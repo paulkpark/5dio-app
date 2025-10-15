@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>5D SONIC — Mobile Player</title>
+
+<!-- Keep API/MEDIA same-origin so Cloudflare Tunnel works -->
+<script>
+window.LUNA_API_BASE  = location.origin + '/api/tree';
+window.LUNA_MEDIA_BASE= location.origin + '/media/';
+</script>
+
+<style>
+:root{
+  --bg:#0b1020; --ink:#e6edf7; --muted:#97a6c6; --panel:rgba(18,24,42,.7);
+  --edge:rgba(255,255,255,.12); --accent:#7dd3fc; --accent2:#fbbf24;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto}
+
+.app{max-width:740px;margin:0 auto;padding:12px;display:flex;flex-direction:column;gap:12px}
+.header{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:linear-gradient(180deg, rgba(11,16,32,.9), rgba(11,16,32,.55));border:1px solid var(--edge);border-radius:14px}
+.brand{font-weight:900;letter-spacing:.8px}
+.chips{display:flex;gap:8px}
+.chip{background:rgba(255,255,255,.08);border:1px solid var(--edge);color:var(--ink);padding:6px 10px;border-radius:999px;cursor:pointer}
+.panel{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:10px}
+.panel h3{margin:0 0 8px 0;font-size:13px;color:#cbd5e1}
+
+/* Library */
+#libBar{display:flex;align-items:center;gap:8px;margin:0 0 6px 0}
+#libPath{font-size:12px;color:var(--muted);flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btn{background:#0f172a;border:1px solid var(--edge);color:var(--ink);border-radius:10px;padding:8px 12px;cursor:pointer}
+.btn:active{transform:translateY(1px)}
+#libGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.card{background:rgba(0,0,0,.2);border:1px solid var(--edge);border-radius:12px;overflow:hidden;cursor:pointer}
+.thumb{position:relative}
+.thumb img{width:100%;aspect-ratio:1/1;height:auto;object-fit:cover;display:block}
+.thumb .badge{position:absolute;left:6px;top:6px;background:rgba(0,0,0,.6);border:1px solid var(--edge);color:#fde68a;border-radius:999px;font-size:11px;padding:2px 6px}
+.card .meta{padding:8px;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card.active{outline:2px solid var(--accent)}
+
+/* Player */
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.grow{flex:1 1 auto}
+.pill{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.05);border:1px solid var(--edge);border-radius:10px;padding:8px 10px}
+.cover{width:46px;height:46px;border-radius:8px;overflow:hidden;border:1px solid var(--edge);background:#0b1222}
+.cover img{width:100%;height:100%;object-fit:cover}
+.badge{font-size:12px;color:#9ca3af}
+.icon{width:16px;height:16px;display:inline-block}
+.icon.play{border-style:solid;border-width:8px 0 8px 14px;border-color:transparent transparent transparent #e2e8f0}
+.icon.pause{width:14px;height:16px;background:linear-gradient(90deg,#e2e8f0 0 40%,transparent 40% 60%,#e2e8f0 60% 100%)}
+.icon.stop{width:16px;height:16px;background:#e2e8f0;border-radius:2px}
+
+/* Sliders */
+input[type=range]{appearance:none;height:32px;background:transparent;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%, #fff 0 35%, #f59e0b 36% 100%);
+  border:1px solid rgba(0,0,0,.45);box-shadow:0 2px 6px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.35)}
+input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:999px;background:linear-gradient(90deg, var(--accent), #4f46e5);box-shadow:inset 0 1px 2px rgba(0,0,0,.5), 0 0 0 1px var(--edge)}
+#vol::-webkit-slider-runnable-track{background:linear-gradient(90deg, #fbbf24, #f59e0b)}
+
+@media (max-width:640px){
+  .app{max-width:480px}
+  #libGrid{grid-template-columns:repeat(2,1fr)}
+}
+
+/* Hamburger button */
+.hamburger{display:inline-flex;flex-direction:column;gap:3px;padding:8px 10px}
+.hamburger .hb{display:block;width:18px;height:2px;background:#e6edf7;opacity:.95}
+
+/* Dropdown menu */
+.dropdown{position:absolute;top:68px;left:12px;z-index:200;background:rgba(18,24,42,.98);
+  border:1px solid var(--edge);border-radius:12px;box-shadow:0 10px 24px rgba(0,0,0,.35);
+  min-width:200px;padding:8px;backdrop-filter:saturate(120%) blur(6px)}
+.dropdown a{display:block;color:#e6edf7;text-decoration:none;padding:10px;border-radius:8px;font-size:14px}
+.dropdown a:hover{background:rgba(255,255,255,.08)}
+.hidden{display:none}
+
+</style>
+
+<style id="brand-fontstyle-patch">
+.brand {
+    font-size: 2.2rem !important;
+    color: #39FF14 !important;
+    text-shadow: 0 0 10px #39FF14, 0 0 20px #39FF14;
+}
+</style>
+
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="leftHead" style="display:flex;align-items:center;gap:10px"><button id="menuBtn" class="chip hamburger" aria-haspopup="true" aria-expanded="false" aria-controls="dropdownMenu" title="Menu"><span class="hb"></span><span class="hb"></span><span class="hb"></span></button><div class="brand" id="brandTitle"> 5DIO </div></div>
+    <div class="chips">
+      <button id="langToggle" class="chip" title="Language">EN / KR</button>
+      <button id="refresh" class="chip">↻</button>
+    </div>
+  </div>
+
+<!-- Dropdown Menu -->
+<div id="dropdownMenu" class="dropdown hidden" role="menu" aria-hidden="true">
+  <a href="https://5dshop.co.kr" target="_blank" rel="noopener" role="menuitem">Shop</a>
+  <a href="#" role="menuitem">FAQ</a>
+  <a href="#" role="menuitem">Contact</a>
+  <a href="#" role="menuitem">Credits</a>
+  <a href="#" role="menuitem">About</a>
+  <a href="#" role="menuitem">Manual</a>
+</div>
+
+<!-- Library -->
+  <section class="panel" id="libPanel">
+    <h3 data-i18n="library">Library</h3>
+    <div id="libBar">
+      <button id="libBack" class="btn" data-i18n="back">Back</button>
+      <div id="libPath">/</div>
+      <button id="libRoot" class="btn" data-i18n="root">Root</button>
+    </div>
+    <div id="libGrid"></div>
+    <div id="libError" class="badge" style="display:none;color:#fecaca"></div>
+  </section>
+
+  <!-- Player -->
+  <section class="panel" id="playerPanel">
+    <h3 data-i18n="nowPlaying">Now Playing</h3>
+    <div class="row">
+      <div class="pill grow">
+        <div class="cover"><img id="nowThumb" alt=""></div>
+        <div style="display:flex;flex-direction:column;min-width:0">
+          <div id="nowTitle" style="font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">—</div>
+          <div id="nowMeta" class="badge">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:8px">
+      <input id="timeline" class="grow" type="range" min="0" max="1" step="0.01" value="0" aria-label="Timeline">
+      <div class="badge"><span id="tCur">00:00</span> / <span id="tDur">00:00</span></div>
+    </div>
+
+    <div class="row" style="margin-top:6px">
+      <button id="btnPP" class="btn" title="Play/Pause"><span class="icon play"></span></button>
+      <button id="btnStop" class="btn" title="Stop"><span class="icon stop"></span></button>
+      <button id="btnLoop" class="btn" title="Loop" data-i18n="loop">Loop: Off</button>
+      <div class="row" style="margin-left:auto">
+        <label class="badge" for="timerSel" data-i18n="sleep">Sleep</label>
+        <select id="timerSel" class="btn" style="padding:6px 10px">
+          <option value="0">Off</option>
+          <option value="5">5 min</option>
+          <option value="10">10 min</option>
+          <option value="15">15 min</option>
+          <option value="30">30 min</option>
+          <option value="60">60 min</option>
+        </select>
+        <span id="timerLeft" class="badge" style="min-width:56px;text-align:right">—</span>
+        <button id="btnDL" class="btn" title="Download" data-i18n="download">Download</button>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:6px">
+      <label class="badge" data-i18n="volume">Volume</label>
+      <input id="vol" type="range" min="0" max="1" step="0.01" value="0.8" style="width:160px">
+    </div>
+  </section>
+</div>
+
+<audio id="audio" preload="metadata" crossorigin="anonymous" playsinline></audio>
+
+<script>
+// ---------- i18n ----------
+const DICT = {
+  en:{library:'Library', back:'Back', root:'Root', nowPlaying:'Now Playing', loop:'Loop', sleep:'Sleep', download:'Download', volume:'Volume'},
+  ko:{library:'라이브러리', back:'뒤로', root:'루트', nowPlaying:'재생 중', loop:'반복', sleep:'수면 타이머', download:'다운로드', volume:'볼륨'}
+};
+function getLang(){ return localStorage.getItem('luna:lang') || 'en'; }
+function setLang(lang){
+  localStorage.setItem('luna:lang', lang);
+  document.documentElement.setAttribute('lang', lang);
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key = el.getAttribute('data-i18n');
+    if(key==='loop'){
+      const isOn = window.__loopOn === true;
+      el.textContent = (DICT[lang].loop + ': ' + (isOn ? (lang==='ko'?'켜짐':'On') : (lang==='ko'?'꺼짐':'Off')));
+    }else{
+      el.textContent = DICT[lang][key] || el.textContent;
+    }
+  });
+  const t=document.getElementById('langToggle'); if(t) t.textContent=(lang==='en')?'EN / KR':'KR / EN';
+}
+document.getElementById('langToggle').addEventListener('click', ()=>{
+  setLang(getLang()==='en'?'ko':'en');
+});
+setLang(getLang());
+</script>
+
+<script>
+// ---------- Helpers ----------
+function absMedia(pathLike){
+  if(!pathLike) return null;
+  if(/^https?:\/\//i.test(pathLike)) return pathLike;
+  if(pathLike.startsWith('/media/')) return location.origin + pathLike;
+  return (window.LUNA_MEDIA_BASE||'').replace(/\/+$/,'') + '/' + pathLike.replace(/^\/+/,'');
+}
+function fmtTime(t){const m=Math.floor(t/60),s=Math.floor(t%60);return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}
+</script>
+
+<script>
+// ---------- Library ----------
+const libGrid  = document.getElementById('libGrid');
+const libErr   = document.getElementById('libError');
+const libPath  = document.getElementById('libPath');
+const btnBack  = document.getElementById('libBack');
+const btnRoot  = document.getElementById('libRoot');
+const btnRef   = document.getElementById('refresh');
+let curPath = '';
+let stack = [];
+
+function folderThumb(rel){
+  const base=(window.LUNA_MEDIA_BASE||'').replace(/\/+$/,'') + '/' + rel.replace(/^\/+/,'');
+  return [base+'/folder.png', base+'/folder.jpg'];
+}
+
+async function fetchTree(path=''){
+  const url = (window.LUNA_API_BASE||'/api/tree') + (path?('?path='+encodeURIComponent(path)):''); 
+  const res = await fetch(url, {cache:'default'});
+  if(!res.ok) throw new Error('API '+res.status);
+  return res.json();
+}
+
+function renderCard(item){
+  const div=document.createElement('div');
+  div.className='card';
+  const th=document.createElement('div'); th.className='thumb';
+  const img=document.createElement('img');
+  img.alt=item.name||item.title||'';
+  img.loading='lazy'; img.decoding='async';
+
+  if(item.type==='folder'){
+    const opts=folderThumb(item.path||item.name); let i=0;
+    img.src=opts[i++];
+    img.onerror=()=>{ if(i<opts.length) img.src=opts[i++]; };
+    const badge=document.createElement('div'); badge.className='badge'; badge.textContent='CAT';
+    th.appendChild(img); th.appendChild(badge);
+  }else{
+    const src = item.thumb ? absMedia(item.thumb) : absMedia((curPath?curPath+'/':'') + 'folder.png');
+    img.src = src || '';
+    th.appendChild(img);
+  }
+  const meta=document.createElement('div'); meta.className='meta'; meta.textContent=item.name||item.title||'—';
+  div.appendChild(th); div.appendChild(meta);
+
+  div.addEventListener('click',()=>{
+    if(item.type==='folder'){ stack.push(curPath); openFolder(item.path); }
+    else { selectTrack(item); }
+  });
+  return div;
+}
+
+async function openFolder(path){
+  curPath = path||'';
+  libPath.textContent = '/'+curPath;
+  libErr.style.display='none'; libGrid.innerHTML='';
+  try{
+    const data = await fetchTree(curPath);
+    const nodes = [
+      ...(data.folders||[]).map(f=>({type:'folder',...f})),
+      ...(data.files||[]).map(f=>({type:'file',...f}))
+    ];
+    nodes.forEach(n=> libGrid.appendChild(renderCard(n)));
+    if(!nodes.length){
+      const p=document.createElement('div'); p.className='badge'; p.textContent='(Empty)'; libGrid.appendChild(p);
+    }
+  }catch(e){
+    libErr.textContent='Library load failed: '+e.message; libErr.style.display='block';
+  }
+}
+
+btnBack.addEventListener('click',()=>{ if(!stack.length) return; const p=stack.pop(); openFolder(p); });
+btnRoot.addEventListener('click',()=>{ stack=[]; openFolder(''); });
+btnRef.addEventListener('click',()=> openFolder(curPath));
+openFolder('');
+</script>
+
+<script>
+// ---------- Player ----------
+const audio   = document.getElementById('audio');
+const tCur    = document.getElementById('tCur');
+const tDur    = document.getElementById('tDur');
+const timeline= document.getElementById('timeline');
+const vol     = document.getElementById('vol');
+const btnPP   = document.getElementById('btnPP');
+const btnStop = document.getElementById('btnStop');
+const btnLoop = document.getElementById('btnLoop');
+const timerSel= document.getElementById('timerSel');
+const timerLeft=document.getElementById('timerLeft');
+const btnDL   = document.getElementById('btnDL');
+
+const nowTitle= document.getElementById('nowTitle');
+const nowMeta = document.getElementById('nowMeta');
+const nowThumb= document.getElementById('nowThumb');
+
+let currentSrc=null, currentCover=null, currentName=null, currentCat=null;
+let sleepTimer=null, sleepEnd=0;
+window.__loopOn = false; // loop state reflected into i18n
+
+function selectTrack(item){
+  currentSrc   = item.url || absMedia(item.path||'');
+  currentName  = (item.name||'').replace(/\.(mp3|wav|m4a|flac)$/i,'');
+  currentCat   = curPath || '/';
+  currentCover = item.thumb ? absMedia(item.thumb) : absMedia((curPath?curPath+'/':'')+'folder.png');
+
+  audio.src = currentSrc; audio.load();
+  nowTitle.textContent = currentName||'—'; nowMeta.textContent=currentCat||'—';
+  nowThumb.src = currentCover||'';
+
+  btnPP.querySelector('.icon').className='icon play';
+  timeline.value=0; tCur.textContent='00:00'; tDur.textContent='00:00';
+}
+
+audio.addEventListener('loadedmetadata', ()=>{
+  tDur.textContent = fmtTime(audio.duration||0);
+  timeline.min=0; timeline.max=isFinite(audio.duration)? audio.duration : 1; timeline.step=0.01; timeline.value=0;
+});
+audio.addEventListener('timeupdate', ()=>{
+  tCur.textContent = fmtTime(audio.currentTime||0);
+  if(isFinite(audio.duration)&&audio.duration>0) timeline.value = audio.currentTime;
+
+  if(sleepEnd>0){
+    const left = Math.max(0, Math.ceil((sleepEnd - Date.now())/1000));
+    const m = Math.floor(left/60), s = left%60;
+    timerLeft.textContent = (left>0) ? (String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')) : '—';
+    if(left<=0){ clearInterval(sleepTimer); sleepTimer=null; sleepEnd=0; timerSel.value='0'; audio.pause(); btnPP.querySelector('.icon').className='icon play'; }
+  }
+});
+
+btnPP.addEventListener('click', async ()=>{
+  try{ if(audio.paused){ await audio.play(); btnPP.querySelector('.icon').className='icon pause'; }
+       else { audio.pause(); btnPP.querySelector('.icon').className='icon play'; } }catch(e){}
+});
+btnStop.addEventListener('click', ()=>{ audio.pause(); audio.currentTime=0; btnPP.querySelector('.icon').className='icon play'; });
+
+timeline.addEventListener('input', ()=>{
+  const v=parseFloat(timeline.value||'0'); if(isFinite(v)) audio.currentTime=v;
+});
+vol.addEventListener('input', ()=>{ audio.volume = Math.max(0,Math.min(1,parseFloat(vol.value||'0.8'))); });
+
+btnLoop.addEventListener('click', ()=>{
+  audio.loop = !audio.loop;
+  window.__loopOn = audio.loop;
+  const lang = localStorage.getItem('luna:lang') || 'en';
+  btnLoop.textContent = (lang==='ko' ? '반복' : 'Loop') + ': ' + (audio.loop ? (lang==='ko'?'켜짐':'On') : (lang==='ko'?'꺼짐':'Off'));
+});
+
+function startTimer(mins){
+  if(sleepTimer){ clearInterval(sleepTimer); sleepTimer=null; }
+  if(mins<=0){ timerLeft.textContent='—'; sleepEnd=0; return; }
+  sleepEnd = Date.now() + mins*60*1000;
+  timerLeft.textContent = String(mins).padStart(2,'0')+':00';
+  sleepTimer = setInterval(()=>{}, 1000); // tick handled in timeupdate
+}
+timerSel.addEventListener('change', ()=>{
+  const mins = parseInt(timerSel.value||'0',10)||0;
+  startTimer(mins);
+});
+
+btnDL.addEventListener('click', ()=>{
+  if(!currentSrc) return;
+  const a=document.createElement('a');
+  a.href=currentSrc;
+  const base=(currentName||'track').replace(/[^\w\-]+/g,'_');
+  const ext=(currentSrc.split('.').pop()||'mp3').split(/\#|\?/)[0];
+  a.download = base + '.' + ext;
+  document.body.appendChild(a); a.click(); a.remove();
+});
+</script>
+
+<script>
+// Dropdown menu behavior
+(function(){
+  const btn = document.getElementById('menuBtn');
+  const menu = document.getElementById('dropdownMenu');
+  function closeMenu(){
+    if(!menu) return;
+    menu.classList.add('hidden');
+    btn && btn.setAttribute('aria-expanded','false');
+    menu.setAttribute('aria-hidden','true');
+  }
+  function openMenu(){
+    if(!menu) return;
+    menu.classList.remove('hidden');
+    btn && btn.setAttribute('aria-expanded','true');
+    menu.setAttribute('aria-hidden','false');
+  }
+  btn && btn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    if(menu.classList.contains('hidden')) openMenu(); else closeMenu();
+  });
+  document.addEventListener('click', (e)=>{
+    if(!menu || menu.classList.contains('hidden')) return;
+    const within = menu.contains(e.target) || (btn && btn.contains(e.target));
+    if(!within) closeMenu();
+  });
+  document.addEventListener('keydown', (e)=>{
+    if(e.key==='Escape') closeMenu();
+  });
+})();
+</script>
+
+</body>
+</html>
