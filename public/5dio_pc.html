@@ -149,6 +149,21 @@ button[data-scope="both"], button[data-scope="freeze"] { display:none !important
 }
 </style>
 
+<script src="https://unpkg.com/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
+<script>
+// === Supabase configuration (client-side) ===
+window.USE_SUPABASE = true; // enable by default; fill your keys below
+window.SUPABASE_URL = "https://YOUR_PROJECT_ID.supabase.co";
+window.SUPABASE_KEY = "YOUR_PUBLIC_ANON_KEY";
+window.SUPABASE_BUCKET = "media";
+window.SUPABASE_PUBLIC_BASE = "https://YOUR_PROJECT_ID.supabase.co/storage/v1/object/public/media";
+window.CACHE_BUST = true;
+
+// If Supabase is enabled, you may also want to use its public base for media assets globally
+if (window.USE_SUPABASE && window.SUPABASE_PUBLIC_BASE) {
+  window.LUNA_MEDIA_BASE = window.SUPABASE_PUBLIC_BASE.replace(/\/+$/,'');
+}
+</script>
 </head>
 <body>
 
@@ -532,10 +547,54 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
   setInterval(()=>{ if (window.fetchAndRender) window.fetchAndRender(window.curPath||''); }, 15000);
 
   function api(path=''){
-    const url = '/api/tree' + (path ? ('?path=' + encodeURIComponent(path)) : '');
-    return fetch(url).then(r=>{
-      if(!r.ok) throw new Error('Library fetch failed');
-      return r.json();
+    
+  // Supabase mode: client-side listing
+  if (window.USE_SUPABASE && window.supabase && window.SUPABASE_URL && window.SUPABASE_KEY) {
+    const sb = window.__sb || (window.__sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY));
+    const bucket = window.SUPABASE_BUCKET || 'media';
+    const prefix = (path||'').replace(/^\//,'');
+
+    return sb.storage.from(bucket).list(prefix, {
+      limit: 1000,
+      sortBy: { column: 'name', order: 'asc' }
+    }).then(({ data, error }) => {
+      if (error) throw error;
+      const entries = data || [];
+      const mediaBase = (window.SUPABASE_PUBLIC_BASE||'').replace(/\/+$/,'');
+      const t = window.CACHE_BUST ? ('?t=' + Date.now()) : '';
+
+      const folders = [];
+      const files = [];
+
+      for (const e of entries) {
+        const name = e.name;
+        const isFolder = !/\./.test(name);
+        const full = (prefix ? prefix + '/' : '') + name;
+
+        if (isFolder) {
+          const thumb = mediaBase + '/' + full + '/folder.png' + t;
+          folders.push({ name, path: full, thumb });
+        } else {
+          const isAudio = /\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(name);
+          if (isAudio) {
+            const base = name.replace(/\.[^.]+$/, '');
+            const url = mediaBase + '/' + full + t;
+            const thumb = mediaBase + '/' + (prefix?prefix + '/':'') + base + '.png' + t;
+            files.push({ name, path: full, url, thumb });
+          }
+        }
+      }
+      return { folders, files };
+    });
+  }
+
+  // Default: server API
+  const url = '/api/tree' + (path ? ('?path=' + encodeURIComponent(path)) : '');
+  return fetch(url).then(r=>{
+    if(!r.ok) throw new Error('Library fetch failed');
+    return r.json();
+  });
+
     });
   }
 
@@ -1954,5 +2013,20 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
+<script>
+function absMedia(pathLike){
+  if(!pathLike) return null;
+  let base = (window.LUNA_MEDIA_BASE||'').replace(/\/+$/,'');
+  let url = null;
+  if(/^https?:\/\//i.test(pathLike)) url = pathLike;
+  else if(pathLike.startsWith('/media/')) url = location.origin + pathLike;
+  else url = base + '/' + pathLike.replace(/^\/+/,'');
+  if (window.CACHE_BUST) {
+    const sep = url.includes('?') ? '&' : '?';
+    url = url + sep + 't=' + Date.now();
+  }
+  return url;
+}
+</script>
 </body>
 </html>

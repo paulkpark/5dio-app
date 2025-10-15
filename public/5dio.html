@@ -87,6 +87,21 @@ input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:999px;
 }
 </style>
 
+<script src="https://unpkg.com/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
+<script>
+// === Supabase configuration (client-side) ===
+window.USE_SUPABASE = true; // enable Supabase mode by default
+window.SUPABASE_URL = "https://YOUR_PROJECT_ID.supabase.co";            // ← fill your project URL
+window.SUPABASE_KEY = "YOUR_PUBLIC_ANON_KEY";                           // ← fill your anon public key
+window.SUPABASE_BUCKET = "media";                                       // default bucket name
+window.SUPABASE_PUBLIC_BASE = "https://YOUR_PROJECT_ID.supabase.co/storage/v1/object/public/media";
+window.CACHE_BUST = true;                                               // add ?t=timestamp to media URLs
+
+// If Supabase is enabled, override the media base so the UI uses Supabase URLs.
+if (window.USE_SUPABASE && window.SUPABASE_PUBLIC_BASE) {
+  window.LUNA_MEDIA_BASE = window.SUPABASE_PUBLIC_BASE.replace(/\/+$/,''); // trailing slash safe
+}
+</script>
 </head>
 <body>
 <div class="app">
@@ -197,9 +212,16 @@ setLang(getLang());
 // ---------- Helpers ----------
 function absMedia(pathLike){
   if(!pathLike) return null;
-  if(/^https?:\/\//i.test(pathLike)) return pathLike;
-  if(pathLike.startsWith('/media/')) return location.origin + pathLike;
-  return (window.LUNA_MEDIA_BASE||'').replace(/\/+$/,'') + '/' + pathLike.replace(/^\/+/,'');
+  let base = (window.LUNA_MEDIA_BASE||'').replace(/\/+$/,'');
+  let url = null;
+  if(/^https?:\/\//i.test(pathLike)) url = pathLike;
+  else if(pathLike.startsWith('/media/')) url = location.origin + pathLike;
+  else url = base + '/' + pathLike.replace(/^\/+/,'');
+  if(window.CACHE_BUST){
+    const sep = url.includes('?') ? '&' : '?';
+    url = url + sep + 't=' + Date.now();
+  }
+  return url;
 }
 function fmtTime(t){const m=Math.floor(t/60),s=Math.floor(t%60);return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}
 </script>
@@ -221,8 +243,51 @@ function folderThumb(rel){
 }
 
 async function fetchTree(path=''){
+  // Supabase mode: client-side listing from Storage
+  if (window.USE_SUPABASE && window.supabase && window.SUPABASE_URL && window.SUPABASE_KEY) {
+    const sb = window.__sb || (window.__sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY));
+    const bucket = window.SUPABASE_BUCKET || 'media';
+    const prefix = (path||'').replace(/^\/+/, '');
+
+    const { data: entries, error } = await sb.storage.from(bucket).list(prefix, {
+      limit: 1000,
+      sortBy: { column: 'name', order: 'asc' }
+    });
+    if (error) throw error;
+
+    const folders = [];
+    const files = [];
+    const mediaBase = (window.SUPABASE_PUBLIC_BASE||'').replace(/\/+$/,'');
+
+    for (const e of (entries||[])) {
+      const name = e.name;
+      const isFolder = !/\./.test(name);          // heuristic: no dot => folder
+      const full = (prefix ? prefix + '/' : '') + name;
+
+      if (isFolder) {
+        const thumb = mediaBase + '/' + full + '/folder.png';
+        folders.push({ name, path: full, thumb });
+      } else {
+        const isAudio = /\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(name);
+        if (isAudio) {
+          const base = name.replace(/\.[^.]+$/, '');
+          const url  = mediaBase + '/' + full;
+          const thumbCandidate1 = mediaBase + '/' + (prefix?prefix + '/':'') + base + '.png';
+          const thumbCandidate2 = mediaBase + '/' + (prefix?prefix + '/':'') + base + '.jpg';
+          // we can't check existence cheaply; UI will handle fallback if 404
+          files.push({ name, path: full, url, thumb: thumbCandidate1 });
+        }
+      }
+    }
+    return { folders, files };
+  }
+
+  // Default: server-side API
   const url = (window.LUNA_API_BASE||'/api/tree') + (path?('?path='+encodeURIComponent(path)):''); 
   const res = await fetch(url, {cache:'default'});
+  if(!res.ok) throw new Error('API '+res.status);
+  return res.json();
+});
   if(!res.ok) throw new Error('API '+res.status);
   return res.json();
 }
