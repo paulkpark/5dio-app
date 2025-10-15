@@ -3,10 +3,20 @@
 <head>
 
 <!-- Cloud Tunnel Safe Endpoints -->
-<script id="cloud-tunnel-config">
-// Force API & MEDIA to same-origin (works via Cloudflare Tunnel / reverse proxy)
-window.LUNA_API_BASE = location.origin + '/api/tree';
-window.LUNA_MEDIA_BASE = location.origin + '/media/';
+<script>
+window.USE_SUPABASE = true;
+
+// ✅ Supabase 대시보드 → Settings → API 에서 복사
+window.SUPABASE_URL = "https://fivedio-app.supabase.co";
+window.SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
+
+// ✅ Storage 버킷이름(우린 media)
+window.SUPABASE_BUCKET = "media";
+
+// ✅ 퍼블릭 베이스 URL: 맨 끝에 /media 까지 포함!
+window.SUPABASE_PUBLIC_BASE = "https://fivedio-app.supabase.co/storage/v1/object/public/media";
+
+window.CACHE_BUST = true;
 </script>
 
 <meta charset="utf-8"/>
