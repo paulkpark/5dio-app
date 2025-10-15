@@ -1,0 +1,10 @@
+<!-- public/index.html -->
+<!doctype html>
+<html lang="ko"><meta charset="utf-8">
+<title>5DIO</title>
+<script>
+  const ua = navigator.userAgent.toLowerCase();
+  const isMobile = /iphone|ipad|ipod|android|mobile/.test(ua) || window.innerWidth < 900;
+  window.location.replace(isMobile ? "/5dio.html" : "/5dio_pc.html");
+</script>
+<body></body></html>
