@@ -6,8 +6,9 @@ const cors = require('cors');
 
 const app = express();
 
-// ✅ MEDIA ROOT 지정 (기본값은 /Users/paulpark/Music/lunasonic_media)
-const MEDIA_ROOT = process.env.MEDIA_DIR || '/Users/paulpark/Music/lunasonic_media';
+// ✅ MEDIA ROOT 지정 
+const MEDIA_ROOT = path.resolve(process.env.MEDIA_DIR || path.join(__dirname, 'media'));
+fs.mkdirSync(MEDIA_ROOT, { recursive: true }); // 폴더가 없으면 자동 생성
 const PORT = process.env.PORT || 5178;
 
 app.use(cors());
