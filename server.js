@@ -1,3 +1,11 @@
+// server.js — Render 호환 버전 (Node Web Service)
+// - PUBLIC 정적파일 서빙
+// - MEDIA 디렉토리 스트리밍(+Range)
+// - /api/tree 미디어 트리 조회
+// - /healthz 헬스체크
+// - SPA 라우팅(* → index.html)
+// ---------------------------------------------
+
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
@@ -6,20 +14,43 @@ const cors = require('cors');
 
 const app = express();
 
-// ✅ MEDIA ROOT 지정 (기본값은 /Users/paulpark/Music/lunasonic_media)
-const MEDIA_ROOT = process.env.MEDIA_DIR || '/Users/paulpark/Music/lunasonic_media';
-const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`Server running on port ${port}`));
+// ✅ Render에서 포트는 반드시 process.env.PORT 사용
+const PORT = process.env.PORT || 3000;
 
+// ✅ MEDIA_ROOT: 로컬 절대경로 기본값은 Render에서 통하지 않으므로
+//    프로젝트 내부의 /media 를 기본으로 사용하도록 변경.
+//    (원하면 Render 대시보드 Environment에 MEDIA_DIR를 지정해 오버라이드)
+const MEDIA_ROOT = path.resolve(
+  process.env.MEDIA_DIR || path.join(__dirname, 'media')
+);
+
+// 공용 미들웨어
 app.use(cors());
-app.use(express.static('public'));
 
+// ✅ 정적파일 서빙: /public 폴더(캐시 1시간)
+const PUBLIC_DIR = path.join(__dirname, 'public');
+app.use(
+  express.static(PUBLIC_DIR, {
+    maxAge: '1h',
+    etag: true,
+  })
+);
+
+// 헬스체크 (Render 재시작/상태확인에 유용)
+app.get('/healthz', (_req, res) => res.status(200).send('ok'));
+
+// 안전한 경로 결합(디렉토리 탈출 방지)
 function safeJoin(root, p = '') {
   const target = path.resolve(root, p || '');
-  if (!target.startsWith(root)) throw new Error('Invalid path');
+  // Windows/Posix 모두 안전하게 비교되도록 root를 resolve해두고, 구분자 보정
+  const rootWithSep = root.endsWith(path.sep) ? root : root + path.sep;
+  if (!(target === root || target.startsWith(rootWithSep))) {
+    throw new Error('Invalid path');
+  }
   return target;
 }
 
+// 폴더 트리 나열(썸네일/오디오 매칭)
 function listTree(dirAbs) {
   const out = { folders: [], files: [] };
   const entries = fs.readdirSync(dirAbs, { withFileTypes: true });
@@ -29,13 +60,15 @@ function listTree(dirAbs) {
       const full = path.join(dirAbs, entry.name);
       if (entry.isDirectory()) {
         const files = fs.readdirSync(full);
-        const thumb = files.find(f => /\.(png|jpg|jpeg|webp|gif)$/i.test(f));
+        const thumb = files.find((f) => /\.(png|jpg|jpeg|webp|gif)$/i.test(f));
         out.folders.push({
           name: entry.name,
           path: path.relative(MEDIA_ROOT, full).replace(/\\/g, '/'),
           thumb: thumb
-            ? `/media/${path.relative(MEDIA_ROOT, path.join(full, thumb)).replace(/\\/g, '/')}`
-            : null
+            ? `/media/${path
+                .relative(MEDIA_ROOT, path.join(full, thumb))
+                .replace(/\\/g, '/')}`
+            : null,
         });
       } else if (entry.isFile()) {
         if (/\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(entry.name)) {
@@ -43,7 +76,7 @@ function listTree(dirAbs) {
           const exts = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
           let img = null;
           for (const x of exts) {
-            if (fs.existsSync(path.join(dirAbs, base + '.' + x))) {
+            if (fs.existsSync(path.join(dirAbs, `${base}.${x}`))) {
               img = x;
               break;
             }
@@ -51,14 +84,20 @@ function listTree(dirAbs) {
           out.files.push({
             name: entry.name,
             path: path.relative(MEDIA_ROOT, full).replace(/\\/g, '/'),
-            url: `/media/${path.relative(MEDIA_ROOT, full).replace(/\\/g, '/')}`,
+            url: `/media/${path
+              .relative(MEDIA_ROOT, full)
+              .replace(/\\/g, '/')}`,
             thumb: img
-              ? `/media/${path.relative(MEDIA_ROOT, path.join(dirAbs, base + '.' + img)).replace(/\\/g, '/')}`
-              : null
+              ? `/media/${path
+                  .relative(MEDIA_ROOT, path.join(dirAbs, `${base}.${img}`))
+                  .replace(/\\/g, '/')}`
+              : null,
           });
         }
       }
-    } catch {}
+    } catch {
+      // 개별 항목 오류는 무시
+    }
   }
 
   out.folders.sort((a, b) => a.name.localeCompare(b.name));
@@ -66,24 +105,28 @@ function listTree(dirAbs) {
   return out;
 }
 
-// ✅ API: 폴더 구조 반환
+// ✅ API: 미디어 트리 조회
 app.get('/api/tree', (req, res) => {
   try {
     const rel = req.query.path || '';
     const abs = safeJoin(MEDIA_ROOT, rel);
+    if (!fs.existsSync(abs)) return res.status(404).json({ error: 'Not found' });
     const st = fs.statSync(abs);
-    if (!st.isDirectory()) return res.status(400).json({ error: 'Not a directory' });
-    res.json(listTree(abs));
+    if (!st.isDirectory())
+      return res.status(400).json({ error: 'Not a directory' });
+
+    return res.json(listTree(abs));
   } catch (e) {
-    res.status(400).json({ error: String(e.message || e) });
+    return res.status(400).json({ error: String(e.message || e) });
   }
 });
 
-// ✅ /media/:file → 오디오/이미지 스트리밍
+// ✅ /media/*: 오디오/이미지 스트리밍(+Range)
 app.get('/media/*', (req, res) => {
   try {
-    const rel = req.params[0];
+    const rel = req.params[0] || '';
     const abs = safeJoin(MEDIA_ROOT, rel);
+
     if (!fs.existsSync(abs)) return res.status(404).send('File not found');
     const st = fs.statSync(abs);
     if (!st.isFile()) return res.status(404).end();
@@ -94,25 +137,37 @@ app.get('/media/*', (req, res) => {
     const range = req.headers.range;
     if (range) {
       const m = range.match(/bytes=(\d+)-(\d*)/);
-      const start = m && m[1] ? parseInt(m[1]) : 0;
-      const end = m && m[2] ? parseInt(m[2]) : st.size - 1;
+      const start = m && m[1] ? parseInt(m[1], 10) : 0;
+      const end = m && m[2] ? parseInt(m[2], 10) : st.size - 1;
+
+      if (start >= st.size || end >= st.size) {
+        res.setHeader('Content-Range', `bytes */${st.size}`);
+        return res.status(416).end();
+      }
+
       res.status(206).set({
         'Content-Length': end - start + 1,
         'Content-Range': `bytes ${start}-${end}/${st.size}`,
-        'Accept-Ranges': 'bytes'
+        'Accept-Ranges': 'bytes',
       });
       fs.createReadStream(abs, { start, end }).pipe(res);
     } else {
+      res.setHeader('Content-Length', st.size);
       fs.createReadStream(abs).pipe(res);
     }
   } catch (e) {
-    res.status(404).send('Error: ' + e.message);
+    res.status(404).send('Error: ' + (e.message || String(e)));
   }
 });
 
-// ✅ 서버 시작 로그
+// ✅ SPA 라우팅: 나머지 모든 경로는 index.html 반환
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
+});
+
+// 서버 시작
 app.listen(PORT, () => {
-  console.log(`\n[LUNASONIC SERVER READY]`);
-  console.log(`http://localhost:${PORT}`);
+  console.log('\n[5DIO SERVER READY]');
+  console.log(`→ http://localhost:${PORT}`);
   console.log(`MEDIA_ROOT: ${MEDIA_ROOT}`);
 });
