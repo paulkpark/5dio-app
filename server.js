@@ -8,10 +8,11 @@ const app = express();
 
 // ✅ MEDIA ROOT 지정 (기본값은 /Users/paulpark/Music/lunasonic_media)
 const MEDIA_ROOT = process.env.MEDIA_DIR || '/Users/paulpark/Music/lunasonic_media';
-const PORT = process.env.PORT || 5178;
+const port = process.env.PORT || 3000;
+app.listen(port, () => console.log(`Server running on port ${port}`));
 
 app.use(cors());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static('public'));
 
 function safeJoin(root, p = '') {
   const target = path.resolve(root, p || '');
