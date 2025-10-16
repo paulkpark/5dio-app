@@ -99,20 +99,7 @@ input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:999px;
 </style>
 
 <script src="https://unpkg.com/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
-<script>
-// === Supabase configuration (client-side) ===
-window.USE_SUPABASE = true; // enable Supabase mode by default
-window.SUPABASE_URL = "https://YOUR_PROJECT_ID.supabase.co";            // ← fill your project URL
-window.SUPABASE_KEY = "YOUR_PUBLIC_ANON_KEY";                           // ← fill your anon public key
-window.SUPABASE_BUCKET = "media";                                       // default bucket name
-window.SUPABASE_PUBLIC_BASE = "https://YOUR_PROJECT_ID.supabase.co/storage/v1/object/public/media";
-window.CACHE_BUST = true;                                               // add ?t=timestamp to media URLs
 
-// If Supabase is enabled, override the media base so the UI uses Supabase URLs.
-if (window.USE_SUPABASE && window.SUPABASE_PUBLIC_BASE) {
-  window.LUNA_MEDIA_BASE = window.SUPABASE_PUBLIC_BASE.replace(/\/+$/,''); // trailing slash safe
-}
-</script>
 </head>
 <body>
 <div class="app">
