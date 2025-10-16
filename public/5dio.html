@@ -117,6 +117,23 @@ input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:999px;
   }
 })();
 </script>
+<!-- Supabase config guard -->
+<script>
+(function(){
+  const hasRealUrl = typeof window.SUPABASE_URL === 'string' && window.SUPABASE_URL &&
+                     !/YOUR_PROJECT_ID/.test(window.SUPABASE_URL);
+  if (hasRealUrl) {
+    const freeze = (k) => { try { Object.defineProperty(window, k, { configurable:false, writable:false }); } catch(_){} };
+    ['SUPABASE_URL','SUPABASE_KEY','SUPABASE_BUCKET','SUPABASE_PUBLIC_BASE','LUNA_MEDIA_BASE'].forEach(freeze);
+  }
+  if (!window.SUPABASE_PUBLIC_BASE && typeof window.SUPABASE_URL === 'string' && window.SUPABASE_URL &&
+      !/YOUR_PROJECT_ID/.test(window.SUPABASE_URL)) {
+    window.SUPABASE_PUBLIC_BASE = window.SUPABASE_URL.replace(/\/+$/, '') + '/storage/v1/object/public/media';
+    if (window.USE_SUPABASE !== false) window.USE_SUPABASE = true;
+    window.LUNA_MEDIA_BASE = window.SUPABASE_PUBLIC_BASE;
+  }
+})();
+</script>
 </head>
 <body>
 <div class="app">
@@ -258,13 +275,64 @@ function folderThumb(rel){
 }
 
 async function fetchTree(path=''){
-  // Supabase mode: client-side listing from Storage
   if (window.USE_SUPABASE && window.supabase && window.SUPABASE_URL && window.SUPABASE_KEY) {
     const sb = window.__sb || (window.__sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY));
     const bucket = window.SUPABASE_BUCKET || 'media';
     const prefix = (path||'').replace(/^\/+/, '');
+    const { data: entries, error } = await sb.storage.from(bucket).list(prefix, { limit: 1000, sortBy:{ column:'name', order:'asc' } });
+    if (error) throw error;
 
-    const { data: entries, error } = await sb.storage.from(bucket).list(prefix, {
+    const names = new Set((entries||[]).map(e => e.name));
+    const lcMap = new Map(Array.from(names, n => [n.toLowerCase(), n])); // lower -> real
+    const mediaBase = (window.SUPABASE_PUBLIC_BASE||'').replace(/\/+$/,'');
+    const t = window.CACHE_BUST ? ('?t=' + Date.now()) : '';
+
+    function pickThumbCI(base) {
+      const exts = ['png','jpg','jpeg','webp','gif'];
+      for (const ext of exts) {
+        const wanted = `${base}.${ext}`.toLowerCase();
+        const real = lcMap.get(wanted);
+        if (real) return real;
+      }
+      return null;
+    }
+    function encSegPath(p){ return p.split('/').map(encodeURIComponent).join('/'); }
+
+    const folders = [];
+    const files = [];
+
+    const folderThumbReal = pickThumbCI('folder');
+
+    for (const e of (entries||[])) {
+      const name = e.name;
+      const isFolder = !/\./.test(name);
+      const full = (prefix ? (prefix + '/') : '') + name;
+
+      if (isFolder) {
+        const thumb = folderThumbReal ? `${mediaBase}/${encSegPath((prefix?prefix + '/':'') + folderThumbReal)}${t}` : null;
+        folders.push({ name, path: full, thumb });
+      } else {
+        const isAudio = /\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(name);
+        if (isAudio) {
+          const base = name.replace(/\.[^.]+$/, '');
+          const trackThumbReal = pickThumbCI(base);
+          const url = `${mediaBase}/${encSegPath(full)}${t}`;
+          const thumb = trackThumbReal
+            ? `${mediaBase}/${encSegPath((prefix?prefix + '/':'') + trackThumbReal)}${t}`
+            : (folderThumbReal ? `${mediaBase}/${encSegPath((prefix?prefix + '/':'') + folderThumbReal)}${t}` : null);
+          files.push({ name, path: full, url, thumb });
+        }
+      }
+    }
+    return { folders, files };
+  }
+
+  // fallback to server API
+  const url = (window.LUNA_API_BASE||'/api/tree') + (path?('?path='+encodeURIComponent(path)):''); 
+  const res = await fetch(url, {cache:'default'});
+  if(!res.ok) throw new Error('API '+res.status);
+  return res.json();
+} = await sb.storage.from(bucket).list(prefix, {
       limit: 1000,
       sortBy: { column: 'name', order: 'asc' }
     });
@@ -514,6 +582,42 @@ function armAudioOnce(){
     try {
       __mediaSrcNode = ctx.createMediaElementSource(__mediaEl);
     } catch (e) { console.warn('MediaElementSource already exists:', e.message); }
+  }
+}
+document.addEventListener('click', armAudioOnce, { once:true, capture:true });
+document.addEventListener('keydown', armAudioOnce, { once:true, capture:true });
+document.addEventListener('DOMContentLoaded', () => {
+  const btnPlay = document.querySelector('#btnPlay');
+  if (btnPlay) btnPlay.addEventListener('click', () => {});
+});
+</script>
+<script>
+// ===== Safety & Audio Boot =====
+let __audioCtx=null, __mediaEl=null, __mediaSrcNode=null, __armedAudio=false;
+function $(sel, { required=false } = {}) {
+  const el = document.querySelector(sel);
+  if (required && !el) throw new Error('Required element not found: '+sel);
+  return el;
+}
+function safePrepend(container, node) {
+  if (container && typeof container.prepend === 'function') container.prepend(node);
+  else if (container && container.firstChild) container.insertBefore(node, container.firstChild);
+  else if (container) container.appendChild(node);
+  else document.body.appendChild(node);
+}
+function getAudioCtx(){
+  if (!__audioCtx) __audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  return __audioCtx;
+}
+function armAudioOnce(){
+  if (__armedAudio) return;
+  __armedAudio = true;
+  const ctx = getAudioCtx();
+  if (ctx.state === 'suspended') ctx.resume().catch(console.warn);
+  if (!__mediaEl) __mediaEl = document.querySelector('#player');
+  if (__mediaEl && !__mediaSrcNode) {
+    try { __mediaSrcNode = ctx.createMediaElementSource(__mediaEl); }
+    catch (e) { console.warn('MediaElementSource already exists:', e.message); }
   }
 }
 document.addEventListener('click', armAudioOnce, { once:true, capture:true });
