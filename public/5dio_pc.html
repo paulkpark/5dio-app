@@ -160,20 +160,7 @@ button[data-scope="both"], button[data-scope="freeze"] { display:none !important
 </style>
 
 <script src="https://unpkg.com/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
-<script>
-// === Supabase configuration (client-side) ===
-window.USE_SUPABASE = true; // enable by default; fill your keys below
-window.SUPABASE_URL = "https://YOUR_PROJECT_ID.supabase.co";
-window.SUPABASE_KEY = "YOUR_PUBLIC_ANON_KEY";
-window.SUPABASE_BUCKET = "media";
-window.SUPABASE_PUBLIC_BASE = "https://YOUR_PROJECT_ID.supabase.co/storage/v1/object/public/media";
-window.CACHE_BUST = true;
 
-// If Supabase is enabled, you may also want to use its public base for media assets globally
-if (window.USE_SUPABASE && window.SUPABASE_PUBLIC_BASE) {
-  window.LUNA_MEDIA_BASE = window.SUPABASE_PUBLIC_BASE.replace(/\/+$/,'');
-}
-</script>
 <!-- Supabase config guard -->
 <script>
 (function(){
