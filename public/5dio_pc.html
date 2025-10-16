@@ -160,7 +160,37 @@ button[data-scope="both"], button[data-scope="freeze"] { display:none !important
 </style>
 
 <script src="https://unpkg.com/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
+<script>
+// === Supabase configuration (client-side) ===
+window.USE_SUPABASE = true; // enable by default; fill your keys below
+window.SUPABASE_URL = "https://YOUR_PROJECT_ID.supabase.co";
+window.SUPABASE_KEY = "YOUR_PUBLIC_ANON_KEY";
+window.SUPABASE_BUCKET = "media";
+window.SUPABASE_PUBLIC_BASE = "https://YOUR_PROJECT_ID.supabase.co/storage/v1/object/public/media";
+window.CACHE_BUST = true;
 
+// If Supabase is enabled, you may also want to use its public base for media assets globally
+if (window.USE_SUPABASE && window.SUPABASE_PUBLIC_BASE) {
+  window.LUNA_MEDIA_BASE = window.SUPABASE_PUBLIC_BASE.replace(/\/+$/,'');
+}
+</script>
+<!-- Supabase config guard -->
+<script>
+(function(){
+  const hasRealUrl = typeof window.SUPABASE_URL === 'string' && window.SUPABASE_URL &&
+                     !/YOUR_PROJECT_ID/.test(window.SUPABASE_URL);
+  if (hasRealUrl) {
+    const freeze = (k) => { try { Object.defineProperty(window, k, { configurable:false, writable:false }); } catch(_){} };
+    ['SUPABASE_URL','SUPABASE_KEY','SUPABASE_BUCKET','SUPABASE_PUBLIC_BASE','LUNA_MEDIA_BASE'].forEach(freeze);
+  }
+  if (!window.SUPABASE_PUBLIC_BASE && typeof window.SUPABASE_URL === 'string' && window.SUPABASE_URL &&
+      !/YOUR_PROJECT_ID/.test(window.SUPABASE_URL)) {
+    window.SUPABASE_PUBLIC_BASE = window.SUPABASE_URL.replace(/\/+$/, '') + '/storage/v1/object/public/media';
+    if (window.USE_SUPABASE !== false) window.USE_SUPABASE = true;
+    window.LUNA_MEDIA_BASE = window.SUPABASE_PUBLIC_BASE;
+  }
+})();
+</script>
 </head>
 <body>
 
@@ -545,15 +575,59 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
 
   function api(path=''){
     
-  // Supabase mode: client-side listing
+  // Supabase mode: enhanced thumbnail detection with png/jpg/jpeg/webp/gif
   if (window.USE_SUPABASE && window.supabase && window.SUPABASE_URL && window.SUPABASE_KEY) {
     const sb = window.__sb || (window.__sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY));
     const bucket = window.SUPABASE_BUCKET || 'media';
-    const prefix = (path||'').replace(/^\//,'');
+    const prefix = (path||'').replace(/^\/+/, '');
+    return sb.storage.from(bucket).list(prefix, { limit: 1000, sortBy: { column: 'name', order: 'asc' } })
+      .then(({ data, error }) => {
+        if (error) throw error;
+        const entries = data || [];
+        const names = new Set(entries.map(e => e.name));
+        const mediaBase = (window.SUPABASE_PUBLIC_BASE||'').replace(/\/+$/,'');
+        const t = window.CACHE_BUST ? ('?t=' + Date.now()) : '';
 
-    return sb.storage.from(bucket).list(prefix, {
-      limit: 1000,
-      sortBy: { column: 'name', order: 'asc' }
+        function pickThumb(base) {
+          const exts = ['png','jpg','jpeg','webp','gif'];
+          for (const ext of exts) {
+            if (names.has(base + '.' + ext)) return base + '.' + ext;
+          }
+          return null;
+        }
+
+        const folderThumb = pickThumb('folder');
+        const folders = [];
+        const files = [];
+
+        for (const e of entries) {
+          const name = e.name;
+          const isFolder = !/\./.test(name);
+          const full = (prefix ? (prefix + '/') : '') + name;
+
+          if (isFolder) {
+            const thumb = folderThumb ? (mediaBase + '/' + (prefix?prefix + '/':'') + folderThumb + t) : null;
+            folders.push({ name, path: full, thumb });
+          } else {
+            const isAudio = /\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(name);
+            if (isAudio) {
+              const base = name.replace(/\.[^.]+$/, '');
+              const trackThumb = pickThumb(base);
+              const url = mediaBase + '/' + full + t;
+              const thumb = trackThumb
+                   ? (mediaBase + '/' + (prefix?prefix + '/':'') + trackThumb + t)
+                   : (folderThumb ? (mediaBase + '/' + (prefix?prefix + '/':'') + folderThumb + t) : null);
+              files.push({ name, path: full, url, thumb });
+            }
+          }
+        }
+        return { folders, files };
+      });
+  }
+
+  // Default: server API
+  const url = '/api/tree' + (path ? ('?path=' + encodeURIComponent(path)) : '');
+  return fetch(url).then(r => { if (!r.ok) throw new Error('Library fetch failed'); return r.json(); }); }
     }).then(({ data, error }) => {
       if (error) throw error;
       const entries = data || [];
@@ -2024,6 +2098,43 @@ function absMedia(pathLike){
   }
   return url;
 }
+</script>
+<script>
+// ===== Safety & Audio Boot =====
+let __audioCtx=null, __mediaEl=null, __mediaSrcNode=null, __armedAudio=false;
+function $(sel, { required=false } = {}) {
+  const el = document.querySelector(sel);
+  if (required && !el) throw new Error('Required element not found: '+sel);
+  return el;
+}
+function safePrepend(container, node) {
+  if (container && typeof container.prepend === 'function') container.prepend(node);
+  else if (container && container.firstChild) container.insertBefore(node, container.firstChild);
+  else if (container) container.appendChild(node);
+  else document.body.appendChild(node);
+}
+function getAudioCtx(){
+  if (!__audioCtx) __audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  return __audioCtx;
+}
+function armAudioOnce(){
+  if (__armedAudio) return;
+  __armedAudio = true;
+  const ctx = getAudioCtx();
+  if (ctx.state === 'suspended') ctx.resume().catch(console.warn);
+  if (!__mediaEl) __mediaEl = document.querySelector('#player');
+  if (__mediaEl && !__mediaSrcNode) {
+    try {
+      __mediaSrcNode = ctx.createMediaElementSource(__mediaEl);
+    } catch (e) { console.warn('MediaElementSource already exists:', e.message); }
+  }
+}
+document.addEventListener('click', armAudioOnce, { once:true, capture:true });
+document.addEventListener('keydown', armAudioOnce, { once:true, capture:true });
+document.addEventListener('DOMContentLoaded', () => {
+  const btnPlay = document.querySelector('#btnPlay');
+  if (btnPlay) btnPlay.addEventListener('click', () => {});
+});
 </script>
 </body>
 </html>
