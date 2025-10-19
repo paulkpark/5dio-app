@@ -332,49 +332,6 @@ async function fetchTree(path=''){
   const res = await fetch(url, {cache:'default'});
   if(!res.ok) throw new Error('API '+res.status);
   return res.json();
-} = await sb.storage.from(bucket).list(prefix, {
-      limit: 1000,
-      sortBy: { column: 'name', order: 'asc' }
-    });
-    if (error) throw error;
-
-    const folders = [];
-    const files = [];
-    const mediaBase = (window.SUPABASE_PUBLIC_BASE||'').replace(/\/+$/,'');
-
-    for (const e of (entries||[])) {
-      const name = e.name;
-      const isFolder = !/\./.test(name);          // heuristic: no dot => folder
-      const full = (prefix ? prefix + '/' : '') + name;
-
-      if (isFolder) {
-        const thumb = mediaBase + '/' + full + '/folder.png';
-        folders.push({ name, path: full, thumb });
-      } else {
-        const isAudio = /\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(name);
-        if (isAudio) {
-          const base = name.replace(/\.[^.]+$/, '');
-          const url  = mediaBase + '/' + full;
-          const thumbCandidate1 = mediaBase + '/' + (prefix?prefix + '/':'') + base + '.png';
-          const thumbCandidate2 = mediaBase + '/' + (prefix?prefix + '/':'') + base + '.jpg';
-          // we can't check existence cheaply; UI will handle fallback if 404
-          files.push({ name, path: full, url, thumb: thumbCandidate1 });
-        }
-      }
-    }
-    return { folders, files };
-  }
-
-  // Default: server-side API
-  const url = (window.LUNA_API_BASE||'/api/tree') + (path?('?path='+encodeURIComponent(path)):''); 
-  const res = await fetch(url, {cache:'default'});
-  if(!res.ok) throw new Error('API '+res.status);
-  return res.json();
-});
-  if(!res.ok) throw new Error('API '+res.status);
-  return res.json();
-}
-
 function renderCard(item){
   const div=document.createElement('div');
   div.className='card';
@@ -591,41 +548,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnPlay) btnPlay.addEventListener('click', () => {});
 });
 </script>
-<script>
-// ===== Safety & Audio Boot =====
-let __audioCtx=null, __mediaEl=null, __mediaSrcNode=null, __armedAudio=false;
-function $(sel, { required=false } = {}) {
-  const el = document.querySelector(sel);
-  if (required && !el) throw new Error('Required element not found: '+sel);
-  return el;
-}
-function safePrepend(container, node) {
-  if (container && typeof container.prepend === 'function') container.prepend(node);
-  else if (container && container.firstChild) container.insertBefore(node, container.firstChild);
-  else if (container) container.appendChild(node);
-  else document.body.appendChild(node);
-}
-function getAudioCtx(){
-  if (!__audioCtx) __audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-  return __audioCtx;
-}
-function armAudioOnce(){
-  if (__armedAudio) return;
-  __armedAudio = true;
-  const ctx = getAudioCtx();
-  if (ctx.state === 'suspended') ctx.resume().catch(console.warn);
-  if (!__mediaEl) __mediaEl = document.querySelector('#player');
-  if (__mediaEl && !__mediaSrcNode) {
-    try { __mediaSrcNode = ctx.createMediaElementSource(__mediaEl); }
-    catch (e) { console.warn('MediaElementSource already exists:', e.message); }
-  }
-}
-document.addEventListener('click', armAudioOnce, { once:true, capture:true });
-document.addEventListener('keydown', armAudioOnce, { once:true, capture:true });
-document.addEventListener('DOMContentLoaded', () => {
-  const btnPlay = document.querySelector('#btnPlay');
-  if (btnPlay) btnPlay.addEventListener('click', () => {});
-});
-</script>
+
 </body>
 </html>
