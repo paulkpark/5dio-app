@@ -385,8 +385,8 @@ const genCtx=new (window.AudioContext||window.webkitAudioContext)();const player
 let lOsc,rOsc,lGain,rGain,genMasterGain,genPan,genAnalyser;
 function makePulsePeriodicWave(ctx,duty){const D=Math.min(Math.max(duty/100,.01),.99);const N=64;const real=new Float32Array(N+1),imag=new Float32Array(N+1);for(let n=1;n<=N;n++){const c=(2/(n*Math.PI))*Math.sin(n*Math.PI*D);real[n]=c*2}return ctx.createPeriodicWave(real,imag,{disableNormalization:false})}
 function makeHarmonicWave(ctx,base,count,amps){const N=64,real=new Float32Array(N+1),imag=new Float32Array(N+1);real[base]=1;for(let i=1;i<=count;i++){const idx=base*(i+1);if(idx<=N)real[idx]=amps[i]||0}return ctx.createPeriodicWave(real,imag,{disableNormalization:false})}
-function setupGenerator(){lOsc=genCtx.createOscillator();rOsc=genCtx.createOscillator();lGain=genCtx.createGain();rGain=genCtx.createGain();genMasterGain=genCtx.createGain();genPan=new StereoPannerNode(genCtx,{pan:0});genAnalyser=genCtx.createAnalyser();genAnalyser.fftSize=2048;lOsc.connect(lGain).connect(genPan);rOsc.connect(rGain).connect(genPan);genPan.connect(genMasterGain).connect(genAnalyser).connect(genCtx.destination);lOsc.start();rOsc.start()}setupGenerator();
-const audioEl=document.getElementById('audio');const srcNode=playerCtx.createMediaElementSource(audioEl);const playerMasterGain=playerCtx.createGain();const playerAnalyser=playerCtx.createAnalyser();playerAnalyser.fftSize=2048;srcNode.connect(playerMasterGain).connect(playerAnalyser).connect(playerCtx.destination);
+function setupGenerator(){lOsc=genCtx.createOscillator();rOsc=genCtx.createOscillator();lGain=genCtx.createGain();rGain=genCtx.createGain();genMasterGain=genCtx.createGain();genPan=new StereoPannerNode(genCtx,{pan:0});genAnalyser=genCtx.createAnalyser();genAnalyser.fftSize=2048;lOsc.connect(lGain).connect(genPan);rOsc.connect(rGain).connect(genPan);genPan.connect(genMasterGain).connect(genAnalyser).connect(genCtx.destination);lOsc.start();rOsc.start()}
+const audioEl=document.getElementById('audio');let srcNode=null;if(audioEl){if(!audioEl.__mediaNode){try{audioEl.__mediaNode=playerCtx.createMediaElementSource(audioEl);}catch(e){}}srcNode=audioEl.__mediaNode;}const playerMasterGain=window.playerMasterGain||playerCtx.createGain();window.playerMasterGain=playerMasterGain;const playerAnalyser=window.playerAnalyser||playerCtx.createAnalyser();playerAnalyser.fftSize=2048;if(srcNode){try{srcNode.disconnect();}catch(e){}srcNode.connect(playerMasterGain).connect(playerAnalyser).connect(playerCtx.destination);}
 /* UI */
 const UI={lFreq:document.getElementById('lFreq'),lFreqIn:document.getElementById('lFreqIn'),lWave:document.getElementById('lWave'),lDuty:document.getElementById('lDuty'),lDutyIn:document.getElementById('lDutyIn'),lLevel:document.getElementById('lLevel'),lLevelTxt:document.getElementById('lLevelTxt'),rFreq:document.getElementById('rFreq'),rFreqIn:document.getElementById('rFreqIn'),rWave:document.getElementById('rWave'),rDuty:document.getElementById('rDuty'),rDutyIn:document.getElementById('rDutyIn'),rLevel:document.getElementById('rLevel'),rLevelTxt:document.getElementById('rLevelTxt'),masterGain:document.getElementById('masterGain'),masterKnob:document.getElementById('masterKnob'),balance:document.getElementById('balance'),balanceKnob:document.getElementById('balanceKnob'),harmCount:document.getElementById('harmCount'),harmBase:document.getElementById('harmBase'),h1:document.getElementById('h1'),h2:document.getElementById('h2'),h3:document.getElementById('h3'),h4:document.getElementById('h4'),h1v:document.getElementById('h1v'),h2v:document.getElementById('h2v'),h3v:document.getElementById('h3v'),h4v:document.getElementById('h4v'),genPlayPause:document.getElementById('genPlayPause'),genStop:document.getElementById('genStop'),libRail:document.getElementById('libRail'),libPrev:document.getElementById('libPrev'),libNext:document.getElementById('libNext'),filePicker:document.getElementById('filePicker'),playPause:document.getElementById('playPause'),stop:document.getElementById('stop'),timeline:document.getElementById('timeline'),timeCur:document.getElementById('timeCur'),timeDur:document.getElementById('timeDur'),playerVol:document.getElementById('playerVol'),playerVolKnob:document.getElementById('playerVolKnob')};
 function knobAngle(rangeEl){const k=rangeEl.closest('.knob');if(!k)return 0;const min=+rangeEl.min,max=+rangeEl.max,v=+rangeEl.value;const pct=(v-min)/(max-min);const start=+k.dataset.start||210;const sweep=+k.dataset.sweep||270;return start+pct*sweep}
@@ -403,7 +403,7 @@ UI.balance.addEventListener('input',()=>{if(genPan)genPan.pan.value=(+UI.balance
 function applyHarmonics(){if(UI.lWave.value==='sine'||UI.rWave.value==='sine'){const base=parseInt(UI.harmBase.value)||1;const count=parseInt(UI.harmCount.value)||0;const amps={1:(+UI.h1.value)/100,2:(+UI.h2.value)/100,3:(+UI.h3.value)/100,4:(+UI.h4.value)/100};if(UI.lWave.value==='sine'&&lOsc){lOsc.setPeriodicWave(makeHarmonicWave(genCtx,base,count,amps))}if(UI.rWave.value==='sine'&&rOsc){rOsc.setPeriodicWave(makeHarmonicWave(genCtx,base,count,amps))}}UI.h1v.textContent=UI.h1.value+'%';UI.h2v.textContent=UI.h2.value+'%';UI.h3v.textContent=UI.h3.value+'%';UI.h4v.textContent=UI.h4.value+'%'}
 ;['input','change'].forEach(ev=>{UI.harmBase.addEventListener(ev,applyHarmonics);UI.harmCount.addEventListener(ev,applyHarmonics);UI.h1.addEventListener(ev,applyHarmonics);UI.h2.addEventListener(ev,applyHarmonics);UI.h3.addEventListener(ev,applyHarmonics);UI.h4.addEventListener(ev,applyHarmonics)});applyWave('L');applyWave('R');applyHarmonics();
 let genRunning=false;function startGenerator(){genCtx.resume();genRunning=true}function pauseGenerator(){genRunning=false}function stopGenerator(){genRunning=false;if(lGain)lGain.gain.value=0;if(rGain)rGain.gain.value=0}
-UI.genPlayPause.addEventListener('click',()=>{if(!genRunning){startGenerator()}else{pauseGenerator()}});UI.genStop.addEventListener('click',stopGenerator);
+if(UI.genPlayPause){UI.genPlayPause.addEventListener('click',()=>{if(!genRunning){startGenerator()}else{pauseGenerator()}})};if(UI.genStop){UI.genStop.addEventListener('click',stopGenerator)};
 function fmt(t){const m=Math.floor(t/60),s=Math.floor(t%60);return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}
 UI.filePicker.addEventListener('change',e=>{const f=e.target.files?.[0];if(!f)return;audioEl.src=URL.createObjectURL(f);audioEl.load();playerCtx.resume().then(()=>audioEl.play().catch(()=>{}))});
 UI.playPause.addEventListener('click',()=>{playerCtx.resume();if(audioEl.paused)audioEl.play();else audioEl.pause()});
@@ -589,7 +589,7 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
       const t = window.CACHE_BUST ? ('?t=' + Date.now()) : '';
 
       return sb.storage.from(bucket).list(prefix, { limit: 1000, sortBy: { column:'name', order:'asc' } })
-        .then(({ data, error }) => {
+        .then(async ({ data, error }) => {
           if (error) throw error;
           const entries = data || [];
 
@@ -630,6 +630,16 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
 
           outFolders.sort((a,b)=>a.name.localeCompare(b.name));
           outFiles.sort((a,b)=>a.name.localeCompare(b.name));
+
+          // Fallback to server API if nothing is found in Supabase
+          if ((outFolders.length + outFiles.length) === 0) {
+            try {
+              const url = '/api/tree' + (prefix ? ('?path=' + encodeURIComponent(prefix)) : '');
+              const r = await fetch(url);
+              if (r.ok) return await r.json();
+            } catch (e) { /* swallow and return empty */ }
+          }
+
           return { folders: outFolders, files: outFiles };
         });
     }
@@ -1331,21 +1341,28 @@ label[for="volume"],
   // If containers don't exist, create a minimal bar + rail above the audio player
   let rail = document.getElementById('libRail');
   let bar  = document.getElementById('libBar');
+  const audioAnchor = document.getElementById('audio');
   if (!rail) {
     rail = document.createElement('div'); rail.id = 'libRail';
-    const anchor = document.getElementById('audio') || document.body;
+    const anchor = audioAnchor || document.body;
     // create bar
     bar = document.createElement('div'); bar.id = 'libBar';
     const backBtn = document.createElement('button'); backBtn.id='libBack'; backBtn.textContent='Back';
     const refBtn  = document.createElement('button'); refBtn.id='libRefresh'; refBtn.textContent='Refresh';
     const pathLbl = document.createElement('span');   pathLbl.id='libPath'; pathLbl.textContent='/';
     bar.appendChild(backBtn); bar.appendChild(refBtn); bar.appendChild(pathLbl);
-    anchor.parentNode.insertBefore(bar, anchor);
-    anchor.parentNode.insertBefore(rail, anchor);
+    if (anchor && anchor.parentNode) { anchor.parentNode.insertBefore(bar, anchor); anchor.parentNode.insertBefore(rail, anchor); }
+    else { document.body.appendChild(bar); document.body.appendChild(rail); }
+  } else if (!bar) {
+    // create toolbar near existing rail
+    bar = document.createElement('div'); bar.id='libBar';
+    if (rail.parentNode) { rail.parentNode.insertBefore(bar, rail); }
+    else if (audioAnchor && audioAnchor.parentNode) { audioAnchor.parentNode.insertBefore(bar, audioAnchor); }
+    else { document.body.appendChild(bar); }
   }
-  const backBtn = document.getElementById('libBack') || (function(){ const b=document.createElement('button'); b.id='libBack'; b.textContent='Back'; bar.prepend(b); return b; })();
-  const refBtn  = document.getElementById('libRefresh') || (function(){ const b=document.createElement('button'); b.id='libRefresh'; b.textContent='Refresh'; bar.appendChild(b); return b; })();
-  const pathLbl = document.getElementById('libPath') || (function(){ const s=document.createElement('span'); s.id='libPath'; s.textContent='/'; bar.appendChild(s); return s; })();
+  const backBtn = document.getElementById('libBack') || (function(){ const b=document.createElement('button'); b.id='libBack'; b.textContent='Back'; if(bar){ if(typeof bar.prepend==='function') bar.prepend(b); else bar.appendChild(b); } return b; })();
+  const refBtn  = document.getElementById('libRefresh') || (function(){ const b=document.createElement('button'); b.id='libRefresh'; b.textContent='Refresh'; if(bar) bar.appendChild(b); return b; })();
+  const pathLbl = document.getElementById('libPath') || (function(){ const s=document.createElement('span'); s.id='libPath'; s.textContent='/'; if(bar) bar.appendChild(s); return s; })();
 
   const origin = location.origin; // expect same host:port as server when served via http://localhost:5178/...
   const API = (window.LUNA_API_BASE || (origin + '/api/tree'));
