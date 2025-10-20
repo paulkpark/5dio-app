@@ -563,178 +563,92 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
   backBtn.className = 'btn';
   backBtn.textContent = 'Back';
   backBtn.style.marginRight = '8px';
-  backBtn.onclick = ()=>{
+  backBtn.onclick = () => {
     if (!stack.length) return;
     curPath = stack.pop(); window.curPath = curPath;
     page = 0;
     fetchAndRender(curPath, false);
   };
   rail.parentNode.insertBefore(backBtn, rail);
+
   const refreshBtn = document.createElement('button');
-  refreshBtn.className='btn'; refreshBtn.textContent='Refresh';
-  refreshBtn.style.margin='0 0 0 8px';
-  refreshBtn.onclick = ()=>{ if (window.fetchAndRender) window.fetchAndRender(window.curPath||''); };
+  refreshBtn.className = 'btn'; refreshBtn.textContent = 'Refresh';
+  refreshBtn.style.margin = '0 0 0 8px';
+  refreshBtn.onclick = () => { if (window.fetchAndRender) window.fetchAndRender(window.curPath || ''); };
   rail.parentNode.insertBefore(refreshBtn, rail);
-  setInterval(()=>{ if (window.fetchAndRender) window.fetchAndRender(window.curPath||''); }, 15000);
+  setInterval(() => { if (window.fetchAndRender) window.fetchAndRender(window.curPath || ''); }, 15000);
 
-  function api(path=''){
-    
-  // Supabase mode: CI thumbnail match + segment-encoded URLs
-  if (window.USE_SUPABASE && window.supabase && window.SUPABASE_URL && window.SUPABASE_KEY) {
-    const sb = window.__sb || (window.__sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY));
-    const bucket = window.SUPABASE_BUCKET || 'media';
-    const prefix = (path||'').replace(/^\/+/, '');
-    return sb.storage.from(bucket).list(prefix, { limit: 1000, sortBy:{ column:'name', order:'asc' } })
-      .then(({ data, error }) => {
-        if (error) throw error;
-        const entries = data || [];
-        const names = new Set(entries.map(e => e.name));
-        const lcMap = new Map(Array.from(names, n => [n.toLowerCase(), n])); // lower -> real
-        const mediaBase = (window.SUPABASE_PUBLIC_BASE||'').replace(/\/+$/,'');
-        const t = window.CACHE_BUST ? ('?t=' + Date.now()) : '';
+  function encSegPath(p) { return (p||'').split('/').filter(Boolean).map(encodeURIComponent).join('/'); }
+  function api(path='') {
+    const prefix = (path || '').replace(/^\/+/, '');
 
-        function pickThumbCI(base) {
-          const exts = ['png','jpg','jpeg','webp','gif'];
-          for (const ext of exts) {
-            const wanted = (base + '.' + ext).toLowerCase();
-            const real = lcMap.get(wanted);
-            if (real) return real;
+    if (window.USE_SUPABASE && window.supabase && window.SUPABASE_URL && window.SUPABASE_KEY) {
+      const sb = window.__sb || (window.__sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY));
+      const bucket = window.SUPABASE_BUCKET || 'media';
+      const mediaBase = (window.SUPABASE_PUBLIC_BASE || '').replace(/\/+$/, '');
+      const t = window.CACHE_BUST ? ('?t=' + Date.now()) : '';
+
+      return sb.storage.from(bucket).list(prefix, { limit: 1000, sortBy: { column:'name', order:'asc' } })
+        .then(({ data, error }) => {
+          if (error) throw error;
+          const entries = data || [];
+
+          const names = new Set(entries.map(e=>e.name));
+          const lcMap = new Map(Array.from(names, n => [n.toLowerCase(), n]));
+
+          function pickThumbCI(base) {
+            const exts = ['png','jpg','jpeg','webp','gif'];
+            for (const ext of exts) {
+              const wanted = (base + '.' + ext).toLowerCase();
+              const real = lcMap.get(wanted);
+              if (real) return real;
+            }
+            return null;
           }
-          return null;
-        }
-        function encSegPath(p){ return p.split('/').map(encodeURIComponent).join('/'); }
 
-        const folderThumbReal = pickThumbCI('folder');
-        const folders = [];
-        const files = [];
+          const folderThumbReal = pickThumbCI('folder');
+          const outFolders = [];
+          const outFiles = [];
+          for (const e of entries) {
+            const name = e.name;
+            const isFolder = !/\./.test(name);
+            const full = (prefix ? (prefix + '/') : '') + name;
 
-        for (const e of entries) {
-          const name = e.name;
-          const isFolder = !/\./.test(name);
-          const full = (prefix ? (prefix + '/') : '') + name;
-
-          if (isFolder) {
-            const thumb = folderThumbReal ? `${mediaBase}/${encSegPath((prefix?prefix + '/':'') + folderThumbReal)}${t}` : null;
-            folders.push({ name, path: full, thumb });
-          } else {
-            const isAudio = /\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(name);
-            if (isAudio) {
+            if (isFolder) {
+              const thumb = folderThumbReal ? `${mediaBase}/${encSegPath((prefix?prefix+'/':'')+folderThumbReal)}${t}` : null;
+              outFolders.push({ name, path: full, thumb });
+            } else if (/\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(name)) {
               const base = name.replace(/\.[^.]+$/, '');
               const trackThumbReal = pickThumbCI(base);
               const url = `${mediaBase}/${encSegPath(full)}${t}`;
               const thumb = trackThumbReal
-                   ? `${mediaBase}/${encSegPath((prefix?prefix + '/':'') + trackThumbReal)}${t}`
-                   : (folderThumbReal ? `${mediaBase}/${encSegPath((prefix?prefix + '/':'') + folderThumbReal)}${t}` : null);
-              files.push({ name, path: full, url, thumb });
+                ? `${mediaBase}/${encSegPath((prefix?prefix+'/':'')+trackThumbReal)}${t}`
+                : (folderThumbReal ? `${mediaBase}/${encSegPath((prefix?prefix+'/':'')+folderThumbReal)}${t}` : null);
+              outFiles.push({ name, path: full, url, thumb });
             }
           }
-        }
-        return { folders, files };
-      });
+
+          outFolders.sort((a,b)=>a.name.localeCompare(b.name));
+          outFiles.sort((a,b)=>a.name.localeCompare(b.name));
+          return { folders: outFolders, files: outFiles };
+        });
+    }
+
+    const url = '/api/tree' + (prefix ? ('?path=' + encodeURIComponent(prefix)) : '');
+    return fetch(url).then(r => { if (!r.ok) throw new Error('Library fetch failed'); return r.json(); });
   }
 
-  // Default: server API
-  const url = '/api/tree' + (path ? ('?path=' + encodeURIComponent(path)) : '');
-  return fetch(url).then(r => { if (!r.ok) throw new Error('Library fetch failed'); return r.json(); }); } })
-      .then(({ data, error }) => {
-        if (error) throw error;
-        const entries = data || [];
-        const names = new Set(entries.map(e => e.name));
-        const mediaBase = (window.SUPABASE_PUBLIC_BASE||'').replace(/\/+$/,'');
-        const t = window.CACHE_BUST ? ('?t=' + Date.now()) : '';
-
-        function pickThumb(base) {
-          const exts = ['png','jpg','jpeg','webp','gif'];
-          for (const ext of exts) {
-            if (names.has(base + '.' + ext)) return base + '.' + ext;
-          }
-          return null;
-        }
-
-        const folderThumb = pickThumb('folder');
-        const folders = [];
-        const files = [];
-
-        for (const e of entries) {
-          const name = e.name;
-          const isFolder = !/\./.test(name);
-          const full = (prefix ? (prefix + '/') : '') + name;
-
-          if (isFolder) {
-            const thumb = folderThumb ? (mediaBase + '/' + (prefix?prefix + '/':'') + folderThumb + t) : null;
-            folders.push({ name, path: full, thumb });
-          } else {
-            const isAudio = /\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(name);
-            if (isAudio) {
-              const base = name.replace(/\.[^.]+$/, '');
-              const trackThumb = pickThumb(base);
-              const url = mediaBase + '/' + full + t;
-              const thumb = trackThumb
-                   ? (mediaBase + '/' + (prefix?prefix + '/':'') + trackThumb + t)
-                   : (folderThumb ? (mediaBase + '/' + (prefix?prefix + '/':'') + folderThumb + t) : null);
-              files.push({ name, path: full, url, thumb });
-            }
-          }
-        }
-        return { folders, files };
-      });
-  }
-
-  // Default: server API
-  const url = '/api/tree' + (path ? ('?path=' + encodeURIComponent(path)) : '');
-  return fetch(url).then(r => { if (!r.ok) throw new Error('Library fetch failed'); return r.json(); }); }
-    }).then(({ data, error }) => {
-      if (error) throw error;
-      const entries = data || [];
-      const mediaBase = (window.SUPABASE_PUBLIC_BASE||'').replace(/\/+$/,'');
-      const t = window.CACHE_BUST ? ('?t=' + Date.now()) : '';
-
-      const folders = [];
-      const files = [];
-
-      for (const e of entries) {
-        const name = e.name;
-        const isFolder = !/\./.test(name);
-        const full = (prefix ? prefix + '/' : '') + name;
-
-        if (isFolder) {
-          const thumb = mediaBase + '/' + full + '/folder.png' + t;
-          folders.push({ name, path: full, thumb });
-        } else {
-          const isAudio = /\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(name);
-          if (isAudio) {
-            const base = name.replace(/\.[^.]+$/, '');
-            const url = mediaBase + '/' + full + t;
-            const thumb = mediaBase + '/' + (prefix?prefix + '/':'') + base + '.png' + t;
-            files.push({ name, path: full, url, thumb });
-          }
-        }
-      }
-      return { folders, files };
-    });
-  }
-
-  // Default: server API
-  const url = '/api/tree' + (path ? ('?path=' + encodeURIComponent(path)) : '');
-  return fetch(url).then(r=>{
-    if(!r.ok) throw new Error('Library fetch failed');
-    return r.json();
-  });
-
-    });
-  }
-
-  function renderItems(){
-    rail.innerHTML='';
+  function renderItems() {
+    rail.innerHTML = '';
     const all = [...folders.map(f=>({type:'folder', ...f})), ...files.map(f=>({type:'file', ...f}))];
-    const start = page*PAGE;
+    const start = page * PAGE;
     const slice = all.slice(start, start+PAGE);
-    slice.forEach(item=>{
+    slice.forEach(item => {
       const d = document.createElement('div');
       d.className = 'tcard';
       const img = document.createElement('div');
-      img.className='thumb';
-      if(item.thumb){
+      img.className = 'thumb';
+      if (item.thumb) {
         img.style.backgroundImage = 'url(' + item.thumb + ')';
         img.style.backgroundSize = 'cover';
         img.style.backgroundPosition = 'center';
@@ -742,14 +656,15 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
       const t = document.createElement('div');
       t.className = 't';
       t.textContent = item.name;
-      d.appendChild(img); d.appendChild(t);
-      d.onclick = ()=>{
-        if(item.type==='folder'){
+      d.appendChild(img);
+      d.appendChild(t);
+      d.onclick = () => {
+        if (item.type === 'folder') {
           stack.push(curPath);
           curPath = item.path; window.curPath = curPath;
           page = 0;
           fetchAndRender(curPath, false);
-        }else{
+        } else {
           audio.src = item.url;
           audio.load();
           audio.play().catch(()=>{});
@@ -758,26 +673,28 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
       rail.appendChild(d);
     });
     const totalPages = Math.ceil((folders.length + files.length)/PAGE);
-    prevBtn.disabled = page<=0;
-    nextBtn.disabled = page>=totalPages-1;
+    prevBtn.disabled = page <= 0;
+    nextBtn.disabled = page >= totalPages - 1;
   }
 
-  function fetchAndRender(path='', keepStack=true){
-    api(path).then(data=>{
-      folders = (data.folders||[]);
-      files   = (data.files||[]);
-      renderItems();
-    }
-  // expose for external refresh
+  function fetchAndRender(path='', keepStack=true) {
+    api(path)
+      .then(data => {
+        folders = data.folders || [];
+        files = data.files || [];
+        renderItems();
+      })
+      .catch(err => {
+        rail.innerHTML = '<div class="t small">Failed to load library</div>';
+        console.warn('Library fetch error:', err);
+      });
+  }
+
+  prevBtn.addEventListener('click', () => { if (page > 0) { page--; renderItems(); } });
+  nextBtn.addEventListener('click', () => { page++; renderItems(); });
+
   window.fetchAndRender = fetchAndRender;
   window.curPath = curPath;
-).catch(err=>{
-      rail.innerHTML = '<div class="t small">Failed to load library</div>';
-    });
-  }
-
-  prevBtn.addEventListener('click', ()=>{ if(page>0){ page--; renderItems(); } });
-  nextBtn.addEventListener('click', ()=>{ page++; renderItems(); });
 
   fetchAndRender('');
 })();
@@ -2182,42 +2099,6 @@ function armAudioOnce(){
     try {
       __mediaSrcNode = ctx.createMediaElementSource(__mediaEl);
     } catch (e) { console.warn('MediaElementSource already exists:', e.message); }
-  }
-}
-document.addEventListener('click', armAudioOnce, { once:true, capture:true });
-document.addEventListener('keydown', armAudioOnce, { once:true, capture:true });
-document.addEventListener('DOMContentLoaded', () => {
-  const btnPlay = document.querySelector('#btnPlay');
-  if (btnPlay) btnPlay.addEventListener('click', () => {});
-});
-</script>
-<script>
-// ===== Safety & Audio Boot =====
-let __audioCtx=null, __mediaEl=null, __mediaSrcNode=null, __armedAudio=false;
-function $(sel, { required=false } = {}) {
-  const el = document.querySelector(sel);
-  if (required && !el) throw new Error('Required element not found: '+sel);
-  return el;
-}
-function safePrepend(container, node) {
-  if (container && typeof container.prepend === 'function') container.prepend(node);
-  else if (container && container.firstChild) container.insertBefore(node, container.firstChild);
-  else if (container) container.appendChild(node);
-  else document.body.appendChild(node);
-}
-function getAudioCtx(){
-  if (!__audioCtx) __audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-  return __audioCtx;
-}
-function armAudioOnce(){
-  if (__armedAudio) return;
-  __armedAudio = true;
-  const ctx = getAudioCtx();
-  if (ctx.state === 'suspended') ctx.resume().catch(console.warn);
-  if (!__mediaEl) __mediaEl = document.querySelector('#player');
-  if (__mediaEl && !__mediaSrcNode) {
-    try { __mediaSrcNode = ctx.createMediaElementSource(__mediaEl); }
-    catch (e) { console.warn('MediaElementSource already exists:', e.message); }
   }
 }
 document.addEventListener('click', armAudioOnce, { once:true, capture:true });
