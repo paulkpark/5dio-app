@@ -99,40 +99,19 @@ input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:999px;
 </style>
 
 <script src="https://unpkg.com/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
+<script>
+// === Supabase configuration (client-side) ===
+window.USE_SUPABASE = true; // enable Supabase mode by default
+window.SUPABASE_URL = "https://YOUR_PROJECT_ID.supabase.co";            // ← fill your project URL
+window.SUPABASE_KEY = "YOUR_PUBLIC_ANON_KEY";                           // ← fill your anon public key
+window.SUPABASE_BUCKET = "media";                                       // default bucket name
+window.SUPABASE_PUBLIC_BASE = "https://YOUR_PROJECT_ID.supabase.co/storage/v1/object/public/media";
+window.CACHE_BUST = true;                                               // add ?t=timestamp to media URLs
 
-<!-- Supabase config guard -->
-<script>
-(function(){
-  const hasRealUrl = typeof window.SUPABASE_URL === 'string' && window.SUPABASE_URL &&
-                     !/YOUR_PROJECT_ID/.test(window.SUPABASE_URL);
-  if (hasRealUrl) {
-    const freeze = (k) => { try { Object.defineProperty(window, k, { configurable:false, writable:false }); } catch(_){} };
-    ['SUPABASE_URL','SUPABASE_KEY','SUPABASE_BUCKET','SUPABASE_PUBLIC_BASE','LUNA_MEDIA_BASE'].forEach(freeze);
-  }
-  if (!window.SUPABASE_PUBLIC_BASE && typeof window.SUPABASE_URL === 'string' && window.SUPABASE_URL &&
-      !/YOUR_PROJECT_ID/.test(window.SUPABASE_URL)) {
-    window.SUPABASE_PUBLIC_BASE = window.SUPABASE_URL.replace(/\/+$/, '') + '/storage/v1/object/public/media';
-    if (window.USE_SUPABASE !== false) window.USE_SUPABASE = true;
-    window.LUNA_MEDIA_BASE = window.SUPABASE_PUBLIC_BASE;
-  }
-})();
-</script>
-<!-- Supabase config guard -->
-<script>
-(function(){
-  const hasRealUrl = typeof window.SUPABASE_URL === 'string' && window.SUPABASE_URL &&
-                     !/YOUR_PROJECT_ID/.test(window.SUPABASE_URL);
-  if (hasRealUrl) {
-    const freeze = (k) => { try { Object.defineProperty(window, k, { configurable:false, writable:false }); } catch(_){} };
-    ['SUPABASE_URL','SUPABASE_KEY','SUPABASE_BUCKET','SUPABASE_PUBLIC_BASE','LUNA_MEDIA_BASE'].forEach(freeze);
-  }
-  if (!window.SUPABASE_PUBLIC_BASE && typeof window.SUPABASE_URL === 'string' && window.SUPABASE_URL &&
-      !/YOUR_PROJECT_ID/.test(window.SUPABASE_URL)) {
-    window.SUPABASE_PUBLIC_BASE = window.SUPABASE_URL.replace(/\/+$/, '') + '/storage/v1/object/public/media';
-    if (window.USE_SUPABASE !== false) window.USE_SUPABASE = true;
-    window.LUNA_MEDIA_BASE = window.SUPABASE_PUBLIC_BASE;
-  }
-})();
+// If Supabase is enabled, override the media base so the UI uses Supabase URLs.
+if (window.USE_SUPABASE && window.SUPABASE_PUBLIC_BASE) {
+  window.LUNA_MEDIA_BASE = window.SUPABASE_PUBLIC_BASE.replace(/\/+$/,''); // trailing slash safe
+}
 </script>
 </head>
 <body>
@@ -275,63 +254,55 @@ function folderThumb(rel){
 }
 
 async function fetchTree(path=''){
+  // Supabase mode: client-side listing from Storage
   if (window.USE_SUPABASE && window.supabase && window.SUPABASE_URL && window.SUPABASE_KEY) {
     const sb = window.__sb || (window.__sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY));
     const bucket = window.SUPABASE_BUCKET || 'media';
     const prefix = (path||'').replace(/^\/+/, '');
-    const { data: entries, error } = await sb.storage.from(bucket).list(prefix, { limit: 1000, sortBy:{ column:'name', order:'asc' } });
+
+    const { data: entries, error } = await sb.storage.from(bucket).list(prefix, {
+      limit: 1000,
+      sortBy: { column: 'name', order: 'asc' }
+    });
     if (error) throw error;
-
-    const names = new Set((entries||[]).map(e => e.name));
-    const lcMap = new Map(Array.from(names, n => [n.toLowerCase(), n])); // lower -> real
-    const mediaBase = (window.SUPABASE_PUBLIC_BASE||'').replace(/\/+$/,'');
-    const t = window.CACHE_BUST ? ('?t=' + Date.now()) : '';
-
-    function pickThumbCI(base) {
-      const exts = ['png','jpg','jpeg','webp','gif'];
-      for (const ext of exts) {
-        const wanted = `${base}.${ext}`.toLowerCase();
-        const real = lcMap.get(wanted);
-        if (real) return real;
-      }
-      return null;
-    }
-    function encSegPath(p){ return p.split('/').map(encodeURIComponent).join('/'); }
 
     const folders = [];
     const files = [];
-
-    const folderThumbReal = pickThumbCI('folder');
+    const mediaBase = (window.SUPABASE_PUBLIC_BASE||'').replace(/\/+$/,'');
 
     for (const e of (entries||[])) {
       const name = e.name;
-      const isFolder = !/\./.test(name);
-      const full = (prefix ? (prefix + '/') : '') + name;
+      const isFolder = !/\./.test(name);          // heuristic: no dot => folder
+      const full = (prefix ? prefix + '/' : '') + name;
 
       if (isFolder) {
-        const thumb = folderThumbReal ? `${mediaBase}/${encSegPath((prefix?prefix + '/':'') + folderThumbReal)}${t}` : null;
+        const thumb = mediaBase + '/' + full + '/folder.png';
         folders.push({ name, path: full, thumb });
       } else {
         const isAudio = /\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(name);
         if (isAudio) {
           const base = name.replace(/\.[^.]+$/, '');
-          const trackThumbReal = pickThumbCI(base);
-          const url = `${mediaBase}/${encSegPath(full)}${t}`;
-          const thumb = trackThumbReal
-            ? `${mediaBase}/${encSegPath((prefix?prefix + '/':'') + trackThumbReal)}${t}`
-            : (folderThumbReal ? `${mediaBase}/${encSegPath((prefix?prefix + '/':'') + folderThumbReal)}${t}` : null);
-          files.push({ name, path: full, url, thumb });
+          const url  = mediaBase + '/' + full;
+          const thumbCandidate1 = mediaBase + '/' + (prefix?prefix + '/':'') + base + '.png';
+          const thumbCandidate2 = mediaBase + '/' + (prefix?prefix + '/':'') + base + '.jpg';
+          // we can't check existence cheaply; UI will handle fallback if 404
+          files.push({ name, path: full, url, thumb: thumbCandidate1 });
         }
       }
     }
     return { folders, files };
   }
 
-  // fallback to server API
+  // Default: server-side API
   const url = (window.LUNA_API_BASE||'/api/tree') + (path?('?path='+encodeURIComponent(path)):''); 
   const res = await fetch(url, {cache:'default'});
   if(!res.ok) throw new Error('API '+res.status);
   return res.json();
+});
+  if(!res.ok) throw new Error('API '+res.status);
+  return res.json();
+}
+
 function renderCard(item){
   const div=document.createElement('div');
   div.className='card';
@@ -511,42 +482,105 @@ btnDL.addEventListener('click', ()=>{
 })();
 </script>
 
+
+<div id="grid"></div>
+<audio id="player" controls style="width:100%"></audio>
+
+<!-- === 5DIO Supabase Library Integration (auto list / thumbnails / playback) === -->
 <script>
-// ===== Safety & Audio Boot =====
-let __audioCtx=null, __mediaEl=null, __mediaSrcNode=null, __armedAudio=false;
-function $(sel, { required=false } = {}) {
-  const el = document.querySelector(sel);
-  if (required && !el) throw new Error('Required element not found: '+sel);
-  return el;
-}
-function safePrepend(container, node) {
-  if (container && typeof container.prepend === 'function') container.prepend(node);
-  else if (container && container.firstChild) container.insertBefore(node, container.firstChild);
-  else if (container) container.appendChild(node);
-  else document.body.appendChild(node);
-}
-function getAudioCtx(){
-  if (!__audioCtx) __audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-  return __audioCtx;
-}
-function armAudioOnce(){
-  if (__armedAudio) return;
-  __armedAudio = true;
-  const ctx = getAudioCtx();
-  if (ctx.state === 'suspended') ctx.resume().catch(console.warn);
-  if (!__mediaEl) __mediaEl = document.querySelector('#player');
-  if (__mediaEl && !__mediaSrcNode) {
-    try {
-      __mediaSrcNode = ctx.createMediaElementSource(__mediaEl);
-    } catch (e) { console.warn('MediaElementSource already exists:', e.message); }
+(function(){
+  const SUPABASE_URL = (window.SUPABASE_URL || "https://xdjgumqdwedgzwqturcx.supabase.co");
+  const SUPABASE_KEY = (window.SUPABASE_KEY || "YOUR_ANON_PUBLIC_KEY"); // replace with real anon key
+  const BUCKET       = (window.SUPABASE_BUCKET || "media");
+  const PUBLIC_BASE  = (window.SUPABASE_PUBLIC_BASE || (SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/object/public/" + BUCKET)).replace(/\/+$/,'');
+
+  if (!window.supabase) { console.error("Supabase SDK not loaded"); return; }
+  const sb = window.__sbClient || (window.__sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY));
+
+  const enc = p => p.split('/').map(encodeURIComponent).join('/');
+  function pickThumbCI(names, base) {
+    const map = new Map(names.map(n => [n.toLowerCase(), n]));
+    const exts = ['png','jpg','jpeg','webp','gif'];
+    for (const ext of exts) {
+      const real = map.get((base + "." + ext).toLowerCase());
+      if (real) return real;
+    }
+    return null;
   }
-}
-document.addEventListener('click', armAudioOnce, { once:true, capture:true });
-document.addEventListener('keydown', armAudioOnce, { once:true, capture:true });
-document.addEventListener('DOMContentLoaded', () => {
-  const btnPlay = document.querySelector('#btnPlay');
-  if (btnPlay) btnPlay.addEventListener('click', () => {});
-});
+
+  async function listCategory(prefix){
+    const { data, error } = await sb.storage.from(BUCKET).list(prefix, { limit: 1000, sortBy: { column: 'name', order: 'asc' } });
+    if (error) throw error;
+    return data || [];
+  }
+
+  async function buildList(prefix){
+    const entries = await listCategory(prefix);
+    const names = entries.map(e => e.name);
+    const folderThumb = pickThumbCI(names, 'folder');
+
+    const folders = [], files = [];
+    for (const e of entries) {
+      const isFolder = !/\./.test(e.name);
+      const full = (prefix ? prefix + '/' : '') + e.name;
+
+      if (isFolder) {
+        const thumb = folderThumb ? `${PUBLIC_BASE}/${enc(prefix + '/' + folderThumb)}` : null;
+        folders.push({ name:e.name, path:full, thumb });
+      } else if (/\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(e.name)) {
+        const base = e.name.replace(/\.[^.]+$/, '');
+        const trackThumb = pickThumbCI(names, base);
+        const url   = `${PUBLIC_BASE}/${enc(full)}`;
+        const thumb = trackThumb
+          ? `${PUBLIC_BASE}/${enc(prefix + '/' + trackThumb)}`
+          : (folderThumb ? `${PUBLIC_BASE}/${enc(prefix + '/' + folderThumb)}` : null);
+        files.push({ name:e.name, path:full, url, thumb });
+      }
+    }
+    return { folders, files };
+  }
+
+  function el(html){ const d=document.createElement('div'); d.innerHTML=html.trim(); return d.firstChild; }
+
+  async function renderLibrary(prefix){
+    try {
+      const { folders, files } = await buildList(prefix);
+      const grid = document.getElementById('grid');
+      if (!grid) return console.warn('grid container not found');
+      grid.innerHTML = '';
+      folders.forEach(f => {
+        grid.appendChild(el(`
+          <div style="display:inline-block;width:160px;margin:8px;text-align:center">
+            <img src="${f.thumb || ''}" alt="" style="width:100%;height:100px;object-fit:cover;background:#111">
+            <div>${f.name}/</div>
+          </div>
+        `));
+      });
+      files.forEach(file => {
+        const card = el(`
+          <div style="display:inline-block;width:160px;margin:8px;text-align:center;cursor:pointer">
+            <img src="${file.thumb || ''}" alt="" style="width:100%;height:100px;object-fit:cover;background:#111">
+            <div>${file.name}</div>
+          </div>
+        `);
+        card.onclick = () => {
+          const audio = document.getElementById('player');
+          if (!audio) return;
+          audio.src = file.url;
+          audio.play().catch(()=>{});
+        };
+        grid.appendChild(card);
+      });
+    } catch (e) {
+      console.error('renderLibrary error', e);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const DEFAULT_PREFIX = (window.DEFAULT_CATEGORY_PREFIX || 'Brainwave_States');
+    renderLibrary(DEFAULT_PREFIX);
+  });
+})();
 </script>
 
 </body>
