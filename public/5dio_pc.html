@@ -210,6 +210,21 @@ if (window.USE_SUPABASE && window.SUPABASE_PUBLIC_BASE) {
   });
 })();
 </script>
+<!-- REAL Supabase config + overwrite guard -->
+<script>
+(function(){
+  window.SUPABASE_URL  = "https://xdjgumqdwedgzwqturcx.supabase.co";
+  window.SUPABASE_KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
+  window.SUPABASE_BUCKET = "media";
+  window.SUPABASE_PUBLIC_BASE = window.SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/object/public/" + window.SUPABASE_BUCKET;
+  window.USE_SUPABASE = true;
+  window.LUNA_MEDIA_BASE = window.SUPABASE_PUBLIC_BASE.replace(/\/+$/,'');
+  ["SUPABASE_URL","SUPABASE_KEY","SUPABASE_BUCKET","SUPABASE_PUBLIC_BASE","USE_SUPABASE","LUNA_MEDIA_BASE"].forEach(k=>{
+    try { Object.defineProperty(window, k, { configurable:false, writable:false }); } catch(e){}
+  });
+})();
+</script>
+<link rel="icon" href="data:,">
 </head>
 <body>
 
@@ -691,7 +706,7 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
   // expose for external refresh
   window.fetchAndRender = fetchAndRender;
   window.curPath = curPath;
-).catch(err=>{
+}).catch(err=>{
       rail.innerHTML = '<div class="t small">Failed to load library</div>';
     });
   }
@@ -2175,5 +2190,27 @@ function absMedia(pathLike){
 })();
 </script>
 
+<script>
+// Audio gesture gate + single MediaElementSource guard
+(function(){
+  let __ctx = null, __node = null, __armed = false;
+  function getCtx(){ return __ctx || (__ctx = new (window.AudioContext||window.webkitAudioContext)()); }
+  function arm(){
+    if (__armed) return;
+    __armed = true;
+    const ctx = getCtx();
+    if (ctx.state === 'suspended') ctx.resume().catch(()=>{});
+    const el = document.getElementById('player');
+    if (el && !__node) {
+      try { __node = ctx.createMediaElementSource(el); } catch(e) { /* already connected; ignore */ }
+    }
+  }
+  document.addEventListener('click', arm,   { once:true, capture:true });
+  document.addEventListener('keydown', arm, { once:true, capture:true });
+  document.addEventListener('DOMContentLoaded', () => {
+    // no-op; just ensure code after DOM
+  });
+})();
+</script>
 </body>
 </html>
