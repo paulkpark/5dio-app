@@ -100,9 +100,9 @@ input[type="range"]{width:100%;height:28px}
 <script>
 // You can override these from the console or an inline script BEFORE this runs:
 //   window.LUNA_API_BASE = location.origin + '/api/tree';
-//   window.LUNA_MEDIA_BASE = location.origin + '/media/';
+//   window.LUNA_MEDIA_BASE = window.SUPABASE_PUBLIC_BASE.replace(/\/+$/,"");
 window.LUNA_API_BASE = location.origin + '/api/tree';
-window.LUNA_MEDIA_BASE = location.origin + '/media/';
+window.LUNA_MEDIA_BASE = window.SUPABASE_PUBLIC_BASE.replace(/\/+$/,"");
 </script>
 
 
@@ -171,10 +171,10 @@ button[data-scope="both"], button[data-scope="freeze"] { display:none !important
 <script>
 // === Supabase configuration (client-side) ===
 window.USE_SUPABASE = true; // enable by default; fill your keys below
-window.SUPABASE_URL = "https://YOUR_PROJECT_ID.supabase.co";
-window.SUPABASE_KEY = "YOUR_PUBLIC_ANON_KEY";
+window.SUPABASE_URL = "https://xdjgumqdwedgzwqturcx.supabase.co";
+window.SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
 window.SUPABASE_BUCKET = "media";
-window.SUPABASE_PUBLIC_BASE = "https://YOUR_PROJECT_ID.supabase.co/storage/v1/object/public/media";
+window.SUPABASE_PUBLIC_BASE = "https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media";
 window.CACHE_BUST = true;
 
 // If Supabase is enabled, you may also want to use its public base for media assets globally
@@ -196,6 +196,20 @@ if (window.USE_SUPABASE && window.SUPABASE_PUBLIC_BASE) {
   margin-top: 40px !important;
 }
 </style>
+<!-- Supabase REAL config + overwrite guard -->
+<script>
+(function(){
+  window.SUPABASE_URL = "https://xdjgumqdwedgzwqturcx.supabase.co";
+  window.SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
+  window.SUPABASE_BUCKET = "media";
+  window.SUPABASE_PUBLIC_BASE = "https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media";
+  window.USE_SUPABASE = true;
+  window.LUNA_MEDIA_BASE = window.SUPABASE_PUBLIC_BASE.replace(/\/+$/,'');
+  ["SUPABASE_URL","SUPABASE_KEY","SUPABASE_BUCKET","SUPABASE_PUBLIC_BASE","USE_SUPABASE","LUNA_MEDIA_BASE"].forEach(k=>{
+    try { Object.defineProperty(window, k, { configurable:false, writable:false }); } catch(e){}
+  });
+})();
+</script>
 </head>
 <body>
 
