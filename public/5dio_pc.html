@@ -258,10 +258,11 @@ if (window.USE_SUPABASE && window.SUPABASE_PUBLIC_BASE) {
       .dropdown-menu a:hover { background: rgba(255,255,255,0.1); }
     </style>
     <script>
-      function toggleMenu() {
-        const menu = document.getElementById('dropdownMenu');
-        menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
-      
+  function toggleMenu() {
+    const menu = document.getElementById('dropdownMenu');
+    if (!menu) return;
+    menu.style.display = (menu.style.display === 'flex') ? 'none' : 'flex';
+  }
 </script>
     
 <div class="app">
@@ -2225,5 +2226,15 @@ function absMedia(pathLike){
   document.addEventListener('keydown', arm, { once:true, capture:true });
 })();
 </script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.querySelector('.menu-button');
+  if (btn && typeof toggleMenu === 'function') {
+    btn.addEventListener('click', toggleMenu);
+  }
+});
+</script>
+
 </body>
 </html>
