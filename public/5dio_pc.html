@@ -244,6 +244,12 @@ if (window.USE_SUPABASE && window.SUPABASE_PUBLIC_BASE) {
   window.USE_SUPABASE = true;
 })();
 </script>
+<style id="scope-hide-buttons">
+#scopeMode, #scopeFreeze,
+button#scopeMode, button#scopeFreeze,
+button[data-role="both"], button[data-role="freeze"],
+.scope-ctrl .btn:nth-child(1), .scope-ctrl .btn:nth-child(2) { display:none !important; }
+</style>
 </head>
 <body>
 
@@ -455,7 +461,13 @@ function updateGenGains(){if(lGain)lGain.gain.value=(+UI.lLevel.value)/100;if(rG
 UI.balance.addEventListener('input',()=>{if(genPan)genPan.pan.value=(+UI.balance.value)/100});updateGenGains();
 function applyHarmonics(){if(UI.lWave.value==='sine'||UI.rWave.value==='sine'){const base=parseInt(UI.harmBase.value)||1;const count=parseInt(UI.harmCount.value)||0;const amps={1:(+UI.h1.value)/100,2:(+UI.h2.value)/100,3:(+UI.h3.value)/100,4:(+UI.h4.value)/100};if(UI.lWave.value==='sine'&&lOsc){lOsc.setPeriodicWave(makeHarmonicWave(genCtx,base,count,amps))}if(UI.rWave.value==='sine'&&rOsc){rOsc.setPeriodicWave(makeHarmonicWave(genCtx,base,count,amps))}}UI.h1v.textContent=UI.h1.value+'%';UI.h2v.textContent=UI.h2.value+'%';UI.h3v.textContent=UI.h3.value+'%';UI.h4v.textContent=UI.h4.value+'%'}
 ;['input','change'].forEach(ev=>{UI.harmBase.addEventListener(ev,applyHarmonics);UI.harmCount.addEventListener(ev,applyHarmonics);UI.h1.addEventListener(ev,applyHarmonics);UI.h2.addEventListener(ev,applyHarmonics);UI.h3.addEventListener(ev,applyHarmonics);UI.h4.addEventListener(ev,applyHarmonics)});applyWave('L');applyWave('R');applyHarmonics();
-let genRunning=false;function startGenerator(){genCtx.resume();genRunning=true}function pauseGenerator(){genRunning=false}function stopGenerator(){genRunning=false;if(lGain)lGain.gain.value=0;if(rGain)rGain.gain.value=0}
+let genRunning=false;function startGenerator(){genCtx.resume();genRunning=true}function pauseGenerator(){
+  try { if (typeof genRunning !== 'undefined') genRunning = false; } catch(e){}
+  try { if (typeof lGain !== 'undefined' && lGain && lGain.gain) lGain.gain.value = 0; } catch(e){}
+  try { if (typeof rGain !== 'undefined' && rGain && rGain.gain) rGain.gain.value = 0; } catch(e){}
+  try { if (typeof genGain !== 'undefined' && genGain && genGain.gain) genGain.gain.value = 0; } catch(e){}
+  try { if (typeof window.__genGain !== 'undefined' && window.__genGain && window.__genGain.gain) window.__genGain.gain.value = 0; } catch(e){}
+}function stopGenerator(){genRunning=false;if(lGain)lGain.gain.value=0;if(rGain)rGain.gain.value=0}
 UI.genPlayPause.addEventListener('click',()=>{if(!genRunning){startGenerator()}else{pauseGenerator()}});UI.genStop.addEventListener('click',stopGenerator);
 function fmt(t){const m=Math.floor(t/60),s=Math.floor(t%60);return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}
 UI.filePicker.addEventListener('change',e=>{const f=e.target.files?.[0];if(!f)return;audioEl.src=URL.createObjectURL(f);audioEl.load();playerCtx.resume().then(()=>audioEl.play().catch(()=>{}))});
@@ -521,10 +533,12 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
     labelPause();
   }
   function pauseGenerator(){
-    muteChannels();    // keep desired, but muted
-    genState = 'paused';
-    labelPlay();
-  }
+  try { if (typeof genRunning !== 'undefined') genRunning = false; } catch(e){}
+  try { if (typeof lGain !== 'undefined' && lGain && lGain.gain) lGain.gain.value = 0; } catch(e){}
+  try { if (typeof rGain !== 'undefined' && rGain && rGain.gain) rGain.gain.value = 0; } catch(e){}
+  try { if (typeof genGain !== 'undefined' && genGain && genGain.gain) genGain.gain.value = 0; } catch(e){}
+  try { if (typeof window.__genGain !== 'undefined' && window.__genGain && window.__genGain.gain) window.__genGain.gain.value = 0; } catch(e){}
+}
 
   // Rebind Play/Pause
   if (UI.genPlayPause) {
@@ -2331,5 +2345,110 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 </script>
+
+<!-- ==== Patch: Oscilloscope + Pause fix + Supabase list override ==== -->
+<script>
+(function(){
+  const scope = document.getElementById('scope');
+  let __ctx=null, __analyser=null, __mediaNode=null, __armed=false;
+  function getCtx(){ return __ctx || (__ctx = new (window.AudioContext||window.webkitAudioContext)()); }
+  function wireAnalyser(){
+    const ctx = getCtx();
+    if (!__analyser){
+      __analyser = ctx.createAnalyser();
+      __analyser.fftSize = 2048;
+    }
+    let connected = false;
+    if (window.__genGain && typeof window.__genGain.connect === 'function'){
+      try { window.__genGain.connect(__analyser); connected = true; } catch(e){}
+    }
+    const player = document.getElementById('player');
+    if (!connected && player){
+      try { if (!__mediaNode) { __mediaNode = ctx.createMediaElementSource(player); } } catch(e) {}
+      try { if (__mediaNode) { __mediaNode.connect(__analyser); connected = true; } } catch(e){}
+    }
+    return __analyser;
+  }
+  function drawLoop(){
+    if (!scope) return;
+    const g = scope.getContext('2d');
+    const W = scope.width, H = scope.height;
+    const analyser = wireAnalyser();
+    const bufLen = analyser ? analyser.fftSize : 2048;
+    const buf = new Uint8Array(bufLen);
+    function frame(){
+      if (!analyser){ requestAnimationFrame(frame); return; }
+      analyser.getByteTimeDomainData(buf);
+      g.clearRect(0,0,W,H);
+      g.beginPath();
+      const step = W / buf.length;
+      for (let i=0;i<buf.length;i++){
+        const x = i*step;
+        const y = (buf[i]/128)*H/2;
+        if (i===0) g.moveTo(x,y); else g.lineTo(x,y);
+      }
+      g.stroke();
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+  function armAudio(){
+    if (__armed) return;
+    __armed = true;
+    const ctx = getCtx();
+    if (ctx.state === 'suspended') { try { ctx.resume(); } catch(e){} }
+    wireAnalyser();
+  }
+  document.addEventListener('click', armAudio,   {capture:true});
+  document.addEventListener('keydown', armAudio, {capture:true});
+  if (scope) drawLoop();
+
+  if (typeof window.pauseGenerator === 'function'){
+    const __origPause = window.pauseGenerator;
+    window.pauseGenerator = function(){
+      try { __origPause.apply(this, arguments); } catch(e){}
+      try { if (typeof genRunning !== 'undefined') genRunning = false; } catch(e){}
+      try { if (window.__genGain && window.__genGain.gain) window.__genGain.gain.value = 0; } catch(e){}
+      try { if (typeof lGain !== 'undefined' && lGain && lGain.gain) lGain.gain.value = 0; } catch(e){}
+      try { if (typeof rGain !== 'undefined' && rGain && rGain.gain) rGain.gain.value = 0; } catch(e){}
+      try { if (typeof genGain !== 'undefined' && genGain && genGain.gain) genGain.gain.value = 0; } catch(e){}
+    };
+  }
+
+  async function supabaseList(prefix=""){
+    try {
+      const url = window.SUPABASE_URL;
+      const key = window.SUPABASE_KEY;
+      const bucket = window.SUPABASE_BUCKET || "media";
+      if (!window.supabase || !url || !key) throw new Error("Supabase SDK not loaded or config missing");
+      const sb = (window.sb && window.sb.auth) ? window.sb : window.supabase.createClient(url, key);
+      const { data, error } = await sb.storage.from(bucket).list(prefix.replace(/^\/+|\/+$/g,''), {
+        limit: 1000,
+        sortBy: { column: 'name', order: 'asc' }
+      });
+      if (error) throw error;
+      const folders=[], files=[];
+      (data||[]).forEach(it=>{
+        if (it.name && (it.type === 'folder' || /\/$/.test(it.name))) folders.push({ name: it.name.replace(/\/+$/,'') });
+        else if (it.name) files.push({ name: it.name });
+      });
+      return { folders, files };
+    } catch(err){
+      console.error("supabaseList error:", err);
+      return { folders:[], files:[] };
+    }
+  }
+  if (typeof window.api === 'function'){
+    const __origApi = window.api;
+    window.api = function(path){
+      if (window.USE_SUPABASE) return supabaseList(path||"");
+      try { return __origApi.apply(this, arguments); } catch(e){ return Promise.resolve({folders:[], files:[]}); }
+    };
+  } else {
+    window.api = function(path){ return supabaseList(path||""); };
+  }
+})();
+</script>
+
 </body>
 </html>
