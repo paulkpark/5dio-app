@@ -86,6 +86,14 @@ input[type="range"]{width:100%;height:28px}
   .knob::after{ --r:27px; width:9px; height:9px }
 }
 .hidden{display:none !important}
+
+#stopBtn,
+#stop {
+  font-size: 200%;
+  padding: 18px 22px;
+  line-height: 1.2;
+}
+
 </style>
 
 <!-- 5D SONIC runtime config for API/MEDIA roots -->
@@ -288,7 +296,7 @@ if (window.USE_SUPABASE && window.SUPABASE_PUBLIC_BASE) {
             
           </div>
         </div>
-        <hr/>
+        
         <div id="harmonics-panel" class="card" style="background:#1e2531">
           <div class="inline" style="gap:10px; flex-wrap:wrap">
             <label data-en="Harmonics" data-ko="하모닉스">Harmonics</label>
