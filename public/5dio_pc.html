@@ -444,7 +444,31 @@ const genCtx=new (window.AudioContext||window.webkitAudioContext)();const player
 let lOsc,rOsc,lGain,rGain,genMasterGain,genPan,genAnalyser;
 function makePulsePeriodicWave(ctx,duty){const D=Math.min(Math.max(duty/100,.01),.99);const N=64;const real=new Float32Array(N+1),imag=new Float32Array(N+1);for(let n=1;n<=N;n++){const c=(2/(n*Math.PI))*Math.sin(n*Math.PI*D);real[n]=c*2}return ctx.createPeriodicWave(real,imag,{disableNormalization:false})}
 function makeHarmonicWave(ctx,base,count,amps){const N=64,real=new Float32Array(N+1),imag=new Float32Array(N+1);real[base]=1;for(let i=1;i<=count;i++){const idx=base*(i+1);if(idx<=N)real[idx]=amps[i]||0}return ctx.createPeriodicWave(real,imag,{disableNormalization:false})}
-function setupGenerator(){lOsc=genCtx.createOscillator();rOsc=genCtx.createOscillator();lGain=genCtx.createGain();rGain=genCtx.createGain();genMasterGain=genCtx.createGain();genPan=new StereoPannerNode(genCtx,{pan:0});genAnalyser=genCtx.createAnalyser();genAnalyser.fftSize=2048;lOsc.connect(lGain).connect(genPan);rOsc.connect(rGain).connect(genPan);genPan.connect(genMasterGain).connect(genAnalyser).connect(genCtx.destination);lOsc.start();rOsc.start()}setupGenerator();
+function setupGenerator(){
+// --- ensure analysers wired once ---
+try {
+  if (typeof genCtx !== 'undefined' && genCtx && !window.__genAnalyserInit) {
+    if (typeof genAnalyser === 'undefined' || !genAnalyser) genAnalyser = genCtx.createAnalyser();
+    genAnalyser.fftSize = 2048;
+    if (typeof genMasterGain !== 'undefined' && genMasterGain) {
+      try { genMasterGain.connect(genAnalyser); } catch(e){}
+      try { genAnalyser.connect(genCtx.destination); } catch(e){}
+    }
+    window.__genAnalyserInit = true;
+  }
+} catch(e) {}
+try {
+  if (typeof playerCtx !== 'undefined' && playerCtx && !window.__playerAnalyserInit) {
+    if (typeof playerAnalyser === 'undefined' || !playerAnalyser) playerAnalyser = playerCtx.createAnalyser();
+    playerAnalyser.fftSize = 2048;
+    if (typeof playerMasterGain !== 'undefined' && playerMasterGain) {
+      try { playerMasterGain.connect(playerAnalyser); } catch(e){}
+      try { playerAnalyser.connect(playerCtx.destination); } catch(e){}
+    }
+    window.__playerAnalyserInit = true;
+  }
+} catch(e) {}
+lOsc=genCtx.createOscillator();rOsc=genCtx.createOscillator();lGain=genCtx.createGain();rGain=genCtx.createGain();genMasterGain=genCtx.createGain();genPan=new StereoPannerNode(genCtx,{pan:0});genAnalyser=genCtx.createAnalyser();genAnalyser.fftSize=2048;lOsc.connect(lGain).connect(genPan);rOsc.connect(rGain).connect(genPan);genPan.connect(genMasterGain).connect(genAnalyser).connect(genCtx.destination);lOsc.start();rOsc.start()}setupGenerator();
 const audioEl=document.getElementById('audio');const srcNode=playerCtx.createMediaElementSource(audioEl);const playerMasterGain=playerCtx.createGain();const playerAnalyser=playerCtx.createAnalyser();playerAnalyser.fftSize=2048;srcNode.connect(playerMasterGain).connect(playerAnalyser).connect(playerCtx.destination);
 /* UI */
 const UI={lFreq:document.getElementById('lFreq'),lFreqIn:document.getElementById('lFreqIn'),lWave:document.getElementById('lWave'),lDuty:document.getElementById('lDuty'),lDutyIn:document.getElementById('lDutyIn'),lLevel:document.getElementById('lLevel'),lLevelTxt:document.getElementById('lLevelTxt'),rFreq:document.getElementById('rFreq'),rFreqIn:document.getElementById('rFreqIn'),rWave:document.getElementById('rWave'),rDuty:document.getElementById('rDuty'),rDutyIn:document.getElementById('rDutyIn'),rLevel:document.getElementById('rLevel'),rLevelTxt:document.getElementById('rLevelTxt'),masterGain:document.getElementById('masterGain'),masterKnob:document.getElementById('masterKnob'),balance:document.getElementById('balance'),balanceKnob:document.getElementById('balanceKnob'),harmCount:document.getElementById('harmCount'),harmBase:document.getElementById('harmBase'),h1:document.getElementById('h1'),h2:document.getElementById('h2'),h3:document.getElementById('h3'),h4:document.getElementById('h4'),h1v:document.getElementById('h1v'),h2v:document.getElementById('h2v'),h3v:document.getElementById('h3v'),h4v:document.getElementById('h4v'),genPlayPause:document.getElementById('genPlayPause'),genStop:document.getElementById('genStop'),libRail:document.getElementById('libRail'),libPrev:document.getElementById('libPrev'),libNext:document.getElementById('libNext'),filePicker:document.getElementById('filePicker'),playPause:document.getElementById('playPause'),stop:document.getElementById('stop'),timeline:document.getElementById('timeline'),timeCur:document.getElementById('timeCur'),timeDur:document.getElementById('timeDur'),playerVol:document.getElementById('playerVol'),playerVolKnob:document.getElementById('playerVolKnob')};
@@ -461,7 +485,15 @@ function updateGenGains(){if(lGain)lGain.gain.value=(+UI.lLevel.value)/100;if(rG
 UI.balance.addEventListener('input',()=>{if(genPan)genPan.pan.value=(+UI.balance.value)/100});updateGenGains();
 function applyHarmonics(){if(UI.lWave.value==='sine'||UI.rWave.value==='sine'){const base=parseInt(UI.harmBase.value)||1;const count=parseInt(UI.harmCount.value)||0;const amps={1:(+UI.h1.value)/100,2:(+UI.h2.value)/100,3:(+UI.h3.value)/100,4:(+UI.h4.value)/100};if(UI.lWave.value==='sine'&&lOsc){lOsc.setPeriodicWave(makeHarmonicWave(genCtx,base,count,amps))}if(UI.rWave.value==='sine'&&rOsc){rOsc.setPeriodicWave(makeHarmonicWave(genCtx,base,count,amps))}}UI.h1v.textContent=UI.h1.value+'%';UI.h2v.textContent=UI.h2.value+'%';UI.h3v.textContent=UI.h3.value+'%';UI.h4v.textContent=UI.h4.value+'%'}
 ;['input','change'].forEach(ev=>{UI.harmBase.addEventListener(ev,applyHarmonics);UI.harmCount.addEventListener(ev,applyHarmonics);UI.h1.addEventListener(ev,applyHarmonics);UI.h2.addEventListener(ev,applyHarmonics);UI.h3.addEventListener(ev,applyHarmonics);UI.h4.addEventListener(ev,applyHarmonics)});applyWave('L');applyWave('R');applyHarmonics();
-let genRunning=false;function startGenerator(){genCtx.resume();genRunning=true}function pauseGenerator(){
+let genRunning=false;function startGenerator(){
+try { if (typeof updateGenGains === 'function') updateGenGains(); } catch(e) {}
+genCtx.resume();genRunning=true}function pauseGenerator(){
+try { if (typeof genRunning !== 'undefined') genRunning = false; } catch(e){}
+try { if (typeof lGain !== 'undefined' && lGain && lGain.gain) lGain.gain.value = 0; } catch(e){}
+try { if (typeof rGain !== 'undefined' && rGain && rGain.gain) rGain.gain.value = 0; } catch(e){}
+try { if (typeof genGain !== 'undefined' && genGain && genGain.gain) genGain.gain.value = 0; } catch(e){}
+try { if (typeof window.__genGain !== 'undefined' && window.__genGain && window.__genGain.gain) window.__genGain.gain.value = 0; } catch(e){}
+
   try { if (typeof genRunning !== 'undefined') genRunning = false; } catch(e){}
   try { if (typeof lGain !== 'undefined' && lGain && lGain.gain) lGain.gain.value = 0; } catch(e){}
   try { if (typeof rGain !== 'undefined' && rGain && rGain.gain) rGain.gain.value = 0; } catch(e){}
