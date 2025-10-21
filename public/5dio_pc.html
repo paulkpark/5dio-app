@@ -180,7 +180,7 @@ window.CACHE_BUST = true;
 // If Supabase is enabled, you may also want to use its public base for media assets globally
 if (window.USE_SUPABASE && window.SUPABASE_PUBLIC_BASE) {
   window.LUNA_MEDIA_BASE = window.SUPABASE_PUBLIC_BASE.replace(/\/+$/,'');
-}
+
 </script>
 <style id="ui-size-tweaks">
 /* ▶/⏸ 버튼(제네레이터 & 플레이어) 2배 크기 느낌으로 확장 */
@@ -211,6 +211,19 @@ if (window.USE_SUPABASE && window.SUPABASE_PUBLIC_BASE) {
 })();
 </script>
 <link rel="icon" href="data:,">
+<!-- REAL Supabase config + overwrite guard -->
+<script>
+(function(){
+  window.SUPABASE_URL  = "https://xdjgumqdwedgzwqturcx.supabase.co";
+  window.SUPABASE_KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
+  window.SUPABASE_BUCKET = "media";
+  window.SUPABASE_PUBLIC_BASE = window.SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/object/public/" + window.SUPABASE_BUCKET;
+  window.USE_SUPABASE = true;
+  ["SUPABASE_URL","SUPABASE_KEY","SUPABASE_BUCKET","SUPABASE_PUBLIC_BASE","USE_SUPABASE"].forEach(k=>{
+    try { Object.defineProperty(window, k, { configurable:false, writable:false }); } catch(e){}
+  });
+})();
+</script>
 </head>
 <body>
 
@@ -248,8 +261,8 @@ if (window.USE_SUPABASE && window.SUPABASE_PUBLIC_BASE) {
       function toggleMenu() {
         const menu = document.getElementById('dropdownMenu');
         menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
-      }
-    </script>
+      
+</script>
     
 <div class="app">
   <header>
@@ -421,7 +434,7 @@ function applyHarmonics(){if(UI.lWave.value==='sine'||UI.rWave.value==='sine'){c
 let genRunning=false;function startGenerator(){genCtx.resume();genRunning=true}function pauseGenerator(){genRunning=false}function stopGenerator(){genRunning=false;if(lGain)lGain.gain.value=0;if(rGain)rGain.gain.value=0}
 UI.genPlayPause.addEventListener('click',()=>{if(!genRunning){startGenerator()}else{pauseGenerator()}});UI.genStop.addEventListener('click',stopGenerator);
 function fmt(t){const m=Math.floor(t/60),s=Math.floor(t%60);return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}
-UI.filePicker.addEventListener('change',e=>{const f=e.target.files?.[0];if(!f)return;audioEl.src=URL.createObjectURL(f);audioEl.load();playerCtx.resume().then(()=>audioEl.play(}).catch(()=>{}))});
+UI.filePicker.addEventListener('change',e=>{const f=e.target.files?.[0];if(!f)return;audioEl.src=URL.createObjectURL(f);audioEl.load();playerCtx.resume().then(()=>audioEl.play().catch(()=>{}))});
 UI.playPause.addEventListener('click',()=>{playerCtx.resume();if(audioEl.paused)audioEl.play();else audioEl.pause()});
 UI.stop.addEventListener('click',()=>{audioEl.pause();audioEl.currentTime=0});
 audioEl.addEventListener('loadedmetadata',()=>{UI.timeDur.textContent=fmt(audioEl.duration||0)});
@@ -673,7 +686,7 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
         }else{
           audio.src = item.url;
           audio.load();
-          audio.play(}).catch(()=>{});
+          audio.play().catch(()=>{});
         }
       };
       rail.appendChild(d);
@@ -728,7 +741,7 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
         audio.load();
         // Resume the audio context for autoplay (Safari/iOS needs gesture; file change is a gesture)
         if (window.playerCtx && playerCtx.state === 'suspended') { try { await playerCtx.resume(); } catch(e){} }
-        await audio.play(}).catch(()=>{});
+        await audio.play().catch(()=>{});
         if (ppBtn) ppBtn.textContent = '⏸';
       } catch(e) {
         console.warn('Audio load error:', e);
@@ -982,7 +995,7 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
         audio.src = url;
         audio.load();
         try { if (playerCtx && playerCtx.state==='suspended') await playerCtx.resume(); } catch(e){}
-        audio.play(}).catch(()=>{});
+        audio.play().catch(()=>{});
         if (pp) pp.textContent = '⏸';
       });
     }
@@ -2073,7 +2086,7 @@ function absMedia(pathLike){
     url = url + sep + 't=' + Date.now();
   }
   return url;
-}
+
 </script>
 
 <div id="grid"></div>
@@ -2160,7 +2173,7 @@ function absMedia(pathLike){
           const audio = document.getElementById('player');
           if (!audio) return;
           audio.src = file.url;
-          audio.play(}).catch(()=>{});
+          audio.play().catch(()=>{});
         };
         grid.appendChild(card);
       });
@@ -2188,6 +2201,24 @@ function absMedia(pathLike){
     const el = document.getElementById('player');
     if (el && !__node) {
       try { __node = ctx.createMediaElementSource(el); } catch(e) { /* already connected */ }
+    }
+  }
+  document.addEventListener('click', arm,   { once:true, capture:true });
+  document.addEventListener('keydown', arm, { once:true, capture:true });
+})();
+</script>
+<script>
+(function(){
+  let __ctx=null, __node=null, __armed=false;
+  function getCtx(){ return __ctx || (__ctx = new (window.AudioContext||window.webkitAudioContext)()); }
+  function arm(){
+    if (__armed) return;
+    __armed = true;
+    const ctx = getCtx();
+    if (ctx.state === 'suspended') ctx.resume().catch(()=>{});
+    const el = document.getElementById('player');
+    if (el && !__node) {
+      try { __node = ctx.createMediaElementSource(el); } catch(e) { /* already connected; ignore */ }
     }
   }
   document.addEventListener('click', arm,   { once:true, capture:true });
