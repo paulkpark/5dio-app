@@ -4,6 +4,7 @@
 
 <!-- Cloud Tunnel Safe Endpoints -->
 <script>
+
 window.USE_SUPABASE = true;
 
 // ✅ Supabase 대시보드 → Settings → API 에서 복사
@@ -17,6 +18,7 @@ window.SUPABASE_BUCKET = "media";
 window.SUPABASE_PUBLIC_BASE = "https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media";
 
 window.CACHE_BUST = true;
+
 </script>
 
 <meta charset="utf-8"/>
@@ -98,11 +100,13 @@ input[type="range"]{width:100%;height:28px}
 
 <!-- 5D SONIC runtime config for API/MEDIA roots -->
 <script>
+
 // You can override these from the console or an inline script BEFORE this runs:
 //   window.LUNA_API_BASE = location.origin + '/api/tree';
 //   window.LUNA_MEDIA_BASE = location.origin + '/media/';
 window.LUNA_API_BASE = location.origin + '/api/tree';
 window.LUNA_MEDIA_BASE = location.origin + '/media/';
+
 </script>
 
 
@@ -169,6 +173,7 @@ button[data-scope="both"], button[data-scope="freeze"] { display:none !important
 
 <script src="https://unpkg.com/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
 <script>
+
 // === Supabase configuration (client-side) ===
 window.USE_SUPABASE = true; // enable by default; fill your keys below
 window.SUPABASE_URL = "https://xdjgumqdwedgzwqturcx.supabase.co";
@@ -181,6 +186,7 @@ window.CACHE_BUST = true;
 if (window.USE_SUPABASE && window.SUPABASE_PUBLIC_BASE) {
   window.LUNA_MEDIA_BASE = window.SUPABASE_PUBLIC_BASE.replace(/\/+$/,'');
 
+}
 </script>
 <style id="ui-size-tweaks">
 /* ▶/⏸ 버튼(제네레이터 & 플레이어) 2배 크기 느낌으로 확장 */
@@ -198,6 +204,7 @@ if (window.USE_SUPABASE && window.SUPABASE_PUBLIC_BASE) {
 </style>
 <!-- REAL Supabase config + overwrite guard -->
 <script>
+
 (function(){
   window.SUPABASE_URL  = "https://xdjgumqdwedgzwqturcx.supabase.co";
   window.SUPABASE_KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
@@ -209,10 +216,12 @@ if (window.USE_SUPABASE && window.SUPABASE_PUBLIC_BASE) {
     try { Object.defineProperty(window, k, { configurable:false, writable:false }); } catch(e){}
   });
 })();
+
 </script>
 <link rel="icon" href="data:,">
 <!-- REAL Supabase config + overwrite guard -->
 <script>
+
 (function(){
   window.SUPABASE_URL  = "https://xdjgumqdwedgzwqturcx.supabase.co";
   window.SUPABASE_KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
@@ -223,6 +232,7 @@ if (window.USE_SUPABASE && window.SUPABASE_PUBLIC_BASE) {
     try { Object.defineProperty(window, k, { configurable:false, writable:false }); } catch(e){}
   });
 })();
+
 </script>
 </head>
 <body>
@@ -258,11 +268,13 @@ if (window.USE_SUPABASE && window.SUPABASE_PUBLIC_BASE) {
       .dropdown-menu a:hover { background: rgba(255,255,255,0.1); }
     </style>
     <script>
-  function toggleMenu() {
-    const menu = document.getElementById('dropdownMenu');
-    if (!menu) return;
-    menu.style.display = (menu.style.display === 'flex') ? 'none' : 'flex';
-  }
+
+      function toggleMenu() {
+        const menu = document.getElementById('dropdownMenu');
+        menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
+      
+}
+
 </script>
     
 <div class="app">
@@ -406,6 +418,7 @@ if (window.USE_SUPABASE && window.SUPABASE_PUBLIC_BASE) {
 </div>
 
 <script>
+
 /* i18n */
 (function(){const t=document.getElementById('langToggle');function a(l){document.querySelectorAll('[data-en]').forEach(e=>{e.textContent=(l==='ko'&&e.dataset.ko)?e.dataset.ko:e.dataset.en});t.dataset.lang=l;t.textContent=l==='ko'?'한글 / EN':'EN / 한글'}t&&t.addEventListener('click',()=>{const c=t.dataset.lang||'en';a(c==='en'?'ko':'en')});a('en')})();
 /* fit */
@@ -453,12 +466,14 @@ const bufG=new Uint8Array(1024),bufP=new Uint8Array(1024);
 function drawGrid(){g.fillStyle='#0b0f16';g.fillRect(0,0,scope.width,scope.height);g.strokeStyle='rgba(255,255,255,.08)';g.lineWidth=1;for(let x=0;x<scope.width;x+=50){g.beginPath();g.moveTo(x,0);g.lineTo(x,scope.height);g.stroke()}for(let y=0;y<scope.height;y+=50){g.beginPath();g.moveTo(0,y);g.lineTo(scope.width,y);g.stroke()}}
 function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnalyser.getByteTimeDomainData(bufG);g.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue('--accent')||'#ffd166';g.lineWidth=2;g.beginPath();for(let i=0;i<bufG.length;i++){const x=i/bufG.length*scope.width;const y=bufG[i]/255*scope.height;i?g.lineTo(x,y):g.moveTo(x,y)}g.stroke()}if(mode!=='gen'&&playerAnalyser){playerAnalyser.getByteTimeDomainData(bufP);g.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue('--accent2')||'#00b7ff';g.lineWidth=2;g.beginPath();for(let i=0;i<bufP.length;i++){const x=i/bufP.length*scope.width;const y=bufP[i]/255*scope.height;i?g.lineTo(x,y):g.moveTo(x,y)}g.stroke()}}requestAnimationFrame(tick)}requestAnimationFrame(tick);
 (function(){let d=false;const r=()=>{if(d)return;try{genCtx.resume();playerCtx.resume()}catch(e){}d=true;['touchstart','touchend','mousedown','keydown'].forEach(ev=>window.removeEventListener(ev,r))};['touchstart','touchend','mousedown','keydown'].forEach(ev=>window.addEventListener(ev,r,{passive:true}))})();
+
 </script>
 
 
 
 <!-- Generator transport override v3 (Play/Pause only, Stop removed) -->
 <script>
+
 (function(){
   if (!window.UI) return;
 
@@ -529,10 +544,12 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
   muteChannels();
   labelPlay();
 })();
+
 </script>
 
 
 <script>
+
 (function(){
   function updateHarmVisibility(){
     var cntEl = document.getElementById('harmCount');
@@ -550,10 +567,12 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
     updateHarmVisibility();
   }
 })();
+
 </script>
 
 
 <script>
+
 (function(){
   function fix2(v){ return (Math.round(v*100)/100).toFixed(2); }
   function bindFix2(inputId){
@@ -571,10 +590,12 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
   bindFix2('lFreqIn');
   bindFix2('rFreqIn');
 })();
+
 </script>
 
 
 <script>
+
 // ===== Library: server-backed tree with thumbnails =====
 (function(){
   const rail = document.getElementById('libRail');
@@ -716,10 +737,12 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
 
   fetchAndRender('');
 })();
+
 </script>
 
 
 <script>
+
 // Audio Player: robust local file load + UI sync
 (function(){
   const file = document.getElementById('filePicker');
@@ -778,10 +801,12 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
     });
   }
 })();
+
 </script>
 
 
 <script>
+
 // Generator Play/Pause: enforce gains on pause, no auto-start from sliders
 (function(){
   if (!window.UI) return;
@@ -844,10 +869,12 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
     UI.balance && UI.balance.addEventListener(ev, ()=>{ if (state==='playing') applyDesired(desired()); });
   });
 })();
+
 </script>
 
 
 <script>
+
 /* ===== 5D SONIC hotfix: scope draw + generator pause + player load ===== */
 (function(){
   /* ---- Oscilloscope ---- */
@@ -1009,10 +1036,12 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
     }
   })();
 })();
+
 </script>
 
 
 <script>
+
 /* ===== 5D SONIC: Audio Player volume + explicit controls (no autoplay) ===== */
 (function(){
   const audio = document.getElementById('audio');
@@ -1118,11 +1147,13 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
     }));
   }
 })();
+
 </script>
 
 
 <!-- 5D SONIC: Audio Player volume + explicit controls (no autoplay) -->
 <script>
+
 (function(){
   const audio = document.getElementById('audio');
   if (!audio) return;
@@ -1232,6 +1263,7 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
     }));
   }
 })();
+
 </script>
 
 
@@ -1244,6 +1276,7 @@ label[for="volume"],
 .player-volume-label { display:none !important; }
 </style>
 <script>
+
 (function(){
   const audio = document.getElementById('audio');
   if (!audio) return;
@@ -1328,6 +1361,7 @@ label[for="volume"],
     });
   }
 })();
+
 </script>
 
 
@@ -1345,6 +1379,7 @@ label[for="volume"],
   #libPath { color:#9fb7ff; font-size:12px; margin-left:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 </style>
 <script>
+
 (function(){
   // If containers don't exist, create a minimal bar + rail above the audio player
   let rail = document.getElementById('libRail');
@@ -1473,17 +1508,21 @@ label[for="volume"],
   // initial load
   fetchAndRender('');
 })();
+
 </script>
 
 <script>
+
 /*
 If you see 404 for MEDIA URLs, ensure your server maps the physical folder to /media, e.g.:
   app.use('/media', express.static('/Users/paulpark/Music/lunasonic_media'));
 */
+
 </script>
 
 <!-- === 5D SONIC: resilient Library bootstrap (no generator changes) === -->
 <script>
+
 (function(){
   // Config
   const ORIGIN = location.origin;
@@ -1614,6 +1653,7 @@ If you see 404 for MEDIA URLs, ensure your server maps the physical folder to /m
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', update);
   else update();
 })();
+
 </script>
 
 
@@ -1899,6 +1939,7 @@ If you see 404 for MEDIA URLs, ensure your server maps the physical folder to /m
 
 
 <script>
+
 // === 5D SONIC Desktop: Force audio pipeline & unlock ===
 (function(){
   const getAudio = ()=> document.getElementById('audio') || document.querySelector('audio');
@@ -1957,10 +1998,12 @@ If you see 404 for MEDIA URLs, ensure your server maps the physical folder to /m
     }
   }, true);
 })();
+
 </script>
 
 
 <script>
+
 /* ===== Safari-solid audio bootstrap (create-on-gesture + single media node) ===== */
 (function () {
   const A = document.getElementById('audio') || document.querySelector('audio');
@@ -2011,6 +2054,7 @@ If you see 404 for MEDIA URLs, ensure your server maps the physical folder to /m
     if (isPlay) unlockAndMaybePlay(true);
   }, true);
 })();
+
 </script>
 
 
@@ -2075,6 +2119,7 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <script>
+
 function absMedia(pathLike){
   if(!pathLike) return null;
   let base = (window.LUNA_MEDIA_BASE||'').replace(/\/+$/,'');
@@ -2088,6 +2133,7 @@ function absMedia(pathLike){
   }
   return url;
 
+}
 </script>
 
 <div id="grid"></div>
@@ -2095,6 +2141,7 @@ function absMedia(pathLike){
 
 <!-- === 5DIO Supabase Library Integration (auto list / thumbnails / playback) === -->
 <script>
+
 (function(){
   const SUPABASE_URL = (window.SUPABASE_URL || "https://xdjgumqdwedgzwqturcx.supabase.co");
   const SUPABASE_KEY = (window.SUPABASE_KEY || "YOUR_ANON_PUBLIC_KEY"); // replace with real anon key
@@ -2188,9 +2235,11 @@ function absMedia(pathLike){
     renderLibrary(DEFAULT_PREFIX);
   });
 })();
+
 </script>
 
 <script>
+
 (function(){
   let __ctx=null, __node=null, __armed=false;
   function getCtx(){ return __ctx || (__ctx = new (window.AudioContext||window.webkitAudioContext)()); }
@@ -2207,8 +2256,10 @@ function absMedia(pathLike){
   document.addEventListener('click', arm,   { once:true, capture:true });
   document.addEventListener('keydown', arm, { once:true, capture:true });
 })();
+
 </script>
 <script>
+
 (function(){
   let __ctx=null, __node=null, __armed=false;
   function getCtx(){ return __ctx || (__ctx = new (window.AudioContext||window.webkitAudioContext)()); }
@@ -2225,16 +2276,18 @@ function absMedia(pathLike){
   document.addEventListener('click', arm,   { once:true, capture:true });
   document.addEventListener('keydown', arm, { once:true, capture:true });
 })();
-</script>
 
+</script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  const btn = document.querySelector('.menu-button');
-  if (btn && typeof toggleMenu === 'function') {
-    btn.addEventListener('click', toggleMenu);
+  const btn  = document.querySelector('.menu-button') || document.getElementById('hamburger');
+  const menu = document.getElementById('dropdownMenu') || document.querySelector('.side-menu');
+  function toggleMenu(){
+    if (!menu) return;
+    menu.style.display = (menu.style.display === 'flex') ? 'none' : 'flex';
   }
+  if (btn) btn.addEventListener('click', toggleMenu);
 });
 </script>
-
 </body>
 </html>
