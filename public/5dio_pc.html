@@ -2289,5 +2289,24 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btn) btn.addEventListener('click', toggleMenu);
 });
 </script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const btn  = document.querySelector('.menu-button') || document.getElementById('hamburger');
+  const menu = document.getElementById('dropdownMenu') || document.querySelector('.side-menu');
+  function _toggle(){
+    if (!menu) return;
+    if (menu.classList.contains('open')) {
+      menu.classList.remove('open');
+      menu.style.display = 'none';
+    } else {
+      menu.classList.add('open');
+      menu.style.display = 'flex';
+    }
+  }
+  if (btn) btn.addEventListener('click', _toggle);
+});
+</script>
+
 </body>
 </html>
