@@ -5,17 +5,17 @@
 <!-- Cloud Tunnel Safe Endpoints -->
 <script>
 
-window.USE_SUPABASE = true;
+
 
 // ✅ Supabase 대시보드 → Settings → API 에서 복사
-window.SUPABASE_URL = "https://xdjgumqdwedgzwqturcx.supabase.co";
-window.SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
+
+
 
 // ✅ Storage 버킷이름(우린 media)
-window.SUPABASE_BUCKET = "media";
+
 
 // ✅ 퍼블릭 베이스 URL: 맨 끝에 /media 까지 포함!
-window.SUPABASE_PUBLIC_BASE = "https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media";
+
 
 window.CACHE_BUST = true;
 
@@ -171,15 +171,15 @@ button[data-scope="both"], button[data-scope="freeze"] { display:none !important
 }
 </style>
 
-<script src="https://unpkg.com/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
+
 <script>
 
 // === Supabase configuration (client-side) ===
-window.USE_SUPABASE = true; // enable by default; fill your keys below
-window.SUPABASE_URL = "https://xdjgumqdwedgzwqturcx.supabase.co";
-window.SUPABASE_KEY = "REPLACED";
-window.SUPABASE_BUCKET = "media";
-window.SUPABASE_PUBLIC_BASE = "https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media";
+ // enable by default; fill your keys below
+
+
+
+
 window.CACHE_BUST = true;
 
 // If Supabase is enabled, you may also want to use its public base for media assets globally
@@ -206,15 +206,15 @@ if (window.USE_SUPABASE && window.SUPABASE_PUBLIC_BASE) {
 <script>
 
 (function(){
-  window.SUPABASE_URL  = "https://xdjgumqdwedgzwqturcx.supabase.co";
-  window.SUPABASE_KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
-  window.SUPABASE_BUCKET = "media";
-  window.SUPABASE_PUBLIC_BASE = window.SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/object/public/" + window.SUPABASE_BUCKET;
-  window.USE_SUPABASE = true;
+  
+  
+  
+  
+  
   // prevent later placeholder blocks from overwriting
   ["SUPABASE_URL","SUPABASE_KEY","SUPABASE_BUCKET","SUPABASE_PUBLIC_BASE","USE_SUPABASE"].forEach(k=>{
     try { Object.defineProperty(window, k, { configurable:false, writable:false }); } catch(e){}
-  });
+}
 })();
 
 </script>
@@ -223,16 +223,26 @@ if (window.USE_SUPABASE && window.SUPABASE_PUBLIC_BASE) {
 <script>
 
 (function(){
+  
+  
+  
+  
+  
+  ["SUPABASE_URL","SUPABASE_KEY","SUPABASE_BUCKET","SUPABASE_PUBLIC_BASE","USE_SUPABASE"].forEach(k=>{
+    try { Object.defineProperty(window, k, { configurable:false, writable:false }); } catch(e){}
+}
+})();
+
+</script>
+<script src="https://unpkg.com/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
+<script>
+(function(){
   window.SUPABASE_URL  = "https://xdjgumqdwedgzwqturcx.supabase.co";
   window.SUPABASE_KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
   window.SUPABASE_BUCKET = "media";
   window.SUPABASE_PUBLIC_BASE = window.SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/object/public/" + window.SUPABASE_BUCKET;
   window.USE_SUPABASE = true;
-  ["SUPABASE_URL","SUPABASE_KEY","SUPABASE_BUCKET","SUPABASE_PUBLIC_BASE","USE_SUPABASE"].forEach(k=>{
-    try { Object.defineProperty(window, k, { configurable:false, writable:false }); } catch(e){}
-  });
 })();
-
 </script>
 </head>
 <body>
@@ -667,17 +677,16 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
         }
       }
       return { folders, files };
-    });
-  }
+}
+}
 
   // Default: server API
   const url = '/api/tree' + (path ? ('?path=' + encodeURIComponent(path)) : '');
   return fetch(url).then(r=>{
     if(!r.ok) throw new Error('Library fetch failed');
     return r.json();
-  });
-
-    });
+}
+});
   }
 
   function renderItems(){
@@ -729,8 +738,8 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
   window.curPath = curPath;
 }).catch(err=>{
       rail.innerHTML = '<div class="t small">Failed to load library</div>';
-    });
-  }
+}
+}
 
   prevBtn.addEventListener('click', ()=>{ if(page>0){ page--; renderItems(); } });
   nextBtn.addEventListener('click', ()=>{ page++; renderItems(); });
@@ -770,24 +779,24 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
       } catch(e) {
         console.warn('Audio load error:', e);
       }
-    });
-  }
+}
+}
 
   if (audio && ppBtn){
     ppBtn.addEventListener('click', async ()=>{
       if (window.playerCtx && playerCtx.state === 'suspended') { try { await playerCtx.resume(); } catch(e){} }
       if (audio.paused){ try { await audio.play(); ppBtn.textContent='⏸'; } catch(e){} }
       else { audio.pause(); ppBtn.textContent='▶/⏸'; }
-    });
-  }
+}
+}
 
   if (audio && stopBtn){
     stopBtn.addEventListener('click', ()=>{
       audio.pause();
       audio.currentTime = 0;
       if (ppBtn) ppBtn.textContent='▶/⏸';
-    });
-  }
+}
+}
 
   if (audio){
     audio.addEventListener('loadedmetadata', ()=>{
@@ -798,8 +807,8 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
       const d = audio.duration || 1;
       if (timeCur) timeCur.textContent = fmt(audio.currentTime||0);
       if (timeline) timeline.value = (audio.currentTime/d).toFixed(3);
-    });
-  }
+}
+}
 })();
 
 </script>
@@ -867,7 +876,7 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
     UI.rLevel && UI.rLevel.addEventListener(ev, ()=>{ if (state==='playing') applyDesired(desired()); });
     UI.masterGain && UI.masterGain.addEventListener(ev, ()=>{ if (state==='playing') applyDesired(desired()); });
     UI.balance && UI.balance.addEventListener(ev, ()=>{ if (state==='playing') applyDesired(desired()); });
-  });
+}
 })();
 
 </script>
@@ -1005,8 +1014,8 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
         } else {
           setMaster(0);
         }
-      });
-    });
+}
+});
   })();
 
   /* ---- Audio Player: local file load + play ---- */
@@ -1025,15 +1034,15 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
         try { if (playerCtx && playerCtx.state==='suspended') await playerCtx.resume(); } catch(e){}
         audio.play().catch(()=>{});
         if (pp) pp.textContent = '⏸';
-      });
-    }
+}
+}
     if (pp){
       pp.addEventListener('click', async ()=>{
         try { if (playerCtx && playerCtx.state==='suspended') await playerCtx.resume(); } catch(e){}
         if (audio.paused){ try{ await audio.play(); if(pp) pp.textContent='⏸'; }catch(e){} }
         else { audio.pause(); if(pp) pp.textContent='▶/⏸'; }
-      });
-    }
+}
+}
   })();
 })();
 
@@ -1099,8 +1108,8 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
       audio.load();
       // Do not autoplay; just set UI to "Play"
       if (btnPlay) btnPlay.textContent = 'Play';
-    });
-  }
+}
+}
 
   // ---------- Play/Pause/Stop controls ----------
   async function ensureCtx() {
@@ -1116,15 +1125,15 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
       } else {
         audio.pause(); btnPlay.textContent = 'Play';
       }
-    });
-  }
+}
+}
   if (btnStop) {
     btnStop.addEventListener('click', () => {
       audio.pause();
       audio.currentTime = 0;
       if (btnPlay) btnPlay.textContent = 'Play';
-    });
-  }
+}
+}
 
   // ---------- Timeline + counters ----------
   function fmt(t){ const m=Math.floor(t/60), s=Math.floor(t%60); return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0'); }
@@ -1137,8 +1146,8 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
       const d = audio.duration || 1;
       if (timeCur) timeCur.textContent = fmt(audio.currentTime || 0);
       if (timeline) timeline.value = (audio.currentTime / d) * 100;
-    });
-  }
+}
+}
   if (timeline) {
     ['input','change'].forEach(evt => timeline.addEventListener(evt, () => {
       const d = audio.duration || 0;
@@ -1208,8 +1217,8 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
       };
       audio.addEventListener('loadeddata', onLoaded);
       if (btnPP) btnPP.textContent = 'Play';
-    });
-  }
+}
+}
 
   async function ensureCtx() {
     if (!ctx) return;
@@ -1227,8 +1236,8 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
       } else {
         audio.pause(); playBtn.textContent = 'Play';
       }
-    });
-  }
+}
+}
 
   if (btnStop) {
     const cloneS = btnStop.cloneNode(true);
@@ -1238,8 +1247,8 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
       audio.currentTime = 0;
       const p = document.getElementById('audioPlayPause') || document.getElementById('audPlayPause') || document.getElementById('playPause');
       if (p) p.textContent = 'Play';
-    });
-  }
+}
+}
 
   const timeline = document.getElementById('timeline');
   const timeCur  = document.getElementById('timeCur');
@@ -1312,8 +1321,8 @@ label[for="volume"],
       audio.pause(); audio.currentTime = 0;
       const p = document.getElementById('audioPlayPause') || document.getElementById('audPlayPause') || document.getElementById('playPause');
       if (p) p.textContent = '▶';
-    });
-  }
+}
+}
 
   // 2) Accurate timeline: use seconds, not percent
   function fmt(t){ const m=Math.floor(t/60), s=Math.floor(t%60); return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0'); }
@@ -1358,8 +1367,8 @@ label[for="volume"],
     file.addEventListener('change', ()=>{
       if (btnPP) { const p = document.getElementById('audioPlayPause') || document.getElementById('audPlayPause') || document.getElementById('playPause'); if (p) p.textContent='▶'; }
       // timeline will be reconfigured on loadedmetadata
-    });
-  }
+}
+}
 })();
 
 </script>
@@ -1444,8 +1453,8 @@ label[for="volume"],
         thumb = MEDIA + encodeURI((pth.replace(/\/[^\/]+$/,'/')) + base + '.jpg');
       }
       return { type, name, path: pth, thumb, url };
-    });
-  }
+}
+}
 
   function render(list){
     rail.innerHTML = '';
@@ -1578,8 +1587,8 @@ If you see 404 for MEDIA URLs, ensure your server maps the physical folder to /m
         }
       }
       return {type,name,path,thumb,url};
-    });
-  }
+}
+}
 
   async function fetchTree(path=''){
     const url = path ? (API + '?path=' + encodeURIComponent(path)) : API;
@@ -1696,7 +1705,7 @@ If you see 404 for MEDIA URLs, ensure your server maps the physical folder to /m
   }
   document.addEventListener('library:trackSelected', function(e){
     setName(e && e.detail && e.detail.name);
-  });
+}
 })();
 </script>
 
@@ -1751,7 +1760,7 @@ If you see 404 for MEDIA URLs, ensure your server maps the physical folder to /m
     var f = ev.target.files && ev.target.files[0];
     if(!f) return;
     update(f.name, null);
-  });
+}
 })();
 </script>
 
@@ -1861,8 +1870,8 @@ If you see 404 for MEDIA URLs, ensure your server maps the physical folder to /m
 
         // Signal for any external listeners
         try{ document.dispatchEvent(new CustomEvent('library:trackSelected',{detail:{name,url}})); }catch(e){}
-      });
-    }
+}
+}
 
     // Fallback: if <audio>.src changes, populate name (thumb stays as-is)
     var audio = document.getElementById('audio') || document.querySelector('audio');
@@ -1876,7 +1885,7 @@ If you see 404 for MEDIA URLs, ensure your server maps the physical folder to /m
         }
       }, 400);
     }
-  });
+}
 })();
 </script>
 
@@ -1917,15 +1926,15 @@ If you see 404 for MEDIA URLs, ensure your server maps the physical folder to /m
         // highlight only for file items (optional). If also for folders, remove the condition below.
         clearActive();
         card.classList.add('thumb--active');
-      });
-    }
+}
+}
     // Also respond to our custom event (e.g., when selection happens programmatically)
     document.addEventListener('library:trackSelected', function(e){
       var path = e && e.detail && e.detail.path;
       var match = path && document.querySelector('.thumb[data-path="'+CSS.escape(path)+'"]');
       if(match){ clearActive(); match.classList.add('thumb--active'); }
-    });
-  });
+}
+});
 })();
 </script>
 
@@ -2113,8 +2122,8 @@ document.addEventListener('DOMContentLoaded', () => {
         value = value.slice(0, firstDot + 1) + value.slice(firstDot + 1).replace(/\./g, '');
       }
       e.target.value = value;
-    });
-  });
+}
+});
 });
 </script>
 
@@ -2224,8 +2233,8 @@ function absMedia(pathLike){
           audio.play().catch(()=>{});
         };
         grid.appendChild(card);
-      });
-    } catch (e) {
+}
+} catch (e) {
       console.error('renderLibrary error', e);
     }
   }
@@ -2233,7 +2242,7 @@ function absMedia(pathLike){
   document.addEventListener('DOMContentLoaded', () => {
     const DEFAULT_PREFIX = (window.DEFAULT_CATEGORY_PREFIX || 'Brainwave_States');
     renderLibrary(DEFAULT_PREFIX);
-  });
+}
 })();
 
 </script>
@@ -2308,5 +2317,19 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.supabase && window.SUPABASE_URL && window.SUPABASE_KEY) {
+    try {
+      window.sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
+      console.log("✅ Supabase client ready");
+    } catch (e) {
+      console.error("❌ Supabase client init failed", e);
+    }
+  } else {
+    console.error("❌ Supabase SDK not loaded or config missing");
+  }
+});
+</script>
 </body>
 </html>
