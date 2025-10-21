@@ -7,6 +7,7 @@
 
 
 
+
 // ✅ Supabase 대시보드 → Settings → API 에서 복사
 
 
@@ -101,6 +102,7 @@ input[type="range"]{width:100%;height:28px}
 <!-- 5D SONIC runtime config for API/MEDIA roots -->
 <script>
 
+
 // You can override these from the console or an inline script BEFORE this runs:
 //   window.LUNA_API_BASE = location.origin + '/api/tree';
 //   window.LUNA_MEDIA_BASE = location.origin + '/media/';
@@ -174,6 +176,7 @@ button[data-scope="both"], button[data-scope="freeze"] { display:none !important
 
 <script>
 
+
 // === Supabase configuration (client-side) ===
  // enable by default; fill your keys below
 
@@ -205,6 +208,7 @@ if (window.USE_SUPABASE && window.SUPABASE_PUBLIC_BASE) {
 <!-- REAL Supabase config + overwrite guard -->
 <script>
 
+
 (function(){
   
   
@@ -216,11 +220,12 @@ if (window.USE_SUPABASE && window.SUPABASE_PUBLIC_BASE) {
     try { Object.defineProperty(window, k, { configurable:false, writable:false }); } catch(e){}
 }
 })();
-
+)
 </script>
 <link rel="icon" href="data:,">
 <!-- REAL Supabase config + overwrite guard -->
 <script>
+
 
 (function(){
   
@@ -232,15 +237,16 @@ if (window.USE_SUPABASE && window.SUPABASE_PUBLIC_BASE) {
     try { Object.defineProperty(window, k, { configurable:false, writable:false }); } catch(e){}
 }
 })();
-
+)
 </script>
-<script src="https://unpkg.com/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
+
 <script>
+
 (function(){
-  window.SUPABASE_URL  = "https://xdjgumqdwedgzwqturcx.supabase.co";
-  window.SUPABASE_KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
-  window.SUPABASE_BUCKET = "media";
-  window.SUPABASE_PUBLIC_BASE = window.SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/object/public/" + window.SUPABASE_BUCKET;
+  
+  
+  
+  
   window.USE_SUPABASE = true;
 })();
 </script>
@@ -250,6 +256,15 @@ button#scopeMode, button#scopeFreeze,
 button[data-role="both"], button[data-role="freeze"],
 .scope-ctrl .btn:nth-child(1), .scope-ctrl .btn:nth-child(2) { display:none !important; }
 </style>
+<script src="https://unpkg.com/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
+<script>
+(function(){
+  window.SUPABASE_URL  = "https://xdjgumqdwedgzwqturcx.supabase.co";
+  window.SUPABASE_KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
+  window.SUPABASE_BUCKET = "media";
+  window.SUPABASE_PUBLIC_BASE = window.SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/object/public/" + window.SUPABASE_BUCKET;
+})();
+</script>
 </head>
 <body>
 
@@ -284,6 +299,7 @@ button[data-role="both"], button[data-role="freeze"],
       .dropdown-menu a:hover { background: rgba(255,255,255,0.1); }
     </style>
     <script>
+
 
       function toggleMenu() {
         const menu = document.getElementById('dropdownMenu');
@@ -435,6 +451,7 @@ button[data-role="both"], button[data-role="freeze"],
 
 <script>
 
+
 /* i18n */
 (function(){const t=document.getElementById('langToggle');function a(l){document.querySelectorAll('[data-en]').forEach(e=>{e.textContent=(l==='ko'&&e.dataset.ko)?e.dataset.ko:e.dataset.en});t.dataset.lang=l;t.textContent=l==='ko'?'한글 / EN':'EN / 한글'}t&&t.addEventListener('click',()=>{const c=t.dataset.lang||'en';a(c==='en'?'ko':'en')});a('en')})();
 /* fit */
@@ -528,6 +545,7 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
 <!-- Generator transport override v3 (Play/Pause only, Stop removed) -->
 <script>
 
+
 (function(){
   if (!window.UI) return;
 
@@ -606,6 +624,7 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
 
 <script>
 
+
 (function(){
   function updateHarmVisibility(){
     var cntEl = document.getElementById('harmCount');
@@ -629,6 +648,7 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
 
 <script>
 
+
 (function(){
   function fix2(v){ return (Math.round(v*100)/100).toFixed(2); }
   function bindFix2(inputId){
@@ -651,6 +671,7 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
 
 
 <script>
+
 
 // ===== Library: server-backed tree with thumbnails =====
 (function(){
@@ -785,18 +806,19 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
 }).catch(err=>{
       rail.innerHTML = '<div class="t small">Failed to load library</div>';
 }
-}
+
 
   prevBtn.addEventListener('click', ()=>{ if(page>0){ page--; renderItems(); } });
   nextBtn.addEventListener('click', ()=>{ page++; renderItems(); });
 
   fetchAndRender('');
-})();
-
+)();
+))
 </script>
 
 
 <script>
+
 
 // Audio Player: robust local file load + UI sync
 (function(){
@@ -856,11 +878,12 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
 }
 }
 })();
-
+))))
 </script>
 
 
 <script>
+
 
 // Generator Play/Pause: enforce gains on pause, no auto-start from sliders
 (function(){
@@ -924,11 +947,12 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
     UI.balance && UI.balance.addEventListener(ev, ()=>{ if (state==='playing') applyDesired(desired()); });
 }
 })();
-
+)
 </script>
 
 
 <script>
+
 
 /* ===== 5D SONIC hotfix: scope draw + generator pause + player load ===== */
 (function(){
@@ -1091,11 +1115,12 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
 }
   })();
 })();
-
+)))
 </script>
 
 
 <script>
+
 
 /* ===== 5D SONIC: Audio Player volume + explicit controls (no autoplay) ===== */
 (function(){
@@ -1202,12 +1227,13 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
     }));
   }
 })();
-
+))))
 </script>
 
 
 <!-- 5D SONIC: Audio Player volume + explicit controls (no autoplay) -->
 <script>
+
 
 (function(){
   const audio = document.getElementById('audio');
@@ -1318,7 +1344,7 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
     }));
   }
 })();
-
+)))
 </script>
 
 
@@ -1331,6 +1357,7 @@ label[for="volume"],
 .player-volume-label { display:none !important; }
 </style>
 <script>
+
 
 (function(){
   const audio = document.getElementById('audio');
@@ -1434,6 +1461,7 @@ label[for="volume"],
   #libPath { color:#9fb7ff; font-size:12px; margin-left:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 </style>
 <script>
+
 
 (function(){
   // If containers don't exist, create a minimal bar + rail above the audio player
@@ -1563,10 +1591,11 @@ label[for="volume"],
   // initial load
   fetchAndRender('');
 })();
-
+)
 </script>
 
 <script>
+
 
 /*
 If you see 404 for MEDIA URLs, ensure your server maps the physical folder to /media, e.g.:
@@ -1577,6 +1606,7 @@ If you see 404 for MEDIA URLs, ensure your server maps the physical folder to /m
 
 <!-- === 5D SONIC: resilient Library bootstrap (no generator changes) === -->
 <script>
+
 
 (function(){
   // Config
@@ -1614,7 +1644,7 @@ If you see 404 for MEDIA URLs, ensure your server maps the physical folder to /m
     return {back:panel.querySelector('#libBack'), refresh:panel.querySelector('#libRefresh'), path:panel.querySelector('#libPath'), grid:panel.querySelector('#libGrid')};
   }
 
-  // 2) Normalize server data -> common shape
+  // 2 Normalize server data -> common shape
   function normalize(items){
     return items.map(it=>{
       const type = it.type || (it.isFolder||it.kind==='folder' ? 'folder' : 'file');
@@ -1707,7 +1737,7 @@ If you see 404 for MEDIA URLs, ensure your server maps the physical folder to /m
   // kick off after DOM is fully ready
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', update);
   else update();
-})();
+}();
 
 </script>
 
@@ -1995,6 +2025,7 @@ If you see 404 for MEDIA URLs, ensure your server maps the physical folder to /m
 
 <script>
 
+
 // === 5D SONIC Desktop: Force audio pipeline & unlock ===
 (function(){
   const getAudio = ()=> document.getElementById('audio') || document.querySelector('audio');
@@ -2058,6 +2089,7 @@ If you see 404 for MEDIA URLs, ensure your server maps the physical folder to /m
 
 
 <script>
+
 
 /* ===== Safari-solid audio bootstrap (create-on-gesture + single media node) ===== */
 (function () {
@@ -2175,6 +2207,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 <script>
 
+
 function absMedia(pathLike){
   if(!pathLike) return null;
   let base = (window.LUNA_MEDIA_BASE||'').replace(/\/+$/,'');
@@ -2196,6 +2229,7 @@ function absMedia(pathLike){
 
 <!-- === 5DIO Supabase Library Integration (auto list / thumbnails / playback) === -->
 <script>
+
 
 (function(){
   const SUPABASE_URL = (window.SUPABASE_URL || "https://xdjgumqdwedgzwqturcx.supabase.co");
@@ -2290,10 +2324,11 @@ function absMedia(pathLike){
     renderLibrary(DEFAULT_PREFIX);
 }
 })();
-
+))
 </script>
 
 <script>
+
 
 (function(){
   let __ctx=null, __node=null, __armed=false;
@@ -2315,6 +2350,7 @@ function absMedia(pathLike){
 </script>
 <script>
 
+
 (function(){
   let __ctx=null, __node=null, __armed=false;
   function getCtx(){ return __ctx || (__ctx = new (window.AudioContext||window.webkitAudioContext)()); }
@@ -2334,6 +2370,7 @@ function absMedia(pathLike){
 
 </script>
 <script>
+
 document.addEventListener('DOMContentLoaded', () => {
   const btn  = document.querySelector('.menu-button') || document.getElementById('hamburger');
   const menu = document.getElementById('dropdownMenu') || document.querySelector('.side-menu');
@@ -2346,6 +2383,7 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <script>
+
 document.addEventListener('DOMContentLoaded', () => {
   const btn  = document.querySelector('.menu-button') || document.getElementById('hamburger');
   const menu = document.getElementById('dropdownMenu') || document.querySelector('.side-menu');
@@ -2364,6 +2402,7 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <script>
+
 document.addEventListener('DOMContentLoaded', () => {
   if (window.supabase && window.SUPABASE_URL && window.SUPABASE_KEY) {
     try {
@@ -2380,6 +2419,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 <!-- ==== Patch: Oscilloscope + Pause fix + Supabase list override ==== -->
 <script>
+
 (function(){
   const scope = document.getElementById('scope');
   let __ctx=null, __analyser=null, __mediaNode=null, __armed=false;
