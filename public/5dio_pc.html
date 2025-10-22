@@ -1,27 +1,278 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>5DIO Desktop</title>
-  <link rel="stylesheet" href="/css/styles.css"/>
-  <!-- Supabase SDK (jsDelivr CDN) -->
-<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
+  <title>5DIO PC — Single File (Supabase + Oscilloscope)</title>
 
-<!-- 네 공개 설정 -->
-<script defer src="/config.js"></script>
+  <style>
+    :root{--bg:#0b0b0b;--fg:#eaeaea;--muted:#a9b4bf;--panel:#111417;--line:#20242a;--accent:#26b3ff}
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,sans-serif}
+    header{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:10}
+    header .brand{font-weight:700}
+    .container{max-width:1120px;margin:0 auto;padding:14px}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .btn{background:#1a1f24;border:1px solid var(--line);padding:8px 12px;border-radius:10px;color:#fff;cursor:pointer}
+    .btn:disabled{opacity:.45;cursor:default}
+    #scope{width:100%;height:170px;background:#05070a;border:1px solid var(--line);border-radius:10px}
+    .small{font-size:12px;color:var(--muted)}
+    .toolbar{display:flex;gap:8px;align-items:center;margin:10px 0}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+    .card{background:#0f1317;border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
+    .thumb{width:100%;aspect-ratio:1/1;border-radius:8px;background:#0a0f13;display:block;background-size:cover;background-position:center}
+    .title{margin-top:6px;font-size:12px;color:#d9e1ea;word-break:break-word}
+    .crumbs{font-size:13px;color:var(--muted);margin-top:8px}
+    .crumbs a{color:#bcdcff;text-decoration:none}
+    .crumbs a:hover{text-decoration:underline}
+  </style>
+
+  <!-- Supabase SDK -->
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
+
+  <!-- PUBLIC config (replace only if your project changes) -->
+  <script>
+  window.SUPABASE_URL   = "https://xdjgumqdwedgzwqturcx.supabase.co";
+  window.SUPABASE_KEY   = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
+  window.SUPABASE_BUCKET = "media";
+  window.SUPABASE_PUBLIC_BASE =
+    window.SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/object/public/" + window.SUPABASE_BUCKET;
+  window.CACHE_BUST = true;
+  </script>
 </head>
 <body>
-  <header><h1 style="margin:0;font-size:18px">5DIO Desktop</h1></header>
+  <header>
+    <div class="brand">5DIO</div>
+    <div class="small">Single-file build · Supabase Media + Oscilloscope</div>
+  </header>
+
   <div class="container">
-    <canvas id="scope" width="800" height="160"></canvas>
-    <div class="row" style="margin:10px 0">
-      <audio id="player" controls preload="none" class="player" style="width:100%"></audio>
+    <!-- Oscilloscope -->
+    <canvas id="scope" width="1100" height="170"></canvas>
+
+    <!-- Player -->
+    <div class="row" style="margin:10px 0 6px">
+      <audio id="player" controls preload="none" style="flex:1 1 auto"></audio>
+      <div class="small">Now Playing: <b id="nowplaying">—</b></div>
     </div>
-    <div id="grid"></div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <button id="btnBack" class="btn">Back</button>
+      <button id="btnPrev" class="btn">◀ Prev</button>
+      <button id="btnNext" class="btn">Next ▶</button>
+      <div class="crumbs" id="crumbs"></div>
+    </div>
+
+    <!-- Library Grid -->
+    <div id="grid" class="grid"></div>
   </div>
-  <script src="/js/oscilloscope.js"></script>
-  <script src="/js/library_autoload.js"></script>
+
+  <!-- Oscilloscope (player -> analyser -> canvas) -->
+  <script>
+  (function(){
+    const cvs = document.getElementById('scope');
+    const player = document.getElementById('player');
+    if (!cvs || !player || !cvs.getContext) return;
+    const g = cvs.getContext('2d');
+
+    let ac, analyser, src, raf;
+    function setup(){
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      analyser = analyser || ac.createAnalyser();
+      analyser.fftSize = 2048;
+      try{
+        if (!src) src = ac.createMediaElementSource(player);
+        src.connect(analyser);
+        analyser.connect(ac.destination);
+      }catch(e){
+        // Already connected (ignore)
+      }
+    }
+    async function arm(){
+      setup();
+      if (ac.state === 'suspended') {
+        try { await ac.resume(); } catch(_){}
+      }
+    }
+    function loop(){
+      const W=cvs.width, H=cvs.height, buf=new Uint8Array(2048);
+      (function draw(){
+        raf = requestAnimationFrame(draw);
+        if (!analyser) return;
+        analyser.getByteTimeDomainData(buf);
+        g.fillStyle='#05070a'; g.fillRect(0,0,W,H);
+        g.beginPath(); g.strokeStyle='#26b3ff'; g.lineWidth=2;
+        const step=W/buf.length;
+        for(let i=0;i<buf.length;i++){
+          const x=i*step, y=(buf[i]/255)*H;
+          i? g.lineTo(x,y) : g.moveTo(x,y);
+        }
+        g.stroke();
+      })();
+    }
+    player.addEventListener('play', ()=>{ arm(); cancelAnimationFrame(raf); loop(); });
+    player.addEventListener('pause', ()=> cancelAnimationFrame(raf));
+    player.addEventListener('ended', ()=> cancelAnimationFrame(raf));
+    document.addEventListener('click', arm, { once:true, capture:true });
+  })();
+  </script>
+
+  <!-- Supabase Library (folders + tracks + thumbnails) -->
+  <script>
+  (function(){
+    const PAGE = 12; // 한 화면 카드 수
+    const grid = document.getElementById('grid');
+    const btnBack = document.getElementById('btnBack');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+    const crumbs  = document.getElementById('crumbs');
+    const player  = document.getElementById('player');
+    const nowEl   = document.getElementById('nowplaying');
+
+    // Supabase client
+    const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
+    const BUCKET = window.SUPABASE_BUCKET || 'media';
+    const PUBLIC_BASE = (window.SUPABASE_PUBLIC_BASE||'').replace(/\/+$/,'');
+    const bust = window.CACHE_BUST ? ('?t=' + Date.now()) : '';
+
+    // State
+    let cwd = ''; // '' = root
+    let folders = [];
+    let files   = [];
+    let page = 0;
+    const stack = [];
+
+    // helpers
+    const enc = p => p.split('/').filter(Boolean).map(encodeURIComponent).join('/');
+    const el  = html => { const d=document.createElement('div'); d.innerHTML=html.trim(); return d.firstChild; };
+
+    function ciPicker(names){
+      const map = new Map(names.map(n=>[n.toLowerCase(), n]));
+      return (base, exts) => {
+        for(const ext of exts){
+          const real = map.get((base + '.' + ext).toLowerCase());
+          if (real) return real;
+        }
+        return null;
+      };
+    }
+
+    async function list(prefix=''){
+      const { data, error } = await sb.storage.from(BUCKET).list(prefix, {
+        limit:1000, sortBy:{ column:'name', order:'asc' }
+      });
+      if (error) throw error;
+      return data || [];
+    }
+
+    function drawCrumbs(){
+      const parts = cwd ? cwd.split('/') : [];
+      let acc = '';
+      const segs = ['<a href="#" data-path="">media</a>'];
+      for(const p of parts){
+        acc = acc ? acc + '/' + p : p;
+        segs.push(`<a href="#" data-path="${acc}">${p}</a>`);
+      }
+      crumbs.innerHTML = segs.join(' / ');
+      crumbs.querySelectorAll('a').forEach(a=>a.addEventListener('click', e=>{
+        e.preventDefault();
+        const p = a.getAttribute('data-path') || '';
+        cwd = p; page = 0; render();
+      }));
+    }
+
+    async function build(prefix=''){
+      const entries = await list(prefix);
+      const names = entries.map(e=>e.name);
+      const pick = ciPicker(names);
+
+      const folderThumb = pick('folder', ['png','jpg','jpeg','webp','gif']);
+
+      const fds = [], fls = [];
+      for(const e of entries){
+        const isFolder = !/\./.test(e.name);
+        const full = (prefix ? prefix + '/' : '') + e.name;
+        if (isFolder){
+          const thumb = folderThumb ? `${PUBLIC_BASE}/${enc(prefix + '/' + folderThumb)}${bust}` : '';
+          fds.push({ name:e.name, path:full, thumb });
+        }else if (/\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(e.name)){
+          const base = e.name.replace(/\.[^.]+$/,'');
+          const tThumb = pick(base, ['png','jpg','jpeg','webp','gif']);
+          const url = `${PUBLIC_BASE}/${enc(full)}${bust}`;
+          const thumb = tThumb
+            ? `${PUBLIC_BASE}/${enc(prefix + '/' + tThumb)}${bust}`
+            : (folderThumb ? `${PUBLIC_BASE}/${enc(prefix + '/' + folderThumb)}${bust}` : '');
+          fls.push({ name:e.name, path:full, url, thumb, base });
+        }
+      }
+      fds.sort((a,b)=>a.name.localeCompare(b.name));
+      fls.sort((a,b)=>a.name.localeCompare(b.name));
+      return { folders:fds, files:fls };
+    }
+
+    function renderPage(){
+      grid.innerHTML = '';
+      const all = [...folders.map(f=>({type:'folder', ...f})), ...files.map(f=>({type:'file', ...f}))];
+      const totalPages = Math.max(1, Math.ceil(all.length / PAGE));
+      if (page > totalPages - 1) page = totalPages-1;
+      const start = page * PAGE;
+      const slice = all.slice(start, start + PAGE);
+
+      slice.forEach(item => {
+        const node = el(`
+          <div class="card">
+            <span class="thumb" ${item.thumb?`style="background-image:url('${item.thumb}')"`:''}></span>
+            <div class="title">${item.type==='file'? item.base : item.name}</div>
+            ${item.type==='file' ? `<div style="margin-top:8px"><button class="btn">▶ Play</button></div>` : ''}
+          </div>
+        `);
+        node.addEventListener('click', (ev)=>{
+          if (item.type==='folder'){
+            stack.push(cwd);
+            cwd = item.path;
+            page = 0;
+            render();
+          }
+        });
+        if (item.type==='file'){
+          node.querySelector('button').addEventListener('click', async (ev)=>{
+            ev.stopPropagation();
+            if (player.src !== item.url) player.src = item.url;
+            player.load();
+            try{ await player.play(); }catch(_){}
+            if (nowEl) nowEl.textContent = item.base;
+          });
+        }
+        grid.appendChild(node);
+      });
+
+      btnPrev.disabled = page <= 0;
+      btnNext.disabled = page >= totalPages - 1 || totalPages === 0;
+    }
+
+    async function render(){
+      drawCrumbs();
+      const data = await build(cwd);
+      folders = data.folders;
+      files   = data.files;
+      renderPage();
+    }
+
+    btnBack.addEventListener('click', ()=>{
+      if (!stack.length) return;
+      cwd = stack.pop();
+      page = 0;
+      render();
+    });
+    btnPrev.addEventListener('click', ()=>{ if(page>0){ page--; renderPage(); } });
+    btnNext.addEventListener('click', ()=>{ page++; renderPage(); });
+
+    // start
+    if (!window.supabase){ console.error('Supabase SDK not loaded'); return; }
+    render();
+  })();
+  </script>
 </body>
 </html>
