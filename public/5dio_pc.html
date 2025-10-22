@@ -1,90 +1,124 @@
-<!DOCTYPE html>
-<html lang="ko">
+<!doctype html>
+<html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>5DIO PC — Single File (Supabase + Oscilloscope)</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>5DIO Desktop</title>
 
-  <style>
-    :root{--bg:#0b0b0b;--fg:#eaeaea;--muted:#a9b4bf;--panel:#111417;--line:#20242a;--accent:#26b3ff}
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,sans-serif}
-    header{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:10}
-    header .brand{font-weight:700}
-    .container{max-width:1120px;margin:0 auto;padding:14px}
-    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    .btn{background:#1a1f24;border:1px solid var(--line);padding:8px 12px;border-radius:10px;color:#fff;cursor:pointer}
-    .btn:disabled{opacity:.45;cursor:default}
-    #scope{width:100%;height:170px;background:#05070a;border:1px solid var(--line);border-radius:10px}
-    .small{font-size:12px;color:var(--muted)}
-    .toolbar{display:flex;gap:8px;align-items:center;margin:10px 0}
-    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
-    .card{background:#0f1317;border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
-    .thumb{width:100%;aspect-ratio:1/1;border-radius:8px;background:#0a0f13;display:block;background-size:cover;background-position:center}
-    .title{margin-top:6px;font-size:12px;color:#d9e1ea;word-break:break-word}
-    .crumbs{font-size:13px;color:var(--muted);margin-top:8px}
-    .crumbs a{color:#bcdcff;text-decoration:none}
-    .crumbs a:hover{text-decoration:underline}
-  </style>
+<!-- ✅ Supabase SDK (로드 보장) -->
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
 
-  <!-- Supabase SDK -->
-  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
-  <!-- PUBLIC config (replace only if your project changes) -->
-  <script>
-window.USE_SUPABASE = true;
-window.SUPABASE_URL   = "https://xdjgumqdwedgzwqturcx.supabase.co";
-window.SUPABASE_KEY   = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
-window.SUPABASE_BUCKET = "media";
-window.SUPABASE_PUBLIC_BASE =
-  window.SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/object/public/" + window.SUPABASE_BUCKET;
-window.CACHE_BUST = true;  // 필요 없으면 false
-</script>
-</head>
+<!-- ✅ 공개 설정 (필요시 수정) -->
 <script>
-// === 5DIO Library Access Module (Supabase-only; UI unchanged) ===
-(function(){
-  // 기존 UI 엘리먼트 (그대로 사용)
-  const rail    = document.getElementById('libRail');
-  const prevBtn = document.getElementById('libPrev');
-  const nextBtn = document.getElementById('libNext');
-  const audio   = document.getElementById('audio') || document.getElementById('player');
+window.USE_SUPABASE = true;
+window.SUPABASE_URL   = window.SUPABASE_URL  || "https://xdjgumqdwedgzwqturcx.supabase.co";
+window.SUPABASE_KEY   = window.SUPABASE_KEY  || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
+window.SUPABASE_BUCKET = window.SUPABASE_BUCKET || "media";
+window.SUPABASE_PUBLIC_BASE =
+  (window.SUPABASE_PUBLIC_BASE ||
+   (window.SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/object/public/" + window.SUPABASE_BUCKET));
+window.CACHE_BUST = (window.CACHE_BUST ?? true);
+</script>
 
-  if (!rail || !prevBtn || !nextBtn || !audio) {
+<!-- (선택) 기본 스타일 유지용 – 당신의 기존 CSS가 있다면 그대로 두세요 -->
+<style>
+  body{background:#111;color:#ddd;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+  .library-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:12px 0}
+  .tcard{background:#1b1f26;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.25);padding:8px;cursor:pointer}
+  .tcard .thumb{width:100%;aspect-ratio:1;border-radius:8px;background:#222}
+  .tcard .t{margin-top:8px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .nav-btn{margin:0 4px;padding:6px 10px;border-radius:8px;border:0;background:#2a2f3a;color:#ddd}
+  .t.small{opacity:.75}
+</style>
+</head>
+<body>
+
+<!-- ✅ 당신의 기존 UI를 여기에 그대로 두세요.
+     (이 샘플은 라이브러리 부분만 최소로 포함합니다) -->
+<section class="card" style="padding:12px;margin:12px;border-radius:10px;background:#141922;box-shadow:0 1px 6px rgba(0,0,0,.2)">
+  <h3 style="margin:4px 0 10px;font-weight:600">Library</h3>
+  <div class="library-controls">
+    <button id="libPrev" class="nav-btn">◀</button>
+    <button id="libNext" class="nav-btn">▶</button>
+  </div>
+  <div id="libRail" class="library-grid"></div>
+</section>
+
+<!-- ✅ 플레이어(당신의 기존 플레이어가 있다면 그 태그에 id="audio"만 부여) -->
+<div style="padding:12px;margin:12px;border-radius:10px;background:#141922;box-shadow:0 1px 6px rgba(0,0,0,.2)">
+  <audio id="audio" controls preload="none" style="width:100%"></audio>
+</div>
+
+<!-- ✅ 드롭-인 라이브러리 모듈 (UI 변경 없음) -->
+<script>
+(async () => {
+  // 1) Supabase SDK 보장
+  async function ensureSupabase() {
+    if (window.supabase && typeof window.supabase.createClient === 'function') return;
+    await new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js";
+      s.defer = true;
+      s.onload = resolve;
+      s.onerror = () => reject(new Error('Supabase SDK load failed'));
+      document.head.appendChild(s);
+    });
+  }
+  try { await ensureSupabase(); } catch(e){ console.warn('[5DIO] SDK load error:', e); return; }
+
+  // 2) 필수 id 체크 (이미 샘플에 포함되어 있음 – 기존 UI라면 자동 부여 로직 추가 가능)
+  function ensureIds() {
+    let audio = document.getElementById('audio') || document.getElementById('player') || document.querySelector('audio');
+    if (audio && !audio.id) audio.id = 'audio';
+    if (!document.getElementById('libRail')) {
+      const rail = document.createElement('div');
+      rail.id = 'libRail';
+      rail.className = 'library-grid';
+      (document.querySelector('.card')||document.body).appendChild(rail);
+    }
+    if (!document.getElementById('libPrev')) {
+      const b=document.createElement('button'); b.id='libPrev'; b.textContent='◀'; b.className='nav-btn';
+      (document.querySelector('.library-controls')||document.body).appendChild(b);
+    }
+    if (!document.getElementById('libNext')) {
+      const b=document.createElement('button'); b.id='libNext'; b.textContent='▶'; b.className='nav-btn';
+      (document.querySelector('.library-controls')||document.body).appendChild(b);
+    }
+    return {
+      audio: document.getElementById('audio'),
+      rail : document.getElementById('libRail'),
+      prev : document.getElementById('libPrev'),
+      next : document.getElementById('libNext'),
+    };
+  }
+
+  const need = ensureIds();
+  if (!need.audio || !need.rail || !need.prev || !need.next) {
     console.warn('[5DIO] Missing required UI elements (libRail/libPrev/libNext/audio).');
     return;
   }
-  if (!window.supabase || !window.SUPABASE_URL || !window.SUPABASE_KEY) {
-    console.warn('[5DIO] Supabase SDK/config missing.');
-    return;
-  }
 
-  // 설정
+  // 3) 라이브러리 모듈
   const BUCKET      = window.SUPABASE_BUCKET || 'media';
   const PUBLIC_BASE = (window.SUPABASE_PUBLIC_BASE ||
     (window.SUPABASE_URL.replace(/\/+$/,'') + '/storage/v1/object/public/' + BUCKET)
   ).replace(/\/+$/,'');
   const CACHE_BUST  = !!window.CACHE_BUST;
-
-  // Supabase client
   const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
 
-  // 상태
-  const PAGE = 3;     // 기존 UI 페이징 폭 유지
-  let cwd = '';       // '' = 버킷 root (카테고리 폴더들이 위치)
+  const PAGE = 3;
+  let cwd = ''; // root
   let folders = [];
   let files   = [];
   let page    = 0;
-  const stack = [];
 
-  // 도우미
   const enc = p => p.split('/').filter(Boolean).map(encodeURIComponent).join('/');
   const isAudio = name => /\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(name);
   function ciPicker(names){
     const map = new Map(names.map(n=>[n.toLowerCase(), n]));
     return (base, exts) => { for (const ext of exts){
-      const real = map.get((base + '.' + ext).toLowerCase());
-      if (real) return real;
+      const hit = map.get((base + '.' + ext).toLowerCase());
+      if (hit) return hit;
     } return null; };
   }
 
@@ -96,12 +130,10 @@ window.CACHE_BUST = true;  // 필요 없으면 false
     return data || [];
   }
 
-  // 폴더: folder.png(대소문자 무시), 트랙: <베이스명>.(png|jpg...) 우선
   async function readFolder(prefix=''){
     const entries = await list(prefix);
     const names   = entries.map(e=>e.name);
     const pick    = ciPicker(names);
-
     const folderThumb = pick('folder', ['png','jpg','jpeg','webp','gif']);
 
     const outFolders = [];
@@ -109,7 +141,7 @@ window.CACHE_BUST = true;  // 필요 없으면 false
 
     for (const e of entries){
       const name = e.name;
-      const isFolder = !/\./.test(name);  // 점이 없으면 폴더
+      const isFolder = !/\./.test(name);
       const full = (prefix ? prefix + '/' : '') + name;
 
       if (isFolder){
@@ -132,11 +164,12 @@ window.CACHE_BUST = true;  // 필요 없으면 false
     return { folders: outFolders, files: outFiles };
   }
 
-  function renderPage(){
+  function renderPage(folders, files){
+    const rail = document.getElementById('libRail');
     rail.innerHTML = '';
+
     const all = [...folders.map(f=>({type:'folder', ...f})),
                  ...files.map(f=>({type:'file',   ...f}))];
-
     const totalPages = Math.max(1, Math.ceil(all.length / PAGE));
     if (page > totalPages-1) page = totalPages-1;
     const start = page * PAGE;
@@ -158,11 +191,9 @@ window.CACHE_BUST = true;  // 필요 없으면 false
 
       card.addEventListener('click', async () => {
         if (item.type === 'folder'){
-          stack.push(cwd);
-          cwd = item.path;
-          page = 0;
-          await render();
+          cwd = item.path; page = 0; await render();
         } else {
+          const audio = document.getElementById('audio');
           if (audio.src !== item.url) audio.src = item.url;
           audio.load();
           try { await audio.play(); } catch(e) {}
@@ -172,263 +203,33 @@ window.CACHE_BUST = true;  // 필요 없으면 false
       rail.appendChild(card);
     });
 
-    prevBtn.disabled = page <= 0;
-    nextBtn.disabled = page >= (Math.ceil((folders.length + files.length)/PAGE) - 1);
+    const prev = document.getElementById('libPrev');
+    const next = document.getElementById('libNext');
+    if (prev) prev.disabled = page <= 0;
+    if (next) next.disabled = page >= (Math.ceil((folders.length + files.length)/PAGE) - 1);
   }
 
   async function render(){
     try{
-      const data = await readFolder(cwd);
-      folders = data.folders;
-      files   = data.files;
-      renderPage();
+      const {folders, files} = await readFolder(cwd);
+      renderPage(folders, files);
+      // 내비게이션 핸들러(한 번만 연결)
+      if (!render._bound){
+        document.getElementById('libPrev').addEventListener('click', ()=>{ if (page>0){ page--; render(); }});
+        document.getElementById('libNext').addEventListener('click', ()=>{ page++; render(); });
+        render._bound = true;
+      }
     }catch(err){
+      const rail = document.getElementById('libRail');
       rail.innerHTML = '<div class="t small">Failed to load library</div>';
       console.warn('[5DIO] Library error:', err);
     }
   }
 
-  // 기존 버튼들 그대로 재사용
-  prevBtn.addEventListener('click', ()=>{ if (page>0){ page--; renderPage(); }});
-  nextBtn.addEventListener('click', ()=>{ page++; renderPage(); });
-  const backBtn = document.getElementById('libBackBtn') || document.getElementById('btnBack');
-  if (backBtn) backBtn.addEventListener('click', ()=>{ if(!stack.length) return; cwd = stack.pop(); page = 0; render(); });
-
+  // 시작
   render();
 })();
 </script>
-  <body>
-  <header>
-    <div class="brand">5DIO</div>
-    <div class="small">Single-file build · Supabase Media + Oscilloscope</div>
-  </header>
 
-  <div class="container">
-    <!-- Oscilloscope -->
-    <canvas id="scope" width="1100" height="170"></canvas>
-
-    <!-- Player -->
-    <div class="row" style="margin:10px 0 6px">
-      <audio id="player" controls preload="none" style="flex:1 1 auto"></audio>
-      <div class="small">Now Playing: <b id="nowplaying">—</b></div>
-    </div>
-
-    <!-- Toolbar -->
-    <div class="toolbar">
-      <button id="btnBack" class="btn">Back</button>
-      <button id="btnPrev" class="btn">◀ Prev</button>
-      <button id="btnNext" class="btn">Next ▶</button>
-      <div class="crumbs" id="crumbs"></div>
-    </div>
-
-    <!-- Library Grid -->
-    <div id="grid" class="grid"></div>
-  </div>
-
-  <!-- Oscilloscope (player -> analyser -> canvas) -->
-  <script>
-  (function(){
-    const cvs = document.getElementById('scope');
-    const player = document.getElementById('player');
-    if (!cvs || !player || !cvs.getContext) return;
-    const g = cvs.getContext('2d');
-
-    let ac, analyser, src, raf;
-    function setup(){
-      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
-      analyser = analyser || ac.createAnalyser();
-      analyser.fftSize = 2048;
-      try{
-        if (!src) src = ac.createMediaElementSource(player);
-        src.connect(analyser);
-        analyser.connect(ac.destination);
-      }catch(e){
-        // Already connected (ignore)
-      }
-    }
-    async function arm(){
-      setup();
-      if (ac.state === 'suspended') {
-        try { await ac.resume(); } catch(_){}
-      }
-    }
-    function loop(){
-      const W=cvs.width, H=cvs.height, buf=new Uint8Array(2048);
-      (function draw(){
-        raf = requestAnimationFrame(draw);
-        if (!analyser) return;
-        analyser.getByteTimeDomainData(buf);
-        g.fillStyle='#05070a'; g.fillRect(0,0,W,H);
-        g.beginPath(); g.strokeStyle='#26b3ff'; g.lineWidth=2;
-        const step=W/buf.length;
-        for(let i=0;i<buf.length;i++){
-          const x=i*step, y=(buf[i]/255)*H;
-          i? g.lineTo(x,y) : g.moveTo(x,y);
-        }
-        g.stroke();
-      })();
-    }
-    player.addEventListener('play', ()=>{ arm(); cancelAnimationFrame(raf); loop(); });
-    player.addEventListener('pause', ()=> cancelAnimationFrame(raf));
-    player.addEventListener('ended', ()=> cancelAnimationFrame(raf));
-    document.addEventListener('click', arm, { once:true, capture:true });
-  })();
-  </script>
-
-  <!-- Supabase Library (folders + tracks + thumbnails) -->
-  <script>
-  (function(){
-    const PAGE = 12; // 한 화면 카드 수
-    const grid = document.getElementById('grid');
-    const btnBack = document.getElementById('btnBack');
-    const btnPrev = document.getElementById('btnPrev');
-    const btnNext = document.getElementById('btnNext');
-    const crumbs  = document.getElementById('crumbs');
-    const player  = document.getElementById('player');
-    const nowEl   = document.getElementById('nowplaying');
-
-    // Supabase client
-    const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
-    const BUCKET = window.SUPABASE_BUCKET || 'media';
-    const PUBLIC_BASE = (window.SUPABASE_PUBLIC_BASE||'').replace(/\/+$/,'');
-    const bust = window.CACHE_BUST ? ('?t=' + Date.now()) : '';
-
-    // State
-    let cwd = ''; // '' = root
-    let folders = [];
-    let files   = [];
-    let page = 0;
-    const stack = [];
-
-    // helpers
-    const enc = p => p.split('/').filter(Boolean).map(encodeURIComponent).join('/');
-    const el  = html => { const d=document.createElement('div'); d.innerHTML=html.trim(); return d.firstChild; };
-
-    function ciPicker(names){
-      const map = new Map(names.map(n=>[n.toLowerCase(), n]));
-      return (base, exts) => {
-        for(const ext of exts){
-          const real = map.get((base + '.' + ext).toLowerCase());
-          if (real) return real;
-        }
-        return null;
-      };
-    }
-
-    async function list(prefix=''){
-      const { data, error } = await sb.storage.from(BUCKET).list(prefix, {
-        limit:1000, sortBy:{ column:'name', order:'asc' }
-      });
-      if (error) throw error;
-      return data || [];
-    }
-
-    function drawCrumbs(){
-      const parts = cwd ? cwd.split('/') : [];
-      let acc = '';
-      const segs = ['<a href="#" data-path="">media</a>'];
-      for(const p of parts){
-        acc = acc ? acc + '/' + p : p;
-        segs.push(`<a href="#" data-path="${acc}">${p}</a>`);
-      }
-      crumbs.innerHTML = segs.join(' / ');
-      crumbs.querySelectorAll('a').forEach(a=>a.addEventListener('click', e=>{
-        e.preventDefault();
-        const p = a.getAttribute('data-path') || '';
-        cwd = p; page = 0; render();
-      }));
-    }
-
-    async function build(prefix=''){
-      const entries = await list(prefix);
-      const names = entries.map(e=>e.name);
-      const pick = ciPicker(names);
-
-      const folderThumb = pick('folder', ['png','jpg','jpeg','webp','gif']);
-
-      const fds = [], fls = [];
-      for(const e of entries){
-        const isFolder = !/\./.test(e.name);
-        const full = (prefix ? prefix + '/' : '') + e.name;
-        if (isFolder){
-          const thumb = folderThumb ? `${PUBLIC_BASE}/${enc(prefix + '/' + folderThumb)}${bust}` : '';
-          fds.push({ name:e.name, path:full, thumb });
-        }else if (/\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(e.name)){
-          const base = e.name.replace(/\.[^.]+$/,'');
-          const tThumb = pick(base, ['png','jpg','jpeg','webp','gif']);
-          const url = `${PUBLIC_BASE}/${enc(full)}${bust}`;
-          const thumb = tThumb
-            ? `${PUBLIC_BASE}/${enc(prefix + '/' + tThumb)}${bust}`
-            : (folderThumb ? `${PUBLIC_BASE}/${enc(prefix + '/' + folderThumb)}${bust}` : '');
-          fls.push({ name:e.name, path:full, url, thumb, base });
-        }
-      }
-      fds.sort((a,b)=>a.name.localeCompare(b.name));
-      fls.sort((a,b)=>a.name.localeCompare(b.name));
-      return { folders:fds, files:fls };
-    }
-
-    function renderPage(){
-      grid.innerHTML = '';
-      const all = [...folders.map(f=>({type:'folder', ...f})), ...files.map(f=>({type:'file', ...f}))];
-      const totalPages = Math.max(1, Math.ceil(all.length / PAGE));
-      if (page > totalPages - 1) page = totalPages-1;
-      const start = page * PAGE;
-      const slice = all.slice(start, start + PAGE);
-
-      slice.forEach(item => {
-        const node = el(`
-          <div class="card">
-            <span class="thumb" ${item.thumb?`style="background-image:url('${item.thumb}')"`:''}></span>
-            <div class="title">${item.type==='file'? item.base : item.name}</div>
-            ${item.type==='file' ? `<div style="margin-top:8px"><button class="btn">▶ Play</button></div>` : ''}
-          </div>
-        `);
-        node.addEventListener('click', (ev)=>{
-          if (item.type==='folder'){
-            stack.push(cwd);
-            cwd = item.path;
-            page = 0;
-            render();
-          }
-        });
-        if (item.type==='file'){
-          node.querySelector('button').addEventListener('click', async (ev)=>{
-            ev.stopPropagation();
-            if (player.src !== item.url) player.src = item.url;
-            player.load();
-            try{ await player.play(); }catch(_){}
-            if (nowEl) nowEl.textContent = item.base;
-          });
-        }
-        grid.appendChild(node);
-      });
-
-      btnPrev.disabled = page <= 0;
-      btnNext.disabled = page >= totalPages - 1 || totalPages === 0;
-    }
-
-    async function render(){
-      drawCrumbs();
-      const data = await build(cwd);
-      folders = data.folders;
-      files   = data.files;
-      renderPage();
-    }
-
-    btnBack.addEventListener('click', ()=>{
-      if (!stack.length) return;
-      cwd = stack.pop();
-      page = 0;
-      render();
-    });
-    btnPrev.addEventListener('click', ()=>{ if(page>0){ page--; renderPage(); } });
-    btnNext.addEventListener('click', ()=>{ page++; renderPage(); });
-
-    // start
-    if (!window.supabase){ console.error('Supabase SDK not loaded'); return; }
-    render();
-  })();
-  </script>
 </body>
 </html>
