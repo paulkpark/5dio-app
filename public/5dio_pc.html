@@ -220,7 +220,7 @@ if (window.USE_SUPABASE && window.SUPABASE_PUBLIC_BASE) {
     try { Object.defineProperty(window, k, { configurable:false, writable:false }); } catch(e){}
 }
 })();
-)
+
 </script>
 <link rel="icon" href="data:,">
 <!-- REAL Supabase config + overwrite guard -->
@@ -237,7 +237,7 @@ if (window.USE_SUPABASE && window.SUPABASE_PUBLIC_BASE) {
     try { Object.defineProperty(window, k, { configurable:false, writable:false }); } catch(e){}
 }
 })();
-)
+
 </script>
 
 <script>
@@ -247,7 +247,7 @@ if (window.USE_SUPABASE && window.SUPABASE_PUBLIC_BASE) {
   
   
   
-  window.USE_SUPABASE = true;
+  
 })();
 </script>
 <style id="scope-hide-buttons">
@@ -256,13 +256,24 @@ button#scopeMode, button#scopeFreeze,
 button[data-role="both"], button[data-role="freeze"],
 .scope-ctrl .btn:nth-child(1), .scope-ctrl .btn:nth-child(2) { display:none !important; }
 </style>
+
+<script>
+(function(){
+  
+  
+  
+  
+})();
+</script>
 <script src="https://unpkg.com/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
 <script>
 (function(){
   window.SUPABASE_URL  = "https://xdjgumqdwedgzwqturcx.supabase.co";
   window.SUPABASE_KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
   window.SUPABASE_BUCKET = "media";
-  window.SUPABASE_PUBLIC_BASE = window.SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/object/public/" + window.SUPABASE_BUCKET;
+  window.SUPABASE_PUBLIC_BASE =
+      window.SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/object/public/" + window.SUPABASE_BUCKET;
+  window.USE_SUPABASE = true;
 })();
 </script>
 </head>
@@ -947,7 +958,7 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
     UI.balance && UI.balance.addEventListener(ev, ()=>{ if (state==='playing') applyDesired(desired()); });
 }
 })();
-)
+
 </script>
 
 
@@ -1591,7 +1602,7 @@ label[for="volume"],
   // initial load
   fetchAndRender('');
 })();
-)
+
 </script>
 
 <script>
@@ -2522,5 +2533,76 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 </script>
 
+<!-- Oscilloscope + Supabase library render -->
+<script>
+(function(){
+  // ====== Oscilloscope ======
+  const scope = document.getElementById('scope');
+  let ctx=null, analyser=null, mediaNode=null;
+  function getCtx(){ return ctx || (ctx = new (window.AudioContext||window.webkitAudioContext)()); }
+  function wire(){
+    const c=getCtx();
+    if(!analyser){ analyser=c.createAnalyser(); analyser.fftSize=2048; }
+    let connected=false;
+    if (window.__genGain && window.__genGain.connect){ try{ window.__genGain.connect(analyser); connected=true; }catch(e){} }
+    const audio=document.getElementById('player')||document.getElementById('audio');
+    if(!connected && audio){
+      try{ if(!mediaNode) mediaNode=c.createMediaElementSource(audio); }catch(e){}
+      try{ if(mediaNode){ mediaNode.connect(analyser); connected=true; } }catch(e){}
+    }
+  }
+  function draw(){
+    if(!scope) return;
+    const g=scope.getContext('2d'); const W=scope.width,H=scope.height;
+    const c=getCtx(); if (c.state==='suspended'){ requestAnimationFrame(draw); return; }
+    wire();
+    const buf=new Uint8Array(analyser.fftSize);
+    (function loop(){
+      analyser.getByteTimeDomainData(buf);
+      g.clearRect(0,0,W,H); g.beginPath();
+      const step=W/buf.length;
+      for(let i=0;i<buf.length;i++){ const x=i*step; const y=(buf[i]/128)*H/2; i?g.lineTo(x,y):g.moveTo(x,y); }
+      g.stroke(); requestAnimationFrame(loop);
+    })();
+  }
+  document.addEventListener('click', async ()=>{ const c=getCtx(); if(c.state==='suspended') try{ await c.resume(); }catch(e){} }, {once:true, capture:true});
+  draw();
+
+  // ====== Supabase Library Render ======
+  (async function(){
+    try{
+      if(!window.supabase){ console.warn('supabase sdk missing'); return; }
+      const url=window.SUPABASE_URL, key=window.SUPABASE_KEY, bucket=window.SUPABASE_BUCKET||'media';
+      if(!url||!key){ console.warn('supabase config missing'); return; }
+      const sb=(window.sb)||(window.sb=window.supabase.createClient(url,key));
+      const base=(window.SUPABASE_PUBLIC_BASE|| (url.replace(/\/+$/,'')+'/storage/v1/object/public/'+bucket)).replace(/\/+$/,'');
+      const enc=p=>p.split('/').map(encodeURIComponent).join('/');
+      const prefix='Brainwave_States';
+      const {data,error}=await sb.storage.from(bucket).list(prefix,{limit:1000,sortBy:{column:'name',order:'asc'}});
+      if(error){ console.warn(error); return; }
+      const names=(data||[]).map(d=>d.name);
+      const grid=document.getElementById('grid'); if(!grid) return;
+      grid.innerHTML='';
+      const folderThumb=(function(){
+        const ex=['png','jpg','jpeg','webp'];
+        for(const e of ex){ const n='folder.'+e; if(names.find(a=>a.toLowerCase()===n)) return `${base}/${enc(prefix+'/'+n)}`; }
+        return null;
+      })();
+      (data||[]).forEach(e=>{
+        const full=prefix+'/'+e.name;
+        if(!/\./.test(e.name)){
+          grid.insertAdjacentHTML('beforeend', `<div style="display:inline-block;width:160px;margin:8px;text-align:center"><img src="${folderThumb||''}" style="width:140px;height:140px;object-fit:cover;border-radius:10px;background:#111"/><div style="margin-top:6px;color:#ddd">${e.name}</div></div>`);
+        }else if(/\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(e.name)){
+          const baseName=e.name.replace(/\.[^.]+$/,'');
+          let t=null;
+          const cand=names.find(n=>n.toLowerCase()===(baseName+'.png').toLowerCase()) || names.find(n=>n.toLowerCase()===(baseName+'.jpg').toLowerCase());
+          if(cand) t = `${base}/${enc(prefix+'/'+cand)}`; else if(folderThumb) t=folderThumb;
+          grid.insertAdjacentHTML('beforeend', `<div style="display:inline-block;width:160px;margin:8px;text-align:center"><img src="${t||''}" style="width:140px;height:140px;object-fit:cover;border-radius:10px;background:#111"/><div style="margin-top:6px;color:#ddd">${e.name}</div></div>`);
+        }
+      });
+    }catch(e){ console.error(e); }
+  })();
+})();
+</script>
 </body>
 </html>
