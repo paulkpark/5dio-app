@@ -30,18 +30,174 @@
 
   <!-- Supabase SDK -->
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
-
   <!-- PUBLIC config (replace only if your project changes) -->
   <script>
-  window.SUPABASE_URL   = "https://xdjgumqdwedgzwqturcx.supabase.co";
-  window.SUPABASE_KEY   = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
-  window.SUPABASE_BUCKET = "media";
-  window.SUPABASE_PUBLIC_BASE =
-    window.SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/object/public/" + window.SUPABASE_BUCKET;
-  window.CACHE_BUST = true;
-  </script>
+window.USE_SUPABASE = true;
+window.SUPABASE_URL   = "https://xdjgumqdwedgzwqturcx.supabase.co";
+window.SUPABASE_KEY   = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
+window.SUPABASE_BUCKET = "media";
+window.SUPABASE_PUBLIC_BASE =
+  window.SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/object/public/" + window.SUPABASE_BUCKET;
+window.CACHE_BUST = true;  // 필요 없으면 false
+</script>
 </head>
-<body>
+<script>
+// === 5DIO Library Access Module (Supabase-only; UI unchanged) ===
+(function(){
+  // 기존 UI 엘리먼트 (그대로 사용)
+  const rail    = document.getElementById('libRail');
+  const prevBtn = document.getElementById('libPrev');
+  const nextBtn = document.getElementById('libNext');
+  const audio   = document.getElementById('audio') || document.getElementById('player');
+
+  if (!rail || !prevBtn || !nextBtn || !audio) {
+    console.warn('[5DIO] Missing required UI elements (libRail/libPrev/libNext/audio).');
+    return;
+  }
+  if (!window.supabase || !window.SUPABASE_URL || !window.SUPABASE_KEY) {
+    console.warn('[5DIO] Supabase SDK/config missing.');
+    return;
+  }
+
+  // 설정
+  const BUCKET      = window.SUPABASE_BUCKET || 'media';
+  const PUBLIC_BASE = (window.SUPABASE_PUBLIC_BASE ||
+    (window.SUPABASE_URL.replace(/\/+$/,'') + '/storage/v1/object/public/' + BUCKET)
+  ).replace(/\/+$/,'');
+  const CACHE_BUST  = !!window.CACHE_BUST;
+
+  // Supabase client
+  const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
+
+  // 상태
+  const PAGE = 3;     // 기존 UI 페이징 폭 유지
+  let cwd = '';       // '' = 버킷 root (카테고리 폴더들이 위치)
+  let folders = [];
+  let files   = [];
+  let page    = 0;
+  const stack = [];
+
+  // 도우미
+  const enc = p => p.split('/').filter(Boolean).map(encodeURIComponent).join('/');
+  const isAudio = name => /\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(name);
+  function ciPicker(names){
+    const map = new Map(names.map(n=>[n.toLowerCase(), n]));
+    return (base, exts) => { for (const ext of exts){
+      const real = map.get((base + '.' + ext).toLowerCase());
+      if (real) return real;
+    } return null; };
+  }
+
+  async function list(prefix=''){
+    const { data, error } = await sb.storage.from(BUCKET).list(prefix, {
+      limit: 1000, sortBy: { column:'name', order:'asc' }
+    });
+    if (error) throw error;
+    return data || [];
+  }
+
+  // 폴더: folder.png(대소문자 무시), 트랙: <베이스명>.(png|jpg...) 우선
+  async function readFolder(prefix=''){
+    const entries = await list(prefix);
+    const names   = entries.map(e=>e.name);
+    const pick    = ciPicker(names);
+
+    const folderThumb = pick('folder', ['png','jpg','jpeg','webp','gif']);
+
+    const outFolders = [];
+    const outFiles   = [];
+
+    for (const e of entries){
+      const name = e.name;
+      const isFolder = !/\./.test(name);  // 점이 없으면 폴더
+      const full = (prefix ? prefix + '/' : '') + name;
+
+      if (isFolder){
+        const thumb = folderThumb
+          ? `${PUBLIC_BASE}/${enc(prefix + '/' + folderThumb)}${CACHE_BUST?('?t='+Date.now()):''}`
+          : '';
+        outFolders.push({ name, path: full, thumb });
+      } else if (isAudio(name)){
+        const base  = name.replace(/\.[^.]+$/,'');
+        const tThumb= pick(base, ['png','jpg','jpeg','webp','gif']);
+        const url   = `${PUBLIC_BASE}/${enc(full)}${CACHE_BUST?('?t='+Date.now()):''}`;
+        const thumb = tThumb
+          ? `${PUBLIC_BASE}/${enc(prefix + '/' + tThumb)}${CACHE_BUST?('?t='+Date.now()):''}`
+          : (folderThumb ? `${PUBLIC_BASE}/${enc(prefix + '/' + folderThumb)}${CACHE_BUST?('?t='+Date.now()):''}` : '');
+        outFiles.push({ name, base, url, thumb });
+      }
+    }
+    outFolders.sort((a,b)=>a.name.localeCompare(b.name));
+    outFiles.sort((a,b)=>a.name.localeCompare(b.name));
+    return { folders: outFolders, files: outFiles };
+  }
+
+  function renderPage(){
+    rail.innerHTML = '';
+    const all = [...folders.map(f=>({type:'folder', ...f})),
+                 ...files.map(f=>({type:'file',   ...f}))];
+
+    const totalPages = Math.max(1, Math.ceil(all.length / PAGE));
+    if (page > totalPages-1) page = totalPages-1;
+    const start = page * PAGE;
+    const slice = all.slice(start, start + PAGE);
+
+    slice.forEach(item => {
+      const card  = document.createElement('div'); card.className='tcard';
+      const img   = document.createElement('div'); img.className='thumb';
+      if (item.thumb) {
+        img.style.backgroundImage  = `url(${item.thumb})`;
+        img.style.backgroundSize   = 'cover';
+        img.style.backgroundPosition = 'center';
+      }
+      const title = document.createElement('div'); title.className='t';
+      title.textContent = item.type === 'file' ? item.base : item.name;
+
+      card.appendChild(img);
+      card.appendChild(title);
+
+      card.addEventListener('click', async () => {
+        if (item.type === 'folder'){
+          stack.push(cwd);
+          cwd = item.path;
+          page = 0;
+          await render();
+        } else {
+          if (audio.src !== item.url) audio.src = item.url;
+          audio.load();
+          try { await audio.play(); } catch(e) {}
+        }
+      });
+
+      rail.appendChild(card);
+    });
+
+    prevBtn.disabled = page <= 0;
+    nextBtn.disabled = page >= (Math.ceil((folders.length + files.length)/PAGE) - 1);
+  }
+
+  async function render(){
+    try{
+      const data = await readFolder(cwd);
+      folders = data.folders;
+      files   = data.files;
+      renderPage();
+    }catch(err){
+      rail.innerHTML = '<div class="t small">Failed to load library</div>';
+      console.warn('[5DIO] Library error:', err);
+    }
+  }
+
+  // 기존 버튼들 그대로 재사용
+  prevBtn.addEventListener('click', ()=>{ if (page>0){ page--; renderPage(); }});
+  nextBtn.addEventListener('click', ()=>{ page++; renderPage(); });
+  const backBtn = document.getElementById('libBackBtn') || document.getElementById('btnBack');
+  if (backBtn) backBtn.addEventListener('click', ()=>{ if(!stack.length) return; cwd = stack.pop(); page = 0; render(); });
+
+  render();
+})();
+</script>
+  <body>
   <header>
     <div class="brand">5DIO</div>
     <div class="small">Single-file build · Supabase Media + Oscilloscope</div>
