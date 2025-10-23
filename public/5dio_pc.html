@@ -63,31 +63,55 @@ window.CACHE_BUST_AUDIO = true;
 </main>
 
 <script>
-(function(){
-  if (!window.supabase) { console.warn('[5DIO] SDK not loaded'); return; }
+/* --- 1) SDK 로드 보장 --- */
+async function ensureSupabase() {
+  if (window.supabase && typeof window.supabase.createClient === 'function') return;
+  await new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js";
+    s.async = true;
+    s.onload = resolve;
+    s.onerror = () => reject(new Error('Supabase SDK load failed'));
+    document.head.appendChild(s);
+  });
+}
+
+/* --- 2) 라이브러리 모듈 --- */
+(async () => {
+  try { await ensureSupabase(); } catch(e){ console.warn('[5DIO] SDK load error:', e); return; }
+
   const BUCKET = window.SUPABASE_BUCKET || 'media';
-  const PUBLIC_BASE  = window.SUPABASE_PUBLIC_BASE.replace(/\/+$/,'');
-  const RENDER_BASE  = window.SUPABASE_RENDER_BASE.replace(/\/+$/,'') + '/';
+  const PUBLIC_BASE  = (window.SUPABASE_PUBLIC_BASE || (window.SUPABASE_URL.replace(/\/+$/,'') + '/storage/v1/object/public/' + BUCKET)).replace(/\/+$/,'');
+  const RENDER_BASE  = (window.SUPABASE_RENDER_BASE || (window.SUPABASE_URL.replace(/\/+$/,'') + '/storage/v1/render/image/public/' + BUCKET + '/')).replace(/\/+$/,'') + '/';
   const CACHE_BUST_AUDIO = !!window.CACHE_BUST_AUDIO;
+
   const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
 
-  const rail = document.getElementById('libRail');
-  const prevBtn = document.getElementById('libPrev');
-  const nextBtn = document.getElementById('libNext');
-  const backBtn = document.getElementById('libBackBtn');
-  const audio = document.getElementById('audio');
-  if (!rail||!prevBtn||!nextBtn||!audio){ console.warn('[5DIO] Missing UI elements'); return; }
+  // UI 요소 (당신의 기존 UI 그대로 사용)
+  const rail    = document.getElementById('libRail') || document.querySelector('[data-lib-rail]');
+  const prevBtn = document.getElementById('libPrev') || document.querySelector('[data-lib-prev]');
+  const nextBtn = document.getElementById('libNext') || document.querySelector('[data-lib-next]');
+  const backBtn = document.getElementById('libBackBtn') || document.getElementById('btnBack') || document.querySelector('[data-lib-back]');
+  const audio   = document.getElementById('audio') || document.getElementById('player') || document.querySelector('audio');
 
-  let cwd=''; let page=0; const PAGE=12; let folders=[], files=[];
+  if (!rail || !prevBtn || !nextBtn || !audio) {
+    console.warn('[5DIO] Missing required UI elements (libRail/libPrev/libNext/audio).');
+    return;
+  }
+
+  // 상태
+  let cwd = ''; let page = 0; const PAGE = 12; let folders = [], files = [];
   const enc = p => p.split('/').filter(Boolean).map(encodeURIComponent).join('/');
   const isAudio = n => /\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(n);
   const isImg   = n => /\.(png|jpg|jpeg|webp|gif)$/i.test(n);
 
+  // API
   async function list(prefix=''){
-    const { data, error } = await sb.storage.from(BUCKET).list(prefix, {limit:1000, sortBy:{column:'name',order:'asc'}});
+    const { data, error } = await sb.storage.from(BUCKET).list(prefix, { limit: 1000, sortBy:{ column:'name', order:'asc' }});
     if (error) throw error; return data||[];
   }
 
+  // 폴더 썸네일: folder.png 우선, 없으면 폴더 내 첫 이미지
   async function folderThumb(path){
     try{
       const children = await list(path);
@@ -107,20 +131,21 @@ window.CACHE_BUST_AUDIO = true;
       const name=e.name; const full=(prefix?prefix+'/':'')+name;
       const isFolder = !/\./.test(name);
       if (isFolder){
-        const thumb = await folderThumb(full);
-        outFolders.push({name, path:full, thumb});
-      }else if (isAudio(name)){
+        const thumb = await folderThumb(full);                   // ✅ 여기서 실제로 확인
+        outFolders.push({ name, path: full, thumb });
+      } else if (isAudio(name)){
         const base = name.replace(/\.[^.]+$/,'');
         const thumb = RENDER_BASE + enc(prefix + '/' + base + '.png') + '?width=360&quality=70&format=webp';
-        const url = `${PUBLIC_BASE}/${enc(full)}${CACHE_BUST_AUDIO?('?t='+Date.now()):''}`;
-        outFiles.push({name, base, url, thumb});
+        const url   = `${PUBLIC_BASE}/${enc(full)}${CACHE_BUST_AUDIO?('?t='+Date.now()):''}`;
+        outFiles.push({ name, base, url, thumb });
       }
     }
     outFolders.sort((a,b)=>a.name.localeCompare(b.name));
     outFiles.sort((a,b)=>a.name.localeCompare(b.name));
-    return {folders:outFolders, files:outFiles};
+    return { folders: outFolders, files: outFiles };
   }
 
+  // Lazy-load
   const io = 'IntersectionObserver' in window ? new IntersectionObserver(entries=>{
     entries.forEach(e=>{
       if (e.isIntersecting){
@@ -144,10 +169,12 @@ window.CACHE_BUST_AUDIO = true;
       if (item.thumb){ if (io){ img.setAttribute('data-src', item.thumb); io.observe(img); } else { img.style.backgroundImage=`url("${item.thumb}")`; } }
       const title=document.createElement('div'); title.className='t'; title.textContent=item.type==='file'?item.base:item.name;
       card.appendChild(img); card.appendChild(title);
+
       card.addEventListener('click', async ()=>{
         if (item.type==='folder'){ cwd=item.path; page=0; await render(); }
         else { if (audio.src!==item.url) audio.src=item.url; audio.load(); try{ await audio.play(); }catch(e){} }
       });
+
       rail.appendChild(card);
     });
 
@@ -166,9 +193,9 @@ window.CACHE_BUST_AUDIO = true;
     }
   }
 
-  prevBtn.addEventListener('click', ()=>{ if(page>0){page--; renderPage();}});
+  prevBtn.addEventListener('click', ()=>{ if(page>0){page--; renderPage();} });
   nextBtn.addEventListener('click', ()=>{ page++; renderPage(); });
-  backBtn.addEventListener('click', ()=>{ const seg=cwd.split('/'); if(seg.length){ seg.pop(); cwd=seg.join('/'); page=0; render(); }});
+  if (backBtn) backBtn.addEventListener('click', ()=>{ const seg=cwd.split('/'); if(seg.length){ seg.pop(); cwd=seg.join('/'); page=0; render(); }});
 
   render();
 })();
