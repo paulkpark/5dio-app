@@ -688,25 +688,10 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
 
 
 <script>
-<script>
-/** ===== Supabase Media Library (folder → tracks) =====
- * 요구사항
- *  - 카테고리 썸네일: 각 폴더의 folder.png
- *  - 트랙 썸네일: 같은 이름의 .png (예: Gamma_Expansion.mp3 ↔ Gamma_Expansion.png)
- *  - 버킷 구조(예시):
- *      media/
- *        Brainwave_States/
- *          folder.png
- *          Gamma_Expansion.mp3
- *          Gamma_Expansion.png
- *          Theta_Dreaming.mp3
- *          Theta_Dreaming.png
- *        Crystal_Frequencies/
- *          ...
- *        Nature_Resonance/
- *          ...
- *        Quantum_Torus_X/
- *          ...
+/** ===== Supabase Media Library (folder → tracks) v2 =====
+ * - 최상위: 카테고리 폴더 나열 (각 폴더의 folder.png 사용)
+ * - 하위: mp3 목록 + 동일이름 .png 썸네일 (예: X.mp3 ↔ X.png)
+ * - 빠른 썸네일: render endpoint(이미지 변환) 사용, 실패 시 public URL로 폴백
  */
 (function(){
   // 필수 DOM
@@ -715,161 +700,213 @@ function tick(){if(!freeze){drawGrid();if(mode!=='player'&&genAnalyser){genAnaly
   const next   = document.getElementById('libNext');
   const audio  = document.getElementById('audio');
 
+  // SDK 확인
   if (!window.supabase) {
     console.warn('[5DIO] SDK not loaded');
     return;
   }
 
-  // 클라이언트
-  const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
+  // 환경변수 (head에 이미 설정되어 있어야 함)
+  const SB_URL   = window.SUPABASE_URL;
+  const SB_KEY   = window.SUPABASE_KEY;
+  const BUCKET   = window.SUPABASE_BUCKET || 'media';
+  const PUBLIC   = (p) => `${window.SUPABASE_PUBLIC_BASE}${encodePath(p)}`;
+  const RENDER   = (p,w=360) => `${window.SUPABASE_RENDER_BASE}${encodePath(p)}?width=${w}&format=webp`;
 
-  // URL 유틸
-  const enc = (p) => p.split('/').map(encodeURIComponent).join('/');
-  const publicURL  = (path) => `${window.SUPABASE_PUBLIC_BASE}${enc(path)}`;
-  const thumbURL   = (path, w=360) => {
-    // imgproxy: /render/image/public/<bucket>/<path>?width=...&format=webp
-    return `${window.SUPABASE_RENDER_BASE}${enc(path)}?width=${w}&format=webp`;
-  };
+  const sb = window.supabase.createClient(SB_URL, SB_KEY);
 
-  // 페이지네이션
-  const PAGE = 3;
-  let cur = '';          // 현재 경로(폴더). '' = 루트(카테고리 나열)
-  let folders = [];      // 현재 폴더의 하위 폴더(여기선 보통 없음)
-  let files   = [];      // 현재 폴더의 파일들
-  let page    = 0;
-  const stack = [];      // 뒤로가기 스택
+  // 상태
+  const PAGE = 3;          // 가로 레일에 한 번에 보이는 카드 수
+  let cur   = '';          // 현재 폴더 ('' = 루트)
+  let files = [];          // 현재 폴더의 파일/서브폴더
+  let page  = 0;
+  const backStack = [];    // Back 스택
 
-  // Back / Refresh 버튼(원본 UI와 나란히)
+  // 유틸
+  function encodePath(p){ return p.split('/').map(encodeURIComponent).join('/'); }
+  function isDir(item)   { return item && item.id === null; }
+  function isMp3(name)   { return /\.mp3$/i.test(name); }
+  function pngOf(mp3)    { return mp3.replace(/\.mp3$/i, '.png'); }
+
+  function setPathText() {
+    const el = document.getElementById('libPath');
+    if (!el) return;
+    el.textContent = cur ? `/${cur}` : '/';
+  }
+
+  function cardTemplate({title, imgSrc, isFolder}) {
+    // 이미지 로딩 실패 시 public URL로 폴백
+    const safeImg = imgSrc.replace(/\u0022/g,'&quot;');
+    const html = `
+      <div class="tcard" data-type="${isFolder?'dir':'file'}" data-name="${title}">
+        <div class="thumb">
+          <img alt="${title}" loading="lazy" decoding="async"
+               src="${safeImg}"
+               onerror="this.onerror=null; this.src='${PUBLIC((cur?cur+'/':'')+(isFolder?'folder.png':pngOf(title)))}'">
+        </div>
+        <div class="t">${title}</div>
+      </div>`;
+    return html;
+  }
+
+  // 목록 렌더링
+  function render(items) {
+    rail.innerHTML = '';
+    const start = page*PAGE;
+    const slice = items.slice(start, start+PAGE);
+    slice.forEach(o => {
+      const div = document.createElement('div');
+      div.className = 'tcard';
+      div.innerHTML = o.html;
+      // 클릭 핸들
+      div.querySelector('.thumb')?.addEventListener('click', () => {
+        if (o.isFolder) {
+          backStack.push(cur);
+          cur = cur ? `${cur}/${o.title}` : o.title;
+          page = 0;
+          load();
+        } else {
+          // 파일 선택 → 오디오 재생 & 현재 썸네일/텍스트 갱신
+          const mp3Path = cur ? `${cur}/${o.title}` : o.title;
+          audio.src = PUBLIC(mp3Path);
+          audio.load();
+          (window.playerCtx?.resume?.()||Promise.resolve()).finally(() => audio.play().catch(()=>{}));
+          const tn = document.getElementById('currentThumb');
+          const nm = document.getElementById('currentName');
+          if (tn) tn.src = RENDER(pngOf(mp3Path), 120);
+          if (nm) nm.textContent = o.title;
+          rail.querySelectorAll('.thumb').forEach(t => t.classList.remove('thumb--active'));
+          div.querySelector('.thumb')?.classList.add('thumb--active');
+        }
+      });
+      rail.appendChild(div);
+    });
+    updateArrows(items.length);
+    setPathText();
+  }
+
+  function updateArrows(total){
+    prev.disabled = (page === 0);
+    const maxPage = Math.max(0, Math.ceil(total/PAGE) - 1);
+    next.disabled = (page >= maxPage);
+  }
+
+  prev.addEventListener('click', ()=>{ if (page>0){ page--; load(); } });
+  next.addEventListener('click', ()=>{ page++; load(); });
+
+  // 데이터 가져오기
+  async function fetchRoot() {
+    const { data, error } = await sb.storage.from(BUCKET).list('', {
+      limit: 1000,
+      sortBy: { column: 'name', order: 'asc' }
+    });
+    if (error) throw error;
+    // 디렉터리만
+    return (data||[]).filter(isDir).map(d => {
+      const folderThumb = `/${d.name}/folder.png`.replace(/^\//,'');
+      return {
+        isFolder: true,
+        title: d.name,
+        html: cardTemplate({
+          title: d.name,
+          imgSrc: RENDER(folderThumb, 360),
+          isFolder: true
+        })
+      };
+    });
+  }
+
+  async function fetchFolder(path) {
+    const { data, error } = await sb.storage.from(BUCKET).list(path, {
+      limit: 1000,
+      sortBy: { column: 'name', order: 'asc' }
+    });
+    if (error) throw error;
+
+    // mp3만 보여줌
+    const tracks = (data||[])
+      .filter(i => i && i.name && isMp3(i.name))
+      .map(i => {
+        const mp3 = path ? `${path}/${i.name}` : i.name;
+        const png = pngOf(mp3);
+        return {
+          isFolder: false,
+          title: i.name,
+          html: cardTemplate({
+            title: i.name,
+            imgSrc: RENDER(png, 360),
+            isFolder: false
+          })
+        };
+      });
+
+    // 폴더도 섞여 있으면 상단에 먼저 표시
+    const dirs = (data||[])
+      .filter(isDir)
+      .map(d => {
+        const p = path ? `${path}/${d.name}` : d.name;
+        const folderThumb = `${p}/folder.png`;
+        return {
+          isFolder: true,
+          title: d.name,
+          html: cardTemplate({
+            title: d.name,
+            imgSrc: RENDER(folderThumb, 360),
+            isFolder: true
+          })
+        };
+      });
+
+    return [...dirs, ...tracks];
+  }
+
+  async function load(){
+    try {
+      // 로딩 표시
+      rail.innerHTML = '';
+      const items = cur ? await fetchFolder(cur) : await fetchRoot();
+      files = items;
+      render(files);
+    } catch (e) {
+      console.error('[5DIO] library load failed:', e);
+      rail.innerHTML = `<div class="small" style="color:#f6a;">Library load failed</div>`;
+    }
+  }
+
+  // Back / Refresh 단추 (원래 UI 옆에)
   (function addToolbar(){
-    const p = rail.parentNode; // .nav 컨테이너
-    // Back
+    const cont = document.querySelector('.library .nav');
+    if (!cont) return;
     const backBtn = document.createElement('button');
+    backBtn.id = 'libBack';
     backBtn.className = 'btn';
     backBtn.textContent = 'Back';
     backBtn.style.marginLeft = '8px';
     backBtn.onclick = () => {
-      if (!stack.length) return;
-      cur = stack.pop();
+      if (!backStack.length) return;
+      cur = backStack.pop();
       page = 0;
-      load(cur);
+      load();
     };
-    p.insertBefore(backBtn, rail.nextSibling);
-
-    // Refresh
     const refBtn = document.createElement('button');
+    refBtn.id = 'libRefresh';
     refBtn.className = 'btn';
     refBtn.textContent = 'Refresh';
     refBtn.style.marginLeft = '8px';
-    refBtn.onclick = () => load(cur);
-    p.insertBefore(refBtn, backBtn.nextSibling);
+    refBtn.onclick = () => load();
+    const pathSpan = document.createElement('span');
+    pathSpan.id = 'libPath';
+    pathSpan.style.cssText = 'color:#a7b5d6;margin-left:6px;';
+    cont.appendChild(backBtn);
+    cont.appendChild(refBtn);
+    cont.appendChild(pathSpan);
   })();
 
-  // 루트 = 카테고리(최상위 폴더) 나열
-  async function listRootCategories() {
-    const { data, error } = await sb.storage.from('media').list('', {
-      limit: 1000, sortBy: { column: 'name', order: 'asc' }
-    });
-    if (error) throw error;
-    // 디렉터리만 추리기
-    return (data || []).filter(i => i.name && i.id === null);
-  }
-
-  // 폴더 내부 파일 나열
-  async function listFolder(path) {
-    const { data, error } = await sb.storage.from('media').list(path, {
-      limit: 1000, sortBy: { column: 'name', order: 'asc' }
-    });
-    if (error) throw error;
-    return data || [];
-  }
-
-  // 현재 경로 그리기
-  function render() {
-    rail.innerHTML = '';
-    const items = [
-      ...folders.map(f => ({ type:'folder', name:f.name, path: cur ? `${cur}/${f.name}` : f.name })),
-      ...files  .map(f => ({ type:'file',   name:f.name, path: cur ? `${cur}/${f.name}` : f.name }))
-    ];
-
-    const start = page * PAGE;
-    const rows  = items.slice(start, start + PAGE);
-
-    rows.forEach(item => {
-      const card = document.createElement('div');
-      card.className = 'tcard';
-
-      const thumb = document.createElement('div');
-      thumb.className = 'thumb';
-
-      const title = document.createElement('div');
-      title.className = 't';
-      title.textContent = item.name;
-
-      // 썸네일(카테고리=folder.png, 파일=동명이미지)
-      if (item.type === 'folder') {
-        thumb.style.backgroundImage = `url("${thumbURL(`${item.path}/folder.png`, 360)}")`;
-        thumb.style.backgroundSize = 'cover';
-        thumb.style.backgroundPosition = 'center';
-        card.onclick = async () => {
-          stack.push(cur);
-          cur = item.path; page = 0;
-          await load(cur);
-        };
-      } else {
-        // 확장자 기준으로 mp3만 표시
-        if (!/\.mp3$/i.test(item.name)) return;
-        // 트랙 썸네일: .mp3 → .png 치환
-        const png = item.name.replace(/\.mp3$/i, '.png');
-        thumb.style.backgroundImage = `url("${thumbURL(`${cur}/${png}`, 360)}")`;
-        thumb.style.backgroundSize = 'cover';
-        thumb.style.backgroundPosition = 'center';
-
-        card.onclick = () => {
-          const url = publicURL(`${cur}/${item.name}`);
-          audio.src = url;
-          audio.load();
-          audio.play().catch(()=>{});
-        };
-      }
-
-      card.appendChild(thumb);
-      card.appendChild(title);
-      rail.appendChild(card);
-    });
-
-    const total = Math.ceil(items.length / PAGE);
-    prev.disabled = (page <= 0);
-    next.disabled = (page >= total - 1);
-  }
-
-  prev.addEventListener('click', () => { if (page > 0) { page--; render(); } });
-  next.addEventListener('click', () => { page++; render(); });
-
-  // 데이터 로드
-  async function load(path='') {
-    try {
-      if (!path) {
-        // 루트: 카테고리(최상위 폴더들)
-        const cats = await listRootCategories();
-        folders = cats;
-        files   = [];     // 루트에는 파일 없음
-      } else {
-        const rows = await listFolder(path);
-        folders = rows.filter(i => i.id === null);
-        files   = rows.filter(i => i.id !== null);
-      }
-      render();
-    } catch (e) {
-      console.error(e);
-      rail.innerHTML = '<div class="t small">Failed to load library</div>';
-    }
-  }
-
   // 최초 로드
-  load('');
+  load();
 })();
 </script>
-</script>
+
 
 
 <script>
