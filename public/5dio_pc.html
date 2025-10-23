@@ -8,11 +8,9 @@
 <link rel="preconnect" href="https://xdjgumqdwedgzwqturcx.supabase.co" crossorigin>
 <link rel="dns-prefetch" href="//xdjgumqdwedgzwqturcx.supabase.co">
 
-<!-- Supabase SDK -->
 <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
 
 <script>
-/* === Supabase ENV (원본 그대로) === */
 window.USE_SUPABASE = true;
 window.SUPABASE_URL   = "https://xdjgumqdwedgzwqturcx.supabase.co";
 window.SUPABASE_KEY   = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
@@ -39,41 +37,6 @@ window.CACHE_BUST_AUDIO = true;
   audio{width:100%}
   .osc{height:140px;background:#0b0e14;border-radius:8px;border:1px solid #1a1f2b}
 </style>
-
-<!-- === 5DIO PATCH: UI & Layout overrides (요청 1,2,3,4,7,8) === -->
-<style id="fiveDioOverrides">
-/* 1) 햄버거: 기본 닫힘(해당 요소가 있을 때만 적용, 없으면 무해) */
-.side-menu { display:none; }
-.nav-toggle:checked ~ .side-menu, .side-menu.open { display:none !important; }
-.hamburger[aria-expanded="true"] + .side-menu { display:block; }
-
-/* 2) 하모닉스 패널 아래로 100px (요소가 있을 때만 적용) */
-#harmonicsPanel, .harmonics-panel { margin-top:100px !important; }
-
-/* 3) 마스터/밸런스와 하모닉스 사이 흰색 라인 제거 (요소가 있을 때만 적용) */
-.master-balance-sep, .harmonics-sep, #mixMaster hr, #mixMaster .divider {
-  border:none !important; background:transparent !important; height:0 !important;
-}
-
-/* 4) 플레이/포즈/스톱 커스텀 버튼 2배 (커스텀 버튼이 있을 때만 적용) */
-.btn-play, .btn-pause, .btn-stop, .play-btn, .pause-btn, .stop-btn {
-  transform: scale(2) !important; transform-origin:center;
-}
-.player-controls, .mix-controls { min-height:56px; }
-
-/* 7) 썸네일 정사각형 + 크롭 방지 (배경이미지 방식) */
-.library-grid .tcard .thumb {
-  aspect-ratio: 1 / 1;
-  background:#1a1f2b;
-  background-position:center;
-  background-repeat:no-repeat;
-  background-size:contain; /* 정사각 원본 유지 */
-  border-radius:8px;
-}
-
-/* 8) 오디오플레이어 하단 'volume' 라벨 숨김(있으면) */
-.player-volume-label, #volumeLabel, .audio-volume .label { display:none !important; }
-</style>
 </head>
 <body>
 <header><div class="logo">5DIO</div><div>Full UI + Supabase Library</div></header>
@@ -89,34 +52,22 @@ window.CACHE_BUST_AUDIO = true;
       <button id="libPrev" class="nav-btn">◀</button>
       <button id="libNext" class="nav-btn">▶</button>
       <button id="libBackBtn" class="nav-btn">Back</button>
-      <!-- (선택) Root/Refresh 버튼이 HTML에 추가되어 있으면 자동으로 작동합니다 -->
-      <!-- <button id="libRoot" class="nav-btn">Root</button>
-      <button id="libRefresh" class="nav-btn">Refresh</button> -->
-      <span id="libPath" style="margin-left:8px;opacity:.7"></span>
     </div>
     <div id="libRail" class="library-grid"></div>
   </section>
 
   <section class="card">
     <h3 class="title">Audio Player</h3>
-
-    <!-- 9) Now Playing: 썸네일/제목 표시(처음엔 비어 있음) -->
-    <div class="now-playing" style="display:flex;align-items:center;gap:10px;margin:6px 0 8px;">
-      <img id="currentThumb" alt="" style="display:none;width:56px;height:56px;border-radius:8px;">
-      <span id="currentName" style="opacity:.9;"></span>
-    </div>
-
     <audio id="audio" controls preload="none"></audio>
   </section>
 </main>
 
 <script>
-/* === Library + Player (요청 5,6,7,9) === */
 (function(){
   if (!window.supabase) { console.warn('[5DIO] SDK not loaded'); return; }
   const BUCKET = window.SUPABASE_BUCKET || 'media';
-  const PUBLIC_BASE  = window.SUPABASE_PUBLIC_BASE.replace(/\/+$/,'');         // .../object/public/media
-  const RENDER_BASE  = window.SUPABASE_RENDER_BASE.replace(/\/+$/,'') + '/';   // .../render/image/public/media/
+  const PUBLIC_BASE  = window.SUPABASE_PUBLIC_BASE.replace(/\/+$/,'');
+  const RENDER_BASE  = window.SUPABASE_RENDER_BASE.replace(/\/+$/,'') + '/';
   const CACHE_BUST_AUDIO = !!window.CACHE_BUST_AUDIO;
   const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
 
@@ -124,9 +75,6 @@ window.CACHE_BUST_AUDIO = true;
   const prevBtn = document.getElementById('libPrev');
   const nextBtn = document.getElementById('libNext');
   const backBtn = document.getElementById('libBackBtn');
-  const rootBtn = document.getElementById('libRoot');       // (선택)
-  const refBtn  = document.getElementById('libRefresh');    // (선택)
-  const pathEl  = document.getElementById('libPath');
   const audio = document.getElementById('audio');
   if (!rail||!prevBtn||!nextBtn||!audio){ console.warn('[5DIO] Missing UI elements'); return; }
 
@@ -140,17 +88,16 @@ window.CACHE_BUST_AUDIO = true;
     if (error) throw error; return data||[];
   }
 
-  // 6) 카테고리 썸네일: folder.png는 'public(object)' 경로를 우선 사용(400 방지)
   async function folderThumb(path){
     try{
       const children = await list(path);
       const names = children.map(e=>e.name);
       const hit = names.find(n=>n.toLowerCase()==='folder.png');
-      if (hit) return `${PUBLIC_BASE}/${enc(path + '/' + hit)}`;                       // ← public 원본
+      if (hit) return RENDER_BASE + enc(path + '/' + hit) + '?width=360&quality=70&format=webp';
       const firstImg = names.find(n=>isImg(n));
-      if (firstImg) return `${PUBLIC_BASE}/${enc(path + '/' + firstImg)}`;             // fallback도 public
+      if (firstImg) return RENDER_BASE + enc(path + '/' + firstImg) + '?width=360&quality=70&format=webp';
     }catch(e){}
-    return ''; // 없으면 빈 배경
+    return '';
   }
 
   async function readFolder(prefix=''){
@@ -158,16 +105,13 @@ window.CACHE_BUST_AUDIO = true;
     const outFolders=[], outFiles=[];
     for (const e of entries){
       const name=e.name; const full=(prefix?prefix+'/':'')+name;
-
-      // 폴더 판정: Supabase 폴더는 e.id === null (없으면 파일명 기반)
-      const isFolder = (e.id === null) || (!/\./.test(name));
-
+      const isFolder = !/\./.test(name);
       if (isFolder){
         const thumb = await folderThumb(full);
         outFolders.push({name, path:full, thumb});
       }else if (isAudio(name)){
         const base = name.replace(/\.[^.]+$/,'');
-        const thumb = `${RENDER_BASE}${enc(prefix + '/' + base + '.png')}?width=640&quality=90&format=webp`;
+        const thumb = RENDER_BASE + enc(prefix + '/' + base + '.png') + '?width=360&quality=70&format=webp';
         const url = `${PUBLIC_BASE}/${enc(full)}${CACHE_BUST_AUDIO?('?t='+Date.now()):''}`;
         outFiles.push({name, base, url, thumb});
       }
@@ -177,7 +121,6 @@ window.CACHE_BUST_AUDIO = true;
     return {folders:outFolders, files:outFiles};
   }
 
-  // 레이지 로딩 (배경이미지)
   const io = 'IntersectionObserver' in window ? new IntersectionObserver(entries=>{
     entries.forEach(e=>{
       if (e.isIntersecting){
@@ -201,31 +144,13 @@ window.CACHE_BUST_AUDIO = true;
       if (item.thumb){ if (io){ img.setAttribute('data-src', item.thumb); io.observe(img); } else { img.style.backgroundImage=`url("${item.thumb}")`; } }
       const title=document.createElement('div'); title.className='t'; title.textContent=item.type==='file'?item.base:item.name;
       card.appendChild(img); card.appendChild(title);
-
       card.addEventListener('click', async ()=>{
-        if (item.type==='folder'){
-          cwd=item.path; page=0; await render();
-        } else {
-          // 오디오 재생
-          if (audio.src!==item.url) audio.src=item.url;
-          audio.load(); try{ await audio.play(); }catch(e){}
-
-          // 9) Now Playing 썸네일/제목 표시 (mp3 → png, public 원본 사용)
-          const tn = document.getElementById('currentThumb');
-          const nm = document.getElementById('currentName');
-          if (tn) {
-            const pngPath = (cwd? (cwd + '/') : '') + item.base + '.png';
-            tn.src = `${PUBLIC_BASE}/${enc(pngPath)}`;
-            tn.style.display = '';
-          }
-          if (nm) nm.textContent = item.name || item.base || '';
-        }
+        if (item.type==='folder'){ cwd=item.path; page=0; await render(); }
+        else { if (audio.src!==item.url) audio.src=item.url; audio.load(); try{ await audio.play(); }catch(e){} }
       });
-
       rail.appendChild(card);
     });
 
-    if (pathEl) pathEl.textContent = cwd ? ('/' + cwd) : '/';
     prevBtn.disabled = page<=0;
     nextBtn.disabled = page >= (Math.ceil((folders.length+files.length)/PAGE)-1);
   }
@@ -241,16 +166,9 @@ window.CACHE_BUST_AUDIO = true;
     }
   }
 
-  // 5) 네비게이션 (Prev/Next/Back + (선택)Root/Refresh)
   prevBtn.addEventListener('click', ()=>{ if(page>0){page--; renderPage();}});
   nextBtn.addEventListener('click', ()=>{ page++; renderPage(); });
   backBtn.addEventListener('click', ()=>{ const seg=cwd.split('/'); if(seg.length){ seg.pop(); cwd=seg.join('/'); page=0; render(); }});
-  if (rootBtn) rootBtn.addEventListener('click', ()=>{ cwd=''; page=0; render(); });
-  if (refBtn)  refBtn.addEventListener('click', ()=>{ render(); });
-
-  // 초기 오디오 디폴트 제거 (아무것도 재생되지 않게)
-  audio.removeAttribute('src'); audio.load();
-  (function(){ const _tn=document.getElementById('currentThumb'); const _nm=document.getElementById('currentName'); if(_tn){_tn.style.display='none';} if(_nm){_nm.textContent='';} })();
 
   render();
 })();
