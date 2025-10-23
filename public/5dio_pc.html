@@ -1,15 +1,11 @@
-<html lang="en" style="--mobile-scale: 1;"><div id="in-page-channel-node-id" data-channel-name="in_page_channel_LZov6M"></div><head>
-
-<!-- Cloud Tunnel Safe Endpoints -->
-<script id="cloud-tunnel-config">
-// Force API & MEDIA to same-origin (works via Cloudflare Tunnel / reverse proxy)
-window.LUNA_API_BASE = location.origin + '/api/tree';
-window.LUNA_MEDIA_BASE = location.origin + '/media/';
-</script>
+<html lang="en" style="--mobile-scale: 1;"><div id="in-page-channel-node-id" data-channel-name="in_page_channel_LZov6M"></div>
+  
+  
+<head>
 
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>5D SONIC — vNext (Independent Transports)</title>
+<title>5DO Sound Player</title>
 <style>
 :root{
   --bg:#2f3541;
@@ -76,14 +72,7 @@ input[type="range"]{width:100%;height:28px}
 .hidden{display:none !important}
 </style>
 
-<!-- 5D SONIC runtime config for API/MEDIA roots -->
-<script>
-// You can override these from the console or an inline script BEFORE this runs:
-//   window.LUNA_API_BASE = location.origin + '/api/tree';
-//   window.LUNA_MEDIA_BASE = location.origin + '/media/';
-window.LUNA_API_BASE = location.origin + '/api/tree';
-window.LUNA_MEDIA_BASE = location.origin + '/media/';
-</script>
+
 
 
 <!-- Hard override for local server routes -->
@@ -338,6 +327,26 @@ button[data-scope="both"], button[data-scope="freeze"] { display:none !important
   window.SUPABASE_PUBLIC_BASE = `${window.SUPABASE_URL}/storage/v1/object/public/${window.SUPABASE_BUCKET}/`;
   window.SUPABASE_RENDER_BASE = `${window.SUPABASE_URL}/storage/v1/render/image/public/${window.SUPABASE_BUCKET}/`;
 </script>
+<style id="layoutFixes">
+/* 1. 햄버거 초기 펼침 방지 */
+.side-menu { display:none; }
+.nav-toggle:checked ~ .side-menu,
+.side-menu.open { display:none !important; }
+.hamburger[aria-expanded="true"] + .side-menu { display:block; }
+
+/* 2. 하모닉스 패널 아래로 100px */
+#harmonicsPanel, .harmonics-panel { margin-top:100px !important; }
+
+/* 3. 흰색 분리선 제거 */
+.master-balance-sep,
+.harmonics-sep,
+#mixMaster hr,
+#mixMaster .divider {
+  border:none !important;
+  background:transparent !important;
+  height:0 !important;
+}
+</style>
 </head>
 <body>
 
