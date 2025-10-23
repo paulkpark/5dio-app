@@ -1,15 +1,8 @@
 <html lang="en" style="--mobile-scale: 1;"><div id="in-page-channel-node-id" data-channel-name="in_page_channel_LZov6M"></div><head>
 
-<!-- Cloud Tunnel Safe Endpoints -->
-<script id="cloud-tunnel-config">
-// Force API & MEDIA to same-origin (works via Cloudflare Tunnel / reverse proxy)
-window.LUNA_API_BASE = location.origin + '/api/tree';
-window.LUNA_MEDIA_BASE = location.origin + '/media/';
-</script>
-
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>5D SONIC — vNext (Independent Transports)</title>
+<title>5DO Music Player</title>
 <style>
 :root{
   --bg:#2f3541;
@@ -75,16 +68,6 @@ input[type="range"]{width:100%;height:28px}
 }
 .hidden{display:none !important}
 </style>
-
-<!-- 5D SONIC runtime config for API/MEDIA roots -->
-<script>
-// You can override these from the console or an inline script BEFORE this runs:
-//   window.LUNA_API_BASE = location.origin + '/api/tree';
-//   window.LUNA_MEDIA_BASE = location.origin + '/media/';
-window.LUNA_API_BASE = location.origin + '/api/tree';
-window.LUNA_MEDIA_BASE = location.origin + '/media/';
-</script>
-
 
 <!-- Hard override for local server routes -->
 
@@ -380,7 +363,7 @@ button[data-scope="both"], button[data-scope="freeze"] { display:none !important
     
 <div class="app">
   <header>
-    <div class="brand"> 5DIO </div>
+    <div class="brand"> 5DO </div>
     <button id="langToggle" class="btn" data-lang="en">EN / 한글</button>
   </header>
 
