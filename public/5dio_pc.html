@@ -1,177 +1,247 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>5DIO Desktop – full UI (library patched)</title>
-
-<link rel="preconnect" href="https://xdjgumqdwedgzwqturcx.supabase.co" crossorigin>
-<link rel="dns-prefetch" href="//xdjgumqdwedgzwqturcx.supabase.co">
-
-<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
-
-<script>
-window.USE_SUPABASE = true;
-window.SUPABASE_URL   = "https://xdjgumqdwedgzwqturcx.supabase.co";
-window.SUPABASE_KEY   = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
-window.SUPABASE_BUCKET = "media";
-window.SUPABASE_PUBLIC_BASE = window.SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/object/public/" + window.SUPABASE_BUCKET;
-window.SUPABASE_RENDER_BASE = window.SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/render/image/public/" + window.SUPABASE_BUCKET + "/";
-window.CACHE_BUST_AUDIO = true;
-</script>
-
-<style>
-  body{background:#0f1115;color:#e7eaf0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;margin:0}
-  header{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#121520;border-bottom:1px solid #1a1f2b}
-  header .logo{font-weight:800;letter-spacing:.5px;color:#9cff8b}
-  main{padding:14px;display:grid;gap:14px}
-  .card{background:#141926;border:1px solid #1a2030;border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,.2);padding:12px}
-  .title{margin:0 0 8px;font-size:14px;font-weight:700;opacity:.9}
-  .row{display:flex;gap:12px;flex-wrap:wrap}
-  .library-controls{display:flex;gap:8px;margin:6px 0}
-  .nav-btn{padding:6px 10px;border-radius:8px;border:0;background:#232b3d;color:#e7eaf0}
-  .library-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
-  .tcard{background:#1b2130;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.25);padding:8px;cursor:pointer}
-  .tcard .thumb{width:100%;aspect-ratio:1;border-radius:8px;background:#1a1f2b}
-  .tcard .t{margin-top:8px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.95}
-  audio{width:100%}
-  .osc{height:140px;background:#0b0e14;border-radius:8px;border:1px solid #1a1f2b}
-</style>
+  <meta charset="UTF-8" />
+  <title>5DIO — Full UI + Supabase Media Library</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { background:#111; color:#eee; font-family:sans-serif; margin:0; }
+    header { padding:10px 20px; font-size:20px; font-weight:bold; color:#8f8; }
+    .oscilloscope, .freqgen, .library, .audioplayer { margin:10px 20px; padding:10px; background:#1a1b22; border-radius:8px; }
+    .tcard { display:inline-block; margin:4px; width:200px; cursor:pointer; vertical-align:top; }
+    .tcard .thumb { width:200px; height:200px; overflow:hidden; background:#222; display:flex; align-items:center; justify-content:center; }
+    .tcard .thumb img { width:100%; object-fit:cover; }
+    .tcard .t { padding:6px; font-size:14px; text-align:center; color:#ddd; }
+    .library .nav { margin-bottom:10px; }
+    .library button { margin-right:5px; }
+    audio { width:100%; margin-top:10px; }
+  </style>
+  <script>
+    window.SUPABASE_URL = "https://xdjgumqdwedgzwqturcx.supabase.co";
+    window.SUPABASE_KEY = "public-anon-key";
+    window.SUPABASE_BUCKET = "media";
+    window.SUPABASE_PUBLIC_BASE = "https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media";
+    window.SUPABASE_RENDER_BASE = "https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/render/image/public/media";
+  </script>
 </head>
 <body>
-<header><div class="logo">5DIO</div><div>Full UI + Supabase Library</div></header>
-<main>
-  <section class="card">
-    <h3 class="title">Oscilloscope</h3>
-    <div class="osc" id="oscilloscope"></div>
-  </section>
+<header>5DIO</header>
 
-  <section class="card">
-    <h3 class="title">Library</h3>
-    <div class="library-controls">
-      <button id="libPrev" class="nav-btn">◀</button>
-      <button id="libNext" class="nav-btn">▶</button>
-      <button id="libBackBtn" class="nav-btn">Back</button>
-    </div>
-    <div id="libRail" class="library-grid"></div>
-  </section>
+<div class="oscilloscope">
+  <div>Oscilloscope</div>
+  <canvas id="oscilloscope" width="600" height="150" style="width:100%;background:black;"></canvas>
+</div>
 
-  <section class="card">
-    <h3 class="title">Audio Player</h3>
-    <audio id="audio" controls preload="none"></audio>
-  </section>
-</main>
+<div class="freqgen">
+  <h3>Frequency Generator</h3>
+  <div>
+    L: <input type="number" id="freqL" value="432"> Hz
+    Wave: <select id="waveL"><option>sine</option><option>square</option></select>
+    <button onclick="startTone('L')">▶</button>
+    <button onclick="stopTone('L')">■</button>
+  </div>
+  <div>
+    R: <input type="number" id="freqR" value="432"> Hz
+    Wave: <select id="waveR"><option>sine</option><option>square</option></select>
+    <button onclick="startTone('R')">▶</button>
+    <button onclick="stopTone('R')">■</button>
+  </div>
+</div>
+
+<div class="library">
+  <div class="nav">
+    <button id="libPrev">◀</button>
+    <button id="libNext">▶</button>
+    <button id="libBack">Back</button>
+    <button id="libRefresh">Refresh</button>
+    <span id="libPath"></span>
+  </div>
+  <div id="libRail"></div>
+</div>
+
+<div class="audioplayer">
+  <img id="currentThumb" alt="" style="display:none;width:56px;height:56px;border-radius:8px;">
+  <span id="currentName"></span>
+  <audio id="audio" controls preload="none"></audio>
+</div>
 
 <script>
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+const analyser = audioCtx.createAnalyser();
+const oscCanvas = document.getElementById("oscilloscope");
+const oscCtx = oscCanvas.getContext("2d");
+analyser.fftSize = 2048;
+const bufferLength = analyser.fftSize;
+const dataArray = new Uint8Array(bufferLength);
+function drawScope(){
+  requestAnimationFrame(drawScope);
+  analyser.getByteTimeDomainData(dataArray);
+  oscCtx.fillStyle="black";
+  oscCtx.fillRect(0,0,oscCanvas.width,oscCanvas.height);
+  oscCtx.lineWidth=2;
+  oscCtx.strokeStyle="#00ff99";
+  oscCtx.beginPath();
+  const sliceWidth = oscCanvas.width * 1.0 / bufferLength;
+  let x = 0;
+  for(let i=0;i<bufferLength;i++){
+    const v = dataArray[i]/128.0;
+    const y = v*oscCanvas.height/2;
+    if(i===0) oscCtx.moveTo(x,y);
+    else oscCtx.lineTo(x,y);
+    x += sliceWidth;
+  }
+  oscCtx.lineTo(oscCanvas.width,oscCanvas.height/2);
+  oscCtx.stroke();
+}
+drawScope();
+
+let oscL=null, oscR=null;
+function startTone(side){
+  const freq = parseFloat(document.getElementById(`freq${side}`).value);
+  const wave = document.getElementById(`wave${side}`).value;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = wave;
+  osc.frequency.value = freq;
+  osc.connect(gain).connect(analyser).connect(audioCtx.destination);
+  osc.start();
+  if(side==='L') oscL=osc; else oscR=osc;
+}
+function stopTone(side){
+  if(side==='L' && oscL){ oscL.stop(); oscL.disconnect(); oscL=null; }
+  if(side==='R' && oscR){ oscR.stop(); oscR.disconnect(); oscR=null; }
+}
+
 (function(){
-  if (!window.supabase) { console.warn('[5DIO] SDK not loaded'); return; }
-  const BUCKET = window.SUPABASE_BUCKET || 'media';
-  const PUBLIC_BASE  = window.SUPABASE_PUBLIC_BASE.replace(/\/+$/,'');
-  const RENDER_BASE  = window.SUPABASE_RENDER_BASE.replace(/\/+$/,'') + '/';
-  const CACHE_BUST_AUDIO = !!window.CACHE_BUST_AUDIO;
-  const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
+  const rail   = document.getElementById('libRail');
+  const btnPrev= document.getElementById('libPrev');
+  const btnNext= document.getElementById('libNext');
+  const btnBack= document.getElementById('libBack');
+  const btnRef = document.getElementById('libRefresh');
+  const audio  = document.getElementById('audio');
 
-  const rail = document.getElementById('libRail');
-  const prevBtn = document.getElementById('libPrev');
-  const nextBtn = document.getElementById('libNext');
-  const backBtn = document.getElementById('libBackBtn');
-  const audio = document.getElementById('audio');
-  if (!rail||!prevBtn||!nextBtn||!audio){ console.warn('[5DIO] Missing UI elements'); return; }
+  if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+    console.warn('[5DIO] Supabase SDK not loaded');
+    return;
+  }
+  const SB_URL   = window.SUPABASE_URL;
+  const SB_KEY   = window.SUPABASE_KEY;
+  const BUCKET   = window.SUPABASE_BUCKET || 'media';
+  const PUBLIC_BASE = window.SUPABASE_PUBLIC_BASE;
+  const RENDER_BASE = window.SUPABASE_RENDER_BASE + '/';
+  const sb = window.supabase.createClient(SB_URL, SB_KEY);
 
-  let cwd=''; let page=0; const PAGE=12; let folders=[], files=[];
+  const THUMB_W = 640, THUMB_Q = 90;
   const enc = p => p.split('/').filter(Boolean).map(encodeURIComponent).join('/');
-  const isAudio = n => /\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(n);
-  const isImg   = n => /\.(png|jpg|jpeg|webp|gif)$/i.test(n);
+  const urlPublic = path => `${PUBLIC_BASE}/${enc(path)}`;
+  const urlRender = (path,w=THUMB_W,q=THUMB_Q) => `${RENDER_BASE}${enc(path)}?width=${w}&quality=${q}&format=webp`;
 
-  async function list(prefix=''){
+  const PAGE = 3;
+  let cwd='', page=0, items=[];
+  const backStack=[];
+
+  const isDir = row => row && row.id === null;
+  const isMp3 = name => /\.mp3$/i.test(name);
+  const pngOf = name => name.replace(/\.mp3$/i, '.png');
+
+  async function list(prefix='') {
     const { data, error } = await sb.storage.from(BUCKET).list(prefix, {limit:1000, sortBy:{column:'name',order:'asc'}});
-    if (error) throw error; return data||[];
+    if (error) throw error;
+    return data||[];
   }
 
-  async function folderThumb(path){
-    try{
-      const children = await list(path);
-      const names = children.map(e=>e.name);
-      const hit = names.find(n=>n.toLowerCase()==='folder.png');
-      if (hit) return RENDER_BASE + enc(path + '/' + hit) + '?width=360&quality=70&format=webp';
-      const firstImg = names.find(n=>isImg(n));
-      if (firstImg) return RENDER_BASE + enc(path + '/' + firstImg) + '?width=360&quality=70&format=webp';
-    }catch(e){}
-    return '';
-  }
+  function makeCard({title,isFolder,imgPath}){
+    let src = isFolder ? urlPublic(imgPath) : urlRender(imgPath);
+    const fallback = urlPublic(imgPath);
+    const div = document.createElement('div');
+    div.className='tcard';
+    div.dataset.type=isFolder?'dir':'file';
+    div.dataset.name=title;
+    const th=document.createElement('img');
+    th.alt=title;
+    th.loading='lazy'; th.decoding='async';
+    th.src=src;
+    th.onerror=function(){ if(this.src!==fallback) this.src=fallback; };
+    const tWrap=document.createElement('div'); tWrap.className='thumb'; tWrap.appendChild(th);
+    const label=document.createElement('div'); label.className='t'; label.textContent=title;
+    div.appendChild(tWrap); div.appendChild(label);
 
-  async function readFolder(prefix=''){
-    const entries = await list(prefix);
-    const outFolders=[], outFiles=[];
-    for (const e of entries){
-      const name=e.name; const full=(prefix?prefix+'/':'')+name;
-      const isFolder = !/\./.test(name);
-      if (isFolder){
-        const thumb = await folderThumb(full);
-        outFolders.push({name, path:full, thumb});
-      }else if (isAudio(name)){
-        const base = name.replace(/\.[^.]+$/,'');
-        const thumb = RENDER_BASE + enc(prefix + '/' + base + '.png') + '?width=360&quality=70&format=webp';
-        const url = `${PUBLIC_BASE}/${enc(full)}${CACHE_BUST_AUDIO?('?t='+Date.now()):''}`;
-        outFiles.push({name, base, url, thumb});
-      }
-    }
-    outFolders.sort((a,b)=>a.name.localeCompare(b.name));
-    outFiles.sort((a,b)=>a.name.localeCompare(b.name));
-    return {folders:outFolders, files:outFiles};
-  }
-
-  const io = 'IntersectionObserver' in window ? new IntersectionObserver(entries=>{
-    entries.forEach(e=>{
-      if (e.isIntersecting){
-        const el = e.target; const src=el.getAttribute('data-src');
-        if (src){ el.style.backgroundImage=`url("${src}")`; el.removeAttribute('data-src'); }
-        io.unobserve(el);
+    div.addEventListener('click',()=>{
+      if(isFolder){
+        backStack.push(cwd);
+        cwd=cwd?`${cwd}/${title}`:title;
+        page=0; load();
+      } else {
+        const mp3Path=cwd?`${cwd}/${title}`:title;
+        audio.src=urlPublic(mp3Path);
+        audio.load(); audio.play().catch(()=>{});
+        const tn=document.getElementById('currentThumb');
+        const nm=document.getElementById('currentName');
+        if(tn){ tn.src=urlRender(`${cwd}/${pngOf(title)}`,120); tn.style.display=''; }
+        if(nm) nm.textContent=title;
       }
     });
-  }, { rootMargin:'300px' }) : null;
+    return div;
+  }
 
-  function renderPage(){
+  function render(){
     rail.innerHTML='';
-    const all=[...folders.map(f=>({type:'folder',...f})), ...files.map(f=>({type:'file',...f}))];
-    const totalPages=Math.max(1,Math.ceil(all.length/PAGE));
-    if (page>totalPages-1) page=totalPages-1;
-    const start=page*PAGE, slice=all.slice(start,start+PAGE);
-
-    slice.forEach(item=>{
-      const card=document.createElement('div'); card.className='tcard';
-      const img=document.createElement('div'); img.className='thumb';
-      if (item.thumb){ if (io){ img.setAttribute('data-src', item.thumb); io.observe(img); } else { img.style.backgroundImage=`url("${item.thumb}")`; } }
-      const title=document.createElement('div'); title.className='t'; title.textContent=item.type==='file'?item.base:item.name;
-      card.appendChild(img); card.appendChild(title);
-      card.addEventListener('click', async ()=>{
-        if (item.type==='folder'){ cwd=item.path; page=0; await render(); }
-        else { if (audio.src!==item.url) audio.src=item.url; audio.load(); try{ await audio.play(); }catch(e){} }
-      });
-      rail.appendChild(card);
-    });
-
-    prevBtn.disabled = page<=0;
-    nextBtn.disabled = page >= (Math.ceil((folders.length+files.length)/PAGE)-1);
+    const total=items.length;
+    const maxPage=Math.max(0,Math.ceil(total/PAGE)-1);
+    if(page>maxPage) page=maxPage;
+    const slice=items.slice(page*PAGE,page*PAGE+PAGE);
+    slice.forEach(o=>rail.appendChild(o.node));
+    btnPrev.disabled=(page===0);
+    btnNext.disabled=(page>=maxPage);
+    const pathEl=document.getElementById('libPath');
+    if(pathEl) pathEl.textContent=cwd?`/${cwd}`:'/';
   }
 
-  async function render(){
+  btnPrev.addEventListener('click',()=>{if(page>0){page--;render();}});
+  btnNext.addEventListener('click',()=>{page++;render();});
+  if(btnBack) btnBack.addEventListener('click',()=>{
+    if(!backStack.length) return;
+    cwd=backStack.pop(); page=0; load();
+  });
+  if(btnRef) btnRef.addEventListener('click',()=>load());
+
+  async function load(){
     try{
-      const data = await readFolder(cwd);
-      folders=data.folders; files=data.files;
-      renderPage();
-    }catch(err){
-      rail.innerHTML='<div class="t">Failed to load library</div>';
-      console.warn('[5DIO] Library error:', err);
+      let rows;
+      if(!cwd){
+        rows=await list('');
+        const dirs=rows.filter(isDir).map(d=>({
+          node:makeCard({title:d.name,isFolder:true,imgPath:`${d.name}/folder.png`})
+        }));
+        items=dirs;
+      } else {
+        rows=await list(cwd);
+        const dirs=rows.filter(isDir).map(d=>({
+          node:makeCard({title:d.name,isFolder:true,imgPath:`${cwd}/${d.name}/folder.png`})
+        }));
+        const tracks=rows.filter(r=>r&&r.name&&isMp3(r.name)).map(r=>({
+          node:makeCard({title:r.name,isFolder:false,imgPath:`${cwd}/${pngOf(r.name)}`})
+        }));
+        items=[...dirs,...tracks];
+      }
+      render();
+    }catch(e){
+      console.error('[5DIO] Library load failed',e);
+      rail.innerHTML='<div class="t small" style="color:#f66">Library load failed</div>';
     }
   }
 
-  prevBtn.addEventListener('click', ()=>{ if(page>0){page--; renderPage();}});
-  nextBtn.addEventListener('click', ()=>{ page++; renderPage(); });
-  backBtn.addEventListener('click', ()=>{ const seg=cwd.split('/'); if(seg.length){ seg.pop(); cwd=seg.join('/'); page=0; render(); }});
+  audio.removeAttribute('src');
+  audio.load();
+  const tn=document.getElementById('currentThumb');
+  const nm=document.getElementById('currentName');
+  if(tn) tn.style.display='none';
+  if(nm) nm.textContent='';
 
-  render();
+  load();
 })();
 </script>
+
 </body>
 </html>
