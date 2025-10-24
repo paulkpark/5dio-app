@@ -70,8 +70,41 @@ audio{width:92%; display:block; margin:6px auto 12px}
 </style>
 </head>
 <body>
+<div class="menu-container">
+  <div class="menu-button" onclick="toggleMenu()">☰</div>
+  <div class="dropdown-menu" id="dropdownMenu">
+    <a href="https://5dshop.co.kr" target="_blank" rel="noopener" role="menuitem">Shop</a>
+    <a href="#" role="menuitem">FAQ</a>
+    <a href="#" role="menuitem">Manual</a>
+    <a href="#" role="menuitem">Contact</a>
+    <a href="#" role="menuitem">About</a>
+  </div>
+</div>
 
-<header>
+<style>
+.menu-container { position: absolute; top: 12px; left: 10px; z-index:1000; }
+.menu-button { font-size: 26px; cursor: pointer; color: white; }
+.dropdown-menu {
+  display: none;
+  flex-direction: column;
+  position: absolute;
+  background: rgba(0,0,0,0.85);
+  padding: 10px;
+  border-radius: 8px;
+  margin-top: 8px;
+}
+.dropdown-menu a {
+  color: white; text-decoration: none; padding: 6px 10px;
+}
+.dropdown-menu a:hover { background: rgba(255,255,255,0.1); }
+</style>
+
+<script>
+function toggleMenu(){
+  const m=document.getElementById('dropdownMenu');
+  m.style.display = (m.style.display==='flex'?'none':'flex');
+}
+</script><header>
   <div class="h-head">
     <input id="navToggle" class="nav-toggle" type="checkbox" checked> <!-- 기본 닫힘 -->
     <label for="navToggle" class="hamburger" aria-label="menu"><span></span></label>
@@ -163,6 +196,7 @@ const enc = s => s.split('/').filter(Boolean).map(encodeURIComponent).join('/');
 /* ===== Audio graph ===== */
 const audioCtx = new (window.AudioContext||window.webkitAudioContext)();
 const srcNode = audioCtx.createMediaElementSource(player);
+srcNode.connect(gainNode).connect(analyser).connect(audioCtx.destination);
 const panner = audioCtx.createStereoPanner();
 const gainNode = audioCtx.createGain();
 const analyser = audioCtx.createAnalyser();
@@ -173,27 +207,35 @@ player.loop = loopChk.checked;
 
 /* ===== 오디오 언락 (재생/클릭 시 resume) ===== */
 function ensureAudioUnlocked(){
-  if (audioCtx.state !== 'running'){
-    audioCtx.resume().catch(()=>{});
+  if (audioCtx.state !== 'running') {
+    audioCtx.resume().then(()=>console.log('Audio resumed'));
   }
 }
 
+document.body.addEventListener('click', ensureAudioUnlocked, {once:true});
+player.addEventListener('play', ensureAudioUnlocked);
 /* ===== 오실로스코프 ===== */
 analyser.fftSize = 2048;
 const buf = new Uint8Array(analyser.fftSize);
-function drawOsc(){
+function drawOsc() {
   requestAnimationFrame(drawOsc);
-  const {width,height} = canvas.getBoundingClientRect();
-  if (canvas.width!==width) canvas.width=width|0;
-  if (canvas.height!==height) canvas.height=height|0;
-
-  ctx.fillStyle = "#090b11";
+  analyser.getByteTimeDomainData(dataArray);
+  ctx.fillStyle = '#090b11';
   ctx.fillRect(0,0,canvas.width,canvas.height);
-
-  analyser.getByteTimeDomainData(buf);
   ctx.lineWidth = 2;
-  ctx.strokeStyle = "#9cff8b";
+  ctx.strokeStyle = '#9cff8b';
   ctx.beginPath();
+  const slice = canvas.width / dataArray.length;
+  let x=0;
+  for(let i=0;i<dataArray.length;i++){
+    const y = (dataArray[i]/128.0)*canvas.height/2;
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    x += slice;
+  }
+  ctx.lineTo(canvas.width,canvas.height/2);
+  ctx.stroke();
+}
+drawOsc();
 
   const slice = canvas.width / buf.length;
   let x=0;
