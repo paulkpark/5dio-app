@@ -355,7 +355,16 @@ langBtn.onclick = ()=>{ lang = (lang==='ko'?'en':'ko'); applyLang(); };
 applyLang();
 
 /* ===== 플레이어 이벤트 ===== */
-player.addEventListener('play', ensureAudioUnlocked);
+player.addEventListener('play', () => {
+  if (window.audioCtx && audioCtx.state !== 'running') {
+    audioCtx.resume().catch(()=>{});
+  }
+});
+document.addEventListener('pointerdown', () => {
+  if (window.audioCtx && audioCtx.state !== 'running') {
+    audioCtx.resume().catch(()=>{});
+  }
+}, { once:true });
 player.addEventListener('play', ()=>{
   // 추가로 파형이 즉시 살아나도록 resume 보장
   ensureAudioUnlocked();
