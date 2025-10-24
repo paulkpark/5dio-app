@@ -196,10 +196,11 @@ const enc = s => s.split('/').filter(Boolean).map(encodeURIComponent).join('/');
 /* ===== Audio graph ===== */
 const audioCtx = new (window.AudioContext||window.webkitAudioContext)();
 const srcNode = audioCtx.createMediaElementSource(player);
-srcNode.connect(gainNode).connect(analyser).connect(audioCtx.destination);
-const panner = audioCtx.createStereoPanner();
 const gainNode = audioCtx.createGain();
 const analyser = audioCtx.createAnalyser();
+srcNode.connect(gainNode).connect(analyser).connect(audioCtx.destination);
+const panner = audioCtx.createStereoPanner();
+
 srcNode.connect(panner).connect(gainNode).connect(analyser).connect(audioCtx.destination);
 gainNode.gain.value = parseFloat(vol.value);
 panner.pan.value = parseFloat(bal.value);
