@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>5DIO Sound Player (Mobile+ Fixed)</title>
+<title>5DO Sound Player</title>
 
 <!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -159,8 +159,8 @@ function toggleDropdown(){
 }
 
 /* ===== Supabase 설정 (교체) ===== */
-const SUPABASE_URL   = "https://YOUR_PROJECT_ID.supabase.co";  // ← 수정
-const SUPABASE_KEY   = "YOUR_ANON_KEY";                        // ← 수정
+const SUPABASE_URL   = "https://xdjgumqdwedgzwqturcx.supabase.co";  // ← 수정
+const SUPABASE_KEY   = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";                        // ← 수정
 const SUPABASE_BUCKET= "media";                                // ← 필요 시 수정
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const PUBLIC_BASE = SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/object/public/" + SUPABASE_BUCKET + "/";
