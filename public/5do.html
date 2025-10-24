@@ -206,53 +206,55 @@ panner.pan.value = parseFloat(bal.value);
 player.loop = loopChk.checked;
 
 /* ===== 오디오 언락 (재생/클릭 시 resume) ===== */
-function ensureAudioUnlocked(){
-  if (audioCtx.state !== 'running') {
-    audioCtx.resume().then(()=>console.log('Audio resumed'));
-  }
+function unlockAudio(){
+  if (audioCtx.state !== 'running') audioCtx.resume().catch(()=>{});
 }
+document.addEventListener('click', unlockAudio, { once:true });
+player.addEventListener('play', unlockAudio);
 
-document.body.addEventListener('click', ensureAudioUnlocked, {once:true});
-player.addEventListener('play', ensureAudioUnlocked);
 /* ===== 오실로스코프 ===== */
+const canvas = document.getElementById('osc') || document.getElementById('oscilloscope');
+const ctx    = canvas.getContext('2d');
+
 analyser.fftSize = 2048;
-const buf = new Uint8Array(analyser.fftSize);
-function drawOsc() {
+const data = new Uint8Array(analyser.fftSize);
+
+function resizeOsc(){
+  // 폭은 CSS에 맞추고 높이는 고정(원하면 조정 가능)
+  canvas.width  = canvas.clientWidth || window.innerWidth;
+  canvas.height = 120;
+}
+window.addEventListener('resize', resizeOsc);
+resizeOsc();
+
+function drawOsc(){
   requestAnimationFrame(drawOsc);
-  analyser.getByteTimeDomainData(dataArray);
+
+  analyser.getByteTimeDomainData(data);
+
+  // 배경
   ctx.fillStyle = '#090b11';
-  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // 파형
   ctx.lineWidth = 2;
   ctx.strokeStyle = '#9cff8b';
   ctx.beginPath();
-  const slice = canvas.width / dataArray.length;
-  let x=0;
-  for(let i=0;i<dataArray.length;i++){
-    const y = (dataArray[i]/128.0)*canvas.height/2;
-    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+
+  const slice = canvas.width / data.length;
+  let x = 0;
+
+  for (let i = 0; i < data.length; i++){
+    const y = (data[i] / 128.0) * (canvas.height / 2); // 128이 기준선
+    if (i === 0) ctx.moveTo(x, y);
+    else         ctx.lineTo(x, y);
     x += slice;
   }
-  ctx.lineTo(canvas.width,canvas.height/2);
+
+  ctx.lineTo(canvas.width, canvas.height / 2);
   ctx.stroke();
 }
 drawOsc();
-
-  const slice = canvas.width / buf.length;
-  let x=0;
-  for(let i=0;i<buf.length;i++){
-    const v = buf[i] / 128.0;     // 128 = mid
-    const y = v * canvas.height/2;
-    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-    x+=slice;
-  }
-  ctx.lineTo(canvas.width, canvas.height/2);
-  ctx.stroke();
-}
-function resizeCanvas(){ canvas.height = 120; }
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
-drawOsc();
-
 /* ===== 라이브러리 ===== */
 let cwd = '';
 async function listFolder(prefix=''){
