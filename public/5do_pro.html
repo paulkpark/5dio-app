@@ -17,8 +17,18 @@ html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-syst
 header{display:flex;align-items:center;gap:10px;justify-content:space-between;
   padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--border)}
 .logo{font-weight:700;color:var(--accent);font-size:1.2rem}
-.tabs{display:flex;gap:8px}
-.tab{padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:#171d2b;color:#cfead1;cursor:pointer}
+
+/* ▼ 탭 크기 1/2로 축소 */
+.tabs{display:flex;gap:6px}
+.tab{
+  padding:4px 6px;                 /* 8x12 → 4x6 */
+  font-size:.72rem;                /* 글자 크기도 축소 */
+  border:1px solid var(--border);
+  border-radius:8px;               /* 10 → 8 (비율 축소) */
+  background:#171d2b;
+  color:#cfead1;
+  cursor:pointer
+}
 .tab.active{background:#1f2739;border-color:#334}
 .section{display:none}
 .section.active{display:block}
@@ -95,9 +105,9 @@ audio{width:92%;display:block;margin:10px auto}
     <div class="logo">5DO Pro</div>
   </div>
   <div class="tabs">
-    <div class="tab active" data-tab="lib">🎵 Library</div>
-    <div class="tab" data-tab="gen">⚙️ Generator</div>
-  </div>
+  <div class="tab active" data-tab="lib">5DO</div>
+  <div class="tab" data-tab="gen">Freq. Gen.</div>
+</div>
 </header>
 
 <nav class="side-menu">
