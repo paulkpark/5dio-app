@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>5DIO Sound Player</title>
+<title>5DIO Sound Player (Mobile+ Fixed)</title>
 
 <!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -15,12 +15,24 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system, BlinkMacSystemFont, 'Noto Sans KR', Roboto, Arial}
+
+/* Header + desktop-style dropdown (Shop/FAQ/Manual/Contact/About) */
+.menu-container { position:absolute; top: 12px; left:10px; z-index:1000; }
+.menu-button { font-size: 26px; cursor: pointer; color: white; }
+.dropdown-menu {
+  display: none; flex-direction: column; position: absolute; background: rgba(0,0,0,0.85);
+  padding: 10px; border-radius: 8px; margin-top: 8px
+}
+.dropdown-menu a { color: white; text-decoration: none; padding: 6px 10px; }
+.dropdown-menu a:hover { background: rgba(255,255,255,0.1); }
+
 header{
   display:flex;align-items:center;gap:10px;justify-content:space-between;
   padding:10px 12px;background:var(--panel);border-bottom:1px solid var(--border)
 }
 .logo{font-weight:800;letter-spacing:.6px;color:var(--accent)}
-/* Hamburger */
+
+/* Side-menu (controls) */
 .h-head{display:flex;align-items:center;gap:8px}
 .nav-toggle{display:none}
 .hamburger{
@@ -37,11 +49,10 @@ header{
   background:#0f1320; border-right:1px solid var(--border); box-shadow:6px 0 20px rgba(0,0,0,.35);
   transform:translateX(-100%); transition:.22s ease; padding:14px
 }
-/* 기본 닫힘 */
-.side-menu{display:block}
+/* 기본 닫힘: 체크되면 닫힘, 해제되면 열림 */
 .nav-toggle:checked ~ .side-menu{transform:translateX(-100%) !important}
 .nav-toggle:not(:checked) ~ .side-menu{transform:none}
-/* 메뉴 내용 */
+
 .menu-title{margin:4px 0 10px; font-weight:800; color:#cfead1}
 .menu-group{border-top:1px solid #1a2034; padding-top:10px; margin-top:10px}
 .menu-group button, .menu-group label, .menu-group input, .menu-group select{
@@ -53,9 +64,9 @@ header{
 .mrow input[type="number"]{flex:1;padding:8px;border-radius:8px;border:1px solid #28304a;background:#0e131e;color:#e5e7eb}
 .mrow select{flex:1;padding:8px;border-radius:8px;border:1px solid #28304a;background:#0e131e;color:#e5e7eb}
 
+/* Oscilloscope + Library + Player */
 #osc{width:100%; height:120px; background:#090b11; border-bottom:1px solid var(--border)}
 #path{font-size:.8rem;color:var(--muted); margin:6px 0 2px; text-align:center}
-
 #library{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:10px}
 .card{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:6px; cursor:pointer}
 .card img{width:100%; aspect-ratio:1/1; object-fit:contain; background:var(--chip); border-radius:8px}
@@ -70,8 +81,10 @@ audio{width:92%; display:block; margin:6px auto 12px}
 </style>
 </head>
 <body>
+
+<!-- Desktop-like dropdown menu -->
 <div class="menu-container">
-  <div class="menu-button" onclick="toggleMenu()">☰</div>
+  <div class="menu-button" onclick="toggleDropdown()">☰</div>
   <div class="dropdown-menu" id="dropdownMenu">
     <a href="https://5dshop.co.kr" target="_blank" rel="noopener" role="menuitem">Shop</a>
     <a href="#" role="menuitem">FAQ</a>
@@ -81,39 +94,17 @@ audio{width:92%; display:block; margin:6px auto 12px}
   </div>
 </div>
 
-<style>
-.menu-container { position: absolute; top: 12px; left: 10px; z-index:1000; }
-.menu-button { font-size: 26px; cursor: pointer; color: white; }
-.dropdown-menu {
-  display: none;
-  flex-direction: column;
-  position: absolute;
-  background: rgba(0,0,0,0.85);
-  padding: 10px;
-  border-radius: 8px;
-  margin-top: 8px;
-}
-.dropdown-menu a {
-  color: white; text-decoration: none; padding: 6px 10px;
-}
-.dropdown-menu a:hover { background: rgba(255,255,255,0.1); }
-</style>
-
-<script>
-function toggleMenu(){
-  const m=document.getElementById('dropdownMenu');
-  m.style.display = (m.style.display==='flex'?'none':'flex');
-}
-</script><header>
+<header>
   <div class="h-head">
-    <input id="navToggle" class="nav-toggle" type="checkbox" checked> <!-- 기본 닫힘 -->
+    <!-- 체크=닫힘(기본), 해제=열림 -->
+    <input id="navToggle" class="nav-toggle" type="checkbox" checked>
     <label for="navToggle" class="hamburger" aria-label="menu"><span></span></label>
     <div class="logo">5DIO</div>
   </div>
   <button id="langToggle" class="langbtn">🇰🇷 한국어</button>
 </header>
 
-<!-- Side Menu -->
+<!-- Side Menu: controls -->
 <nav class="side-menu">
   <div class="menu-title">Menu</div>
   <div class="menu-group">
@@ -144,6 +135,7 @@ function toggleMenu(){
   </div>
 
   <div class="menu-group">
+    <button id="downloadBtn" class="mbtn">⬇︎ Download current</button>
     <button id="mLang" class="mbtn">🇰🇷 언어 전환</button>
   </div>
 </nav>
@@ -160,21 +152,28 @@ function toggleMenu(){
 <audio id="player" controls preload="none"></audio>
 
 <script>
-/* ===== Supabase 설정 (본인 프로젝트로 교체) ===== */
-const SUPABASE_URL = "https://xdjgumqdwedgzwqturcx.supabase.co";  // ← 수정
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";                        // ← 수정
-const SUPABASE_BUCKET = "media";                              // ← 필요 시 수정
+/* ===== Desktop-like dropdown ===== */
+function toggleDropdown(){
+  const m=document.getElementById('dropdownMenu');
+  m.style.display = (m.style.display==='flex'?'none':'flex');
+}
+
+/* ===== Supabase 설정 (교체) ===== */
+const SUPABASE_URL   = "https://YOUR_PROJECT_ID.supabase.co";  // ← 수정
+const SUPABASE_KEY   = "YOUR_ANON_KEY";                        // ← 수정
+const SUPABASE_BUCKET= "media";                                // ← 필요 시 수정
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const PUBLIC_BASE = SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/object/public/" + SUPABASE_BUCKET + "/";
 const RENDER_BASE = SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/render/image/public/" + SUPABASE_BUCKET + "/";
 
-/* ===== 엘리먼트 ===== */
+/* ===== Elements ===== */
 const navToggle = document.getElementById('navToggle');
 const langBtn   = document.getElementById('langToggle');
 const mRoot = document.getElementById('mRoot');
 const mBack = document.getElementById('mBack');
 const mRefresh = document.getElementById('mRefresh');
 const mLang = document.getElementById('mLang');
+const downloadBtn = document.getElementById('downloadBtn');
 const vol = document.getElementById('vol');
 const bal = document.getElementById('bal');
 const loopChk = document.getElementById('loop');
@@ -183,8 +182,8 @@ const timerMode = document.getElementById('timerMode');
 const timerStart = document.getElementById('timerStart');
 const timerCancel = document.getElementById('timerCancel');
 
-const canvas = document.getElementById('osc');
-const ctx = canvas.getContext('2d');
+const oscCanvas = document.getElementById('osc');
+const oscCtx = oscCanvas.getContext('2d');
 const player = document.getElementById('player');
 const lib = document.getElementById('library');
 const pathEl = document.getElementById('path');
@@ -193,69 +192,67 @@ const btnRefresh = document.getElementById('btnRefresh');
 
 const enc = s => s.split('/').filter(Boolean).map(encodeURIComponent).join('/');
 
-/* ===== Audio graph ===== */
+/* ===== Audio graph (순서/중복 정리) ===== */
 const audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-const srcNode = audioCtx.createMediaElementSource(player);
+const srcNode  = audioCtx.createMediaElementSource(player);
+const panner   = audioCtx.createStereoPanner();
 const gainNode = audioCtx.createGain();
 const analyser = audioCtx.createAnalyser();
-srcNode.connect(gainNode).connect(analyser).connect(audioCtx.destination);
-const panner = audioCtx.createStereoPanner();
 
+// 한 번만 연결
 srcNode.connect(panner).connect(gainNode).connect(analyser).connect(audioCtx.destination);
+
+// 슬라이더/loop 초기화
 gainNode.gain.value = parseFloat(vol.value);
-panner.pan.value = parseFloat(bal.value);
-player.loop = loopChk.checked;
+panner.pan.value    = parseFloat(bal.value);
+player.loop         = loopChk.checked;
 
-/* ===== 오디오 언락 (재생/클릭 시 resume) ===== */
-function unlockAudio(){
-  if (audioCtx.state !== 'running') audioCtx.resume().catch(()=>{});
-}
-document.addEventListener('click', unlockAudio, { once:true });
-player.addEventListener('play', unlockAudio);
+/* ===== 전역 언락 함수 (모든 곳에서 호출 가능) ===== */
+window.ensureAudioUnlocked = function ensureAudioUnlocked(){
+  try { if (audioCtx.state !== 'running') audioCtx.resume().catch(()=>{}); } catch(_) {}
+};
+// 최초 제스처/재생 시 자동 언락
+document.addEventListener('pointerdown', window.ensureAudioUnlocked, { once:true });
+player.addEventListener('play', window.ensureAudioUnlocked);
 
-/* ===== 오실로스코프 ===== */
-const osccanvas = document.getElementById('osc') || document.getElementById('oscilloscope');
-const oscctx    = osccanvas.getContext('2d');
-
+/* ===== Oscilloscope (미니) ===== */
 analyser.fftSize = 2048;
 const data = new Uint8Array(analyser.fftSize);
 
 function resizeOsc(){
-  // 폭은 CSS에 맞추고 높이는 고정(원하면 조정 가능)
-  canvas.width  = canvas.clientWidth || window.innerWidth;
-  canvas.height = 120;
+  oscCanvas.width  = oscCanvas.clientWidth || window.innerWidth;
+  oscCanvas.height = 120;
 }
 window.addEventListener('resize', resizeOsc);
 resizeOsc();
 
 function drawOsc(){
   requestAnimationFrame(drawOsc);
-
   analyser.getByteTimeDomainData(data);
 
   // 배경
-  ctx.fillStyle = '#090b11';
-  oscctx.fillRect(0, 0, osccanvas.width, osccanvas.height);
+  oscCtx.fillStyle = '#090b11';
+  oscCtx.fillRect(0, 0, oscCanvas.width, oscCanvas.height);
 
   // 파형
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = '#9cff8b';
-  ctx.beginPath();
+  oscCtx.lineWidth = 2;
+  oscCtx.strokeStyle = '#9cff8b';
+  oscCtx.beginPath();
 
-  const slice = canvas.width / data.length;
+  const slice = oscCanvas.width / data.length;
   let x = 0;
 
   for (let i = 0; i < data.length; i++){
-    const y = (data[i] / 128.0) * (canvas.height / 2); // 128이 기준선
-    if (i === 0) ctx.moveTo(x, y);
-    else         ctx.lineTo(x, y);
+    const y = (data[i] / 128.0) * (oscCanvas.height / 2);
+    if (i === 0) oscCtx.moveTo(x, y);
+    else         oscCtx.lineTo(x, y);
     x += slice;
   }
-
-  ctx.lineTo(canvas.width, canvas.height / 2);
-  ctx.stroke();
+  oscCtx.lineTo(oscCanvas.width, oscCanvas.height / 2);
+  oscCtx.stroke();
 }
 drawOsc();
+
 /* ===== 라이브러리 ===== */
 let cwd = '';
 async function listFolder(prefix=''){
@@ -303,6 +300,8 @@ async function loadFolder(path=''){
         player.src = absPublic(full);
         player.play().catch(()=>{});
         navToggle.checked = true;
+        // 다운로드용 현재키 저장
+        currentKey = full;
       };
       card.append(img, cap); lib.append(card);
     }
@@ -313,7 +312,7 @@ async function loadFolder(path=''){
 btnBack.onclick = ()=>{ if(!cwd) return; const parts=cwd.split('/'); parts.pop(); loadFolder(parts.join('/')); };
 btnRefresh.onclick = ()=> loadFolder(cwd);
 
-/* ===== 햄버거 메뉴 액션 ===== */
+/* ===== 햄버거-사이드메뉴 액션 ===== */
 mRoot.onclick = ()=>{ ensureAudioUnlocked(); loadFolder(''); navToggle.checked = true; };
 mBack.onclick = ()=>{ ensureAudioUnlocked(); btnBack.onclick(); };
 mRefresh.onclick = ()=>{ ensureAudioUnlocked(); btnRefresh.onclick(); };
@@ -321,8 +320,8 @@ mLang.onclick = ()=> langBtn.click();
 
 /* ===== 슬라이더/루프/타이머 ===== */
 vol.oninput = ()=>{ gainNode.gain.value = parseFloat(vol.value); };
-bal.oninput = ()=>{ panner.pan.value = parseFloat(bal.value); };
-loopChk.onchange = ()=>{ player.loop = loopChk.checked; };
+bal.oninput = ()=>{ panner.pan.value     = parseFloat(bal.value); };
+loopChk.onchange = ()=>{ player.loop      = loopChk.checked; };
 
 let timerHandle = null;
 function clearTimer(){ if (timerHandle){ clearTimeout(timerHandle); timerHandle=null; } }
@@ -343,32 +342,31 @@ let lang = 'ko';
 function applyLang(){
   document.title = (lang==='ko'?'5DIO 모바일+':'5DIO Mobile+');
   langBtn.textContent = (lang==='ko'?'🇰🇷 한국어':'🇺🇸 English');
-  document.getElementById('btnBack').textContent = (lang==='ko'?'Back':'Back'); // 동일 표기 유지
-  document.getElementById('btnRefresh').textContent = (lang==='ko'?'Refresh':'Refresh'); // 동일
+  document.getElementById('btnBack').textContent = (lang==='ko'?'Back':'Back');
+  document.getElementById('btnRefresh').textContent = (lang==='ko'?'Refresh':'Refresh');
   document.querySelector('.menu-title').textContent = (lang==='ko'?'메뉴':'Menu');
   mRoot.textContent = (lang==='ko'?'Root':'Root');
   mBack.textContent = (lang==='ko'?'Back':'Back');
   mRefresh.textContent = (lang==='ko'?'Refresh':'Refresh');
-  document.querySelector('label[for="timerMin"]')?.insertAdjacentText; // no-op safe
 }
 langBtn.onclick = ()=>{ lang = (lang==='ko'?'en':'ko'); applyLang(); };
 applyLang();
 
-/* ===== 플레이어 이벤트 ===== */
-player.addEventListener('play', () => {
-  if (window.audioCtx && audioCtx.state !== 'running') {
-    audioCtx.resume().catch(()=>{});
+/* ===== 오프라인 다운로드 ===== */
+let currentKey = ""; // 마지막 클릭한 트랙의 키 저장
+downloadBtn.onclick = ()=>{
+  if (!currentKey){
+    alert(lang==='ko'?'먼저 트랙을 선택해 주세요.':'Please select a track first.');
+    return;
   }
-});
-document.addEventListener('pointerdown', () => {
-  if (window.audioCtx && audioCtx.state !== 'running') {
-    audioCtx.resume().catch(()=>{});
-  }
-}, { once:true });
-player.addEventListener('play', ()=>{
-  // 추가로 파형이 즉시 살아나도록 resume 보장
-  ensureAudioUnlocked();
-});
+  const a = document.createElement('a');
+  a.href = absPublic(currentKey);       // public URL 직접 다운로드
+  a.download = currentKey.split('/').pop(); // 파일명 보존
+  a.rel = "noopener";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+};
 
 /* ===== 부팅 ===== */
 loadFolder('');
