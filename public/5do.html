@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>5DIO Mobile+</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+body {
+  background:#0b0d13;
+  color:#e5e7eb;
+  font-family: 'Noto Sans KR', sans-serif;
+  margin:0; padding:0;
+  text-align:center;
+}
+header {
+  background:#12141b;
+  color:#aef7a3;
+  font-size:1.2rem;
+  padding:10px;
+  letter-spacing:1px;
+  display:flex; justify-content:space-between; align-items:center;
+}
+#langToggle {
+  background:#1e2130;
+  border:1px solid #30354f;
+  color:#cce8d8;
+  border-radius:8px;
+  padding:5px 10px;
+  cursor:pointer;
+}
+#oscilloscope {
+  width:100%; height:120px;
+  background:#090b11;
+  border-bottom:1px solid #1c1f2a;
+}
+#library {
+  display:grid; grid-template-columns:repeat(2,1fr);
+  gap:10px; padding:10px;
+}
+.card {
+  background:#181b25;
+  border:1px solid #222738;
+  border-radius:10px;
+  cursor:pointer;
+  padding:5px;
+}
+.card img {
+  width:100%;
+  aspect-ratio:1/1;
+  object-fit:contain;
+  border-radius:8px;
+  background:#0e1016;
+}
+.card span { display:block; margin-top:6px; font-size:0.9rem; }
+
+#controls { margin:10px; }
+.slider {
+  width:80%;
+  accent-color:#9cff8b;
+}
+audio {
+  width:90%;
+  margin:8px auto;
+  display:block;
+}
+#nav { display:flex; justify-content:center; gap:8px; margin-bottom:8px; }
+button {
+  background:#1e2232; border:1px solid #2c3147; color:#eee;
+  border-radius:6px; padding:6px 10px; cursor:pointer;
+}
+button:hover { background:#2e3348; }
+</style>
+</head>
+<body>
+
+<header>
+  <span>5DIO Mobile+</span>
+  <button id="langToggle">🇰🇷 한국어</button>
+</header>
+
+<canvas id="oscilloscope"></canvas>
+<div id="path" style="font-size:0.8rem;color:#9ba3b6;margin-top:4px;">/</div>
+
+<div id="library"></div>
+<div id="nav">
+  <button id="btnBack">Back</button>
+  <button id="btnRefresh">Refresh</button>
+</div>
+
+<div id="controls">
+  <div>
+    <label>Volume</label><br>
+    <input id="volSlider" type="range" min="0" max="1" step="0.01" value="1" class="slider">
+  </div>
+  <div>
+    <label>Balance</label><br>
+    <input id="balSlider" type="range" min="-1" max="1" step="0.01" value="0" class="slider">
+  </div>
+</div>
+
+<audio id="player" controls></audio>
+
+<script>
+// ===== Supabase Config =====
+const SUPABASE_URL = "https://YOUR_PROJECT_ID.supabase.co";
+const SUPABASE_KEY = "YOUR_ANON_KEY";
+const SUPABASE_BUCKET = "media";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const PUBLIC_BASE = `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET}/`;
+const RENDER_BASE = `${SUPABASE_URL}/storage/v1/render/image/public/${SUPABASE_BUCKET}/`;
+
+// ===== UI Elements =====
+const canvas = document.getElementById("oscilloscope");
+const ctx = canvas.getContext("2d");
+const player = document.getElementById("player");
+const volSlider = document.getElementById("volSlider");
+const balSlider = document.getElementById("balSlider");
+const lib = document.getElementById("library");
+const pathEl = document.getElementById("path");
+const btnBack = document.getElementById("btnBack");
+const btnRefresh = document.getElementById("btnRefresh");
+const langBtn = document.getElementById("langToggle");
+
+// ===== Audio Context for Visualization =====
+const audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+const srcNode = audioCtx.createMediaElementSource(player);
+const analyser = audioCtx.createAnalyser();
+const gainNode = audioCtx.createGain();
+const panner = audioCtx.createStereoPanner();
+srcNode.connect(panner).connect(gainNode).connect(analyser).connect(audioCtx.destination);
+
+// ===== Oscilloscope Animation =====
+analyser.fftSize = 2048;
+const bufferLength = analyser.fftSize;
+const dataArray = new Uint8Array(bufferLength);
+function drawOsc() {
+  requestAnimationFrame(drawOsc);
+  analyser.getByteTimeDomainData(dataArray);
+  ctx.fillStyle = "#090b11";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = "#9cff8b";
+  ctx.beginPath();
+  const sliceWidth = canvas.width * 1.0 / bufferLength;
+  let x=0;
+  for(let i=0;i<bufferLength;i++){
+    const v = dataArray[i] / 128.0;
+    const y = v * canvas.height/2;
+    if(i===0) ctx.moveTo(x,y);
+    else ctx.lineTo(x,y);
+    x+=sliceWidth;
+  }
+  ctx.lineTo(canvas.width, canvas.height/2);
+  ctx.stroke();
+}
+drawOsc();
+
+// ===== Folder Browsing =====
+let cwd = '';
+async function listFolder(path='') {
+  const { data, error } = await sb.storage.from(SUPABASE_BUCKET)
+    .list(path, { limit:1000, sortBy:{column:'name',order:'asc'} });
+  if(error){ console.error(error); return []; }
+  return data;
+}
+function absMedia(p){ return PUBLIC_BASE + encodeURIComponent(p); }
+function absRender(p){ return RENDER_BASE + encodeURIComponent(p); }
+
+async function loadFolder(path=''){
+  cwd = path;
+  pathEl.textContent = "/" + (path||'');
+  lib.innerHTML = '<p>Loading...</p>';
+  const items = await listFolder(path);
+  lib.innerHTML='';
+  for(const item of items){
+    const name = item.name;
+    const full = (path?path+'/':'')+name;
+    if(!name.includes('.')){
+      const div=document.createElement('div'); div.className='card';
+      const img=document.createElement('img');
+      img.src=absMedia(full+'/folder.png');
+      img.onerror=()=>img.src='https://placehold.co/300x300/111/aaa?text=Folder';
+      const span=document.createElement('span'); span.textContent=name;
+      div.onclick=()=>loadFolder(full);
+      div.append(img,span); lib.append(div);
+    } else if(/\.(mp3|wav|m4a|ogg)$/i.test(name)){
+      const div=document.createElement('div'); div.className='card';
+      const img=document.createElement('img');
+      img.src=absMedia(full.replace(/\.[^.]+$/,'.png'));
+      img.onerror=()=>img.src='https://placehold.co/300x300/222/888?text=Audio';
+      const span=document.createElement('span'); span.textContent=name;
+      div.onclick=()=>{
+        player.src=absMedia(full);
+        player.play();
+        audioCtx.resume();
+      };
+      div.append(img,span); lib.append(div);
+    }
+  }
+}
+
+btnBack.onclick=()=>{
+  if(!cwd)return;
+  const parts=cwd.split('/');
+  parts.pop();
+  loadFolder(parts.join('/'));
+};
+btnRefresh.onclick=()=>loadFolder(cwd);
+volSlider.oninput=()=>gainNode.gain.value=parseFloat(volSlider.value);
+balSlider.oninput=()=>panner.pan.value=parseFloat(balSlider.value);
+
+// ===== Language Toggle =====
+let lang='ko';
+langBtn.onclick=()=>{
+  lang = lang==='ko'?'en':'ko';
+  langBtn.textContent = lang==='ko'?'🇰🇷 한국어':'🇺🇸 English';
+  document.title = lang==='ko'?'5DIO 모바일+':'5DIO Mobile+';
+  pathEl.textContent = lang==='ko'?"/ (폴더 경로)":"Folder Path";
+};
+
+// ===== Responsive Canvas =====
+function resizeCanvas(){
+  canvas.width=window.innerWidth;
+  canvas.height=120;
+}
+window.addEventListener('resize',resizeCanvas);
+resizeCanvas();
+
+// ===== Init =====
+loadFolder('');
+</script>
+</body>
+</html>
