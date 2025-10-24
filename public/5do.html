@@ -213,8 +213,8 @@ document.addEventListener('click', unlockAudio, { once:true });
 player.addEventListener('play', unlockAudio);
 
 /* ===== 오실로스코프 ===== */
-let canvas = document.getElementById('osc') || document.getElementById('oscilloscope');
-const ctx    = canvas.getContext('2d');
+const osccanvas = document.getElementById('osc') || document.getElementById('oscilloscope');
+const oscctx    = osccanvas.getContext('2d');
 
 analyser.fftSize = 2048;
 const data = new Uint8Array(analyser.fftSize);
@@ -234,7 +234,7 @@ function drawOsc(){
 
   // 배경
   ctx.fillStyle = '#090b11';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  oscctx.fillRect(0, 0, osccanvas.width, osccanvas.height);
 
   // 파형
   ctx.lineWidth = 2;
