@@ -1,74 +1,122 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>5DIO Mobile</title>
+<title>5DIO Lite</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <style>
-body{margin:0;background:#0b0d13;color:#e5e7eb;font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',Roboto,Arial}
-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#12141b;border-bottom:1px solid #222738}
-.logo{font-weight:700;color:#9cff8b;font-size:1.2rem}
+:root{
+  --bg:#0b0d13; --panel:#12141b; --card:#181b25; --ink:#e5e7eb;
+  --muted:#9aa3b7; --border:#222738; --chip:#0e1016; --accent:#9cff8b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',Roboto,Arial}
 
-/* Hamburger & slide menu */
-.nav-toggle{display:none}
-.hamburger{width:36px;height:32px;border-radius:8px;border:1px solid #222738;background:#1c2130;display:flex;align-items:center;justify-content:center;cursor:pointer}
-.hamburger span,.hamburger span:before,.hamburger span:after{display:block;background:#cfd6e6;height:2px;width:18px;position:relative;border-radius:2px}
+/* Header */
+header{display:flex;align-items:center;gap:10px;justify-content:flex-start;
+  padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--border)}
+.logo{font-weight:700;color:var(--accent);font-size:1.2rem}
+
+/* Hamburger (single) + slide menu */
+.nav-toggle{display:none} /* controller checkbox */
+.hamburger{width:36px;height:32px;border-radius:8px;border:1px solid var(--border);
+  background:#1c2130;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.hamburger span,.hamburger span:before,.hamburger span:after{
+  display:block;background:#cfd6e6;height:2px;width:18px;position:relative;border-radius:2px}
 .hamburger span:before,.hamburger span:after{content:"";position:absolute;left:0}
 .hamburger span:before{top:-6px}.hamburger span:after{top:6px}
-.side-menu{position:fixed;top:0;left:0;width:78%;max-width:340px;height:100vh;background:#0f1320;border-right:1px solid #222738;box-shadow:6px 0 20px rgba(0,0,0,.35);transform:translateX(-100%);transition:.25s ease;padding:14px;overflow-y:auto}
+
+.side-menu{
+  position:fixed;top:0;left:0;width:78%;max-width:340px;height:100vh;
+  background:#0f1320;border-right:1px solid var(--border);box-shadow:6px 0 20px rgba(0,0,0,.35);
+  transform:translateX(-100%);transition:.25s ease;padding:14px;overflow-y:auto;z-index:1001
+}
+/* 기본 닫힘(checked=닫힘) */
 #navToggle:checked ~ nav.side-menu{transform:translateX(-100%)!important}
 #navToggle:not(:checked) ~ nav.side-menu{transform:none}
+
 .menu-title{margin:4px 0 10px;font-weight:800;color:#cfead1}
-.mbtn{padding:9px 10px;border-radius:10px;border:1px solid #222738;background:#171d2b;color:#dfe7f6;text-align:left;width:100%;margin:5px 0}
-.mrow{display:flex;align-items:center;gap:10px;margin:6px 0}
-.mrow input[type="range"]{flex:1}
+.mbtn{padding:9px 10px;border-radius:10px;border:1px solid var(--border);
+  background:#171d2b;color:#dfe7f6;text-align:left;width:100%;margin:6px 0}
+
+/* Backdrop (open 상태에서 화면 터치 시 닫힘) */
+.backdrop{
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:1000;
+}
+#navToggle:not(:checked) ~ .backdrop{ display:block; }
 
 /* Canvas + library + player */
-canvas{width:100%;height:120px;background:#090b11;display:block;border-bottom:1px solid #222738}
+#osc{width:100%;height:120px;background:#090b11;display:block;border-bottom:1px solid var(--border)}
 #library{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:10px}
-.card{background:#181b25;border:1px solid #222738;border-radius:12px;padding:6px;cursor:pointer}
-.card img{width:100%;aspect-ratio:1/1;object-fit:contain;background:#0e1016;border-radius:8px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:6px;cursor:pointer}
+.card img{width:100%;aspect-ratio:1/1;object-fit:contain;background:var(--chip);border-radius:8px}
 .card span{display:block;margin-top:6px;font-size:.92rem}
 #nav{display:flex;justify-content:center;gap:8px;margin:6px 0 10px}
 .btn{background:#1e2232;border:1px solid #2c3147;color:#eee;border-radius:8px;padding:6px 12px}
-audio{width:92%;display:block;margin:6px auto 12px}
+
+/* Player controls (Loop/Timer/Balance) */
+.controls{
+  display:flex; flex-wrap:wrap; align-items:center; gap:10px;
+  padding:8px 12px; border-top:1px solid var(--border); border-bottom:1px solid var(--border);
+  background:#0f1320;
+}
+.controls .group{display:flex;align-items:center;gap:8px}
+.controls label{font-size:.9rem;color:#cfd6e6}
+.controls input[type="number"]{
+  width:76px; padding:6px 8px; border-radius:8px; border:1px solid #28304a;
+  background:#0e131e; color:#e5e7eb;
+}
+.controls input[type="range"]{ width:160px }
+audio{width:92%;display:block;margin:10px auto 16px}
 </style>
 </head>
 <body>
 
-<!-- ✅ 토글 체크박스는 nav와 “형제”여야 CSS 토글이 작동 -->
+<!-- controller checkbox MUST be sibling of nav.side-menu and backdrop -->
 <input id="navToggle" class="nav-toggle" type="checkbox" checked />
 
 <header>
-  <div style="display:flex;align-items:center;gap:10px">
-    <label for="navToggle" class="hamburger" aria-label="menu"><span></span></label>
-    <div class="logo">5DIO</div>
-  </div>
+  <label for="navToggle" class="hamburger" aria-label="menu"><span></span></label>
+  <div class="logo">5DIO</div>
 </header>
 
 <nav class="side-menu">
   <div class="menu-title">Menu</div>
-  <button id="mRoot" class="mbtn">Root</button>
-  <button id="mBack" class="mbtn">Back</button>
-  <button id="mRefresh" class="mbtn">Refresh</button>
   <a class="mbtn" href="https://5dshop.co.kr" target="_blank" rel="noopener">Shop</a>
   <a class="mbtn" href="#" rel="noopener">FAQ</a>
   <a class="mbtn" href="#" rel="noopener">Manual</a>
   <a class="mbtn" href="#" rel="noopener">Contact</a>
   <a class="mbtn" href="#" rel="noopener">About</a>
-
-  <div class="menu-title" style="margin-top:14px">Audio</div>
-  <div class="mrow"><label>Volume</label><input id="vol" type="range" min="0" max="1" step="0.01" value="1"></div>
-  <div class="mrow"><label>Balance</label><input id="bal" type="range" min="-1" max="1" step="0.01" value="0"></div>
 </nav>
+<!-- 밖을 누르면 닫히는 백드롭 -->
+<div id="backdrop" class="backdrop"></div>
 
 <canvas id="osc"></canvas>
+
 <div id="library"></div>
 <div id="nav">
   <button id="btnBack" class="btn">Back</button>
   <button id="btnRefresh" class="btn">Refresh</button>
 </div>
+
+<!-- ▶︎ 오디오 플레이어 상단 컨트롤(Loop/Timer/Balance) -->
+<div class="controls">
+  <div class="group">
+    <label><input type="checkbox" id="loop"> Loop</label>
+  </div>
+  <div class="group">
+    <label for="timerMin">Timer(min)</label>
+    <input id="timerMin" type="number" min="1" max="180" value="30">
+    <button id="timerStart" class="btn">Start</button>
+    <button id="timerCancel" class="btn">Cancel</button>
+  </div>
+  <div class="group">
+    <label for="bal">Balance</label>
+    <input id="bal" type="range" min="-1" max="1" step="0.01" value="0">
+  </div>
+</div>
+
 <audio id="player" controls preload="none" playsinline></audio>
 
 <script>
@@ -81,12 +129,20 @@ const PUBLIC=SUPABASE_URL.replace(/\/+$/,'')+"/storage/v1/object/public/"+BUCKET
 
 /* ===== Elements ===== */
 const navToggle=document.getElementById("navToggle");
-const player=document.getElementById("player");
-player.crossOrigin="anonymous"; // analyser/CORS 대비
-const vol=document.getElementById("vol");
+const backdrop=document.getElementById("backdrop");
+const lib=document.getElementById("library");
+const btnBack=document.getElementById("btnBack");
+const btnRefresh=document.getElementById("btnRefresh");
+const loopChk=document.getElementById("loop");
+const timerMin=document.getElementById("timerMin");
+const timerStart=document.getElementById("timerStart");
+const timerCancel=document.getElementById("timerCancel");
 const bal=document.getElementById("bal");
 
-/* ===== Audio graph (단일 생성 & 순서 보장) ===== */
+/* ===== Audio graph ===== */
+const player=document.getElementById("player");
+player.crossOrigin="anonymous";
+
 const audioCtx=new (window.AudioContext||window.webkitAudioContext)();
 const src=audioCtx.createMediaElementSource(player);
 const pan=audioCtx.createStereoPanner();
@@ -94,11 +150,10 @@ const gain=audioCtx.createGain();
 const analyser=audioCtx.createAnalyser();
 src.connect(pan).connect(gain).connect(analyser).connect(audioCtx.destination);
 
-// 슬라이더 반영
-gain.gain.value=parseFloat(vol.value||"1");
-pan.pan.value=parseFloat(bal.value||"0");
-vol.oninput=()=>{gain.gain.value=+vol.value;}
-bal.oninput=()=>{pan.pan.value=+bal.value;}
+// Loop / Balance UI 연동
+player.loop = loopChk.checked;
+loopChk.onchange = ()=>{ player.loop = loopChk.checked; };
+bal.oninput = ()=>{ pan.pan.value = parseFloat(bal.value); };
 
 // 사용자 제스처/재생 시 컨텍스트 unlock
 window.ensureAudioUnlocked=function(){
@@ -106,6 +161,17 @@ window.ensureAudioUnlocked=function(){
 };
 document.addEventListener("pointerdown",window.ensureAudioUnlocked,{once:true});
 player.addEventListener("play",window.ensureAudioUnlocked);
+
+/* ===== Timer ===== */
+let timerHandle=null;
+function clearTimer(){ if(timerHandle){ clearTimeout(timerHandle); timerHandle=null; } }
+timerStart.onclick=()=>{
+  clearTimer();
+  const mins=Math.max(1,Math.min(180,parseInt(timerMin.value||"30",10)));
+  timerHandle=setTimeout(()=>{ player.pause(); /* 필요시 player.currentTime=0; */ }, mins*60*1000);
+  alert(`Timer started: ${mins} min`);
+};
+timerCancel.onclick=()=>{ clearTimer(); alert("Timer cancelled"); };
 
 /* ===== Oscilloscope ===== */
 analyser.fftSize=2048;
@@ -127,8 +193,7 @@ window.addEventListener("resize",resize);resize();
   ctx.lineTo(canvas.width,canvas.height/2);ctx.stroke();
 })();
 
-/* ===== Supabase Library ===== */
-const lib=document.getElementById("library");
+/* ===== Library ===== */
 let cwd="";
 const enc=s=>s.split("/").filter(Boolean).map(encodeURIComponent).join("/");
 async function list(p=""){
@@ -149,7 +214,7 @@ async function load(p=""){
       img.src=abs(full+"/folder.png");
       img.onerror=()=>img.src="https://placehold.co/300x300/111/aaa?text=Folder";
       const s=document.createElement("span");s.textContent=name;
-      c.onclick=()=>{window.ensureAudioUnlocked();load(full);navToggle.checked=true;};
+      c.onclick=()=>{ window.ensureAudioUnlocked(); load(full); navToggle.checked=true; };
       c.append(img,s);lib.append(c);
       continue;
     }
@@ -165,25 +230,23 @@ async function load(p=""){
         window.ensureAudioUnlocked();
         player.src=abs(full);
         player.play().catch(err=>console.warn("play blocked",err));
-        navToggle.checked=true;
+        navToggle.checked=true; // 메뉴 닫기
       };
       c.append(img,s);lib.append(c);
     }
   }
 }
 
-// 내비게이션
-document.getElementById("btnBack").onclick=()=>{
+// 내비게이션(하단 버튼)
+btnBack.onclick=()=>{
   if(!cwd)return;const parts=cwd.split("/");parts.pop();load(parts.join("/"));
 };
-document.getElementById("btnRefresh").onclick=()=>load(cwd);
-document.getElementById("mRoot").onclick=()=>{load("");navToggle.checked=true;};
-document.getElementById("mBack").onclick=()=>{
-  if(!cwd)return;const parts=cwd.split("/");parts.pop();load(parts.join("/"));navToggle.checked=true;
-};
-document.getElementById("mRefresh").onclick=()=>{load(cwd);navToggle.checked=true;};
+btnRefresh.onclick=()=>load(cwd);
 
-// 부팅
+// 햄버거 닫힘: 백드롭 클릭 시
+backdrop.addEventListener('click', ()=>{ navToggle.checked=true; });
+
+/* 부팅 */
 load("");
 </script>
 </body>
