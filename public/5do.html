@@ -3,373 +3,166 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>5DO Sound Player</title>
-
-<!-- Supabase -->
+<title>5DIO Mobile</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 
 <style>
-:root{
-  --bg:#0b0d13; --panel:#12141b; --card:#181b25; --ink:#e5e7eb;
-  --muted:#9aa3b7; --border:#222738; --chip:#0e1016; --accent:#9cff8b;
-}
-*{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system, BlinkMacSystemFont, 'Noto Sans KR', Roboto, Arial}
+body{margin:0;background:#0b0d13;color:#e5e7eb;font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',Roboto,Arial}
+header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#12141b;border-bottom:1px solid #222738}
+.logo{font-weight:700;color:#9cff8b;font-size:1.2rem}
 
-/* Header + desktop-style dropdown (Shop/FAQ/Manual/Contact/About) */
-.menu-container { position:absolute; top: 12px; left:10px; z-index:1000; }
-.menu-button { font-size: 26px; cursor: pointer; color: white; }
-.dropdown-menu {
-  display: none; flex-direction: column; position: absolute; background: rgba(0,0,0,0.85);
-  padding: 10px; border-radius: 8px; margin-top: 8px
-}
-.dropdown-menu a { color: white; text-decoration: none; padding: 6px 10px; }
-.dropdown-menu a:hover { background: rgba(255,255,255,0.1); }
-
-header{
-  display:flex;align-items:center;gap:10px;justify-content:space-between;
-  padding:10px 12px;background:var(--panel);border-bottom:1px solid var(--border)
-}
-.logo{font-weight:800;letter-spacing:.6px;color:var(--accent)}
-
-/* Side-menu (controls) */
-.h-head{display:flex;align-items:center;gap:8px}
 .nav-toggle{display:none}
-.hamburger{
-  width:36px;height:32px;border-radius:8px;border:1px solid var(--border);
-  background:#1c2130;display:flex;align-items:center;justify-content:center;cursor:pointer
-}
-.hamburger span, .hamburger span:before, .hamburger span:after{
-  display:block; background:#cfd6e6; height:2px; width:18px; position:relative; border-radius:2px
-}
-.hamburger span:before, .hamburger span:after{content:""; position:absolute; left:0}
-.hamburger span:before{top:-6px} .hamburger span:after{top:6px}
+.hamburger{width:36px;height:32px;border-radius:8px;border:1px solid #222738;
+  background:#1c2130;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.hamburger span,.hamburger span:before,.hamburger span:after{
+  display:block;background:#cfd6e6;height:2px;width:18px;position:relative;border-radius:2px}
+.hamburger span:before,.hamburger span:after{content:"";position:absolute;left:0}
+.hamburger span:before{top:-6px}.hamburger span:after{top:6px}
+
 .side-menu{
-  position:fixed; top:0; left:0; width:78%; max-width:340px; height:100vh;
-  background:#0f1320; border-right:1px solid var(--border); box-shadow:6px 0 20px rgba(0,0,0,.35);
-  transform:translateX(-100%); transition:.22s ease; padding:14px
+  position:fixed;top:0;left:0;width:78%;max-width:340px;height:100vh;
+  background:#0f1320;border-right:1px solid #222738;box-shadow:6px 0 20px rgba(0,0,0,.35);
+  transform:translateX(-100%);transition:.25s ease;padding:14px;overflow-y:auto
 }
-/* 기본 닫힘: 체크되면 닫힘, 해제되면 열림 */
-.nav-toggle:checked ~ .side-menu{transform:translateX(-100%) !important}
-.nav-toggle:not(:checked) ~ .side-menu{transform:none}
+.nav-toggle:checked~.side-menu{transform:translateX(-100%)!important}
+.nav-toggle:not(:checked)~.side-menu{transform:none}
 
-.menu-title{margin:4px 0 10px; font-weight:800; color:#cfead1}
-.menu-group{border-top:1px solid #1a2034; padding-top:10px; margin-top:10px}
-.menu-group button, .menu-group label, .menu-group input, .menu-group select{
-  width:100%; margin:6px 0; font-size:.95rem
-}
-.mbtn{padding:9px 10px;border-radius:10px;border:1px solid var(--border);background:#171d2b;color:#dfe7f6; text-align:left}
-.mrow{display:flex;align-items:center;gap:10px}
+.menu-title{margin:4px 0 10px;font-weight:800;color:#cfead1}
+.mbtn{padding:9px 10px;border-radius:10px;border:1px solid #222738;background:#171d2b;color:#dfe7f6;text-align:left;width:100%;margin:5px 0}
+.mrow{display:flex;align-items:center;gap:10px;margin:6px 0}
 .mrow input[type="range"]{flex:1}
-.mrow input[type="number"]{flex:1;padding:8px;border-radius:8px;border:1px solid #28304a;background:#0e131e;color:#e5e7eb}
-.mrow select{flex:1;padding:8px;border-radius:8px;border:1px solid #28304a;background:#0e131e;color:#e5e7eb}
 
-/* Oscilloscope + Library + Player */
-#osc{width:100%; height:120px; background:#090b11; border-bottom:1px solid var(--border)}
-#path{font-size:.8rem;color:var(--muted); margin:6px 0 2px; text-align:center}
+canvas{width:100%;height:120px;background:#090b11;display:block;border-bottom:1px solid #222738}
 #library{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:10px}
-.card{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:6px; cursor:pointer}
-.card img{width:100%; aspect-ratio:1/1; object-fit:contain; background:var(--chip); border-radius:8px}
+.card{background:#181b25;border:1px solid #222738;border-radius:12px;padding:6px;cursor:pointer}
+.card img{width:100%;aspect-ratio:1/1;object-fit:contain;background:#0e1016;border-radius:8px}
 .card span{display:block;margin-top:6px;font-size:.92rem}
-
-#nav{display:flex; justify-content:center; gap:8px; margin:6px 0 10px}
+#nav{display:flex;justify-content:center;gap:8px;margin:6px 0 10px}
 .btn{background:#1e2232;border:1px solid #2c3147;color:#eee;border-radius:8px;padding:6px 12px}
-.btn:active{transform:translateY(1px)}
-
-audio{width:92%; display:block; margin:6px auto 12px}
-.langbtn{padding:6px 10px;border-radius:8px;border:1px solid var(--border); background:#1e2232;color:#e7efea}
+audio{width:92%;display:block;margin:6px auto 12px}
 </style>
 </head>
 <body>
-
-<!-- Desktop-like dropdown menu -->
-<div class="menu-container">
-  <div class="menu-button" onclick="toggleDropdown()">☰</div>
-  <div class="dropdown-menu" id="dropdownMenu">
-    <a href="https://5dshop.co.kr" target="_blank" rel="noopener" role="menuitem">Shop</a>
-    <a href="#" role="menuitem">FAQ</a>
-    <a href="#" role="menuitem">Manual</a>
-    <a href="#" role="menuitem">Contact</a>
-    <a href="#" role="menuitem">About</a>
-  </div>
-</div>
-
 <header>
-  <div class="h-head">
-    <!-- 체크=닫힘(기본), 해제=열림 -->
+  <div style="display:flex;align-items:center;gap:10px">
     <input id="navToggle" class="nav-toggle" type="checkbox" checked>
     <label for="navToggle" class="hamburger" aria-label="menu"><span></span></label>
     <div class="logo">5DIO</div>
   </div>
-  <button id="langToggle" class="langbtn">🇰🇷 한국어</button>
 </header>
 
-<!-- Side Menu: controls -->
 <nav class="side-menu">
   <div class="menu-title">Menu</div>
-  <div class="menu-group">
-    <button id="mRoot" class="mbtn">Root</button>
-    <button id="mBack" class="mbtn">Back</button>
-    <button id="mRefresh" class="mbtn">Refresh</button>
-  </div>
-
-  <div class="menu-group">
-    <div class="mrow"><label>Volume</label><input id="vol" type="range" min="0" max="1" step="0.01" value="1"></div>
-    <div class="mrow"><label>Balance</label><input id="bal" type="range" min="-1" max="1" step="0.01" value="0"></div>
-  </div>
-
-  <div class="menu-group">
-    <div class="mrow"><label><input id="loop" type="checkbox"> Loop</label></div>
-    <div class="mrow">
-      <label for="timerMin" style="min-width:72px;text-align:left">Timer(min)</label>
-      <input id="timerMin" type="number" min="1" max="180" value="30" />
-    </div>
-    <div class="mrow">
-      <select id="timerMode">
-        <option value="pause">Pause on timeout</option>
-        <option value="stop">Stop on timeout</option>
-      </select>
-    </div>
-    <button id="timerStart" class="mbtn">Start Timer</button>
-    <button id="timerCancel" class="mbtn">Cancel Timer</button>
-  </div>
-
-  <div class="menu-group">
-    <button id="downloadBtn" class="mbtn">⬇︎ Download current</button>
-    <button id="mLang" class="mbtn">🇰🇷 언어 전환</button>
-  </div>
+  <button id="mRoot" class="mbtn">Root</button>
+  <button id="mBack" class="mbtn">Back</button>
+  <button id="mRefresh" class="mbtn">Refresh</button>
+  <div class="mrow"><label>Volume</label><input id="vol" type="range" min="0" max="1" step="0.01" value="1"></div>
+  <div class="mrow"><label>Balance</label><input id="bal" type="range" min="-1" max="1" step="0.01" value="0"></div>
 </nav>
 
 <canvas id="osc"></canvas>
-<div id="path">/</div>
-
 <div id="library"></div>
 <div id="nav">
   <button id="btnBack" class="btn">Back</button>
   <button id="btnRefresh" class="btn">Refresh</button>
 </div>
-
 <audio id="player" controls preload="none"></audio>
 
 <script>
-/* ===== Desktop-like dropdown ===== */
-function toggleDropdown(){
-  const m=document.getElementById('dropdownMenu');
-  m.style.display = (m.style.display==='flex'?'none':'flex');
-}
+const SUPABASE_URL="https://YOUR_PROJECT_ID.supabase.co";
+const SUPABASE_KEY="YOUR_ANON_KEY";
+const BUCKET="media";
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const PUBLIC=SUPABASE_URL+"/storage/v1/object/public/"+BUCKET+"/";
 
-/* ===== Supabase 설정 (교체) ===== */
-const SUPABASE_URL   = "https://xdjgumqdwedgzwqturcx.supabase.co";  // ← 수정
-const SUPABASE_KEY   = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";                        // ← 수정
-const SUPABASE_BUCKET= "media";                                // ← 필요 시 수정
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-const PUBLIC_BASE = SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/object/public/" + SUPABASE_BUCKET + "/";
-const RENDER_BASE = SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/render/image/public/" + SUPABASE_BUCKET + "/";
+const navToggle=document.getElementById("navToggle");
+const player=document.getElementById("player");
+const vol=document.getElementById("vol");
+const bal=document.getElementById("bal");
 
-/* ===== Elements ===== */
-const navToggle = document.getElementById('navToggle');
-const langBtn   = document.getElementById('langToggle');
-const mRoot = document.getElementById('mRoot');
-const mBack = document.getElementById('mBack');
-const mRefresh = document.getElementById('mRefresh');
-const mLang = document.getElementById('mLang');
-const downloadBtn = document.getElementById('downloadBtn');
-const vol = document.getElementById('vol');
-const bal = document.getElementById('bal');
-const loopChk = document.getElementById('loop');
-const timerMin = document.getElementById('timerMin');
-const timerMode = document.getElementById('timerMode');
-const timerStart = document.getElementById('timerStart');
-const timerCancel = document.getElementById('timerCancel');
+const audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+const src=audioCtx.createMediaElementSource(player);
+const gain=audioCtx.createGain();
+const pan=audioCtx.createStereoPanner();
+const analyser=audioCtx.createAnalyser();
+src.connect(pan).connect(gain).connect(analyser).connect(audioCtx.destination);
+gain.gain.value=parseFloat(vol.value);
+pan.pan.value=parseFloat(bal.value);
 
-const oscCanvas = document.getElementById('osc');
-const oscCtx = oscCanvas.getContext('2d');
-const player = document.getElementById('player');
-const lib = document.getElementById('library');
-const pathEl = document.getElementById('path');
-const btnBack = document.getElementById('btnBack');
-const btnRefresh = document.getElementById('btnRefresh');
+vol.oninput=()=>{gain.gain.value=parseFloat(vol.value);}
+bal.oninput=()=>{pan.pan.value=parseFloat(bal.value);}
 
-const enc = s => s.split('/').filter(Boolean).map(encodeURIComponent).join('/');
-
-/* ===== Audio graph (순서/중복 정리) ===== */
-const audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-const srcNode  = audioCtx.createMediaElementSource(player);
-const panner   = audioCtx.createStereoPanner();
-const gainNode = audioCtx.createGain();
-const analyser = audioCtx.createAnalyser();
-
-// 한 번만 연결
-srcNode.connect(panner).connect(gainNode).connect(analyser).connect(audioCtx.destination);
-
-// 슬라이더/loop 초기화
-gainNode.gain.value = parseFloat(vol.value);
-panner.pan.value    = parseFloat(bal.value);
-player.loop         = loopChk.checked;
-
-/* ===== 전역 언락 함수 (모든 곳에서 호출 가능) ===== */
-window.ensureAudioUnlocked = function ensureAudioUnlocked(){
-  try { if (audioCtx.state !== 'running') audioCtx.resume().catch(()=>{}); } catch(_) {}
+window.ensureAudioUnlocked=function(){
+  if(audioCtx.state!=="running")audioCtx.resume().catch(()=>{});
 };
-// 최초 제스처/재생 시 자동 언락
-document.addEventListener('pointerdown', window.ensureAudioUnlocked, { once:true });
-player.addEventListener('play', window.ensureAudioUnlocked);
+document.addEventListener("pointerdown",ensureAudioUnlocked,{once:true});
+player.addEventListener("play",ensureAudioUnlocked);
 
-/* ===== Oscilloscope (미니) ===== */
-analyser.fftSize = 2048;
-const data = new Uint8Array(analyser.fftSize);
-
-function resizeOsc(){
-  oscCanvas.width  = oscCanvas.clientWidth || window.innerWidth;
-  oscCanvas.height = 120;
-}
-window.addEventListener('resize', resizeOsc);
-resizeOsc();
-
-function drawOsc(){
-  requestAnimationFrame(drawOsc);
-  analyser.getByteTimeDomainData(data);
-
-  // 배경
-  oscCtx.fillStyle = '#090b11';
-  oscCtx.fillRect(0, 0, oscCanvas.width, oscCanvas.height);
-
-  // 파형
-  oscCtx.lineWidth = 2;
-  oscCtx.strokeStyle = '#9cff8b';
-  oscCtx.beginPath();
-
-  const slice = oscCanvas.width / data.length;
-  let x = 0;
-
-  for (let i = 0; i < data.length; i++){
-    const y = (data[i] / 128.0) * (oscCanvas.height / 2);
-    if (i === 0) oscCtx.moveTo(x, y);
-    else         oscCtx.lineTo(x, y);
-    x += slice;
+/* ===== Oscilloscope ===== */
+analyser.fftSize=2048;
+const buf=new Uint8Array(analyser.fftSize);
+const canvas=document.getElementById("osc");
+const ctx=canvas.getContext("2d");
+function resize(){canvas.width=canvas.clientWidth;canvas.height=120;}
+window.addEventListener("resize",resize);resize();
+function draw(){
+  requestAnimationFrame(draw);
+  analyser.getByteTimeDomainData(buf);
+  ctx.fillStyle="#090b11";ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.lineWidth=2;ctx.strokeStyle="#9cff8b";ctx.beginPath();
+  const slice=canvas.width/buf.length;
+  for(let i=0,x=0;i<buf.length;i++,x+=slice){
+    const y=(buf[i]/128.0)*canvas.height/2;
+    i?ctx.lineTo(x,y):ctx.moveTo(x,y);
   }
-  oscCtx.lineTo(oscCanvas.width, oscCanvas.height / 2);
-  oscCtx.stroke();
+  ctx.lineTo(canvas.width,canvas.height/2);ctx.stroke();
 }
-drawOsc();
+draw();
 
-/* ===== 라이브러리 ===== */
-let cwd = '';
-async function listFolder(prefix=''){
-  const { data, error } = await sb.storage.from(SUPABASE_BUCKET).list(prefix, {limit:1000, sortBy:{column:'name',order:'asc'}});
-  if (error){ console.warn('[5DIO] list error', error); return []; }
-  return data || [];
+/* ===== Supabase Library ===== */
+const lib=document.getElementById("library");
+let cwd="";
+const enc=s=>s.split("/").map(encodeURIComponent).join("/");
+async function list(p=""){
+  const {data,error}=await sb.storage.from(BUCKET).list(p,{limit:1000,sortBy:{column:"name",order:"asc"}});
+  if(error){console.warn(error);return [];}return data||[];
 }
-function absPublic(pathLike){ return PUBLIC_BASE + enc(pathLike); }
-
-async function loadFolder(path=''){
-  cwd = path;
-  pathEl.textContent = '/' + (path||'');
-  lib.innerHTML = '<p style="opacity:.6">Loading...</p>';
-
-  const items = await listFolder(path);
-  lib.innerHTML = '';
-
-  for (const e of items){
-    const name = e.name;
-    const full = (path?path+'/':'') + name;
-
-    // 폴더
-    if (!name.includes('.')){
-      const card = document.createElement('div'); card.className='card';
-      const img = document.createElement('img');
-      img.src = absPublic(full + '/folder.png');
-      img.onerror = ()=> img.src = 'https://placehold.co/300x300/111/aaa?text=Folder';
-      const cap = document.createElement('span'); cap.textContent = name;
-      card.onclick = ()=>{ ensureAudioUnlocked(); loadFolder(full); navToggle.checked = true; };
-      card.append(img, cap); lib.append(card);
-      continue;
+function abs(p){return PUBLIC+enc(p);}
+async function load(p=""){
+  cwd=p;lib.innerHTML="<p style='opacity:.6'>Loading...</p>";
+  const d=await list(p);lib.innerHTML="";
+  for(const e of d){
+    const name=e.name;const full=(p?p+"/":"")+name;
+    if(!name.includes(".")){
+      const c=document.createElement("div");c.className="card";
+      const img=document.createElement("img");
+      img.src=abs(full+"/folder.png");img.onerror=()=>img.src="https://placehold.co/300x300/111/aaa?text=Folder";
+      const s=document.createElement("span");s.textContent=name;
+      c.onclick=()=>{ensureAudioUnlocked();load(full);navToggle.checked=true;};
+      c.append(img,s);lib.append(c);continue;
     }
-
-    // 오디오
-    if (/\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(name)){
-      const card = document.createElement('div'); card.className='card';
-      const img = document.createElement('img');
-      const png = full.replace(/\.[^.]+$/i, '.png');
-      img.src = absPublic(png);
-      img.onerror = ()=> img.src = 'https://placehold.co/300x300/222/888?text=Audio';
-      const cap = document.createElement('span'); cap.textContent = name;
-
-      card.onclick = ()=>{
-        ensureAudioUnlocked();
-        player.src = absPublic(full);
-        player.play().catch(()=>{});
-        navToggle.checked = true;
-        // 다운로드용 현재키 저장
-        currentKey = full;
-      };
-      card.append(img, cap); lib.append(card);
+    if(/\.(mp3|wav|ogg|m4a)$/i.test(name)){
+      const c=document.createElement("div");c.className="card";
+      const img=document.createElement("img");
+      img.src=abs(full.replace(/\.[^.]+$/,".png"));
+      img.onerror=()=>img.src="https://placehold.co/300x300/222/888?text=Audio";
+      const s=document.createElement("span");s.textContent=name;
+      c.onclick=()=>{ensureAudioUnlocked();player.src=abs(full);player.play();navToggle.checked=true;};
+      c.append(img,s);lib.append(c);
     }
   }
 }
 
-/* ===== 기본 버튼 ===== */
-btnBack.onclick = ()=>{ if(!cwd) return; const parts=cwd.split('/'); parts.pop(); loadFolder(parts.join('/')); };
-btnRefresh.onclick = ()=> loadFolder(cwd);
-
-/* ===== 햄버거-사이드메뉴 액션 ===== */
-mRoot.onclick = ()=>{ ensureAudioUnlocked(); loadFolder(''); navToggle.checked = true; };
-mBack.onclick = ()=>{ ensureAudioUnlocked(); btnBack.onclick(); };
-mRefresh.onclick = ()=>{ ensureAudioUnlocked(); btnRefresh.onclick(); };
-mLang.onclick = ()=> langBtn.click();
-
-/* ===== 슬라이더/루프/타이머 ===== */
-vol.oninput = ()=>{ gainNode.gain.value = parseFloat(vol.value); };
-bal.oninput = ()=>{ panner.pan.value     = parseFloat(bal.value); };
-loopChk.onchange = ()=>{ player.loop      = loopChk.checked; };
-
-let timerHandle = null;
-function clearTimer(){ if (timerHandle){ clearTimeout(timerHandle); timerHandle=null; } }
-timerStart.onclick = ()=>{
-  clearTimer();
-  const mins = Math.max(1, Math.min(180, parseInt(timerMin.value||'30',10)));
-  const mode = timerMode.value; // 'pause' | 'stop'
-  timerHandle = setTimeout(()=>{
-    if (mode==='pause'){ player.pause(); }
-    else { player.pause(); player.currentTime = 0; }
-  }, mins*60*1000);
-  alert((lang==='ko'?'타이머 시작: ':'Timer started: ') + mins + ' min');
+document.getElementById("btnBack").onclick=()=>{
+  if(!cwd)return;const parts=cwd.split("/");parts.pop();load(parts.join("/"));
 };
-timerCancel.onclick = ()=>{ clearTimer(); alert(lang==='ko'?'타이머 취소됨':'Timer cancelled'); };
-
-/* ===== 언어 토글 (UI 텍스트만 전환) ===== */
-let lang = 'ko';
-function applyLang(){
-  document.title = (lang==='ko'?'5DIO 모바일+':'5DIO Mobile+');
-  langBtn.textContent = (lang==='ko'?'🇰🇷 한국어':'🇺🇸 English');
-  document.getElementById('btnBack').textContent = (lang==='ko'?'Back':'Back');
-  document.getElementById('btnRefresh').textContent = (lang==='ko'?'Refresh':'Refresh');
-  document.querySelector('.menu-title').textContent = (lang==='ko'?'메뉴':'Menu');
-  mRoot.textContent = (lang==='ko'?'Root':'Root');
-  mBack.textContent = (lang==='ko'?'Back':'Back');
-  mRefresh.textContent = (lang==='ko'?'Refresh':'Refresh');
-}
-langBtn.onclick = ()=>{ lang = (lang==='ko'?'en':'ko'); applyLang(); };
-applyLang();
-
-/* ===== 오프라인 다운로드 ===== */
-let currentKey = ""; // 마지막 클릭한 트랙의 키 저장
-downloadBtn.onclick = ()=>{
-  if (!currentKey){
-    alert(lang==='ko'?'먼저 트랙을 선택해 주세요.':'Please select a track first.');
-    return;
-  }
-  const a = document.createElement('a');
-  a.href = absPublic(currentKey);       // public URL 직접 다운로드
-  a.download = currentKey.split('/').pop(); // 파일명 보존
-  a.rel = "noopener";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+document.getElementById("btnRefresh").onclick=()=>load(cwd);
+document.getElementById("mRoot").onclick=()=>{load("");navToggle.checked=true;};
+document.getElementById("mBack").onclick=()=>{
+  if(!cwd)return;const parts=cwd.split("/");parts.pop();load(parts.join("/"));navToggle.checked=true;
 };
-
-/* ===== 부팅 ===== */
-loadFolder('');
+document.getElementById("mRefresh").onclick=()=>{load(cwd);navToggle.checked=true;};
+load("");
 </script>
 </body>
 </html>
