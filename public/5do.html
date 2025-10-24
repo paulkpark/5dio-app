@@ -213,7 +213,7 @@ document.addEventListener('click', unlockAudio, { once:true });
 player.addEventListener('play', unlockAudio);
 
 /* ===== 오실로스코프 ===== */
-const canvas = document.getElementById('osc') || document.getElementById('oscilloscope');
+let canvas = document.getElementById('osc') || document.getElementById('oscilloscope');
 const ctx    = canvas.getContext('2d');
 
 analyser.fftSize = 2048;
