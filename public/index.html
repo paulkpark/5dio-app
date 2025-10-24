@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>5DIO</title>
+  <title>5DO</title>
   <link rel="stylesheet" href="/css/styles.css"/>
   <script defer src="https://unpkg.com/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
   <script defer src="/config.js"></script>
@@ -13,8 +13,8 @@
   document.addEventListener("DOMContentLoaded", () => {
     const ua = navigator.userAgent.toLowerCase();
     const isMobile = /android|iphone|ipad|ipod|mobile|blackberry|iemobile|opera mini|mobi/.test(ua);
-    // 데스크탑: 5dio_pc.html / 모바일: 5dio.html
-    const target = isMobile ? "/5dio.html" : "/5dio_pc.html";
+    // 데스크탑: 5do_pc.html / 모바일: 5do.html
+    const target = isMobile ? "/5do.html" : "/5do_pc.html";
 
     // 직접 index.html로 들어온 경우만 자동 이동
     if (window.location.pathname.endsWith("/") || window.location.pathname.endsWith("index.html")) {
@@ -31,7 +31,7 @@
   </style>
 </head>
 <body>
-  <header><h1 style="margin:0;font-size:20px">5DIO</h1></header>
+  <header><h1 style="margin:0;font-size:20px">5DO</h1></header>
   <div class="container">
     <p>Choose experience manually:</p>
     <a class="btn" href="/5dio_pc.html">Open Desktop</a>
