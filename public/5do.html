@@ -1,37 +1,30 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>5DIO Mobile</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-
 <style>
 body{margin:0;background:#0b0d13;color:#e5e7eb;font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',Roboto,Arial}
 header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#12141b;border-bottom:1px solid #222738}
 .logo{font-weight:700;color:#9cff8b;font-size:1.2rem}
 
+/* Hamburger & slide menu */
 .nav-toggle{display:none}
-.hamburger{width:36px;height:32px;border-radius:8px;border:1px solid #222738;
-  background:#1c2130;display:flex;align-items:center;justify-content:center;cursor:pointer}
-.hamburger span,.hamburger span:before,.hamburger span:after{
-  display:block;background:#cfd6e6;height:2px;width:18px;position:relative;border-radius:2px}
+.hamburger{width:36px;height:32px;border-radius:8px;border:1px solid #222738;background:#1c2130;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.hamburger span,.hamburger span:before,.hamburger span:after{display:block;background:#cfd6e6;height:2px;width:18px;position:relative;border-radius:2px}
 .hamburger span:before,.hamburger span:after{content:"";position:absolute;left:0}
 .hamburger span:before{top:-6px}.hamburger span:after{top:6px}
-
-.side-menu{
-  position:fixed;top:0;left:0;width:78%;max-width:340px;height:100vh;
-  background:#0f1320;border-right:1px solid #222738;box-shadow:6px 0 20px rgba(0,0,0,.35);
-  transform:translateX(-100%);transition:.25s ease;padding:14px;overflow-y:auto
-}
-.nav-toggle:checked~.side-menu{transform:translateX(-100%)!important}
-.nav-toggle:not(:checked)~.side-menu{transform:none}
-
+.side-menu{position:fixed;top:0;left:0;width:78%;max-width:340px;height:100vh;background:#0f1320;border-right:1px solid #222738;box-shadow:6px 0 20px rgba(0,0,0,.35);transform:translateX(-100%);transition:.25s ease;padding:14px;overflow-y:auto}
+#navToggle:checked ~ nav.side-menu{transform:translateX(-100%)!important}
+#navToggle:not(:checked) ~ nav.side-menu{transform:none}
 .menu-title{margin:4px 0 10px;font-weight:800;color:#cfead1}
 .mbtn{padding:9px 10px;border-radius:10px;border:1px solid #222738;background:#171d2b;color:#dfe7f6;text-align:left;width:100%;margin:5px 0}
 .mrow{display:flex;align-items:center;gap:10px;margin:6px 0}
 .mrow input[type="range"]{flex:1}
 
+/* Canvas + library + player */
 canvas{width:100%;height:120px;background:#090b11;display:block;border-bottom:1px solid #222738}
 #library{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:10px}
 .card{background:#181b25;border:1px solid #222738;border-radius:12px;padding:6px;cursor:pointer}
@@ -43,9 +36,12 @@ audio{width:92%;display:block;margin:6px auto 12px}
 </style>
 </head>
 <body>
+
+<!-- ✅ 토글 체크박스는 nav와 “형제”여야 CSS 토글이 작동 -->
+<input id="navToggle" class="nav-toggle" type="checkbox" checked />
+
 <header>
   <div style="display:flex;align-items:center;gap:10px">
-    <input id="navToggle" class="nav-toggle" type="checkbox" checked>
     <label for="navToggle" class="hamburger" aria-label="menu"><span></span></label>
     <div class="logo">5DIO</div>
   </div>
@@ -56,6 +52,13 @@ audio{width:92%;display:block;margin:6px auto 12px}
   <button id="mRoot" class="mbtn">Root</button>
   <button id="mBack" class="mbtn">Back</button>
   <button id="mRefresh" class="mbtn">Refresh</button>
+  <a class="mbtn" href="https://5dshop.co.kr" target="_blank" rel="noopener">Shop</a>
+  <a class="mbtn" href="#" rel="noopener">FAQ</a>
+  <a class="mbtn" href="#" rel="noopener">Manual</a>
+  <a class="mbtn" href="#" rel="noopener">Contact</a>
+  <a class="mbtn" href="#" rel="noopener">About</a>
+
+  <div class="menu-title" style="margin-top:14px">Audio</div>
   <div class="mrow"><label>Volume</label><input id="vol" type="range" min="0" max="1" step="0.01" value="1"></div>
   <div class="mrow"><label>Balance</label><input id="bal" type="range" min="-1" max="1" step="0.01" value="0"></div>
 </nav>
@@ -66,66 +69,71 @@ audio{width:92%;display:block;margin:6px auto 12px}
   <button id="btnBack" class="btn">Back</button>
   <button id="btnRefresh" class="btn">Refresh</button>
 </div>
-<audio id="player" controls preload="none"></audio>
+<audio id="player" controls preload="none" playsinline></audio>
 
 <script>
+/* ===== Supabase (프로젝트 값 반영) ===== */
 const SUPABASE_URL="https://xdjgumqdwedgzwqturcx.supabase.co";
 const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
 const BUCKET="media";
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-const PUBLIC=SUPABASE_URL+"/storage/v1/object/public/"+BUCKET+"/";
+const PUBLIC=SUPABASE_URL.replace(/\/+$/,'')+"/storage/v1/object/public/"+BUCKET+"/";
 
+/* ===== Elements ===== */
 const navToggle=document.getElementById("navToggle");
 const player=document.getElementById("player");
+player.crossOrigin="anonymous"; // analyser/CORS 대비
 const vol=document.getElementById("vol");
 const bal=document.getElementById("bal");
 
+/* ===== Audio graph (단일 생성 & 순서 보장) ===== */
 const audioCtx=new (window.AudioContext||window.webkitAudioContext)();
 const src=audioCtx.createMediaElementSource(player);
-const gain=audioCtx.createGain();
 const pan=audioCtx.createStereoPanner();
+const gain=audioCtx.createGain();
 const analyser=audioCtx.createAnalyser();
 src.connect(pan).connect(gain).connect(analyser).connect(audioCtx.destination);
-gain.gain.value=parseFloat(vol.value);
-pan.pan.value=parseFloat(bal.value);
 
-vol.oninput=()=>{gain.gain.value=parseFloat(vol.value);}
-bal.oninput=()=>{pan.pan.value=parseFloat(bal.value);}
+// 슬라이더 반영
+gain.gain.value=parseFloat(vol.value||"1");
+pan.pan.value=parseFloat(bal.value||"0");
+vol.oninput=()=>{gain.gain.value=+vol.value;}
+bal.oninput=()=>{pan.pan.value=+bal.value;}
 
+// 사용자 제스처/재생 시 컨텍스트 unlock
 window.ensureAudioUnlocked=function(){
-  if(audioCtx.state!=="running")audioCtx.resume().catch(()=>{});
+  if(audioCtx.state!=="running"){audioCtx.resume().catch(()=>{});}
 };
-document.addEventListener("pointerdown",ensureAudioUnlocked,{once:true});
-player.addEventListener("play",ensureAudioUnlocked);
+document.addEventListener("pointerdown",window.ensureAudioUnlocked,{once:true});
+player.addEventListener("play",window.ensureAudioUnlocked);
 
 /* ===== Oscilloscope ===== */
 analyser.fftSize=2048;
 const buf=new Uint8Array(analyser.fftSize);
 const canvas=document.getElementById("osc");
 const ctx=canvas.getContext("2d");
-function resize(){canvas.width=canvas.clientWidth;canvas.height=120;}
+function resize(){canvas.width=canvas.clientWidth||window.innerWidth;canvas.height=120;}
 window.addEventListener("resize",resize);resize();
-function draw(){
+(function draw(){
   requestAnimationFrame(draw);
   analyser.getByteTimeDomainData(buf);
   ctx.fillStyle="#090b11";ctx.fillRect(0,0,canvas.width,canvas.height);
   ctx.lineWidth=2;ctx.strokeStyle="#9cff8b";ctx.beginPath();
   const slice=canvas.width/buf.length;
   for(let i=0,x=0;i<buf.length;i++,x+=slice){
-    const y=(buf[i]/128.0)*canvas.height/2;
+    const y=(buf[i]/128.0)*(canvas.height/2);
     i?ctx.lineTo(x,y):ctx.moveTo(x,y);
   }
   ctx.lineTo(canvas.width,canvas.height/2);ctx.stroke();
-}
-draw();
+})();
 
 /* ===== Supabase Library ===== */
 const lib=document.getElementById("library");
 let cwd="";
-const enc=s=>s.split("/").map(encodeURIComponent).join("/");
+const enc=s=>s.split("/").filter(Boolean).map(encodeURIComponent).join("/");
 async function list(p=""){
   const {data,error}=await sb.storage.from(BUCKET).list(p,{limit:1000,sortBy:{column:"name",order:"asc"}});
-  if(error){console.warn(error);return [];}return data||[];
+  if(error){console.warn("[5DIO] list error",error);return [];}return data||[];
 }
 function abs(p){return PUBLIC+enc(p);}
 async function load(p=""){
@@ -133,26 +141,38 @@ async function load(p=""){
   const d=await list(p);lib.innerHTML="";
   for(const e of d){
     const name=e.name;const full=(p?p+"/":"")+name;
+
+    // 폴더
     if(!name.includes(".")){
       const c=document.createElement("div");c.className="card";
       const img=document.createElement("img");
-      img.src=abs(full+"/folder.png");img.onerror=()=>img.src="https://placehold.co/300x300/111/aaa?text=Folder";
+      img.src=abs(full+"/folder.png");
+      img.onerror=()=>img.src="https://placehold.co/300x300/111/aaa?text=Folder";
       const s=document.createElement("span");s.textContent=name;
-      c.onclick=()=>{ensureAudioUnlocked();load(full);navToggle.checked=true;};
-      c.append(img,s);lib.append(c);continue;
+      c.onclick=()=>{window.ensureAudioUnlocked();load(full);navToggle.checked=true;};
+      c.append(img,s);lib.append(c);
+      continue;
     }
-    if(/\.(mp3|wav|ogg|m4a)$/i.test(name)){
+
+    // 오디오
+    if(/\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(name)){
       const c=document.createElement("div");c.className="card";
       const img=document.createElement("img");
       img.src=abs(full.replace(/\.[^.]+$/,".png"));
       img.onerror=()=>img.src="https://placehold.co/300x300/222/888?text=Audio";
       const s=document.createElement("span");s.textContent=name;
-      c.onclick=()=>{ensureAudioUnlocked();player.src=abs(full);player.play();navToggle.checked=true;};
+      c.onclick=()=>{
+        window.ensureAudioUnlocked();
+        player.src=abs(full);
+        player.play().catch(err=>console.warn("play blocked",err));
+        navToggle.checked=true;
+      };
       c.append(img,s);lib.append(c);
     }
   }
 }
 
+// 내비게이션
 document.getElementById("btnBack").onclick=()=>{
   if(!cwd)return;const parts=cwd.split("/");parts.pop();load(parts.join("/"));
 };
@@ -162,6 +182,8 @@ document.getElementById("mBack").onclick=()=>{
   if(!cwd)return;const parts=cwd.split("/");parts.pop();load(parts.join("/"));navToggle.checked=true;
 };
 document.getElementById("mRefresh").onclick=()=>{load(cwd);navToggle.checked=true;};
+
+// 부팅
 load("");
 </script>
 </body>
