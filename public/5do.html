@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
 <title>5DO Lite</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <style>
@@ -13,12 +13,12 @@
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',Roboto,Arial}
 
-/* Header */
+/* 헤더 */
 header{display:flex;align-items:center;gap:10px;justify-content:flex-start;
   padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--border)}
 .logo{font-weight:700;color:var(--accent);font-size:1.2rem}
 
-/* Hamburger + slide menu */
+/* 햄버거 + 사이드메뉴(폭 1/3) */
 .nav-toggle{display:none}
 .hamburger{width:36px;height:32px;border-radius:8px;border:1px solid var(--border);
   background:#1c2130;display:flex;align-items:center;justify-content:center;cursor:pointer}
@@ -35,17 +35,18 @@ header{display:flex;align-items:center;gap:10px;justify-content:flex-start;
 }
 #navToggle:checked ~ nav.side-menu{transform:translateX(-100%)!important}
 #navToggle:not(:checked) ~ nav.side-menu{transform:none}
-
 .menu-title{margin:4px 0 10px;font-weight:800;color:#cfead1}
 .mbtn{padding:10px;border-radius:10px;border:1px solid var(--border);
   background:#171d2b;color:#dfe7f6;text-align:left;width:100%}
 
+/* 백드롭 */
 .backdrop{display:none; position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:1000;}
 #navToggle:not(:checked) ~ .backdrop{ display:block; }
 
+/* 오실로스코프 */
 #osc{width:100%;height:120px;background:#090b11;display:block;border-bottom:1px solid var(--border)}
 
-/* Library */
+/* 라이브러리: 가로 한줄 스크롤 */
 .lib-wrap{padding:10px}
 #library{
   display:flex; flex-wrap:nowrap; gap:10px; overflow-x:auto; padding-bottom:6px;
@@ -58,10 +59,11 @@ header{display:flex;align-items:center;gap:10px;justify-content:flex-start;
 .card img{width:100%;aspect-ratio:1/1;object-fit:contain;background:var(--chip);border-radius:8px}
 .card span{display:block;margin-top:6px;font-size:.92rem}
 
+/* 하단 Back/Refresh */
 #nav{display:flex;justify-content:center;gap:8px;margin:6px 0 10px}
 .btn{background:#1e2232;border:1px solid #2c3147;color:#eee;border-radius:8px;padding:6px 12px}
 
-/* Player */
+/* 플레이어 상단 컨트롤: 상태+볼륨/루프/타이머 */
 .controls{
   display:flex;flex-wrap:wrap;align-items:center;gap:10px;justify-content:space-between;
   padding:8px 12px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);
@@ -73,14 +75,27 @@ header{display:flex;align-items:center;gap:10px;justify-content:flex-start;
 .ctrl-group{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .ctrl-group label{font-size:.9rem;color:#cfd6e6}
 input[type="range"]{width:140px}
-audio{width:92%;display:block;margin:10px auto 16px}
+
+/* 오디오 + 다운로드 버튼 */
+audio{width:92%;display:block;margin:10px auto 8px}
+#downloadBtn{display:block;margin:0 auto 16px}
+
+/* 가로모드 안내 오버레이 (소프트 락 대체) */
+.rotate-overlay{
+  position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.88);color:#fff;z-index:2000;text-align:center;padding:20px
+}
+@media (orientation:landscape){
+  .rotate-overlay{display:flex}
+}
 </style>
 </head>
 <body>
 
+<!-- 햄버거 토글 -->
 <input id="navToggle" class="nav-toggle" type="checkbox" checked />
 <header>
-  <label for="navToggle" class="hamburger"><span></span></label>
+  <label for="navToggle" class="hamburger" aria-label="menu"><span></span></label>
   <div class="logo">5DO Lite</div>
 </header>
 
@@ -93,6 +108,14 @@ audio{width:92%;display:block;margin:10px auto 16px}
   <a class="mbtn" href="#">About</a>
 </nav>
 <div id="backdrop" class="backdrop"></div>
+
+<!-- 가로모드에서 보여줄 안내(실제 잠금 불가 환경 대비) -->
+<div class="rotate-overlay">
+  <div>
+    <div style="font-size:1.1rem;margin-bottom:8px">세로 모드로 사용해 주세요</div>
+    <div style="opacity:.8">화면을 세로로 돌리면 자동으로 돌아옵니다.</div>
+  </div>
+</div>
 
 <canvas id="osc"></canvas>
 
@@ -113,7 +136,6 @@ audio{width:92%;display:block;margin:10px auto 16px}
   <div class="ctrl-group">
     <label for="vol">Volume</label>
     <input id="vol" type="range" min="0" max="1" step="0.01" value="1">
-    <button id="muteBtn" class="btn" aria-pressed="false">Mute</button>
     <label><input type="checkbox" id="loop"> Loop</label>
     <label for="timer">Timer</label>
     <select id="timer">
@@ -129,72 +151,84 @@ audio{width:92%;display:block;margin:10px auto 16px}
   </div>
 </div>
 
-<div style="display:flex;justify-content:center;gap:10px;margin-top:10px">
-  <button id="btnPP" class="btn">Play / Pause</button>
-  <button id="btnStop" class="btn">Stop</button>
-</div>
-
-<audio id="player" controls preload="none" playsinline></audio>
+<!-- 기본 컨트롤만 사용. 배속/다운로드는 숨기고, 별도 다운로드 버튼 제공 -->
+<audio id="player" controls preload="none" playsinline controlslist="nodownload noplaybackrate"></audio>
+<button id="downloadBtn" class="btn" disabled>Download</button>
 
 <script>
+/* ===== Supabase ===== */
 const SUPABASE_URL="https://xdjgumqdwedgzwqturcx.supabase.co";
 const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
 const BUCKET="media";
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const PUBLIC=SUPABASE_URL.replace(/\/+$/,'')+"/storage/v1/object/public/"+BUCKET+"/";
 
+/* ===== Elements ===== */
 const navToggle=document.getElementById("navToggle");
 const backdrop=document.getElementById("backdrop");
 const lib=document.getElementById("library");
 const btnBack=document.getElementById("btnBack");
 const btnRefresh=document.getElementById("btnRefresh");
-
 const loopChk=document.getElementById("loop");
 const vol=document.getElementById("vol");
-const muteBtn=document.getElementById("muteBtn");
 const timerSel=document.getElementById("timer");
 const statusThumb=document.getElementById("statusThumb");
 const statusText=document.getElementById("statusText");
+const downloadBtn=document.getElementById("downloadBtn");
 
+/* ===== Audio graph ===== */
 const player=document.getElementById("player");
 player.crossOrigin="anonymous";
 
 const audioCtx=new (window.AudioContext||window.webkitAudioContext)();
 const src=audioCtx.createMediaElementSource(player);
-const gain=audioCtx.createGain();
+const gain=audioCtx.createGain();             // 마스터 볼륨
 const analyser=audioCtx.createAnalyser();
 src.connect(gain).connect(analyser).connect(audioCtx.destination);
 
-vol.oninput=()=>{ gain.gain.value=+vol.value; };
-let muted=false;
-muteBtn.onclick=()=>{
-  muted=!muted;
-  player.muted=muted;
-  muteBtn.textContent=muted?"Unmute":"Mute";
+// 볼륨 슬라이더 ↔ 게인
+let desiredGain = parseFloat(vol.value||"1");
+gain.gain.value = desiredGain;
+vol.oninput = () => {
+  desiredGain = +vol.value;
+  if (!player.muted) gain.gain.value = desiredGain;
 };
 
-window.ensureAudioUnlocked=function(){
-  if(audioCtx.state!=="running"){audioCtx.resume().catch(()=>{});}
-};
-document.addEventListener("pointerdown",window.ensureAudioUnlocked,{once:true});
-player.addEventListener("play",window.ensureAudioUnlocked);
-player.loop=loopChk.checked;
-loopChk.onchange=()=>player.loop=loopChk.checked;
+// 뮤트 신뢰성 향상: 브라우저 뮤트와 게인 동기화
+player.addEventListener('volumechange', () => {
+  if (player.muted) gain.gain.value = 0;
+  else gain.gain.value = desiredGain;
+});
 
-/* Timer 기능 */
+// 사용자 제스처 후 오디오 언락 & (가능 시) 포트레이트 락 시도
+async function ensureAudioUnlocked(){
+  if(audioCtx.state!=="running"){ try{ await audioCtx.resume(); }catch(e){} }
+  // 가능한 브라우저에서만 잠금. 실패해도 무시.
+  if (screen.orientation && screen.orientation.lock) {
+    try { await screen.orientation.lock('portrait'); } catch (e) { /* ignore */ }
+  }
+}
+document.addEventListener("pointerdown", ensureAudioUnlocked, { once:true });
+player.addEventListener("play", ensureAudioUnlocked);
+
+// Loop
+player.loop = loopChk.checked;
+loopChk.onchange = ()=> { player.loop = loopChk.checked; };
+
+/* Timer Preset */
 let timerId=null;
 timerSel.onchange=()=>{
   clearTimeout(timerId);
   const min=+timerSel.value;
   if(min>0){
     timerId=setTimeout(()=>{
-      player.pause();
-      player.currentTime=0;
+      player.pause(); player.currentTime=0;
       alert(`Playback stopped after ${min} minutes.`);
-    },min*60*1000);
+    }, min*60*1000);
   }
 };
 
+/* Oscilloscope */
 analyser.fftSize=2048;
 const buf=new Uint8Array(analyser.fftSize);
 const canvas=document.getElementById("osc");
@@ -214,6 +248,7 @@ window.addEventListener("resize",resize);resize();
   ctx.lineTo(canvas.width,canvas.height/2);ctx.stroke();
 })();
 
+/* 라이브러리 */
 let cwd="";
 const enc=s=>s.split("/").filter(Boolean).map(encodeURIComponent).join("/");
 async function list(p=""){
@@ -222,43 +257,54 @@ async function list(p=""){
 }
 function abs(p){return PUBLIC+enc(p);}
 function setStatus(imgUrl,text){
-  statusThumb.src=imgUrl||"";statusText.textContent=text||"—";
+  statusThumb.src=imgUrl||""; statusText.textContent=text||"—";
+  // 선택된 트랙이 있으면 다운로드 버튼 활성화
+  const hasTrack = !!player.src;
+  downloadBtn.disabled = !hasTrack;
 }
 
+// 폴더/트랙 로드
 async function load(p=""){
-  cwd=p;lib.innerHTML="";setStatus("","");
+  cwd=p; lib.innerHTML=""; setStatus("","");
   const d=await list(p);
   for(const e of d){
-    const name=e.name;const full=(p?p+"/":"")+name;
+    const name=e.name; const full=(p?p+"/":"")+name;
+
+    // 폴더
     if(!name.includes(".")){
-      const c=document.createElement("div");c.className="card";
+      const c=document.createElement("div"); c.className="card";
       const img=document.createElement("img");
       img.src=abs(full+"/folder.png");
       img.onerror=()=>img.src="https://placehold.co/300x300/111/aaa?text=Folder";
-      const s=document.createElement("span");s.textContent=name;
-      c.onclick=()=>{window.ensureAudioUnlocked();load(full);navToggle.checked=true;};
-      c.append(img,s);lib.append(c);
+      const s=document.createElement("span"); s.textContent=name;
+      c.onclick=()=>{ ensureAudioUnlocked(); load(full); navToggle.checked=true; };
+      c.append(img,s); lib.append(c);
       continue;
     }
+
+    // 오디오
     if(/\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(name)){
-      const c=document.createElement("div");c.className="card";
+      const c=document.createElement("div"); c.className="card";
       const img=document.createElement("img");
       const thumb=full.replace(/\.[^.]+$/,".png");
       img.src=abs(thumb);
       img.onerror=()=>img.src="https://placehold.co/300x300/222/888?text=Audio";
-      const s=document.createElement("span");s.textContent=name;
+      const s=document.createElement("span"); s.textContent=name;
+
+      // 자동재생 없음: src만 설정 + 상태 썸네일 + 다운로드 버튼 활성화
       c.onclick=()=>{
-        window.ensureAudioUnlocked();
+        ensureAudioUnlocked();
         player.src=abs(full);
-        setStatus(abs(thumb),name);
+        setStatus(abs(thumb), name);
         navToggle.checked=true;
       };
-      c.append(img,s);lib.append(c);
+
+      c.append(img,s); lib.append(c);
     }
   }
 }
 
-/* Drag-scroll */
+/* 가로 드래그 스크롤(데스크탑) */
 let isDown=false,startX=0,startLeft=0;
 lib.addEventListener('mousedown',e=>{
   isDown=true;lib.classList.add('dragging');
@@ -273,18 +319,35 @@ lib.addEventListener('mousemove',e=>{
   lib.scrollLeft=startLeft-dx*1.5;
 });
 
+/* Back/Refresh */
 btnBack.onclick=()=>{
   if(!cwd)return;
   const parts=cwd.split("/");parts.pop();load(parts.join("/"));
 };
 btnRefresh.onclick=()=>load(cwd);
+
+/* 햄버거 닫기(백드롭) */
 backdrop.addEventListener('click',()=>{navToggle.checked=true;});
 
-const btnPP=document.getElementById("btnPP");
-const btnStop=document.getElementById("btnStop");
-btnPP.onclick=()=>{if(player.paused)player.play().catch(e=>console.warn(e));else player.pause();};
-btnStop.onclick=()=>{player.pause();player.currentTime=0;};
+/* 다운로드 버튼 */
+downloadBtn.addEventListener('click', ()=>{
+  if(!player.src){ return; }
+  const a=document.createElement('a');
+  a.href = player.src;
+  // 파일명 추출
+  try{
+    const u = new URL(player.src);
+    const base = u.pathname.split('/').pop() || 'audio';
+    a.download = decodeURIComponent(base);
+  }catch{
+    a.download = 'audio';
+  }
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+});
 
+/* 부팅 */
 load("");
 </script>
 </body>
