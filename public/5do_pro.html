@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+<title>5DO Pro</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+:root{
+  --bg:#0b0d13; --panel:#12141b; --card:#181b25; --ink:#e5e7eb;
+  --muted:#9aa3b7; --border:#222738; --chip:#0e1016; --accent:#9cff8b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',Roboto,Arial}
+
+/* Header + Tabs */
+header{display:flex;align-items:center;gap:10px;justify-content:space-between;
+  padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--border)}
+.logo{font-weight:700;color:var(--accent);font-size:1.2rem}
+.tabs{display:flex;gap:8px}
+.tab{padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:#171d2b;color:#cfead1;cursor:pointer}
+.tab.active{background:#1f2739;border-color:#334}
+.section{display:none}
+.section.active{display:block}
+
+/* Side menu (optional; 동일 유지) */
+.nav-toggle{display:none}
+.hamburger{width:36px;height:32px;border-radius:8px;border:1px solid var(--border);
+  background:#1c2130;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-right:8px}
+.hamburger span,.hamburger span:before,.hamburger span:after{
+  display:block;background:#cfd6e6;height:2px;width:18px;position:relative;border-radius:2px}
+.hamburger span:before,.hamburger span:after{content:"";position:absolute;left:0}
+.hamburger span:before{top:-6px}.hamburger span:after{top:6px}
+
+.side-menu{
+  position:fixed;top:0;left:0;width:33%;max-width:220px;height:100vh;
+  background:#0f1320;border-right:1px solid var(--border);box-shadow:6px 0 20px rgba(0,0,0,.35);
+  transform:translateX(-100%);transition:.25s ease;padding:14px;overflow-y:auto;z-index:1001;
+  display:flex;flex-direction:column;gap:8px;
+}
+#navToggle:checked ~ nav.side-menu{transform:translateX(-100%)!important}
+#navToggle:not(:checked) ~ nav.side-menu{transform:none}
+.mbtn{padding:10px;border-radius:10px;border:1px solid var(--border);
+  background:#171d2b;color:#dfe7f6;text-align:left;width:100%}
+.backdrop{display:none; position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:1000;}
+#navToggle:not(:checked) ~ .backdrop{ display:block; }
+
+/* Oscilloscope */
+#osc{width:100%;height:120px;background:#090b11;display:block;border-bottom:1px solid var(--border)}
+
+/* ===== Library (Lite) ===== */
+#navBtns{display:flex;justify-content:center;gap:8px;padding:8px}
+.btn{background:#1e2232;border:1px solid #2c3147;color:#eee;border-radius:8px;padding:6px 12px}
+.lib-wrap{padding:0 10px 10px}
+#library{display:flex;overflow-x:auto;gap:10px;padding:10px;scroll-behavior:smooth;scroll-snap-type:x mandatory}
+.card{flex:0 0 auto;width:160px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:6px;scroll-snap-align:start}
+.card img{width:100%;aspect-ratio:1/1;object-fit:contain;background:var(--chip);border-radius:8px}
+
+.controls{
+  display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:12px;
+  background:#0f1320;border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+}
+.status{display:flex;align-items:center;gap:10px}
+#statusThumb{width:40px;height:40px;object-fit:cover;border-radius:8px;background:#000;border:1px solid rgba(255,255,255,0.12)}
+.ctrl-stack{display:flex;flex-direction:column;gap:6px;margin-left:50px}
+.ctrl-line{display:flex;align-items:center;gap:8px}
+input[type="range"]{width:140px}
+audio{width:92%;display:block;margin:10px auto}
+
+/* ===== Generator (Pro) ===== */
+.gen-wrap{padding:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field{background:#141a27;border:1px solid #2a3044;border-radius:12px;padding:10px}
+.field h4{margin:0 0 8px 0;color:#dfe7f6;font-size:.95rem}
+.field label{display:block;font-size:.85rem;color:#9aa3b7;margin-bottom:4px}
+.field input[type="number"], .field select, .field input[type="range"]{
+  width:100%;background:#101522;color:#e9eefc;border:1px solid #2a3044;border-radius:8px;padding:6px
+}
+.row{display:flex;gap:8px;align-items:center}
+.switch{display:flex;gap:8px;align-items:center}
+.full{grid-column:1/-1}
+.gen-actions{display:flex;gap:10px}
+.pill{padding:8px 12px;border-radius:100px;border:1px solid #2c3147;background:#1b2333;color:#e9eefc;cursor:pointer}
+.pill.primary{background:#21324e;border-color:#355; color:#cfead1}
+.note{color:#8aa0bd;font-size:.88rem;margin-top:4px}
+@media (max-width:540px){ .grid{grid-template-columns:1fr} .ctrl-stack{margin-left:0} }
+</style>
+</head>
+<body>
+
+<input id="navToggle" class="nav-toggle" type="checkbox" checked />
+<header>
+  <div style="display:flex;align-items:center;gap:10px">
+    <label for="navToggle" class="hamburger" aria-label="menu"><span></span></label>
+    <div class="logo">5DO Pro</div>
+  </div>
+  <div class="tabs">
+    <div class="tab active" data-tab="lib">🎵 Library</div>
+    <div class="tab" data-tab="gen">⚙️ Generator</div>
+  </div>
+</header>
+
+<nav class="side-menu">
+  <a class="mbtn" href="https://5dshop.co.kr" target="_blank" rel="noopener">Shop</a>
+  <a class="mbtn" href="#">FAQ</a>
+  <a class="mbtn" href="#">Manual</a>
+  <a class="mbtn" href="#">Contact</a>
+  <a class="mbtn" href="#">About</a>
+</nav>
+<div id="backdrop" class="backdrop"></div>
+
+<canvas id="osc"></canvas>
+
+<!-- ===== Library Section (Lite 그대로) ===== -->
+<section id="section-lib" class="section active">
+  <div id="navBtns">
+    <button id="btnBack" class="btn">Back</button>
+    <button id="btnRefresh" class="btn">Refresh</button>
+  </div>
+  <div class="lib-wrap"><div id="library"></div></div>
+
+  <div class="controls">
+    <div class="status">
+      <img id="statusThumb" alt="status">
+      <div id="statusText" style="font-size:.85rem;color:var(--muted)">—</div>
+    </div>
+    <div class="ctrl-stack">
+      <div class="ctrl-line">
+        <label for="vol">Volume</label>
+        <input id="vol" type="range" min="0" max="1" step="0.01" value="1">
+      </div>
+      <div class="ctrl-line">
+        <label><input type="checkbox" id="loop"> Loop</label>
+      </div>
+      <div class="ctrl-line">
+        <label for="timer">Timer</label>
+        <select id="timer">
+          <option value="0">Off</option>
+          <option value="5">5 min</option>
+          <option value="10">10 min</option>
+          <option value="15">15 min</option>
+          <option value="20">20 min</option>
+          <option value="30">30 min</option>
+          <option value="45">45 min</option>
+          <option value="60">60 min</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <audio id="player" controls preload="none" playsinline controlslist="nodownload noplaybackrate"></audio>
+</section>
+
+<!-- ===== Generator Section (모바일 리포맷) ===== -->
+<section id="section-gen" class="section">
+  <div class="gen-wrap">
+    <div class="grid">
+      <div class="field">
+        <h4>Waveform</h4>
+        <select id="genWave">
+          <option value="sine">Sine</option>
+          <option value="square">Square</option>
+          <option value="sawtooth">Saw</option>
+          <option value="triangle">Triangle</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <h4>Level</h4>
+        <input id="genLevel" type="range" min="0" max="1" step="0.01" value="0.5">
+        <div class="note">Generator output level</div>
+      </div>
+
+      <div class="field">
+        <h4>Frequency (Hz)</h4>
+        <div class="row">
+          <input id="genFreq" type="number" min="1" max="24000" step="0.1" value="440">
+        </div>
+      </div>
+
+      <div class="field">
+        <h4>Binaural Beat</h4>
+        <div class="switch">
+          <label><input type="checkbox" id="genBinaural"> Enable</label>
+        </div>
+        <label for="genBeat">Difference (Hz)</label>
+        <input id="genBeat" type="number" min="0" max="1000" step="0.1" value="7">
+        <div class="note">L = base, R = base + diff</div>
+      </div>
+
+      <div class="field full">
+        <h4>Session</h4>
+        <div class="gen-actions">
+          <button id="genStart" class="pill primary">Start</button>
+          <button id="genStop" class="pill">Stop</button>
+        </div>
+        <div class="note">Library 재생과 중복 방지를 위해, Generator 시작 시 Library는 자동 일시정지됩니다.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+/* ===== Supabase (Library) ===== */
+const SUPABASE_URL="https://xdjgumqdwedgzwqturcx.supabase.co";
+const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
+const BUCKET="media";
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const PUBLIC=SUPABASE_URL.replace(/\/+$/,'')+"/storage/v1/object/public/"+BUCKET+"/";
+
+/* ===== Tabs ===== */
+const tabs=document.querySelectorAll(".tab");
+const secLib=document.getElementById("section-lib");
+const secGen=document.getElementById("section-gen");
+tabs.forEach(t=>t.addEventListener("click",()=>{
+  tabs.forEach(x=>x.classList.remove("active"));
+  t.classList.add("active");
+  const to=t.dataset.tab;
+  if(to==="lib"){ secLib.classList.add("active"); secGen.classList.remove("active"); stopGenerator(); }
+  else { secGen.classList.add("active"); secLib.classList.remove("active"); player.pause(); }
+}));
+
+/* ===== Elements (Library) ===== */
+const navToggle=document.getElementById("navToggle");
+const backdrop=document.getElementById("backdrop");
+const lib=document.getElementById("library");
+const btnBack=document.getElementById("btnBack");
+const btnRefresh=document.getElementById("btnRefresh");
+
+const loopChk=document.getElementById("loop");
+const vol=document.getElementById("vol");
+const timerSel=document.getElementById("timer");
+const statusThumb=document.getElementById("statusThumb");
+const statusText=document.getElementById("statusText");
+const player=document.getElementById("player");
+player.crossOrigin="anonymous";
+
+/* ===== Audio & Analyser (공용) ===== */
+const audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+const mediaSrc=audioCtx.createMediaElementSource(player);
+const masterGain=audioCtx.createGain();
+const analyser=audioCtx.createAnalyser();
+mediaSrc.connect(masterGain).connect(analyser).connect(audioCtx.destination);
+
+let desiredGain = parseFloat(vol.value||"1");
+masterGain.gain.value = desiredGain;
+vol.oninput = ()=>{ desiredGain=+vol.value; if(!player.muted) masterGain.gain.value=desiredGain; };
+player.addEventListener('volumechange', ()=>{ masterGain.gain.value = player.muted?0:desiredGain; });
+
+function ensureAudioUnlocked(){ if(audioCtx.state!=="running"){ audioCtx.resume(); } }
+document.addEventListener("pointerdown", ensureAudioUnlocked, {once:true});
+player.addEventListener("play", ensureAudioUnlocked);
+
+/* Timer (공용) */
+let timerId=null;
+timerSel.onchange=()=>{
+  clearTimeout(timerId);
+  const min=+timerSel.value;
+  if(min>0){
+    timerId=setTimeout(()=>{ player.pause(); player.currentTime=0; alert(`Playback stopped after ${min} minutes.`); },min*60000);
+  }
+};
+player.loop = loopChk.checked;
+loopChk.onchange = ()=> player.loop = loopChk.checked;
+
+/* Oscilloscope (공용 analyser) */
+analyser.fftSize=2048;
+const buf=new Uint8Array(analyser.fftSize);
+const canvas=document.getElementById("osc");
+const ctx=canvas.getContext("2d");
+function resize(){canvas.width=canvas.clientWidth||window.innerWidth;canvas.height=120;}
+window.addEventListener("resize",resize);resize();
+(function draw(){
+  requestAnimationFrame(draw);
+  analyser.getByteTimeDomainData(buf);
+  ctx.fillStyle="#090b11";ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.lineWidth=2;ctx.strokeStyle="#9cff8b";ctx.beginPath();
+  const slice=canvas.width/buf.length;
+  for(let i=0,x=0;i<buf.length;i++,x+=slice){
+    const y=(buf[i]/128.0)*(canvas.height/2);
+    i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+  }
+  ctx.lineTo(canvas.width,canvas.height/2);ctx.stroke();
+})();
+
+/* ===== Library (Supabase) ===== */
+let cwd="";
+const enc=s=>s.split("/").filter(Boolean).map(encodeURIComponent).join("/");
+async function list(p=""){const{data,error}=await sb.storage.from(BUCKET).list(p,{limit:1000,sortBy:{column:"name",order:"asc"}});if(error){console.warn("[list]",error);return[]}return data||[];}
+function abs(p){return PUBLIC+enc(p);}
+function setStatus(imgUrl,text){ statusThumb.src=imgUrl||""; statusText.textContent=text||"—"; }
+
+async function load(p=""){
+  cwd=p; lib.innerHTML=""; setStatus("","");
+  const d=await list(p);
+  for(const e of d){
+    const name=e.name; const full=(p?p+"/":"")+name;
+
+    // folder
+    if(!name.includes(".")){
+      const c=document.createElement("div"); c.className="card";
+      const img=document.createElement("img");
+      img.src=abs(full+"/folder.png");
+      img.onerror=()=>img.src="https://placehold.co/300x300/111/aaa?text=Folder";
+      c.onclick=()=>{ ensureAudioUnlocked(); load(full); };
+      c.append(img); lib.append(c);
+      continue;
+    }
+
+    // audio
+    if(/\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(name)){
+      const c=document.createElement("div"); c.className="card";
+      const img=document.createElement("img");
+      const thumb=full.replace(/\.[^.]+$/,".png");
+      img.src=abs(thumb);
+      img.onerror=()=>img.src="https://placehold.co/300x300/222/888?text=Audio";
+      c.onclick=()=>{ ensureAudioUnlocked(); player.src=abs(full); setStatus(abs(thumb), name); };
+      c.append(img); lib.append(c);
+    }
+  }
+}
+btnBack.onclick=()=>{ if(!cwd) return; const a=cwd.split("/"); a.pop(); load(a.join("/")); };
+btnRefresh.onclick=()=>load(cwd);
+
+/* drag scroll */
+let isDown=false,sx=0,sl=0;
+lib.addEventListener('mousedown',e=>{isDown=true;sx=e.pageX;sl=lib.scrollLeft;});
+['mouseleave','mouseup'].forEach(ev=>lib.addEventListener(ev,()=>{isDown=false;}));
+lib.addEventListener('mousemove',e=>{if(!isDown)return; lib.scrollLeft=sl-(e.pageX-sx)*1.5;});
+
+/* ===== Generator (Pro) ===== */
+let oscL=null,oscR=null,genGain=null,splitter=null,merger=null;
+
+const genWave=document.getElementById("genWave");
+const genLevel=document.getElementById("genLevel");
+const genFreq=document.getElementById("genFreq");
+const genBinaural=document.getElementById("genBinaural");
+const genBeat=document.getElementById("genBeat");
+const genStart=document.getElementById("genStart");
+const genStop=document.getElementById("genStop");
+
+function buildGeneratorChain(){
+  // L/R 체인 구성: (oscL→L만) + (oscR→R만) → master → analyser → destination
+  splitter = audioCtx.createChannelSplitter(2); // (미사용: 레고 구조 대비)
+  merger   = audioCtx.createChannelMerger(2);
+  genGain  = audioCtx.createGain();
+  genGain.gain.value = +genLevel.value;
+
+  // 미디어 체인(masterGain) 뒤의 같은 analyser/destination을 재사용하지 않고
+  // masterGain 앞에 합산하려면: genGain.connect(masterGain) → analyser → destination
+  // 하지만 미디어/제너레이터 믹스를 단순하게 masterGain 뒤 공유로 맞추려면:
+  genGain.connect(analyser); // analyser 먼저 거쳐
+  analyser.connect(audioCtx.destination); // 이미 연결되어 있음(중복 harmless)
+}
+
+function startGenerator(){
+  stopGenerator(); // 안전 정지
+  ensureAudioUnlocked();
+
+  const f = Math.max(1, Math.min(24000, +genFreq.value||440));
+  const beat = Math.max(0, +genBeat.value||0);
+  const wave = genWave.value;
+
+  buildGeneratorChain();
+
+  oscL = audioCtx.createOscillator();
+  oscL.type = wave;
+  oscL.frequency.value = f;
+
+  if(genBinaural.checked){
+    oscR = audioCtx.createOscillator();
+    oscR.type = wave;
+    oscR.frequency.value = f + beat;
+
+    // 채널 라우팅: 각각 PannerNode로 좌/우
+    const panL = new StereoPannerNode(audioCtx,{pan:-1});
+    const panR = new StereoPannerNode(audioCtx,{pan: 1});
+    oscL.connect(panL).connect(genGain);
+    oscR.connect(panR).connect(genGain);
+
+    oscL.start(); oscR.start();
+  }else{
+    oscL.connect(genGain);
+    oscL.start();
+  }
+  genStart.disabled=true;
+  genStop.disabled=false;
+  // Library 음원과 겹치지 않도록 일시정지
+  player.pause();
+}
+
+function stopGenerator(){
+  try{ oscL && oscL.stop(); }catch(e){}
+  try{ oscR && oscR.stop(); }catch(e){}
+  oscL=null; oscR=null;
+  try{ genGain && genGain.disconnect(); }catch(e){}
+  try{ merger && merger.disconnect(); }catch(e){}
+  try{ splitter && splitter.disconnect(); }catch(e){}
+  genGain=null; splitter=null; merger=null;
+  genStart.disabled=false;
+  genStop.disabled=true;
+}
+
+genStart.addEventListener("click", startGenerator);
+genStop .addEventListener("click", stopGenerator);
+genLevel.addEventListener("input", ()=>{ if(genGain) genGain.gain.value=+genLevel.value; });
+
+/* ===== Boot ===== */
+load("");
+stopGenerator(); // 초기 버튼 상태 정리
+</script>
+</body>
+</html>
