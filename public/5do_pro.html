@@ -14,16 +14,15 @@
   --bg:#0b0d13; --panel:#12141b; --card:#181b25; --ink:#e5e7eb;
   --muted:#9aa3b7; --border:#222738; --chip:#0e1016; --accent:#9cff8b;
 }
-
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',Roboto,Arial}
 
-/* Header + Tabs */
+/* ===== Header + Tabs + Lang ===== */
 header{
   display:flex;align-items:center;justify-content:space-between;gap:10px;
-  padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--border)
+  padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--border);position:relative;
 }
-.logo{font-weight:700;color:var(--accent);font-size:1.2rem}
+.logo{font-weight:700;color:var(--accent);font-size:1.2rem;margin-left:40px;} /* ← 햄버거와 겹침 방지 */
 .tabs{display:flex;gap:6px}
 .tab{
   padding:4px 6px;font-size:.72rem;border:1px solid var(--border);
@@ -32,20 +31,22 @@ header{
 .tab.active{background:#1f2739;border-color:#334}
 .section{display:none}
 .section.active{display:block}
+.lang-toggle{
+  color:#fff;border:1px solid #444;padding:4px 8px;border-radius:6px;
+  cursor:pointer;font-size:.8rem;user-select:none;background:#171d2b;
+}
+.lang-toggle:hover{background:#1f2739}
 
-/* ===== Hamburger (Lite 스타일, 외부 클릭시 닫힘) ===== */
-.menu-container { position:absolute; top:12px; left:10px; z-index:2000; }
-.menu-button { font-size:24px; cursor:pointer; user-select:none; color:#fff; }
-.dropdown-menu {
-  display:none; flex-direction:column;
-  position:absolute; background:rgba(0,0,0,0.9);
-  padding:8px 10px; border-radius:10px; margin-top:7px; z-index:2001; width:160px;
+/* ===== Hamburger (Lite 스타일) ===== */
+.menu-container{position:absolute;top:12px;left:10px;z-index:2000}
+.menu-button{font-size:24px;cursor:pointer;user-select:none;color:#fff}
+.dropdown-menu{
+  display:none;flex-direction:column;position:absolute;background:rgba(0,0,0,0.9);
+  padding:8px 10px;border-radius:10px;margin-top:7px;z-index:2001;width:160px
 }
-.dropdown-menu a {
-  color:#fff; padding:6px 10px; text-decoration:none; border-radius:6px;
-}
-.dropdown-menu a:hover { background:rgba(255,255,255,0.1); }
-.menu-backdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.3); z-index:2000; }
+.dropdown-menu a{color:#fff;padding:6px 10px;text-decoration:none;border-radius:6px}
+.dropdown-menu a:hover{background:rgba(255,255,255,0.1)}
+.menu-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:2000}
 
 /* ===== Library: 미니 오실로스코프 ===== */
 #osc{width:100%;height:120px;background:#090b11;display:block;border-bottom:1px solid var(--border)}
@@ -61,7 +62,7 @@ header{
 /* ===== Library: 컨트롤 ===== */
 .controls{
   display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:12px;
-  background:#0f1320;border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+  background:#0f1320;border-top:1px solid var(--border);border-bottom:1px solid var(--border)
 }
 .status{display:flex;align-items:center;gap:18px;margin-bottom:2px}
 
@@ -99,14 +100,14 @@ audio{width:92%;display:block;margin:10px auto}
 .full{grid-column:1/-1}
 .gen-actions{display:flex;gap:10px}
 .pill{padding:8px 12px;border-radius:100px;border:1px solid #2c3147;background:#1b2333;color:#e9eefc;cursor:pointer}
-.pill.primary{background:#21324e;border-color:#355; color:#cfead1}
+.pill.primary{background:#21324e;border-color:#355;color:#cfead1}
 .note{color:#8aa0bd;font-size:.88rem;margin-top:4px}
 @media (max-width:540px){ .grid{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
 
-<!-- ===== 햄버거 (Lite 동일 동작) ===== -->
+<!-- ===== 햄버거 ===== -->
 <div class="menu-container">
   <div class="menu-button" id="menuButton">☰</div>
   <div class="dropdown-menu" id="dropdownMenu">
@@ -125,6 +126,7 @@ audio{width:92%;display:block;margin:10px auto}
     <div class="tab active" data-tab="lib">5DO</div>
     <div class="tab" data-tab="gen">Freq. Gen.</div>
   </div>
+  <div id="langToggle" class="lang-toggle">EN</div>
 </header>
 
 <!-- ===== Library: 상단 미니 오실로스코프 ===== -->
@@ -137,9 +139,7 @@ audio{width:92%;display:block;margin:10px auto}
     <button id="btnRefresh" class="btn">Refresh</button>
   </div>
 
-  <div class="lib-wrap">
-    <div id="library"></div>
-  </div>
+  <div class="lib-wrap"><div id="library"></div></div>
 
   <div class="controls">
     <div class="status">
@@ -167,7 +167,7 @@ audio{width:92%;display:block;margin:10px auto}
   </div>
 </section>
 
-<!-- ===== Generator Section (당신의 원본 코드 그대로 붙여넣기) ===== -->
+<!-- ===== Generator Section (당신의 원본 코드 유지) ===== -->
 <section id="section-gen" class="section" aria-label="Generator">
   <!-- BEGIN: YOUR ORIGINAL GENERATOR CODE -->
   <!-- 여기에 현재 사용 중인 Pro 주파수 생성기(오실레이터/노브/오실로스코프/JS)를 그대로 넣어주세요. -->
@@ -198,6 +198,38 @@ tabs.forEach(t=>t.addEventListener("click",()=>{
   else { secGen.classList.add("active"); secLib.classList.remove("active"); player.pause(); }
 }));
 
+/* ===== 언어 토글 (EN/KO) ===== */
+const langBtn=document.getElementById("langToggle");
+let isKo=false;
+langBtn.onclick=()=>{ isKo=!isKo; langBtn.textContent=isKo?"KO":"EN"; translateLabels(isKo); };
+function translateLabels(ko){
+  const t={
+    vol:{en:"Volume",ko:"볼륨"},
+    loop:{en:"Loop",ko:"반복"},
+    timer:{en:"Timer",ko:"타이머"},
+    back:{en:"Back",ko:"뒤로"},
+    refresh:{en:"Refresh",ko:"새로고침"},
+    tabLib:{en:"5DO",ko:"5DO"},
+    tabGen:{en:"Freq. Gen.",ko:"주파수 생성기"}
+  };
+  document.querySelectorAll("label[for='vol']").forEach(el=>el.textContent=ko?t.vol.ko:t.vol.en);
+  // loop 라벨
+  const loopLabel=document.querySelector("#loop")?.parentElement;
+  if(loopLabel) loopLabel.lastChild.textContent=ko?(" "+t.loop.ko):(" "+t.loop.en);
+  document.querySelectorAll("label[for='timer']").forEach(el=>el.textContent=ko?t.timer.ko:t.timer.en);
+  document.getElementById("btnBack").textContent=ko?t.back.ko:t.back.en;
+  document.getElementById("btnRefresh").textContent=ko?t.refresh.ko:t.refresh.en;
+  // 타이머 옵션
+  const sel=document.getElementById("timer"); if(sel){
+    const en=["Off","5 min","10 min","15 min","20 min","30 min","45 min","60 min"];
+    const koOpt=["끔","5분","10분","15분","20분","30분","45분","60분"];
+    sel.querySelectorAll("option").forEach((o,i)=>o.textContent=ko?koOpt[i]:en[i]);
+  }
+  // 탭 레이블
+  document.querySelector('.tab[data-tab="lib"]').textContent = ko? t.tabLib.ko : t.tabLib.en;
+  document.querySelector('.tab[data-tab="gen"]').textContent = ko? t.tabGen.ko : t.tabGen.en;
+}
+
 /* ===== Supabase 설정 ===== */
 const SUPABASE_URL="https://xdjgumqdwedgzwqturcx.supabase.co";
 const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
@@ -226,10 +258,10 @@ masterGain.connect(analyser);
 analyser.connect(audioCtx.destination);
 
 /* 볼륨/뮤트 동기화 + 사용자 제스처 언락 */
-let desiredGain = parseFloat(vol.value||"1");
-masterGain.gain.value = desiredGain;
-vol.oninput = ()=>{ desiredGain=+vol.value; if(!player.muted) masterGain.gain.value=desiredGain; };
-player.addEventListener('volumechange', ()=>{ masterGain.gain.value = player.muted?0:desiredGain; });
+let desiredGain=parseFloat(vol.value||"1");
+masterGain.gain.value=desiredGain;
+vol.oninput=()=>{ desiredGain=+vol.value; if(!player.muted) masterGain.gain.value=desiredGain; };
+player.addEventListener('volumechange',()=>{ masterGain.gain.value=player.muted?0:desiredGain; });
 function ensureAudioUnlocked(){ if(audioCtx.state!=="running"){ audioCtx.resume(); } }
 document.addEventListener("pointerdown", ensureAudioUnlocked, {once:true});
 player.addEventListener("play", ensureAudioUnlocked);
@@ -243,27 +275,27 @@ timerSel.onchange=()=>{
     timerId=setTimeout(()=>{ player.pause(); player.currentTime=0; alert(`Playback stopped after ${min} minutes.`); },min*60000);
   }
 };
-player.loop = loopChk.checked;
-loopChk.onchange = ()=> player.loop = loopChk.checked;
+player.loop=loopChk.checked;
+loopChk.onchange=()=> player.loop=loopChk.checked;
 
 /* ===== Library 미니 오실로스코프 ===== */
 analyser.fftSize=2048;
 const buf=new Uint8Array(analyser.fftSize);
 const canvas=document.getElementById("osc");
 const ctx=canvas.getContext("2d");
-function resize(){canvas.width=canvas.clientWidth||window.innerWidth;canvas.height=120;}
-window.addEventListener("resize",resize);resize();
+function resize(){ canvas.width=canvas.clientWidth||window.innerWidth; canvas.height=120; }
+window.addEventListener("resize",resize); resize();
 (function draw(){
   requestAnimationFrame(draw);
   analyser.getByteTimeDomainData(buf);
-  ctx.fillStyle="#090b11";ctx.fillRect(0,0,canvas.width,canvas.height);
-  ctx.lineWidth=2;ctx.strokeStyle="#9cff8b";ctx.beginPath();
+  ctx.fillStyle="#090b11"; ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.lineWidth=2; ctx.strokeStyle="#9cff8b"; ctx.beginPath();
   const slice=canvas.width/buf.length;
   for(let i=0,x=0;i<buf.length;i++,x+=slice){
     const y=(buf[i]/128.0)*(canvas.height/2);
     i?ctx.lineTo(x,y):ctx.moveTo(x,y);
   }
-  ctx.lineTo(canvas.width,canvas.height/2);ctx.stroke();
+  ctx.lineTo(canvas.width,canvas.height/2); ctx.stroke();
 })();
 
 /* ===== Status 썸네일: 기본값(Lite) + 로딩 후 치환 ===== */
