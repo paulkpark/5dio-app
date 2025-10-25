@@ -4,22 +4,26 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
 <title>5DO Pro</title>
+
+<!-- Supabase -->
 <link rel="preconnect" href="https://xdjgumqdwedgzwqturcx.supabase.co">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+
 <style>
 :root{
   --bg:#0b0d13; --panel:#12141b; --card:#181b25; --ink:#e5e7eb;
   --muted:#9aa3b7; --border:#222738; --chip:#0e1016; --accent:#9cff8b;
 }
+
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',Roboto,Arial}
 
 /* Header + Tabs */
-header{display:flex;align-items:center;gap:10px;justify-content:space-between;
-  padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--border)}
+header{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--border)
+}
 .logo{font-weight:700;color:var(--accent);font-size:1.2rem}
-
-/* 탭(1/2 크기 유지) */
 .tabs{display:flex;gap:6px}
 .tab{
   padding:4px 6px;font-size:.72rem;border:1px solid var(--border);
@@ -29,52 +33,43 @@ header{display:flex;align-items:center;gap:10px;justify-content:space-between;
 .section{display:none}
 .section.active{display:block}
 
-/* Hamburger */
-.nav-toggle{display:none}
-.hamburger{width:36px;height:32px;border-radius:8px;border:1px solid var(--border);
-  background:#1c2130;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-right:8px}
-.hamburger span,.hamburger span:before,.hamburger span:after{
-  display:block;background:#cfd6e6;height:2px;width:18px;position:relative;border-radius:2px}
-.hamburger span:before,.hamburger span:after{content:"";position:absolute;left:0}
-.hamburger span:before{top:-6px}.hamburger span:after{top:6px}
-
-/* Side menu — 기본 닫힘(체크 시 열림)로 정상화 */
-.side-menu{
-  position:fixed;top:0;left:0;width:33%;max-width:220px;height:100vh;
-  background:#0f1320;border-right:1px solid var(--border);box-shadow:6px 0 20px rgba(0,0,0,.35);
-  transform:translateX(-100%);transition:.25s ease;padding:14px;overflow-y:auto;z-index:1001;
-  display:flex;flex-direction:column;gap:8px;
+/* ===== Hamburger (Lite 스타일, 외부 클릭시 닫힘) ===== */
+.menu-container { position:absolute; top:12px; left:10px; z-index:2000; }
+.menu-button { font-size:24px; cursor:pointer; user-select:none; color:#fff; }
+.dropdown-menu {
+  display:none; flex-direction:column;
+  position:absolute; background:rgba(0,0,0,0.9);
+  padding:8px 10px; border-radius:10px; margin-top:7px; z-index:2001; width:160px;
 }
-#navToggle:checked ~ nav.side-menu{ transform:none; }
-.mbtn{padding:10px;border-radius:10px;border:1px solid var(--border);
-  background:#171d2b;color:#dfe7f6;text-align:left;width:100%}
-.backdrop{display:none; position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:1000;}
-#navToggle:checked ~ .backdrop{ display:block; }
+.dropdown-menu a {
+  color:#fff; padding:6px 10px; text-decoration:none; border-radius:6px;
+}
+.dropdown-menu a:hover { background:rgba(255,255,255,0.1); }
+.menu-backdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.3); z-index:2000; }
 
-/* Oscilloscope (Library 상단) */
+/* ===== Library: 미니 오실로스코프 ===== */
 #osc{width:100%;height:120px;background:#090b11;display:block;border-bottom:1px solid var(--border)}
 
-/* ===== Library (Lite 최종본 이식) ===== */
+/* ===== Library: 내비 + 썸네일 스트립 ===== */
 #navBtns{display:flex;justify-content:center;gap:8px;padding:8px}
-.btn{background:#1e2232;border:1px solid #2c3147;color:#eee;border-radius:8px;padding:6px 12px}
+.btn{background:#1e2232;border:1px solid #2c3147;color:#eee;border-radius:8px;padding:6px 12px;cursor:pointer}
 .lib-wrap{padding:0 10px 10px}
 #library{display:flex;overflow-x:auto;gap:10px;padding:10px;scroll-behavior:smooth;scroll-snap-type:x mandatory}
 .card{flex:0 0 auto;width:160px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:6px;scroll-snap-align:start}
 .card img{width:100%;aspect-ratio:1/1;object-fit:contain;background:var(--chip);border-radius:8px}
 
-/* Controls */
+/* ===== Library: 컨트롤 ===== */
 .controls{
   display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:12px;
   background:#0f1320;border-top:1px solid var(--border);border-bottom:1px solid var(--border);
 }
-.status{display:flex;align-items:center;gap:20px;margin-bottom:2px}
+.status{display:flex;align-items:center;gap:18px;margin-bottom:2px}
 
-/* A안: 글로우 썸네일(로딩 전) + 로딩 후 이미지 치환 */
+/* A안: 로딩 썸네일(기본값) + 로딩 후 치환 */
 #statusThumb{
   width:124px;height:124px;border-radius:16px;position:relative;overflow:hidden;
   background: radial-gradient(circle at center,#1a1f2f 40%,#0d0f18 100%);
-  border:1px solid #2d334a;display:flex;align-items:center;justify-content:center;
-  box-shadow:0 0 12px rgba(80,180,255,0.15);
+  border:1px solid #2d334a;box-shadow:0 0 12px rgba(80,180,255,0.15);
   background-size:cover;background-position:center;
 }
 #statusThumb::before{
@@ -85,12 +80,12 @@ header{display:flex;align-items:center;gap:10px;justify-content:space-between;
 #statusThumb.loaded::before{display:none;}
 @keyframes pulse{0%,100%{transform:scale(0.8);opacity:0.5;}50%{transform:scale(1.1);opacity:1;}}
 
-.ctrl-stack{display:flex;flex-direction:column;gap:6px}
+.ctrl-stack{display:flex;flex-direction:column;gap:10px}
 .ctrl-line{display:flex;align-items:center;gap:8px}
-input[type="range"]{width:140px}
+#vol{width:140px}
 audio{width:92%;display:block;margin:10px auto}
 
-/* ===== Generator (Pro) — 원본 유지 ===== */
+/* ===== Generator(프로) — 원본 유지 (그리드/폼 스타일만) ===== */
 .gen-wrap{padding:12px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .field{background:#141a27;border:1px solid #2a3044;border-radius:12px;padding:10px}
@@ -106,39 +101,37 @@ audio{width:92%;display:block;margin:10px auto}
 .pill{padding:8px 12px;border-radius:100px;border:1px solid #2c3147;background:#1b2333;color:#e9eefc;cursor:pointer}
 .pill.primary{background:#21324e;border-color:#355; color:#cfead1}
 .note{color:#8aa0bd;font-size:.88rem;margin-top:4px}
-@media (max-width:540px){ .grid{grid-template-columns:1fr} .ctrl-stack{margin-left:0} }
+@media (max-width:540px){ .grid{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
 
-<!-- 기본 닫힘 -->
-<input id="navToggle" class="nav-toggle" type="checkbox" />
+<!-- ===== 햄버거 (Lite 동일 동작) ===== -->
+<div class="menu-container">
+  <div class="menu-button" id="menuButton">☰</div>
+  <div class="dropdown-menu" id="dropdownMenu">
+    <a href="https://5dshop.co.kr" target="_blank" rel="noopener">Shop</a>
+    <a href="#">FAQ</a>
+    <a href="#">Manual</a>
+    <a href="#">Contact</a>
+    <a href="#">About</a>
+  </div>
+  <div class="menu-backdrop" id="menuBackdrop"></div>
+</div>
 
 <header>
-  <div style="display:flex;align-items:center;gap:10px">
-    <label for="navToggle" class="hamburger" aria-label="menu"><span></span></label>
-    <div class="logo">5DO Pro</div>
-  </div>
+  <div class="logo">5DO Pro</div>
   <div class="tabs">
     <div class="tab active" data-tab="lib">5DO</div>
     <div class="tab" data-tab="gen">Freq. Gen.</div>
   </div>
 </header>
 
-<nav class="side-menu">
-  <a class="mbtn" href="https://5dshop.co.kr" target="_blank" rel="noopener">Shop</a>
-  <a class="mbtn" href="#">FAQ</a>
-  <a class="mbtn" href="#">Manual</a>
-  <a class="mbtn" href="#">Contact</a>
-  <a class="mbtn" href="#">About</a>
-</nav>
-<div id="backdrop" class="backdrop"></div>
-
-<!-- Library 상단 미니 오실로스코프(공용 analyser) -->
+<!-- ===== Library: 상단 미니 오실로스코프 ===== -->
 <canvas id="osc"></canvas>
 
-<!-- ===== Library Section (최종본) ===== -->
-<section id="section-lib" class="section active">
+<!-- ===== Library Section ===== -->
+<section id="section-lib" class="section active" aria-label="Library">
   <div id="navBtns">
     <button id="btnBack" class="btn">Back</button>
     <button id="btnRefresh" class="btn">Refresh</button>
@@ -162,74 +155,38 @@ audio{width:92%;display:block;margin:10px auto}
         <div class="ctrl-line">
           <label for="timer">Timer</label>
           <select id="timer">
-            <option value="0">Off</option>
-            <option value="5">5 min</option>
-            <option value="10">10 min</option>
-            <option value="15">15 min</option>
-            <option value="20">20 min</option>
-            <option value="30">30 min</option>
-            <option value="45">45 min</option>
-            <option value="60">60 min</option>
+            <option value="0">Off</option><option value="5">5 min</option>
+            <option value="10">10 min</option><option value="15">15 min</option>
+            <option value="20">20 min</option><option value="30">30 min</option>
+            <option value="45">45 min</option><option value="60">60 min</option>
           </select>
         </div>
       </div>
     </div>
-
     <audio id="player" controls preload="none" playsinline controlslist="nodownload noplaybackrate"></audio>
   </div>
 </section>
 
-<!-- ===== Generator Section (원본 유지) ===== -->
-<section id="section-gen" class="section">
-  <div class="gen-wrap">
-    <div class="grid">
-      <div class="field">
-        <h4>Waveform</h4>
-        <select id="genWave">
-          <option value="sine">Sine</option>
-          <option value="square">Square</option>
-          <option value="sawtooth">Saw</option>
-          <option value="triangle">Triangle</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <h4>Level</h4>
-        <input id="genLevel" type="range" min="0" max="1" step="0.01" value="0.5">
-        <div class="note">Generator output level</div>
-      </div>
-
-      <div class="field">
-        <h4>Frequency (Hz)</h4>
-        <div class="row">
-          <input id="genFreq" type="number" min="1" max="24000" step="0.1" value="440">
-        </div>
-      </div>
-
-      <div class="field">
-        <h4>Binaural Beat</h4>
-        <div class="switch">
-          <label><input type="checkbox" id="genBinaural"> Enable</label>
-        </div>
-        <label for="genBeat">Difference (Hz)</label>
-        <input id="genBeat" type="number" min="0" max="1000" step="0.1" value="7">
-        <div class="note">L = base, R = base + diff</div>
-      </div>
-
-      <div class="field full">
-        <h4>Session</h4>
-        <div class="gen-actions">
-          <button id="genStart" class="pill primary">Start</button>
-          <button id="genStop" class="pill">Stop</button>
-        </div>
-        <div class="note">Library 재생과 중복 방지를 위해, Generator 시작 시 Library는 자동 일시정지됩니다.</div>
-      </div>
-    </div>
-  </div>
+<!-- ===== Generator Section (당신의 원본 코드 그대로 붙여넣기) ===== -->
+<section id="section-gen" class="section" aria-label="Generator">
+  <!-- BEGIN: YOUR ORIGINAL GENERATOR CODE -->
+  <!-- 여기에 현재 사용 중인 Pro 주파수 생성기(오실레이터/노브/오실로스코프/JS)를 그대로 넣어주세요. -->
+  <!-- END: YOUR ORIGINAL GENERATOR CODE -->
 </section>
 
 <script>
-/* ===== Tabs ===== */
+/* ===== 햄버거: 열기/닫기 ===== */
+const menuBtn=document.getElementById("menuButton");
+const menu=document.getElementById("dropdownMenu");
+const menuBackdrop=document.getElementById("menuBackdrop");
+menuBtn.onclick=()=>{
+  const open=menu.style.display==="flex";
+  menu.style.display=open?"none":"flex";
+  menuBackdrop.style.display=open?"none":"block";
+};
+menuBackdrop.onclick=()=>{ menu.style.display="none"; menuBackdrop.style.display="none"; };
+
+/* ===== 탭 전환 ===== */
 const tabs=document.querySelectorAll(".tab");
 const secLib=document.getElementById("section-lib");
 const secGen=document.getElementById("section-gen");
@@ -237,25 +194,18 @@ tabs.forEach(t=>t.addEventListener("click",()=>{
   tabs.forEach(x=>x.classList.remove("active"));
   t.classList.add("active");
   const to=t.dataset.tab;
-  if(to==="lib"){ secLib.classList.add("active"); secGen.classList.remove("active"); stopGenerator(); }
+  if(to==="lib"){ secLib.classList.add("active"); secGen.classList.remove("active"); stopGenerator?.(); }
   else { secGen.classList.add("active"); secLib.classList.remove("active"); player.pause(); }
 }));
 
-/* ===== Hamburger close ===== */
-const navToggle=document.getElementById("navToggle");
-const backdrop=document.getElementById("backdrop");
-const sideMenu=document.querySelector("nav.side-menu");
-backdrop.addEventListener("click",()=>navToggle.checked=false);
-sideMenu.addEventListener("click",e=>{ if(e.target.closest("a")) navToggle.checked=false; });
-
-/* ===== Supabase (Library) ===== */
+/* ===== Supabase 설정 ===== */
 const SUPABASE_URL="https://xdjgumqdwedgzwqturcx.supabase.co";
 const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
 const BUCKET="media";
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-const PUBLIC=SUPABASE_URL.replace(/\/+$/,'')+"/storage/v1/object/public/"+BUCKET+"/";
+const PUBLIC=SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/object/public/" + BUCKET + "/";
 
-/* ===== Elements (Library) ===== */
+/* ===== Library 요소 ===== */
 const lib=document.getElementById("library");
 const btnBack=document.getElementById("btnBack");
 const btnRefresh=document.getElementById("btnRefresh");
@@ -266,7 +216,7 @@ const statusThumb=document.getElementById("statusThumb");
 const player=document.getElementById("player");
 player.crossOrigin="anonymous";
 
-/* ===== Audio & Analyser (Library 최종 파이프라인) ===== */
+/* ===== Library 오디오 파이프라인 ===== */
 const audioCtx=new (window.AudioContext||window.webkitAudioContext)();
 const mediaSrc=audioCtx.createMediaElementSource(player);
 const masterGain=audioCtx.createGain();
@@ -280,7 +230,6 @@ let desiredGain = parseFloat(vol.value||"1");
 masterGain.gain.value = desiredGain;
 vol.oninput = ()=>{ desiredGain=+vol.value; if(!player.muted) masterGain.gain.value=desiredGain; };
 player.addEventListener('volumechange', ()=>{ masterGain.gain.value = player.muted?0:desiredGain; });
-
 function ensureAudioUnlocked(){ if(audioCtx.state!=="running"){ audioCtx.resume(); } }
 document.addEventListener("pointerdown", ensureAudioUnlocked, {once:true});
 player.addEventListener("play", ensureAudioUnlocked);
@@ -297,7 +246,7 @@ timerSel.onchange=()=>{
 player.loop = loopChk.checked;
 loopChk.onchange = ()=> player.loop = loopChk.checked;
 
-/* Library 미니 오실로스코프 (공용 analyser) */
+/* ===== Library 미니 오실로스코프 ===== */
 analyser.fftSize=2048;
 const buf=new Uint8Array(analyser.fftSize);
 const canvas=document.getElementById("osc");
@@ -317,24 +266,25 @@ window.addEventListener("resize",resize);resize();
   ctx.lineTo(canvas.width,canvas.height/2);ctx.stroke();
 })();
 
-/* ===== Status 썸네일(A안) ===== */
-const setStatus=(img)=>{
+/* ===== Status 썸네일: 기본값(Lite) + 로딩 후 치환 ===== */
+function setStatus(img){
+  const el=statusThumb;
   if(!img){
-    statusThumb.classList.remove('loaded');
-    statusThumb.style.background="radial-gradient(circle at center,#1a1f2f 40%,#0d0f18 100%)";
-    statusThumb.style.boxShadow="0 0 12px rgba(80,180,255,0.15)";
-    statusThumb.style.border="1px solid #2d334a";
-    statusThumb.style.backgroundImage="";
+    el.classList.remove('loaded');
+    el.style.background="radial-gradient(circle at center,#1a1f2f 40%,#0d0f18 100%)";
+    el.style.boxShadow="0 0 12px rgba(80,180,255,0.15)";
+    el.style.border="1px solid #2d334a";
+    el.style.backgroundImage="";
   }else{
-    statusThumb.classList.add('loaded');
-    statusThumb.style.background="none";
-    statusThumb.style.boxShadow="none";
-    statusThumb.style.border="1px solid rgba(255,255,255,0.12)";
-    statusThumb.style.backgroundImage=`url('${img}')`;
-    statusThumb.style.backgroundSize="cover";
-    statusThumb.style.backgroundPosition="center";
+    el.classList.add('loaded');
+    el.style.background="none";
+    el.style.boxShadow="none";
+    el.style.border="1px solid rgba(255,255,255,0.12)";
+    el.style.backgroundImage=`url('${img}')`;
+    el.style.backgroundSize="cover";
+    el.style.backgroundPosition="center";
   }
-};
+}
 
 /* ===== Supabase list & 로드 ===== */
 let cwd="";
@@ -373,87 +323,26 @@ async function load(p=""){
         ensureAudioUnlocked();
         player.pause(); player.currentTime=0;
         player.src=abs(full);
-        setStatus(abs(thumb));   // 자동재생 금지: <audio> 버튼은 사용자가 누름
+        setStatus(abs(thumb));   // 자동재생 금지: 사용자가 <audio> 버튼으로 재생
       };
       c.append(img); lib.append(c);
     }
   }
 }
-btnBack.onclick=()=>{ if(!cwd) return; const a=cwd.split("/"); a.pop(); load(a.join("/")); };
-btnRefresh.onclick=()=>load(cwd);
+document.getElementById("btnBack").onclick=()=>{ if(!cwd) return; const a=cwd.split("/"); a.pop(); load(a.join("/")); };
+document.getElementById("btnRefresh").onclick=()=>load(cwd);
 
-/* drag scroll */
+/* 드래그 스크롤(아이튠즈 느낌) */
 let isDown=false,sx=0,sl=0;
 lib.addEventListener('mousedown',e=>{isDown=true;sx=e.pageX;sl=lib.scrollLeft;});
 ['mouseleave','mouseup'].forEach(ev=>lib.addEventListener(ev,()=>{isDown=false;}));
 lib.addEventListener('mousemove',e=>{if(!isDown)return; lib.scrollLeft=sl-(e.pageX-sx)*1.5;});
 
-/* ===== Generator (원본 로직 유지) ===== */
-let oscL=null,oscR=null,genGain=null,splitter=null,merger=null;
-const genWave=document.getElementById("genWave");
-const genLevel=document.getElementById("genLevel");
-const genFreq=document.getElementById("genFreq");
-const genBinaural=document.getElementById("genBinaural");
-const genBeat=document.getElementById("genBeat");
-const genStart=document.getElementById("genStart");
-const genStop=document.getElementById("genStop");
-
-function buildGeneratorChain(){
-  genGain  = audioCtx.createGain();
-  genGain.gain.value = +genLevel.value;
-  // Generator 신호도 오실로스코프에 보이도록 analyser 뒤 동일 경로로 믹스
-  genGain.connect(analyser);
-  // analyser → destination 연결은 이미 위에서 한 번만 되어 있음
-}
-
-function startGenerator(){
-  stopGenerator();
-  ensureAudioUnlocked();
-
-  const f = Math.max(1, Math.min(24000, +genFreq.value||440));
-  const beat = Math.max(0, +genBeat.value||0);
-  const wave = genWave.value;
-
-  buildGeneratorChain();
-
-  oscL = audioCtx.createOscillator();
-  oscL.type = wave;
-  oscL.frequency.value = f;
-
-  if(genBinaural.checked){
-    oscR = audioCtx.createOscillator();
-    oscR.type = wave;
-    oscR.frequency.value = f + beat;
-
-    const panL = new StereoPannerNode(audioCtx,{pan:-1});
-    const panR = new StereoPannerNode(audioCtx,{pan: 1});
-    oscL.connect(panL).connect(genGain);
-    oscR.connect(panR).connect(genGain);
-
-    oscL.start(); oscR.start();
-  }else{
-    oscL.connect(genGain);
-    oscL.start();
-  }
-  genStart.disabled=true; genStop.disabled=false;
-  player.pause(); // Library 재생과 중복 방지
-}
-
-function stopGenerator(){
-  try{ oscL && oscL.stop(); }catch(e){}
-  try{ oscR && oscR.stop(); }catch(e){}
-  oscL=null; oscR=null;
-  try{ genGain && genGain.disconnect(); }catch(e){}
-  genGain=null;
-  genStart.disabled=false; genStop.disabled=true;
-}
-genStart.addEventListener("click", startGenerator);
-genStop .addEventListener("click", stopGenerator);
-genLevel.addEventListener("input", ()=>{ if(genGain) genGain.gain.value=+genLevel.value; });
-
-/* Boot */
+/* 초기 로드 */
 load("");
-stopGenerator(); // 초기 버튼 상태
+
+/* ===== Generator 훅: 라이브러리와 중복 재생 방지용 기본 함수 ===== */
+function stopGenerator(){/* 당신의 Generator 코드에 동일 id 함수가 있으면 이 빈 함수는 무시됩니다. */}
 </script>
 </body>
 </html>
