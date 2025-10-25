@@ -1,41 +1,25 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>5DO</title>
-  <link rel="stylesheet" href="/css/styles.css"/>
-  <script defer src="https://unpkg.com/@supabase/supabase-js@2.42.3/dist/umd/supabase.min.js"></script>
-  <script defer src="/config.js"></script>
-
+  <meta charset="utf-8">
+  <title>Redirecting…</title>
+  <!-- 즉시 리디렉트 (메타 리프레시) -->
+  <meta http-equiv="refresh" content="0; url=./5do.html">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <script>
-  // === Device-based redirect ===
-  document.addEventListener("DOMContentLoaded", () => {
-    const ua = navigator.userAgent.toLowerCase();
-    const isMobile = /android|iphone|ipad|ipod|mobile|blackberry|iemobile|opera mini|mobi/.test(ua);
-    // 데스크탑: 5do_pc.html / 모바일: 5do.html
-    const target = isMobile ? "/5do.html" : "/5do_pc.html";
-
-    // 직접 index.html로 들어온 경우만 자동 이동
-    if (window.location.pathname.endsWith("/") || window.location.pathname.endsWith("index.html")) {
-      window.location.replace(target);
-    }
-  });
+    // JS 백업 리디렉트
+    (function () {
+      try { window.location.replace('./5do.html'); }
+      catch (e) { window.location.href = './5do.html'; }
+    })();
   </script>
-
   <style>
-    body{font-family:system-ui,Roboto,sans-serif;text-align:center;padding-top:15vh;background:#0f1115;color:#e7eaf0}
-    .container{margin-top:20px}
-    .btn{display:inline-block;padding:10px 18px;margin:5px;background:#232b3d;color:#fff;text-decoration:none;border-radius:8px}
-    .btn:hover{background:#2c3955}
+    body { margin:0; height:100vh; display:grid; place-items:center; background:#0b0d13; color:#e5e7eb;
+           font-family:-apple-system,BlinkMacSystemFont,"Noto Sans KR",Roboto,Arial; }
+    a { color:#9cff8b; }
   </style>
 </head>
 <body>
-  <header><h1 style="margin:0;font-size:20px">5DO</h1></header>
-  <div class="container">
-    <p>Choose experience manually:</p>
-    <a class="btn" href="/5dio_pc.html">Open Desktop</a>
-    <a class="btn" href="/5dio.html">Open Mobile</a>
-  </div>
+  <div>Redirecting to <a href="./5do.html">5do.html</a>…</div>
 </body>
 </html>
