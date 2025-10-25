@@ -4,59 +4,76 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <title>5DO Pro</title>
+<link rel="preconnect" href="https://xdjgumqdwedgzwqturcx.supabase.co">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-
 <style>
 :root{
-  --bg:#0b0d13; --panel:#12141b; --border:#222738;
-  --ink:#e5e7eb; --accent:#9cff8b; --card:#181b25;
+  --bg:#0b0d13; --panel:#12141b; --card:#181b25; --ink:#e5e7eb;
+  --muted:#9aa3b7; --border:#222738; --accent:#9cff8b;
 }
-body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Noto Sans KR",Roboto,Arial;background:var(--bg);color:var(--ink)}
-header{display:flex;align-items:center;justify-content:space-between;background:var(--panel);border-bottom:1px solid var(--border);padding:10px 14px;position:relative}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',Roboto,Arial}
+
+/* Header / Tabs / Lang / Hamburger */
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--border);position:relative}
 .logo{font-weight:700;color:var(--accent);font-size:1.2rem;margin-left:40px}
 .tabs{display:flex;gap:6px}
-.tab{padding:4px 6px;font-size:.72rem;border:1px solid var(--border);border-radius:8px;background:#171d2b;color:#cfead1;cursor:pointer}
+.tab{padding:4px 8px;font-size:.74rem;border:1px solid var(--border);border-radius:8px;background:#171d2b;color:#cfead1;cursor:pointer}
 .tab.active{background:#1f2739;border-color:#334}
-.section{display:none}
-.section.active{display:block}
+.section{display:none}.section.active{display:block}
 .lang-toggle{color:#fff;border:1px solid #444;padding:4px 8px;border-radius:6px;cursor:pointer;background:#171d2b}
+
 .menu-container{position:absolute;top:12px;left:10px;z-index:1000}
 .menu-button{font-size:24px;color:#fff;cursor:pointer}
-.dropdown-menu{display:none;flex-direction:column;position:absolute;background:rgba(0,0,0,0.9);padding:8px 10px;border-radius:10px;width:160px}
-.dropdown-menu a{color:#fff;padding:6px 10px;text-decoration:none}
+.dropdown-menu{display:none;flex-direction:column;position:absolute;background:rgba(0,0,0,0.9);
+  padding:8px 10px;border-radius:10px;width:160px}
+.dropdown-menu a{color:#fff;padding:6px 10px;text-decoration:none;border-radius:6px}
 .dropdown-menu a:hover{background:rgba(255,255,255,0.1)}
 .menu-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:900}
 
-#oscLib{width:100%;height:120px;background:#090b11;border-bottom:1px solid var(--border)}
-#navBtns{display:flex;justify-content:center;gap:8px;padding:8px}
-.btn{background:#1e2232;border:1px solid #2c3147;color:#eee;border-radius:10px;padding:8px 10px;font-size:1.3rem;cursor:pointer}
+/* Library */
+#oscLib{width:100%;height:120px;background:#090b11;border-bottom:1px solid var(--border);display:block}
+#navRow{display:flex;justify-content:center;gap:8px;padding:8px}
+.btn{background:#1e2232;border:1px solid #2c3147;color:#eee;border-radius:10px;padding:8px 10px;font-size:1.2rem;cursor:pointer}
 .btn:hover{background:#2a3148}
 #library{display:flex;overflow-x:auto;gap:10px;padding:10px;scroll-behavior:smooth;scroll-snap-type:x mandatory}
-.card{flex:0 0 auto;width:160px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:6px}
-.card img{width:100%;aspect-ratio:1/1;object-fit:contain;background:#10131d;border-radius:8px}
+.card{flex:0 0 auto;width:160px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:6px;scroll-snap-align:start}
+.card img{width:100%;aspect-ratio:1/1;object-fit:contain;background:#0f1320;border-radius:8px}
 
-.controls{display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:12px;background:#0f1320;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
-.status{display:flex;align-items:center;gap:18px;margin-bottom:2px}
-#statusThumb{width:124px;height:124px;border-radius:16px;background:radial-gradient(circle at center,#1a1f2f 40%,#0d0f18 100%);border:1px solid #2d334a;box-shadow:0 0 12px rgba(80,180,255,0.15);background-size:cover;background-position:center;position:relative;overflow:hidden}
-#statusThumb::before{content:'';position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,rgba(100,200,255,0.25),transparent 60%);animation:pulse 2s infinite ease-in-out}
+.controls{display:flex;flex-direction:column;gap:12px;padding:12px;background:#0f1320;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.statusRow{display:flex;align-items:center;gap:18px}
+#statusThumb{width:124px;height:124px;border-radius:16px;background:radial-gradient(circle at center,#1a1f2f 40%,#0d0f18 100%);
+  border:1px solid #2d334a;box-shadow:0 0 12px rgba(80,180,255,.15);background-size:cover;background-position:center;position:relative;overflow:hidden}
+#statusThumb::before{content:'';position:absolute;inset:0;border-radius:50%;
+  background:radial-gradient(circle,rgba(100,200,255,.25),transparent 60%);animation:pulse 2s infinite ease-in-out}
 #statusThumb.loaded::before{display:none}
 @keyframes pulse{0%,100%{transform:scale(.8);opacity:.5}50%{transform:scale(1.1);opacity:1}}
-.ctrl-stack{display:flex;flex-direction:column;gap:10px}
-.ctrl-line{display:flex;align-items:center;gap:8px}
-audio{width:92%;display:block;margin:10px auto}
+.ctrlStack{display:flex;flex-direction:column;gap:10px}
+.ctrlLine{display:flex;align-items:center;gap:8px}
+audio{width:92%;display:block;margin:8px auto}
+
+/* Generator */
 .gen-wrap{padding:12px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .field{background:#141a27;border:1px solid #2a3044;border-radius:12px;padding:10px}
 .field h4{margin:0 0 8px;color:#dfe7f6;font-size:.95rem}
 .field label{display:block;font-size:.85rem;color:#9aa3b7;margin-bottom:4px}
-.field input,.field select{width:100%;background:#101522;color:#e9eefc;border:1px solid #2a3044;border-radius:8px;padding:6px}
-.pill{padding:8px 12px;border-radius:100px;border:1px solid #2c3147;background:#1b2333;color:#e9eefc;cursor:pointer}
+.field input[type="number"],.field select,.field input[type="range"]{
+  width:100%;background:#101522;color:#e9eefc;border:1px solid #2a3044;border-radius:8px;padding:6px}
+.row{display:flex;gap:8px;align-items:center}
+.full{grid-column:1/-1}
+.gen-actions{display:flex;gap:10px;align-items:center}
+.pill{padding:8px 12px;border-radius:999px;border:1px solid #2c3147;background:#1b2333;color:#e9eefc;cursor:pointer}
 .pill.primary{background:#21324e;border-color:#355;color:#cfead1}
 #oscGen{width:100%;height:140px;background:#0a0d14;border:1px solid #20263a;border-radius:12px;margin-top:12px}
+
+@media (max-width:640px){ .grid{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
 
+<!-- Hamburger -->
 <div class="menu-container">
   <div id="menuButton" class="menu-button">☰</div>
   <div id="dropdownMenu" class="dropdown-menu">
@@ -72,54 +89,82 @@ audio{width:92%;display:block;margin:10px auto}
     <div class="tab active" data-tab="lib">5DO</div>
     <div class="tab" data-tab="gen">Freq. Gen.</div>
   </div>
-  <div id="langToggle" class="lang-toggle">EN</div>
+  <button id="langToggle" class="lang-toggle">EN</button>
 </header>
 
+<!-- Library oscilloscope -->
 <canvas id="oscLib"></canvas>
 
-<section id="section-lib" class="section active">
-  <div id="navBtns">
-    <button id="btnBack" class="btn">⬅️</button>
-    <button id="btnRefresh" class="btn">🔄</button>
+<section id="section-lib" class="section active" aria-label="Library">
+  <div id="navRow">
+    <button id="btnBack" class="btn" title="Back">⬅️</button>
+    <button id="btnRefresh" class="btn" title="Refresh">🔄</button>
+    <button id="btnSaveList" class="btn" title="Save Playlist">💾</button>
+    <button id="btnLoadList" class="btn" title="Load Playlist">📜</button>
   </div>
+
   <div id="library"></div>
+
   <div class="controls">
-    <div class="status">
+    <div class="statusRow">
       <div id="statusThumb"></div>
-      <div class="ctrl-stack">
-        <div class="ctrl-line">
-          <label for="vol">Volume</label>
+      <div class="ctrlStack">
+        <div class="ctrlLine">
+          <label for="vol" id="lblVol">Volume</label>
           <input id="vol" type="range" min="0" max="1" step="0.01" value="1">
         </div>
-        <div class="ctrl-line"><label><input type="checkbox" id="loop"> Loop</label></div>
-        <div class="ctrl-line">
-          <label for="timer">Timer</label>
-          <select id="timer"><option value="0">Off</option><option value="5">5 min</option><option value="10">10 min</option></select>
+        <div class="ctrlLine">
+          <label><input type="checkbox" id="loop"> <span id="lblLoop">Loop</span></label>
+        </div>
+        <div class="ctrlLine">
+          <label for="timer" id="lblTimer">Timer</label>
+          <select id="timer">
+            <option value="0">Off</option><option value="5">5 min</option>
+            <option value="10">10 min</option><option value="15">15 min</option>
+            <option value="20">20 min</option><option value="30">30 min</option>
+            <option value="45">45 min</option><option value="60">60 min</option>
+          </select>
         </div>
       </div>
     </div>
-    <audio id="player" controls preload="none"></audio>
+    <audio id="player" controls preload="none" playsinline controlslist="nodownload noplaybackrate"></audio>
   </div>
 </section>
 
-<section id="section-gen" class="section">
+<section id="section-gen" class="section" aria-label="Generator">
   <div class="gen-wrap">
     <div class="grid">
       <div class="field">
         <h4>Waveform</h4>
-        <select id="genWave"><option value="sine">Sine</option><option value="square">Square</option></select>
+        <select id="genWave">
+          <option value="sine">Sine</option>
+          <option value="square">Square</option>
+          <option value="sawtooth">Saw</option>
+          <option value="triangle">Triangle</option>
+        </select>
       </div>
       <div class="field">
-        <h4>Level</h4><input id="genLevel" type="range" min="0" max="1" step="0.01" value="0.5">
+        <h4>Level</h4>
+        <input id="genLevel" type="range" min="0" max="1" step="0.01" value="0.5">
       </div>
       <div class="field">
-        <h4>Frequency (Hz)</h4><input id="genFreq" type="number" min="1" max="24000" value="440">
+        <h4>Frequency (Hz)</h4>
+        <input id="genFreq" type="number" min="1" max="24000" step="0.1" value="440">
       </div>
       <div class="field">
-        <h4>Binaural</h4><input id="genBinaural" type="checkbox"> <label for="genBeat">Diff (Hz)</label><input id="genBeat" type="number" value="7">
+        <h4>Binaural Beat</h4>
+        <label class="row"><input id="genBinaural" type="checkbox"> Enable</label>
+        <label for="genBeat">Difference (Hz)</label>
+        <input id="genBeat" type="number" min="0" max="1000" step="0.1" value="7">
       </div>
+
       <div class="field full">
-        <div><button id="genStart" class="pill primary">▶️</button><button id="genStop" class="pill">⏹️</button></div>
+        <div class="gen-actions">
+          <button id="genStart" class="pill primary" title="Play">▶️</button>
+          <button id="genStop"  class="pill"          title="Stop">⏹️</button>
+          <button id="btnSavePreset" class="pill" title="Save Preset">💾 Save</button>
+          <button id="btnLoadPreset" class="pill" title="Load Preset">🔁 Load</button>
+        </div>
         <canvas id="oscGen"></canvas>
       </div>
     </div>
@@ -127,77 +172,248 @@ audio{width:92%;display:block;margin:10px auto}
 </section>
 
 <script>
-/* 햄버거 */
-const menuBtn=document.getElementById("menuButton"),menu=document.getElementById("dropdownMenu"),backdrop=document.getElementById("menuBackdrop");
-menuBtn.onclick=()=>{const open=menu.style.display==="flex";menu.style.display=open?"none":"flex";backdrop.style.display=open?"none":"block";}
-backdrop.onclick=()=>{menu.style.display="none";backdrop.style.display="none";}
+/* ========== Hamburger ========== */
+const menuBtn = document.getElementById("menuButton");
+const menu = document.getElementById("dropdownMenu");
+const backdrop = document.getElementById("menuBackdrop");
+menuBtn.onclick = ()=>{ const o = menu.style.display==="flex"; menu.style.display=o?"none":"flex"; backdrop.style.display=o?"none":"block"; };
+backdrop.onclick = ()=>{ menu.style.display="none"; backdrop.style.display="none"; };
 
-/* 탭 */
-const tabs=document.querySelectorAll(".tab");
-tabs.forEach(t=>t.onclick=()=>{tabs.forEach(x=>x.classList.remove("active"));t.classList.add("active");
-document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
-document.getElementById("section-"+t.dataset.tab).classList.add("active");});
+/* ========== Tabs ========== */
+const tabs = document.querySelectorAll(".tab");
+tabs.forEach(t=>t.onclick=()=>{
+  tabs.forEach(x=>x.classList.remove("active"));
+  t.classList.add("active");
+  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+  document.getElementById("section-"+t.dataset.tab).classList.add("active");
+  if (t.dataset.tab==="gen") player.pause(); // 제너레이터 탭에서는 재생 멈춤
+});
 
-/* ===== AUDIO PIPELINE ===== */
-const audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-function unlockAudio(){if(audioCtx.state!=="running")audioCtx.resume();}
-document.addEventListener("click",unlockAudio,{once:true});
-const player=document.getElementById("player");
-const masterGain=audioCtx.createGain();masterGain.connect(audioCtx.destination);
-const src=audioCtx.createMediaElementSource(player);src.connect(masterGain);
-const analyser=audioCtx.createAnalyser();masterGain.connect(analyser);
-
-/* ===== 오실로스코프 ===== */
-analyser.fftSize=2048;const buf=new Uint8Array(analyser.fftSize);
-const canvas=document.getElementById("oscLib"),ctx=canvas.getContext("2d");
-function size(){canvas.width=canvas.clientWidth;canvas.height=120;}
-size();window.addEventListener("resize",size);
-(function draw(){requestAnimationFrame(draw);
-analyser.getByteTimeDomainData(buf);ctx.fillStyle="#090b11";ctx.fillRect(0,0,canvas.width,canvas.height);
-ctx.lineWidth=2;ctx.strokeStyle="#9cff8b";ctx.beginPath();
-const dx=canvas.width/buf.length;for(let i=0,x=0;i<buf.length;i++,x+=dx){const y=(buf[i]/128)*canvas.height/2;i?ctx.lineTo(x,y):ctx.moveTo(x,y);}
-ctx.lineTo(canvas.width,canvas.height/2);ctx.stroke();})();
-
-/* 볼륨 */
-const vol=document.getElementById("vol");vol.oninput=()=>{masterGain.gain.value=vol.value;}
-
-/* ===== Supabase ===== */
+/* ========== Supabase ========== */
 const SUPABASE_URL="https://xdjgumqdwedgzwqturcx.supabase.co";
 const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
-const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-const PUBLIC=SUPABASE_URL+"/storage/v1/object/public/media/";
-const enc=s=>s.split("/").filter(Boolean).map(encodeURIComponent).join("/");
-const abs=p=>PUBLIC+enc(p);
+const BUCKET="media";
+const sb = supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const PUBLIC = SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/object/public/" + BUCKET + "/";
+const enc = p => p.split("/").filter(Boolean).map(encodeURIComponent).join("/");
+const abs = p => PUBLIC + enc(p);
 
-/* ===== Library Loader ===== */
-const lib=document.getElementById("library");let cwd="";
-async function list(p=""){const {data}=await sb.storage.from("media").list(p,{limit:1000,sortBy:{column:"name",order:"asc"}});return data||[];}
-async function load(p=""){cwd=p;lib.innerHTML="";for(const e of await list(p)){const n=e.name;const full=(p?p+"/":"")+n;
-if(!n.includes(".")){const c=document.createElement("div");c.className="card";const img=document.createElement("img");img.src=abs(full+"/folder.png");
-img.onerror=()=>img.src="https://placehold.co/200x200/111/aaa?text=Folder";c.onclick=()=>load(full);c.append(img);lib.append(c);}
-else if(/\.(mp3|wav)$/i.test(n)){const c=document.createElement("div");c.className="card";const img=document.createElement("img");
-const thumb=full.replace(/\.[^.]+$/,".png");img.src=abs(thumb);img.onerror=()=>img.src="https://placehold.co/200x200/222/888?text=Audio";
-c.onclick=()=>{unlockAudio();player.src=abs(full);player.play();statusThumb.classList.add("loaded");statusThumb.style.backgroundImage=`url(${img.src})`};
-c.append(img);lib.append(c);}}}
-load();
+/* ========== Audio pipeline (singleton & resume) ========== */
+const audioCtx = window.audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+window.audioCtx = audioCtx;
+function unlockAudio(){ if(audioCtx.state!=="running") audioCtx.resume().catch(()=>{}); }
+['pointerdown','touchstart','keydown'].forEach(ev => document.addEventListener(ev, unlockAudio, { once:true }));
 
-/* ===== Generator ===== */
-const genGain=audioCtx.createGain();genGain.connect(masterGain);
-let genNodes=[];
-function stopGen(){genNodes.forEach(n=>{try{n.stop();n.disconnect();}catch{}});genNodes=[];}
-function startGen(){stopGen();unlockAudio();const f=parseFloat(genFreq.value||"440");const w=genWave.value||"sine";const l=parseFloat(genLevel.value||"0.5");genGain.gain.value=l;
-const o=audioCtx.createOscillator();o.type=w;o.frequency.value=f;o.connect(genGain);o.start();genNodes=[o];}
-genStart.onclick=startGen;genStop.onclick=stopGen;
-const analyserG=audioCtx.createAnalyser();genGain.connect(analyserG);
-analyserG.fftSize=2048;const bufG=new Uint8Array(analyserG.fftSize);
-const canvG=document.getElementById("oscGen"),ctxG=canvG.getContext("2d");
-function resG(){canvG.width=canvG.clientWidth;canvG.height=140;}
-resG();window.addEventListener("resize",resG);
-(function drawG(){requestAnimationFrame(drawG);
-analyserG.getByteTimeDomainData(bufG);ctxG.fillStyle="#0a0d14";ctxG.fillRect(0,0,canvG.width,canvG.height);
-ctxG.lineWidth=2;ctxG.strokeStyle="#77d0ff";ctxG.beginPath();
-const dx=canvG.width/bufG.length;for(let i=0,x=0;i<bufG.length;i++,x+=dx){const y=(bufG[i]/128)*canvG.height/2;i?ctxG.lineTo(x,y):ctxG.moveTo(x,y);}
-ctxG.lineTo(canvG.width,canvG.height/2);ctxG.stroke();})();
+const player = document.getElementById("player");
+player.crossOrigin = "anonymous";
+
+if (!window._audio) {
+  const masterGain = audioCtx.createGain(); masterGain.connect(audioCtx.destination);
+  const mediaSrc   = audioCtx.createMediaElementSource(player); mediaSrc.connect(masterGain);
+  const analyserLib= audioCtx.createAnalyser(); masterGain.connect(analyserLib);
+  analyserLib.fftSize = 2048;
+  window._audio = { masterGain, mediaSrc, analyserLib };
+}
+player.addEventListener("play", unlockAudio);
+
+/* Library oscilloscope (player output) */
+(function libScope(){
+  const cvs = document.getElementById("oscLib"); const ctx = cvs.getContext("2d");
+  const buf = new Uint8Array(window._audio.analyserLib.fftSize);
+  function resize(){ cvs.width = cvs.clientWidth || window.innerWidth; cvs.height = 120; }
+  resize(); window.addEventListener("resize", resize);
+  (function draw(){
+    requestAnimationFrame(draw);
+    window._audio.analyserLib.getByteTimeDomainData(buf);
+    ctx.fillStyle="#090b11"; ctx.fillRect(0,0,cvs.width,cvs.height);
+    ctx.lineWidth=2; ctx.strokeStyle="#9cff8b"; ctx.beginPath();
+    const dx=cvs.width/buf.length;
+    for(let i=0,x=0;i<buf.length;i++,x+=dx){
+      const y=(buf[i]/128)*(cvs.height/2);
+      i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+    }
+    ctx.lineTo(cvs.width,cvs.height/2); ctx.stroke();
+  })();
+})();
+
+/* ========== Library Browser ========== */
+const lib = document.getElementById("library");
+const btnBack = document.getElementById("btnBack");
+const btnRefresh = document.getElementById("btnRefresh");
+const statusThumb = document.getElementById("statusThumb");
+let cwd = "";
+
+function setStatus(img){
+  if(!img){
+    statusThumb.classList.remove('loaded');
+    statusThumb.style.background="radial-gradient(circle at center,#1a1f2f 40%,#0d0f18 100%)";
+    statusThumb.style.boxShadow="0 0 12px rgba(80,180,255,.15)";
+    statusThumb.style.border="1px solid #2d334a";
+    statusThumb.style.backgroundImage="";
+  }else{
+    statusThumb.classList.add('loaded');
+    statusThumb.style.background="none"; statusThumb.style.boxShadow="none";
+    statusThumb.style.border="1px solid rgba(255,255,255,.12)";
+    statusThumb.style.backgroundImage=`url('${img}')`;
+    statusThumb.style.backgroundSize="cover"; statusThumb.style.backgroundPosition="center";
+  }
+}
+
+async function list(p=""){
+  const {data,error} = await sb.storage.from(BUCKET).list(p,{limit:1000,sortBy:{column:"name",order:"asc"}});
+  if(error){ console.warn("[list]",error); return []; }
+  return data||[];
+}
+async function load(p=""){
+  cwd = p; lib.innerHTML = ""; setStatus("");
+  const items = await list(p);
+  for (const e of items){
+    const name = e.name; const full = (p?p+"/":"")+name;
+    if (!name.includes(".")){ // folder
+      const card=document.createElement("div"); card.className="card"; card.dataset.kind="folder"; card.dataset.path=full;
+      const img=document.createElement("img"); img.loading="lazy";
+      img.src=abs(full+"/folder.png");
+      img.onerror=()=>img.src="https://placehold.co/300x300/111/aaa?text=Folder";
+      card.onclick=()=>{ unlockAudio(); load(full); };
+      card.append(img); lib.append(card);
+      continue;
+    }
+    // audio
+    if (/\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(name)){
+      const card=document.createElement("div"); card.className="card"; card.dataset.kind="audio"; card.dataset.path=full;
+      const thumb=full.replace(/\.[^.]+$/,".png"); card.dataset.thumb=thumb;
+      const img=document.createElement("img"); img.loading="lazy"; img.src=abs(thumb);
+      img.onerror=()=>img.src="https://placehold.co/300x300/222/888?text=Audio";
+      // 클릭 시 "로딩만" (자동재생 금지) → 사용자가 ▶ 눌러서 재생
+      card.onclick=()=>{ unlockAudio(); player.pause(); player.currentTime=0; player.src=abs(full); setStatus(abs(thumb)); };
+      card.append(img); lib.append(card);
+    }
+  }
+}
+btnBack.onclick = ()=>{ if(!cwd) return; const a=cwd.split('/'); a.pop(); load(a.join('/')); };
+btnRefresh.onclick = ()=> load(cwd);
+
+/* drag-to-scroll */
+let isDown=false,sx=0,sl=0;
+lib.addEventListener('mousedown',e=>{isDown=true;sx=e.pageX;sl=lib.scrollLeft;});
+['mouseleave','mouseup'].forEach(ev=>lib.addEventListener(ev,()=>{isDown=false;}));
+lib.addEventListener('mousemove',e=>{if(!isDown) return; lib.scrollLeft = sl - (e.pageX - sx)*1.5;});
+
+/* 초기 루트 로드 */
+load("");
+
+/* ========== Playlist (localStorage) ========== */
+const btnSaveList = document.getElementById("btnSaveList");
+const btnLoadList = document.getElementById("btnLoadList");
+btnSaveList.onclick = ()=>{
+  const name = prompt(isKo?"플레이리스트 이름?":"Playlist name?"); if(!name) return;
+  const items = [...lib.querySelectorAll(".card")].filter(c=>c.dataset.kind==="audio")
+    .map(c=>({path:c.dataset.path, thumb:c.dataset.thumb}));
+  const all = JSON.parse(localStorage.getItem("playlists")||"{}"); all[name]=items;
+  localStorage.setItem("playlists", JSON.stringify(all));
+  alert((isKo?"저장됨: ":"Saved: ")+name);
+};
+btnLoadList.onclick = ()=>{
+  const all = JSON.parse(localStorage.getItem("playlists")||"{}");
+  const names = Object.keys(all); if(!names.length){ alert(isKo?"플레이리스트가 없습니다.":"No playlists found."); return; }
+  const sel = prompt((isKo?"선택: ":"Select: ")+"\n"+names.join("\n")); if(!sel||!all[sel]) return;
+  lib.innerHTML=""; setStatus("");
+  all[sel].forEach(({path,thumb})=>{
+    const c=document.createElement("div"); c.className="card"; c.dataset.kind="audio"; c.dataset.path=path; c.dataset.thumb=thumb;
+    const img=document.createElement("img"); img.loading="lazy"; img.src=abs(thumb);
+    img.onerror=()=>img.src="https://placehold.co/300x300/222/888?text=Audio";
+    c.onclick=()=>{ unlockAudio(); player.pause(); player.currentTime=0; player.src=abs(path); setStatus(abs(thumb)); };
+    c.append(img); lib.append(c);
+  });
+};
+
+/* ========== Volume / Loop / Timer ========== */
+const vol = document.getElementById("vol");
+const loopChk = document.getElementById("loop");
+const timerSel = document.getElementById("timer");
+let desiredGain = parseFloat(vol.value||"1");
+window._audio.masterGain.gain.value = desiredGain;
+vol.addEventListener("input",()=>{ desiredGain = +vol.value; if(!player.muted) window._audio.masterGain.gain.value = desiredGain; });
+player.addEventListener("volumechange",()=>{ window._audio.masterGain.gain.value = player.muted ? 0 : desiredGain; });
+player.loop = loopChk.checked; loopChk.onchange = ()=> player.loop = loopChk.checked;
+let timerId=null; timerSel.onchange=()=>{ if(timerId) clearTimeout(timerId); const m=+timerSel.value;
+  if(m>0) timerId=setTimeout(()=>{ player.pause(); player.currentTime=0; alert(`Playback stopped after ${m} minutes.`); }, m*60000); };
+
+/* ========== Generator (single oscilloscope) ========== */
+const genStart = document.getElementById("genStart");
+const genStop  = document.getElementById("genStop");
+const waveSel  = document.getElementById("genWave");
+const freqInp  = document.getElementById("genFreq");
+const lvlInp   = document.getElementById("genLevel");
+const bbChk    = document.getElementById("genBinaural");
+const beatInp  = document.getElementById("genBeat");
+const genGain  = (function(){ const g = audioCtx.createGain(); g.connect(window._audio.masterGain); return g; })();
+let genNodes = [], genRunning=false;
+
+function stopGenerator(){ if(!genRunning) return;
+  genNodes.forEach(n=>{try{n.stop&&n.stop()}catch{} try{n.disconnect&&n.disconnect()}catch{}});
+  genNodes=[]; genRunning=false; genGain.gain.setTargetAtTime(0,audioCtx.currentTime,0.02);
+}
+function startGenerator(){
+  unlockAudio();
+  if(!player.paused) player.pause();
+  if(genRunning) stopGenerator();
+  const wave=waveSel.value, freq=parseFloat(freqInp.value||"440"), lvl=parseFloat(lvlInp.value||"0.5");
+  const useBB=!!bbChk.checked, beat=parseFloat(beatInp.value||"7");
+  genGain.gain.value=lvl;
+  if(useBB){
+    const l=audioCtx.createOscillator(), r=audioCtx.createOscillator();
+    l.type=wave; r.type=wave; l.frequency.value=freq; r.frequency.value=freq+beat;
+    try{
+      const pl=audioCtx.createStereoPanner(), pr=audioCtx.createStereoPanner();
+      pl.pan.value=-1; pr.pan.value=+1; l.connect(pl).connect(genGain); r.connect(pr).connect(genGain);
+      genNodes=[l,r,pl,pr];
+    }catch{ l.connect(genGain); r.connect(genGain); genNodes=[l,r]; }
+    l.start(); r.start();
+  }else{
+    const o=audioCtx.createOscillator(); o.type=wave; o.frequency.value=freq; o.connect(genGain); o.start(); genNodes=[o];
+  }
+  genRunning=true;
+}
+genStart.addEventListener("click", startGenerator);
+genStop .addEventListener("click",  stopGenerator);
+
+/* Generator oscilloscope (single) */
+(function genScope(){
+  const cvs = document.getElementById("oscGen"); const ctx = cvs.getContext("2d");
+  const analyserGen = audioCtx.createAnalyser(); genGain.connect(analyserGen);
+  analyserGen.fftSize = 2048; const buf = new Uint8Array(analyserGen.fftSize);
+  function resize(){ cvs.width = cvs.clientWidth || window.innerWidth; cvs.height = 140; }
+  resize(); window.addEventListener("resize", resize);
+  (function draw(){
+    requestAnimationFrame(draw);
+    analyserGen.getByteTimeDomainData(buf);
+    ctx.fillStyle="#0a0d14"; ctx.fillRect(0,0,cvs.width,cvs.height);
+    ctx.lineWidth=2; ctx.strokeStyle="#77d0ff"; ctx.beginPath();
+    const dx=cvs.width/buf.length;
+    for(let i=0,x=0;i<buf.length;i++,x+=dx){
+      const y=(buf[i]/128)*(cvs.height/2);
+      i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+    }
+    ctx.lineTo(cvs.width,cvs.height/2); ctx.stroke();
+  })();
+})();
+
+/* ========== EN/KO Toggle ========== */
+const langBtn = document.getElementById("langToggle"); let isKo=false;
+function applyLang(){
+  document.getElementById("lblVol").textContent = isKo ? "볼륨" : "Volume";
+  document.getElementById("lblLoop").textContent = isKo ? "반복" : "Loop";
+  document.getElementById("lblTimer").textContent= isKo ? "타이머" : "Timer";
+  document.querySelector('.tab[data-tab="lib"]').textContent = isKo ? "5DO" : "5DO";
+  document.querySelector('.tab[data-tab="gen"]').textContent = isKo ? "주파수 생성기" : "Freq. Gen.";
+  const sel = document.getElementById("timer");
+  const en = ["Off","5 min","10 min","15 min","20 min","30 min","45 min","60 min"];
+  const ko = ["끔","5분","10분","15분","20분","30분","45분","60분"];
+  sel.querySelectorAll("option").forEach((o,i)=>o.textContent=isKo?ko[i]:en[i]);
+}
+langBtn.onclick=()=>{ isKo=!isKo; langBtn.textContent=isKo?"KO":"EN"; applyLang(); };
+applyLang();
 </script>
 </body>
 </html>
