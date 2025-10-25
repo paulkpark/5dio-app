@@ -22,7 +22,7 @@ header{
   display:flex;align-items:center;justify-content:space-between;gap:10px;
   padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--border);position:relative;
 }
-.logo{font-weight:700;color:var(--accent);font-size:1.2rem;margin-left:40px;} /* 햄버거와 겹침 방지 */
+.logo{font-weight:700;color:var(--accent);font-size:1.2rem;margin-left:40px;} 
 .tabs{display:flex;gap:6px}
 .tab{
   padding:4px 6px;font-size:.72rem;border:1px solid var(--border);
@@ -37,7 +37,7 @@ header{
 }
 .lang-toggle:hover{background:#1f2739}
 
-/* ===== Hamburger (Lite 스타일) ===== */
+/* ===== Hamburger ===== */
 .menu-container{position:absolute;top:12px;left:10px;z-index:2000}
 .menu-button{font-size:24px;cursor:pointer;user-select:none;color:#fff}
 .dropdown-menu{
@@ -48,57 +48,43 @@ header{
 .dropdown-menu a:hover{background:rgba(255,255,255,0.1)}
 .menu-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:2000}
 
-/* ===== Library: 미니 오실로스코프 ===== */
+/* ===== Library ===== */
 #osc{width:100%;height:120px;background:#090b11;display:block;border-bottom:1px solid var(--border)}
-
-/* ===== Library: 내비 + 썸네일 스트립 ===== */
 #navBtns{display:flex;justify-content:center;gap:8px;padding:8px}
-.btn{
-  background:#1e2232;border:1px solid #2c3147;color:#eee;border-radius:10px;
-  padding:8px 10px;cursor:pointer;transition:background .2s;font-size:1.3rem;line-height:1
-}
+.btn{background:#1e2232;border:1px solid #2c3147;color:#eee;border-radius:10px;
+  padding:8px 10px;cursor:pointer;transition:background .2s;font-size:1.3rem;line-height:1}
 .btn:hover{background:#2a3148;}
 .lib-wrap{padding:0 10px 10px}
 #library{display:flex;overflow-x:auto;gap:10px;padding:10px;scroll-behavior:smooth;scroll-snap-type:x mandatory}
 .card{flex:0 0 auto;width:160px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:6px;scroll-snap-align:start}
 .card img{width:100%;aspect-ratio:1/1;object-fit:contain;background:var(--chip);border-radius:8px}
 
-/* ===== Library: 컨트롤 ===== */
-.controls{
-  display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:12px;
-  background:#0f1320;border-top:1px solid var(--border);border-bottom:1px solid var(--border)
-}
+/* ===== Controls ===== */
+.controls{display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:12px;
+  background:#0f1320;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
 .status{display:flex;align-items:center;gap:18px;margin-bottom:2px}
-
-/* A안: 로딩 썸네일(기본값) + 로딩 후 치환 */
-#statusThumb{
-  width:124px;height:124px;border-radius:16px;position:relative;overflow:hidden;
-  background: radial-gradient(circle at center,#1a1f2f 40%,#0d0f18 100%);
+#statusThumb{width:124px;height:124px;border-radius:16px;position:relative;overflow:hidden;
+  background:radial-gradient(circle at center,#1a1f2f 40%,#0d0f18 100%);
   border:1px solid #2d334a;box-shadow:0 0 12px rgba(80,180,255,0.15);
-  background-size:cover;background-position:center;
-}
-#statusThumb::before{
-  content:'';position:absolute;inset:0;border-radius:50%;
+  background-size:cover;background-position:center;}
+#statusThumb::before{content:'';position:absolute;inset:0;border-radius:50%;
   background:radial-gradient(circle,rgba(100,200,255,0.25),transparent 60%);
-  animation:pulse 2s infinite ease-in-out;
-}
+  animation:pulse 2s infinite ease-in-out;}
 #statusThumb.loaded::before{display:none;}
 @keyframes pulse{0%,100%{transform:scale(0.8);opacity:0.5;}50%{transform:scale(1.1);opacity:1;}}
-
 .ctrl-stack{display:flex;flex-direction:column;gap:10px}
 .ctrl-line{display:flex;align-items:center;gap:8px}
 #vol{width:140px}
 audio{width:92%;display:block;margin:10px auto}
 
-/* ===== Generator(프로) — 원본 유지 (그리드/폼 스타일만) ===== */
+/* ===== Generator ===== */
 .gen-wrap{padding:12px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .field{background:#141a27;border:1px solid #2a3044;border-radius:12px;padding:10px}
 .field h4{margin:0 0 8px 0;color:#dfe7f6;font-size:.95rem}
 .field label{display:block;font-size:.85rem;color:#9aa3b7;margin-bottom:4px}
-.field input[type="number"], .field select, .field input[type="range"]{
-  width:100%;background:#101522;color:#e9eefc;border:1px solid #2a3044;border-radius:8px;padding:6px
-}
+.field input[type="number"],.field select,.field input[type="range"]{
+  width:100%;background:#101522;color:#e9eefc;border:1px solid #2a3044;border-radius:8px;padding:6px}
 .row{display:flex;gap:8px;align-items:center}
 .switch{display:flex;gap:8px;align-items:center}
 .full{grid-column:1/-1}
@@ -111,379 +97,112 @@ audio{width:92%;display:block;margin:10px auto}
 </head>
 <body>
 
-<!-- ===== 햄버거 ===== -->
+<!-- 햄버거 -->
 <div class="menu-container">
   <div class="menu-button" id="menuButton">☰</div>
   <div class="dropdown-menu" id="dropdownMenu">
-    <a href="https://5dshop.co.kr" target="_blank" rel="noopener">Shop</a>
-    <a href="#">FAQ</a>
-    <a href="#">Manual</a>
-    <a href="#">Contact</a>
-    <a href="#">About</a>
+    <a href="https://5dshop.co.kr" target="_blank">Shop</a>
+    <a href="#">FAQ</a><a href="#">Manual</a><a href="#">Contact</a><a href="#">About</a>
   </div>
   <div class="menu-backdrop" id="menuBackdrop"></div>
 </div>
 
 <header>
   <div class="logo">5DO Pro</div>
-  <div class="tabs">
-    <div class="tab active" data-tab="lib">5DO</div>
-    <div class="tab" data-tab="gen">Freq. Gen.</div>
-  </div>
+  <div class="tabs"><div class="tab active" data-tab="lib">5DO</div><div class="tab" data-tab="gen">Freq. Gen.</div></div>
   <div id="langToggle" class="lang-toggle">EN</div>
 </header>
 
-<!-- ===== Library: 상단 미니 오실로스코프 ===== -->
 <canvas id="osc"></canvas>
 
-<!-- ===== Library Section ===== -->
-<section id="section-lib" class="section active" aria-label="Library">
+<section id="section-lib" class="section active">
   <div id="navBtns">
     <button id="btnBack" class="btn" title="Back">⬅️</button>
     <button id="btnRefresh" class="btn" title="Refresh">🔄</button>
-    <button id="btnSaveList" class="btn" title="Save Playlist">💾</button>
-    <button id="btnLoadList" class="btn" title="Load Playlist">📜</button>
   </div>
-
   <div class="lib-wrap"><div id="library"></div></div>
-
   <div class="controls">
     <div class="status">
-      <div id="statusThumb" aria-label="status thumbnail"></div>
+      <div id="statusThumb"></div>
       <div class="ctrl-stack">
-        <div class="ctrl-line">
-          <label for="vol">Volume</label>
-          <input id="vol" type="range" min="0" max="1" step="0.01" value="1">
-        </div>
-        <div class="ctrl-line">
-          <label><input type="checkbox" id="loop"> Loop</label>
-        </div>
-        <div class="ctrl-line">
-          <label for="timer">Timer</label>
-          <select id="timer">
-            <option value="0">Off</option><option value="5">5 min</option>
-            <option value="10">10 min</option><option value="15">15 min</option>
-            <option value="20">20 min</option><option value="30">30 min</option>
-            <option value="45">45 min</option><option value="60">60 min</option>
-          </select>
+        <div class="ctrl-line"><label for="vol">Volume</label><input id="vol" type="range" min="0" max="1" step="0.01" value="1"></div>
+        <div class="ctrl-line"><label><input type="checkbox" id="loop"> Loop</label></div>
+        <div class="ctrl-line"><label for="timer">Timer</label>
+          <select id="timer"><option value="0">Off</option><option value="5">5 min</option><option value="10">10 min</option></select>
         </div>
       </div>
     </div>
-    <audio id="player" controls preload="none" playsinline controlslist="nodownload noplaybackrate"></audio>
+    <audio id="player" controls preload="none" playsinline></audio>
   </div>
 </section>
 
-<!-- ===== Generator Section (당신의 원본 코드 유지) ===== -->
-<section id="section-gen" class="section" aria-label="Generator">
+<section id="section-gen" class="section">
   <div class="gen-wrap">
-    <!-- ▼▼▼ BEGIN: YOUR ORIGINAL GENERATOR CODE ▼▼▼ -->
-    <!-- 당신의 Generator UI/컨트롤이 이미 있다면 그대로 두세요.
-         아래는 보편 ID로 동작하는 예시 컨트롤(없으면 숨겨짐/무시됨) -->
     <div class="grid">
-      <div class="field">
-        <h4>Waveform</h4>
-        <select id="genWave">
-          <option value="sine">Sine</option>
-          <option value="square">Square</option>
-          <option value="sawtooth">Saw</option>
-          <option value="triangle">Triangle</option>
-        </select>
-      </div>
-      <div class="field">
-        <h4>Level</h4>
-        <input id="genLevel" type="range" min="0" max="1" step="0.01" value="0.5">
-      </div>
-      <div class="field">
-        <h4>Frequency (Hz)</h4>
-        <input id="genFreq" type="number" min="1" max="24000" step="0.1" value="440">
-      </div>
-      <div class="field">
-        <h4>Binaural Beat</h4>
-        <label class="switch"><input type="checkbox" id="genBinaural"> Enable</label>
-        <label for="genBeat">Difference (Hz)</label>
-        <input id="genBeat" type="number" min="0" max="1000" step="0.1" value="7">
-      </div>
-
-      <div class="field full">
-        <h4>Session</h4>
-        <div class="gen-actions">
-          <button id="genStart" class="pill primary">Start</button>
-          <button id="genStop" class="pill">Stop</button>
-          <button id="btnSavePreset" class="pill" title="Save Preset">💾 Save</button>
-          <button id="btnLoadPreset" class="pill" title="Load Preset">🔁 Load</button>
-        </div>
-        <div class="note">Generator 시작 시 Library는 자동 일시정지됩니다.</div>
-      </div>
+      <div class="field"><h4>Waveform</h4><select id="genWave"><option value="sine">Sine</option><option value="square">Square</option><option value="sawtooth">Saw</option><option value="triangle">Triangle</option></select></div>
+      <div class="field"><h4>Level</h4><input id="genLevel" type="range" min="0" max="1" step="0.01" value="0.5"></div>
+      <div class="field"><h4>Frequency (Hz)</h4><input id="genFreq" type="number" min="1" max="24000" step="0.1" value="440"></div>
+      <div class="field"><h4>Binaural Beat</h4><label class="switch"><input type="checkbox" id="genBinaural"> Enable</label><label for="genBeat">Difference (Hz)</label><input id="genBeat" type="number" min="0" max="1000" step="0.1" value="7"></div>
+      <div class="field full"><h4>Session</h4><div class="gen-actions">
+        <button id="genStart" class="pill primary">▶️</button>
+        <button id="genStop" class="pill">⏹️</button>
+      </div><div class="note">Generator 시작 시 Library는 자동 일시정지됩니다.</div></div>
     </div>
-    <!-- ▲▲▲ END: YOUR ORIGINAL GENERATOR CODE ▲▲▲ -->
   </div>
 </section>
 
 <script>
-/* ===== 햄버거: 열기/닫기 ===== */
+/* 햄버거 */
 const menuBtn=document.getElementById("menuButton");
 const menu=document.getElementById("dropdownMenu");
-const menuBackdrop=document.getElementById("menuBackdrop");
-menuBtn.onclick=()=>{
-  const open=menu.style.display==="flex";
-  menu.style.display=open?"none":"flex";
-  menuBackdrop.style.display=open?"none":"block";
-};
-menuBackdrop.onclick=()=>{ menu.style.display="none"; menuBackdrop.style.display="none"; };
+const backdrop=document.getElementById("menuBackdrop");
+menuBtn.onclick=()=>{const o=menu.style.display==="flex";menu.style.display=o?"none":"flex";backdrop.style.display=o?"none":"block";};
+backdrop.onclick=()=>{menu.style.display="none";backdrop.style.display="none";};
 
-/* ===== 탭 전환 ===== */
-const tabs=document.querySelectorAll(".tab");
-const secLib=document.getElementById("section-lib");
-const secGen=document.getElementById("section-gen");
-tabs.forEach(t=>t.addEventListener("click",()=>{
-  tabs.forEach(x=>x.classList.remove("active"));
-  t.classList.add("active");
-  const to=t.dataset.tab;
-  if(to==="lib"){ secLib.classList.add("active"); secGen.classList.remove("active"); stopGenerator?.(); }
-  else { secGen.classList.add("active"); secLib.classList.remove("active"); player.pause(); }
-}));
+/* 탭 */
+const tabs=document.querySelectorAll(".tab"),libS=document.getElementById("section-lib"),genS=document.getElementById("section-gen");
+tabs.forEach(t=>t.onclick=()=>{tabs.forEach(x=>x.classList.remove("active"));t.classList.add("active");
+  if(t.dataset.tab==="lib"){libS.classList.add("active");genS.classList.remove("active");stopGenerator?.();}
+  else{genS.classList.add("active");libS.classList.remove("active");player.pause();}});
 
-/* ===== 언어 토글 (EN/KO) ===== */
-const langBtn=document.getElementById("langToggle");
-let isKo=false;
-langBtn.onclick=()=>{ isKo=!isKo; langBtn.textContent=isKo?"KO":"EN"; translateLabels(isKo); };
-function translateLabels(ko){
-  const t={
-    vol:{en:"Volume",ko:"볼륨"},
-    loop:{en:"Loop",ko:"반복"},
-    timer:{en:"Timer",ko:"타이머"},
-    back:{en:"Back",ko:"뒤로"},
-    refresh:{en:"Refresh",ko:"새로고침"},
-    tabLib:{en:"5DO",ko:"5DO"},
-    tabGen:{en:"Freq. Gen.",ko:"주파수 생성기"}
-  };
-  document.querySelectorAll("label[for='vol']").forEach(el=>el.textContent=ko?t.vol.ko:t.vol.en);
-  const loopLabel=document.querySelector("#loop")?.parentElement;
-  if(loopLabel) loopLabel.lastChild.textContent=ko?(" "+t.loop.ko):(" "+t.loop.en);
-  document.querySelectorAll("label[for='timer']").forEach(el=>el.textContent=ko?t.timer.ko:t.timer.en);
-  // 아이콘 버튼은 텍스트가 없으므로 변경 불필요
-  document.querySelector('.tab[data-tab="lib"]').textContent = ko? t.tabLib.ko : t.tabLib.en;
-  document.querySelector('.tab[data-tab="gen"]').textContent = ko? t.tabGen.ko : t.tabGen.en;
-
-  // 타이머 옵션
-  const sel=document.getElementById("timer"); if(sel){
-    const en=["Off","5 min","10 min","15 min","20 min","30 min","45 min","60 min"];
-    const koOpt=["끔","5분","10분","15분","20분","30분","45분","60분"];
-    sel.querySelectorAll("option").forEach((o,i)=>o.textContent=ko?koOpt[i]:en[i]);
-  }
-}
-
-/* ===== Supabase 설정 ===== */
-const SUPABASE_URL="https://xdjgumqdwedgzwqturcx.supabase.co";
-const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
-const BUCKET="media";
-const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-const PUBLIC=SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/object/public/" + BUCKET + "/";
-
-/* ===== Library 요소 ===== */
-const lib=document.getElementById("library");
-const btnBack=document.getElementById("btnBack");
-const btnRefresh=document.getElementById("btnRefresh");
-const btnSaveList=document.getElementById("btnSaveList");
-const btnLoadList=document.getElementById("btnLoadList");
-const loopChk=document.getElementById("loop");
-const vol=document.getElementById("vol");
-const timerSel=document.getElementById("timer");
-const statusThumb=document.getElementById("statusThumb");
-const player=document.getElementById("player");
-player.crossOrigin="anonymous";
-
-/* ===== Library 오디오 파이프라인 ===== */
+/* 기본 AudioContext */
 const audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+const masterGain=audioCtx.createGain(); masterGain.connect(audioCtx.destination);
+const player=document.getElementById("player");
 const mediaSrc=audioCtx.createMediaElementSource(player);
-const masterGain=audioCtx.createGain();
-const analyser=audioCtx.createAnalyser();
-mediaSrc.connect(masterGain);
-masterGain.connect(analyser);
-analyser.connect(audioCtx.destination);
+const analyser=audioCtx.createAnalyser(); mediaSrc.connect(masterGain); masterGain.connect(analyser);
 
-/* 볼륨/뮤트 동기화 + 사용자 제스처 언락 */
-let desiredGain=parseFloat(vol.value||"1");
-masterGain.gain.value=desiredGain;
-vol.oninput=()=>{ desiredGain=+vol.value; if(!player.muted) masterGain.gain.value=desiredGain; };
-player.addEventListener('volumechange',()=>{ masterGain.gain.value=player.muted?0:desiredGain; });
-function ensureAudioUnlocked(){ if(audioCtx.state!=="running"){ audioCtx.resume(); } }
-document.addEventListener("pointerdown", ensureAudioUnlocked, {once:true});
-player.addEventListener("play", ensureAudioUnlocked);
+/* Generator */
+const genGain=audioCtx.createGain(); genGain.connect(masterGain);
+let genState={running:false,nodes:[]};
+function ensureAudioUnlocked(){if(audioCtx.state!=="running")audioCtx.resume();}
+document.addEventListener("pointerdown",ensureAudioUnlocked,{once:true});
 
-/* Timer / Loop */
-let timerId=null;
-timerSel.onchange=()=>{
-  clearTimeout(timerId);
-  const min=+timerSel.value;
-  if(min>0){
-    timerId=setTimeout(()=>{ player.pause(); player.currentTime=0; alert(`Playback stopped after ${min} minutes.`); },min*60000);
-  }
-};
-player.loop=loopChk.checked;
-loopChk.onchange=()=> player.loop=loopChk.checked;
-
-/* ===== Library 미니 오실로스코프 ===== */
-analyser.fftSize=2048;
-const buf=new Uint8Array(analyser.fftSize);
-const canvas=document.getElementById("osc");
-const ctx=canvas.getContext("2d");
-function resize(){ canvas.width=canvas.clientWidth||window.innerWidth; canvas.height=120; }
-window.addEventListener("resize",resize); resize();
-(function draw(){
-  requestAnimationFrame(draw);
-  analyser.getByteTimeDomainData(buf);
-  ctx.fillStyle="#090b11"; ctx.fillRect(0,0,canvas.width,canvas.height);
-  ctx.lineWidth=2; ctx.strokeStyle="#9cff8b"; ctx.beginPath();
-  const slice=canvas.width/buf.length;
-  for(let i=0,x=0;i<buf.length;i++,x+=slice){
-    const y=(buf[i]/128.0)*(canvas.height/2);
-    i?ctx.lineTo(x,y):ctx.moveTo(x,y);
-  }
-  ctx.lineTo(canvas.width,canvas.height/2); ctx.stroke();
-})();
-
-/* ===== Status 썸네일: 기본값(Lite) + 로딩 후 치환 ===== */
-function setStatus(img){
-  const el=statusThumb;
-  if(!img){
-    el.classList.remove('loaded');
-    el.style.background="radial-gradient(circle at center,#1a1f2f 40%,#0d0f18 100%)";
-    el.style.boxShadow="0 0 12px rgba(80,180,255,0.15)";
-    el.style.border="1px solid #2d334a";
-    el.style.backgroundImage="";
-  }else{
-    el.classList.add('loaded');
-    el.style.background="none";
-    el.style.boxShadow="none";
-    el.style.border="1px solid rgba(255,255,255,0.12)";
-    el.style.backgroundImage=`url('${img}')`;
-    el.style.backgroundSize="cover";
-    el.style.backgroundPosition="center";
-  }
+function stopGenerator(){
+  if(!genState.running)return;
+  genState.nodes.forEach(n=>{try{n.stop();n.disconnect();}catch{}});
+  genState={running:false,nodes:[]};
+  genGain.gain.setTargetAtTime(0,audioCtx.currentTime,0.02);
 }
 
-/* ===== Supabase list & 로드 ===== */
-let cwd="";
-const enc=s=>s.split("/").filter(Boolean).map(encodeURIComponent).join("/");
-async function list(p=""){
-  const{data,error}=await sb.storage.from(BUCKET).list(p,{limit:1000,sortBy:{column:"name",order:"asc"}});
-  if(error){console.warn("[list]",error);return[]}return data||[];
+function startGenerator(){
+  ensureAudioUnlocked(); if(!player.paused)player.pause(); if(genState.running)stopGenerator();
+  const w=document.getElementById("genWave").value,f=parseFloat(document.getElementById("genFreq").value||440),
+        bb=document.getElementById("genBinaural").checked,bh=parseFloat(document.getElementById("genBeat").value||7),
+        lvl=parseFloat(document.getElementById("genLevel").value||0.5);
+  genGain.gain.value=lvl;
+  if(bb){
+    const l=audioCtx.createOscillator(),r=audioCtx.createOscillator();
+    l.type=w;r.type=w;l.frequency.value=f;r.frequency.value=f+bh;
+    try{const pl=audioCtx.createStereoPanner(),pr=audioCtx.createStereoPanner();pl.pan.value=-1;pr.pan.value=1;
+      l.connect(pl).connect(genGain);r.connect(pr).connect(genGain);genState.nodes=[l,r,pl,pr];
+    }catch{l.connect(genGain);r.connect(genGain);genState.nodes=[l,r];}
+    l.start();r.start();
+  }else{const o=audioCtx.createOscillator();o.type=w;o.frequency.value=f;o.connect(genGain);o.start();genState.nodes=[o];}
+  genState.running=true;
 }
-const abs=p=>PUBLIC+enc(p);
-
-async function load(p=""){
-  cwd=p; lib.innerHTML=""; setStatus("");
-  const d=await list(p);
-  for(const e of d){
-    const name=e.name; const full=(p?p+"/":"")+name;
-
-    // 폴더
-    if(!name.includes(".")){
-      const c=document.createElement("div"); c.className="card";
-      const img=document.createElement("img"); img.loading="lazy";
-      img.src=abs(full+"/folder.png");
-      img.onerror=()=>img.src="https://placehold.co/300x300/111/aaa?text=Folder";
-      c.onclick=()=>{ ensureAudioUnlocked(); load(full); };
-      c.dataset.kind="folder"; c.dataset.path=full; c.append(img); lib.append(c);
-      continue;
-    }
-
-    // 오디오
-    if(/\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(name)){
-      const c=document.createElement("div"); c.className="card";
-      const img=document.createElement("img"); img.loading="lazy";
-      const thumb=full.replace(/\.[^.]+$/, ".png");
-      img.src=abs(thumb);
-      img.onerror=()=>img.src="https://placehold.co/300x300/222/888?text=Audio";
-      c.dataset.kind="audio"; c.dataset.path=full; c.dataset.thumb=thumb;
-      c.onclick=()=>{
-        ensureAudioUnlocked();
-        player.pause(); player.currentTime=0;
-        player.src=abs(full);
-        setStatus(abs(thumb));   // 자동재생 금지
-      };
-      c.append(img); lib.append(c);
-    }
-  }
-}
-btnBack.onclick=()=>{ if(!cwd) return; const a=cwd.split("/"); a.pop(); load(a.join("/")); };
-btnRefresh.onclick=()=>load(cwd);
-
-/* 드래그 스크롤(아이튠즈 느낌) */
-let isDown=false,sx=0,sl=0;
-lib.addEventListener('mousedown',e=>{isDown=true;sx=e.pageX;sl=lib.scrollLeft;});
-['mouseleave','mouseup'].forEach(ev=>lib.addEventListener(ev,()=>{isDown=false;}));
-lib.addEventListener('mousemove',e=>{if(!isDown)return; lib.scrollLeft=sl-(e.pageX-sx)*1.5;});
-
-/* ===== Playlist Save/Load (localStorage) ===== */
-btnSaveList.onclick=()=>{
-  const name=prompt(isKo?"플레이리스트 이름?":"Playlist name?");
-  if(!name) return;
-  const items=[...lib.querySelectorAll(".card")].filter(c=>c.dataset.kind==="audio")
-    .map(c=>({path:c.dataset.path, thumb:c.dataset.thumb}));
-  const all=JSON.parse(localStorage.getItem("playlists")||"{}");
-  all[name]=items;
-  localStorage.setItem("playlists",JSON.stringify(all));
-  alert((isKo?"저장됨: ":"Saved: ")+name);
-};
-btnLoadList.onclick=()=>{
-  const all=JSON.parse(localStorage.getItem("playlists")||"{}");
-  const names=Object.keys(all);
-  if(!names.length){ alert(isKo?"플레이리스트가 없습니다.":"No playlists found."); return; }
-  const sel=prompt((isKo?"선택: ":"Select: ")+"\n"+names.join("\n"));
-  if(!sel||!all[sel]) return;
-  lib.innerHTML=""; setStatus("");
-  all[sel].forEach(({path,thumb})=>{
-    const c=document.createElement("div"); c.className="card"; c.dataset.kind="audio"; c.dataset.path=path; c.dataset.thumb=thumb;
-    const img=document.createElement("img"); img.loading="lazy";
-    img.src=abs(thumb); img.onerror=()=>img.src="https://placehold.co/300x300/222/888?text=Audio";
-    c.onclick=()=>{
-      ensureAudioUnlocked(); player.pause(); player.currentTime=0;
-      player.src=abs(path); setStatus(abs(thumb));
-    };
-    c.append(img); lib.append(c);
-  });
-};
-
-/* 초기 로드 */
-load("");
-
-/* ===== Generator Preset Save/Load (localStorage) ===== */
-const savePreset=document.getElementById("btnSavePreset");
-const loadPreset=document.getElementById("btnLoadPreset");
-function q(id){return document.getElementById(id)}
-savePreset?.addEventListener("click",()=>{
-  const name=prompt(isKo?"프리셋 이름?":"Preset name?");
-  if(!name) return;
-  const settings={
-    wave:q("genWave")?.value??null,
-    level:q("genLevel")?.value??null,
-    freq:q("genFreq")?.value??null,
-    binaural:q("genBinaural")?.checked??null,
-    beat:q("genBeat")?.value??null
-  };
-  const all=JSON.parse(localStorage.getItem("freq_presets")||"{}");
-  all[name]=settings;
-  localStorage.setItem("freq_presets",JSON.stringify(all));
-  alert((isKo?"저장됨: ":"Saved: ")+name);
-});
-loadPreset?.addEventListener("click",()=>{
-  const all=JSON.parse(localStorage.getItem("freq_presets")||"{}");
-  const names=Object.keys(all);
-  if(!names.length){ alert(isKo?"프리셋이 없습니다.":"No presets found."); return; }
-  const sel=prompt((isKo?"선택: ":"Select: ")+"\n"+names.join("\n"));
-  const p=all[sel]; if(!p) return;
-  if(q("genWave") && p.wave!=null) q("genWave").value=p.wave;
-  if(q("genLevel") && p.level!=null) q("genLevel").value=p.level;
-  if(q("genFreq") && p.freq!=null) q("genFreq").value=p.freq;
-  if(q("genBinaural") && p.binaural!=null) q("genBinaural").checked=p.binaural;
-  if(q("genBeat") && p.beat!=null) q("genBeat").value=p.beat;
-  alert((isKo?"불러옴: ":"Loaded: ")+sel);
-});
-
-/* ===== Generator 훅: 라이브러리와 중복 재생 방지용 기본 함수 ===== */
-function stopGenerator(){/* 당신의 Generator 코드에 동일 id 함수가 있으면 이 빈 함수는 무시됩니다. */}
+document.getElementById("genStart").onclick=startGenerator;
+document.getElementById("genStop").onclick=stopGenerator;
 </script>
 </body>
 </html>
