@@ -15,28 +15,32 @@
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',Roboto,Arial}
 a{color:var(--accent)}
 
-/* ==== Header / App title / Lang / Hamburger ==== */
+/* ==== Header (햄버거+타이틀 / 탭 / 언어토글) ==== */
 header{
-  position:relative; display:flex; align-items:center; justify-content:center;
-  padding:12px 14px; background:var(--panel); border-bottom:1px solid var(--border);
+  display:grid;
+  grid-template-columns: 1fr auto 1fr; /* 좌측 묶음, 중앙 탭, 우측 토글 */
+  align-items:center;
+  gap:12px;
+  padding:12px 14px;
+  background:var(--panel);
+  border-bottom:1px solid var(--border);
 }
-.app-title{
-  position:absolute; top:12px; left:50%; transform:translateX(-50%);
-  font-weight:800; font-size:1.1rem; color:var(--accent); letter-spacing:.2px;
-}
-.menu-container{ position:absolute; top:10px; left:10px; display:flex; align-items:center; z-index:1000 }
-.menu-button{ font-size:24px; color:#fff; cursor:pointer; line-height:1; transform:translateY(1px) } /* 3px 하향 + 1px 정렬 보정 */
+.left-pack{ display:flex; align-items:center; gap:10px; justify-self:start; }
+.menu-container{ position:relative; display:flex; align-items:center; z-index:1000 }
+.menu-button{ font-size:24px; color:#fff; cursor:pointer; line-height:1; transform:translateY(3px) } /* 햄버거 3px 하향 */
+.app-title{ position:static; transform:none; font-weight:800; font-size:1.1rem; color:var(--accent); letter-spacing:.2px; white-space:nowrap; }
+header .tabs{ justify-self:center; display:flex; gap:8px; }
+.lang-toggle{ justify-self:end; position:relative; right:auto; top:auto; background:#151b24; border:1px solid #2b3249;
+  color:#e7effa; padding:4px 8px; border-radius:8px; cursor:pointer }
+
+/* 드롭다운 */
 .dropdown{ position:absolute; top:34px; left:0; display:none; flex-direction:column; width:200px;
   background:#121826; border:1px solid #2b3249; border-radius:10px; padding:6px; z-index:1100; }
 .dropdown.show{ display:flex }
 .dropdown a{ text-decoration:underline; padding:8px 10px; border-radius:8px }
 .dropdown a:hover{ background:#1a2236 }
 .backdrop{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:900 }
-.lang-toggle{ position:absolute; right:12px; top:12px; background:#151b24; border:1px solid #2b3249;
-  color:#e7effa; padding:4px 8px; border-radius:8px; cursor:pointer }
 
-/* ==== Tabs ==== */
-.tabs{ display:flex; gap:8px; }
 .tab{ padding:6px 10px; border:1px solid var(--border); border-radius:8px; background:#171d2b; color:#dfe7f6; cursor:pointer; font-size:.85rem }
 .tab.active{ background:#1f2739; border-color:#334 }
 .section{ display:none } .section.active{ display:block }
@@ -68,8 +72,8 @@ header{
 .ctrlLine{ display:flex; align-items:center; gap:8px }
 audio{ width:92%; display:block; margin:6px auto 0 }
 
-/* ==== Bar Spectrum (라디얼 대체) ==== */
-#barVizWrap{ display:none; padding:8px 0; background:#0b0f17; border-top:1px solid #20263a }
+/* ==== Bar Spectrum (상시 표시 전용 창) ==== */
+#barVizWrap{ display:block; padding:8px 0; background:#0b0f17; border-top:1px solid #20263a }
 #barViz{ display:block; width:100%; height:100px }
 
 /* ==== Generator ==== */
@@ -91,25 +95,30 @@ input[disabled]{ opacity:.6; filter:grayscale(.2) }
 </head>
 <body>
 
-<!-- Hamburger + Backdrop -->
-<div class="menu-container">
-  <div id="menuBtn" class="menu-button">☰</div>
-  <div id="menuDrop" class="dropdown">
-    <a href="https://5dshop.co.kr" target="_blank" rel="noopener">Shop</a>
-    <a href="texts/faq.txt"    class="menu-text">FAQ</a>
-    <a href="texts/manual.txt" class="menu-text">Manual</a>
-    <a href="texts/contact.txt"class="menu-text">Contact</a>
-    <a href="texts/about.txt"  class="menu-text">About</a>
-  </div>
-  <div id="backdrop" class="backdrop"></div>
-</div>
-
+<!-- 좌측: 햄버거 + 타이틀 -->
 <header>
+  <div class="left-pack">
+    <div class="menu-container">
+      <div id="menuBtn" class="menu-button">☰</div>
+      <div id="menuDrop" class="dropdown">
+        <a href="https://5dshop.co.kr" target="_blank" rel="noopener">Shop</a>
+        <a href="texts/faq.txt"     class="menu-text">FAQ</a>
+        <a href="texts/manual.txt"  class="menu-text">Manual</a>
+        <a href="texts/contact.txt" class="menu-text">Contact</a>
+        <a href="texts/about.txt"   class="menu-text">About</a>
+      </div>
+      <div id="backdrop" class="backdrop"></div>
+    </div>
+    <div class="app-title">5DO Pro</div>
+  </div>
+
+  <!-- 가운데: 탭 -->
   <div class="tabs">
     <div class="tab active" data-target="lib">5DO</div>
     <div class="tab" data-target="gen">Freq. Gen.</div>
   </div>
-  <div class="app-title">5DO Pro</div>
+
+  <!-- 우측: 언어 토글 -->
   <button id="langToggle" class="lang-toggle">EN</button>
 </header>
 
@@ -123,9 +132,6 @@ input[disabled]{ opacity:.6; filter:grayscale(.2) }
   </div>
 
   <div id="library" class="library-strip"></div>
-
-  <!-- Bar Spectrum -->
-  <div id="barVizWrap"><canvas id="barViz"></canvas></div>
 
   <div class="controls">
     <div class="statusRow">
@@ -152,6 +158,9 @@ input[disabled]{ opacity:.6; filter:grayscale(.2) }
     </div>
     <audio id="player" controls preload="none" playsinline controlslist="nodownload noplaybackrate"></audio>
   </div>
+
+  <!-- 오디오 플레이어 아래: 바 스펙트럼 모니터 전용창(항상 표시) -->
+  <div id="barVizWrap"><canvas id="barViz"></canvas></div>
 </section>
 
 <!-- ============ Generator ============ -->
@@ -219,7 +228,7 @@ input[disabled]{ opacity:.6; filter:grayscale(.2) }
 </section>
 
 <script>
-/* ========= Constants ========= */
+/* ========= Supabase ========= */
 const SUPABASE_URL="https://xdjgumqdwedgzwqturcx.supabase.co";
 const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
 const BUCKET="media";
@@ -228,7 +237,7 @@ const PUBLIC_BASE=SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/object/public/"
 const enc=s=>s.split('/').filter(Boolean).map(encodeURIComponent).join('/');
 const abs=p=>PUBLIC_BASE + enc(p);
 
-/* ========= Header / Menu / Tabs / Lang ========= */
+/* ========= Header: 메뉴/탭/언어 ========= */
 const menuBtn=document.getElementById('menuBtn'), drop=document.getElementById('menuDrop'), backdrop=document.getElementById('backdrop');
 menuBtn.onclick=()=>{ const on=drop.style.display==='flex'; drop.style.display=on?'none':'flex'; backdrop.style.display=on?'none':'block'; };
 backdrop.onclick=()=>{ drop.style.display='none'; backdrop.style.display='none'; };
@@ -241,25 +250,30 @@ tabs.forEach(t=>t.onclick=()=>{ tabs.forEach(x=>x.classList.remove('active')); s
 
 const langBtn=document.getElementById('langToggle'); let isKo=false;
 function applyLang(){
-  document.getElementById("lblVol").textContent   = isKo ? "볼륨" : "Volume";
-  document.getElementById("lblLoop").textContent  = isKo ? "반복" : "Loop";
-  document.getElementById("lblTimer").textContent = isKo ? "타이머" : "Timer";
-  document.querySelector('.tab[data-target="lib"]').textContent = "5DO";
-  document.querySelector('.tab[data-target="gen"]').textContent = isKo ? "주파수 생성기" : "Freq. Gen.";
-  document.getElementById("lblFreq").textContent   = isKo ? "주파수 (Hz)" : "Frequency (Hz)";
-  document.getElementById("lblWave").textContent   = isKo ? "파형" : "Waveform";
-  document.getElementById("lblBB").textContent     = isKo ? "바이노럴" : "Binaural";
-  document.getElementById("lblBBEnable").textContent= isKo ? "활성화" : "Enable";
-  document.getElementById("lblBBdiff").textContent  = isKo ? "차이 (Hz)" : "Difference (Hz)";
-  document.getElementById("lblHarmonics").textContent = isKo ? "하모닉스" : "Harmonics";
-  document.getElementById("lblHarmHelp").textContent  = isKo ? "배수" : "Multiplier";
-  document.getElementById("lblLevel").textContent   = isKo ? "레벨" : "Level";
-  document.getElementById("lblDuty").textContent    = isKo ? "듀티 사이클" : "Duty Cycle";
+  const L = {
+    en:{ vol:'Volume', loop:'Loop', timer:'Timer', tabLib:'5DO', tabGen:'Freq. Gen.', freq:'Frequency (Hz)', wave:'Waveform', bb:'Binaural', bbEn:'Enable', bbDiff:'Difference (Hz)', harm:'Harmonics', harmHelp:'Multiplier', level:'Level', duty:'Duty Cycle', sweep:'Sweep' },
+    ko:{ vol:'볼륨',  loop:'반복', timer:'타이머', tabLib:'5DO', tabGen:'주파수 생성기', freq:'주파수 (Hz)', wave:'파형', bb:'바이노럴', bbEn:'활성화', bbDiff:'차이 (Hz)', harm:'하모닉스', harmHelp:'배수', level:'레벨', duty:'듀티 사이클', sweep:'스윕' }
+  }[isKo?'ko':'en'];
+  document.getElementById("lblVol").textContent=L.vol;
+  document.getElementById("lblLoop").textContent=L.loop;
+  document.getElementById("lblTimer").textContent=L.timer;
+  document.querySelector('.tab[data-target="lib"]').textContent=L.tabLib;
+  document.querySelector('.tab[data-target="gen"]').textContent=L.tabGen;
+  document.getElementById("lblFreq").textContent=L.freq;
+  document.getElementById("lblWave").textContent=L.wave;
+  document.getElementById("lblBB").textContent=L.bb;
+  document.getElementById("lblBBEnable").textContent=L.bbEn;
+  document.getElementById("lblBBdiff").textContent=L.bbDiff;
+  document.getElementById("lblHarmonics").textContent=L.harm;
+  document.getElementById("lblHarmHelp").textContent=L.harmHelp;
+  document.getElementById("lblLevel").textContent=L.level;
+  document.getElementById("lblDuty").textContent=L.duty;
+  document.getElementById("sweepGo").textContent=L.sweep;  // ✅ Sweep 버튼 다국어 적용
 }
 langBtn.onclick=()=>{ isKo=!isKo; langBtn.textContent=isKo?'KO':'EN'; applyLang(); };
 applyLang();
 
-/* ========= Audio pipeline (iOS 대응: GainNode) ========= */
+/* ========= 공용 오디오 파이프라인 (iOS 대응) ========= */
 let audioCtx = window.audioCtx || new (window.AudioContext||window.webkitAudioContext)();
 window.audioCtx = audioCtx;
 const player=document.getElementById('player'); player.crossOrigin='anonymous'; player.playsInline=true;
@@ -277,7 +291,7 @@ function ensurePipeline(){
       srcNode.connect(gainNode);
       gainNode.connect(analyserNode);
       analyserNode.connect(audioCtx.destination);
-    }catch(e){ /* already connected - ignore */ }
+    }catch(e){ /* 이미 연결된 경우 무시 */ }
   }
 }
 const vol=document.getElementById('vol');
@@ -304,7 +318,7 @@ function setStatus(img){
 
 /* ========= Library (Supabase) ========= */
 const lib=document.getElementById('library');
-const sbClient = sb; const encPath=s=>s.split('/').filter(Boolean).map(encodeURIComponent).join('/');
+const sbClient = sb; 
 async function list(path=""){
   const {data,error}=await sbClient.storage.from(BUCKET).list(path,{limit:1000,sortBy:{column:"name",order:"asc"}});
   if(error){ console.warn('[list]',error); return []; } return data||[];
@@ -316,7 +330,7 @@ async function load(path=""){
   for(const e of rows){
     const name=e.name; const full=(path?path+'/':'')+name;
 
-    // 폴더
+    // 폴더 (확장자 없는 엔트리)
     if(!name.includes('.')){
       const card=document.createElement('div'); card.className='card'; card.dataset.kind='folder'; card.dataset.path=full;
       const img=document.createElement('img'); img.loading='lazy';
@@ -378,9 +392,8 @@ document.getElementById('btnLoadList').onclick=()=>{
   });
 };
 
-/* ========= Bar Spectrum Visualizer ========= */
+/* ========= Bar Spectrum Visualizer (항상 보이는 전용창, 재생 중에만 draw) ========= */
 (function(){
-  const wrap=document.getElementById('barVizWrap');
   const canvas=document.getElementById('barViz'); const ctx=canvas.getContext('2d',{alpha:true});
   function resize(){ const dpr=Math.min(window.devicePixelRatio||1,2); canvas.width=Math.floor(canvas.clientWidth*dpr); canvas.height=Math.floor(canvas.clientHeight*dpr); ctx.setTransform(dpr,0,0,dpr,0,0); }
   new ResizeObserver(resize).observe(canvas); resize();
@@ -399,12 +412,12 @@ document.getElementById('btnLoadList').onclick=()=>{
       ctx.fillRect(x,y,barW*wScale,h);
     }
   }
-  function start(){ wrap.style.display='block'; if(!raf) draw(); }
-  function stop(){ wrap.style.display='none'; if(raf) cancelAnimationFrame(raf); raf=0; ctx.clearRect(0,0,canvas.width,canvas.height); }
-  player.addEventListener('play', ()=>{ ensureAudioUnlocked(); ensurePipeline(); start(); });
-  player.addEventListener('pause', stop);
-  player.addEventListener('ended', stop);
-  player.addEventListener('emptied', stop);
+  function startViz(){ if(!raf) draw(); }
+  function stopViz(){ if(raf) cancelAnimationFrame(raf); raf=0; ctx.clearRect(0,0,canvas.width,canvas.height); }
+  player.addEventListener('play', ()=>{ ensureAudioUnlocked(); ensurePipeline(); startViz(); });
+  player.addEventListener('pause', stopViz);
+  player.addEventListener('ended', stopViz);
+  player.addEventListener('emptied', stopViz);
 })();
 
 /* ========= Generator (Osc, Harmonics, Binaural, Sweep, Presets) ========= */
@@ -435,7 +448,7 @@ function startGenerator(){
 function stopGenerator(){ if(!genRunning) return; clearGen(); genRunning=false; genGain.gain.setTargetAtTime(0,audioCtx.currentTime,0.02); }
 function updateGenerator(){ if(!genRunning) return; const wave=waveSel.value, base=+freqInp.value||432, useBB=!!bbChk.checked, beat=+beatInp.value||7, harm=Math.max(1,Math.min(8,parseInt(harmInp.value)||1)); buildGenNodes(base,useBB,beat,harm,wave); }
 freqInp.oninput=updateGenerator; waveSel.oninput=()=>{ dutyInp.disabled=(waveSel.value!=='square'); updateGenerator(); };
-bbChk.oninput=updateGenerator; beatInp.oninput=updateGenerator; harmInp.oninput=updateGenerator; lvlInp.oninput=e=>{ genGain.gain.value=+e.target.value; };
+bbChk.oninput=updateGenerator; beatInp.oninput=updateGenerator; lvlInp.oninput=e=>{ genGain.gain.value=+e.target.value; };
 
 document.getElementById('sweepGo').onclick=()=>{
   if(!genRunning||genMeta.length===0) return;
