@@ -27,9 +27,12 @@ header{
 .menu-button{font-size:24px;color:#fff;cursor:pointer;line-height:1}
 .dropdown-menu{
   display:none;flex-direction:column;position:absolute;background:rgba(0,0,0,0.9);
-  padding:8px 10px;border-radius:10px;width:160px;top:28px;left:0
+  padding:8px 10px;border-radius:10px;width:160px;top:28px;left:0;z-index:1100
 }
-.dropdown-menu a{color:#fff;padding:6px 10px;text-decoration:none;border-radius:6px}
+.dropdown-menu a{
+  color:#fff;text-decoration:underline;display:block;
+  padding:8px 12px;border-radius:6px;cursor:pointer
+}
 .dropdown-menu a:hover{background:rgba(255,255,255,0.1)}
 .menu-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:900}
 
@@ -73,7 +76,7 @@ audio{width:92%;display:block;margin:8px auto}
 
 /* Generator */
 .gen-wrap{padding:12px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}  /* ✅ 모바일에서도 2열 유지 */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .field{background:#141a27;border:1px solid #2a3044;border-radius:12px;padding:10px;display:flex;flex-direction:column;justify-content:center}
 .field h4{margin:0 0 8px;color:#dfe7f6;font-size:.95rem}
 .field.full{grid-column:1/-1}
@@ -99,14 +102,19 @@ input[disabled]{opacity:.5;filter:grayscale(0.3)}
 <body>
 
 <!-- Hamburger -->
-<!-- 햄버거 메뉴 내부 -->
-<nav class="dropdown-menu">
-  <a href="https://5dshop.co.kr" target="_blank" rel="noopener" class="menu-item">Shop</a>
-  <a href="/texts/faq.txt" class="menu-item">FAQ</a>
-  <a href="/texts/manual.txt" class="menu-item">Manual</a>
-  <a href="/texts/contact.txt" class="menu-item">Contact</a>
-  <a href="/texts/about.txt" class="menu-item">About</a>
-</nav>
+<div class="menu-container">
+  <div id="menuButton" class="menu-button">☰</div>
+  <nav id="dropdownMenu" class="dropdown-menu">
+    <!-- ✅ Shop: 새 탭으로 열리는 순수 링크 -->
+    <a href="https://5dshop.co.kr" target="_blank" rel="noopener" class="menu-item">Shop</a>
+    <!-- ✅ 나머지는 텍스트 파일을 모달로 로딩 -->
+    <a href="texts/faq.txt" class="menu-item">FAQ</a>
+    <a href="texts/manual.txt" class="menu-item">Manual</a>
+    <a href="texts/contact.txt" class="menu-item">Contact</a>
+    <a href="texts/about.txt" class="menu-item">About</a>
+  </nav>
+  <div id="menuBackdrop" class="menu-backdrop"></div>
+</div>
 
 <header>
   <div class="logo">5DO Pro</div>
@@ -163,7 +171,6 @@ input[disabled]{opacity:.5;filter:grayscale(0.3)}
 
 <section id="section-gen" class="section" aria-label="Generator">
   <div class="gen-wrap">
-    <!-- 🔭 Generator 전용 오실로스코프 (한 개만 사용) -->
     <div class="field full">
       <canvas id="oscGen" height="100"></canvas>
     </div>
@@ -172,7 +179,7 @@ input[disabled]{opacity:.5;filter:grayscale(0.3)}
       <!-- 1줄: 주파수 & 파형 -->
       <div class="field">
         <h4 id="lblFreq">Frequency (Hz)</h4>
-        <input id="genFreq" type="number" min="1" max="24000" step="0.1" value="432"> <!-- ✅ 기본 432 Hz -->
+        <input id="genFreq" type="number" min="1" max="24000" step="0.1" value="432">
       </div>
       <div class="field">
         <h4 id="lblWave">Waveform</h4>
@@ -231,45 +238,43 @@ input[disabled]{opacity:.5;filter:grayscale(0.3)}
 </section>
 
 <script>
-/* ========== Hamburger & Modal for text files ========== */
+/* ========== Hamburger & Backdrop ========== */
 const menuBtn = document.getElementById("menuButton");
 const menu = document.getElementById("dropdownMenu");
 const backdrop = document.getElementById("menuBackdrop");
-const modal = document.getElementById("menuModal");
-const modalBody = document.getElementById("modalBody");
-const modalClose = document.getElementById("modalClose");
-
 menuBtn.onclick = ()=>{
   const open = menu.style.display==="flex";
   menu.style.display = open ? "none" : "flex";
   backdrop.style.display = open ? "none" : "block";
 };
 backdrop.onclick = ()=>{ menu.style.display="none"; backdrop.style.display="none"; };
-modalClose.onclick = ()=>{ modal.style.display="none"; };
+
+/* ========== Modal for text files ========== */
+const modal = document.getElementById("menuModal");
+const modalBody = document.getElementById("modalBody");
+const modalClose = document.getElementById("modalClose");
+modalClose.onclick = ()=> modal.style.display="none";
 window.addEventListener('click',e=>{ if(e.target===modal) modal.style.display="none"; });
 
-function openModalWithText(text, title){
+function openModalWithText(text){
   modalBody.textContent = text;
   modal.style.display = "block";
   // 메뉴 닫기
-  menu.style.display="none";
-  backdrop.style.display="none";
+  menu.style.display="none"; backdrop.style.display="none";
 }
-function loadMenuContent(file){
-  fetch(`texts/${file}.txt`, {cache:'no-store'})
-    .then(r=> r.ok ? r.text() : Promise.reject(r.status))
-    .then(t=> openModalWithText(t, file))
-    .catch(()=> openModalWithText("⚠️ 내용을 불러올 수 없습니다.", file));
-}
-// 메뉴 항목 이벤트 연결
-document.querySelectorAll('.dropdown-menu a').forEach(a=>{
-  const kind = a.dataset.kind;
-  if(kind==="external") return; // Shop: 외부 링크 그대로
-  const file = a.dataset.file;  // faq, manual, contact, about
-  a.addEventListener('click', (e)=>{
-    e.preventDefault();
-    loadMenuContent(file);
-  });
+
+/* ✅ 메뉴 항목에 핸들러 부착 (Shop 제외) */
+document.querySelectorAll('.dropdown-menu .menu-item').forEach(link=>{
+  if (link.textContent.trim() !== 'Shop') {
+    link.addEventListener('click', (e)=>{
+      e.preventDefault();
+      const url = link.getAttribute('href'); // texts/*.txt
+      fetch(url, {cache:'no-store'})
+        .then(r=> r.ok ? r.text() : Promise.reject(r.status))
+        .then(txt=> openModalWithText(txt))
+        .catch(()=> openModalWithText('⚠️ 내용을 불러올 수 없습니다.'));
+    });
+  }
 });
 
 /* ========== Tabs ========== */
@@ -279,10 +284,10 @@ tabs.forEach(t=>t.onclick=()=>{
   t.classList.add("active");
   document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
   document.getElementById("section-"+t.dataset.tab).classList.add("active");
-  if (t.dataset.tab==="gen") player.pause(); // 제너레이터 탭으로 갈 때 라이브러리 재생 정지
+  if (t.dataset.tab==="gen") player.pause();
 });
 
-/* ========== Supabase (Lite와 동일한 단순 경로) ========== */
+/* ========== Supabase (Simple public path) ========== */
 const SUPABASE_URL="https://xdjgumqdwedgzwqturcx.supabase.co";
 const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
 const BUCKET="media";
@@ -291,7 +296,7 @@ const PUBLIC_BASE = SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/object/public
 const enc = s => s.split("/").filter(Boolean).map(encodeURIComponent).join("/");
 const abs = p => PUBLIC_BASE + enc(p);
 
-/* ========== Audio pipeline (singleton & resume) ========== */
+/* ========== Audio pipeline ========== */
 const audioCtx = window.audioCtx || new (window.AudioContext||window.webkitAudioContext)();
 window.audioCtx = audioCtx;
 function unlockAudio(){ if(audioCtx.state!=="running") audioCtx.resume().catch(()=>{}); }
@@ -299,7 +304,6 @@ function unlockAudio(){ if(audioCtx.state!=="running") audioCtx.resume().catch((
 
 const player = document.getElementById("player");
 player.crossOrigin = "anonymous";
-
 if (!window._audio) {
   const masterGain = audioCtx.createGain(); masterGain.connect(audioCtx.destination);
   const mediaSrc   = audioCtx.createMediaElementSource(player); mediaSrc.connect(masterGain);
@@ -307,7 +311,7 @@ if (!window._audio) {
 }
 player.addEventListener("play", unlockAudio);
 
-/* ========== Library (Lite 로직) ========== */
+/* ========== Library ========== */
 const lib = document.getElementById("library");
 const btnBack = document.getElementById("btnBack");
 const btnRefresh = document.getElementById("btnRefresh");
@@ -420,7 +424,7 @@ btnLoadList.onclick = ()=>{
   });
 };
 
-/* ========== Generator (harmonics + 2열 + 실시간 반영 + Sweep) ========== */
+/* ========== Generator ========== */
 const genStart = document.getElementById("genStart");
 const genStop  = document.getElementById("genStop");
 const waveSel  = document.getElementById("genWave");
@@ -450,8 +454,8 @@ function buildGenNodes(baseFreq, useBB, beat, harmonics, wave){
     genMeta.push({node:o, mult, beatAdd});
   };
   if(useBB){
-    mk(baseFreq, 1, 0);          // Left
-    mk(baseFreq, 1, beat);       // Right (간단: +beat)
+    mk(baseFreq, 1, 0);
+    mk(baseFreq, 1, beat);
   }else{
     mk(baseFreq, 1, 0);
   }
@@ -479,7 +483,7 @@ function startGenerator(){
   genGain.gain.value = lvl;
   buildGenNodes(base, useBB, beat, harm, wave);
 
-  dutyInp.disabled = (wave!=="square"); // (PWM 확장 여지)
+  dutyInp.disabled = (wave!=="square");
   genRunning = true;
 }
 function stopGenerator(){
@@ -545,7 +549,7 @@ const genStopBtn  = document.getElementById("genStop");
 genStartBtn.addEventListener("click", ()=>{ audioCtx.resume(); startGenerator(); genMeta._wave=waveSel.value; genMeta._bb=!!bbChk.checked; genMeta._harm=(+harmInp.value||1); });
 genStopBtn .addEventListener("click", stopGenerator);
 
-/* Generator mini scope (from generator output) */
+/* Generator mini scope */
 (function genScope(){
   const cvs = document.getElementById("oscGen"); const ctx2 = cvs.getContext("2d");
   const analyser = audioCtx.createAnalyser(); analyser.fftSize=2048;
@@ -620,6 +624,5 @@ function applyLang(){
 langBtn.onclick=()=>{ isKo=!isKo; langBtn.textContent=isKo?"KO":"EN"; applyLang(); };
 applyLang();
 </script>
-
 </body>
 </html>
