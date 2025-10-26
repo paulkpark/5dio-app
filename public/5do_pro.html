@@ -8,7 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <style>
 :root{
-  --bg:#0b0d13; --panel:#12141b; --card:#181b25; --ink:#e5e7eb;
+  --bg:#0b0f17; --panel:#12141b; --card:#181b25; --ink:#e5e7eb;
   --muted:#9aa3b7; --border:#222738; --accent:#9cff8b;
 }
 *{box-sizing:border-box}
@@ -21,7 +21,7 @@ header{
   padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--border)
 }
 .menu-container{
-  position:absolute;top:12px;left:10px;
+  position:absolute;top:7px;left:10px; /* ← 아이콘을 위로 5px 올림 */
   display:flex;align-items:center;z-index:1000
 }
 .menu-button{font-size:24px;color:#fff;cursor:pointer;line-height:1}
@@ -146,7 +146,7 @@ input[disabled]{opacity:.5;filter:grayscale(0.3)}
 
   <div id="library"></div>
 
-  <!-- Radial Visualizer: 라이브러리 플레이어 전용 -->
+  <!-- Radial Visualizer -->
   <div id="radialVizWrap"><canvas id="radialViz"></canvas></div>
 
   <div class="controls">
@@ -182,7 +182,6 @@ input[disabled]{opacity:.5;filter:grayscale(0.3)}
     </div>
 
     <div class="grid">
-      <!-- 1줄: 주파수 & 파형 -->
       <div class="field">
         <h4 id="lblFreq">Frequency (Hz)</h4>
         <input id="genFreq" type="number" min="1" max="24000" step="0.1" value="432">
@@ -197,7 +196,6 @@ input[disabled]{opacity:.5;filter:grayscale(0.3)}
         </select>
       </div>
 
-      <!-- 2줄: 바이노럴 & 하모닉스 -->
       <div class="field">
         <h4 id="lblBB">Binaural</h4>
         <label><input id="genBinaural" type="checkbox"> <span id="lblBBEnable">Enable</span></label>
@@ -210,7 +208,6 @@ input[disabled]{opacity:.5;filter:grayscale(0.3)}
         <input id="genHarmonics" type="number" min="1" max="8" step="1" value="1">
       </div>
 
-      <!-- 3줄: 레벨 & 듀티사이클 -->
       <div class="field">
         <h4 id="lblLevel">Level</h4>
         <input id="genLevel" type="range" min="0" max="1" step="0.01" value="0.5">
@@ -220,7 +217,6 @@ input[disabled]{opacity:.5;filter:grayscale(0.3)}
         <input id="genDuty" type="range" min="0.05" max="0.95" step="0.01" value="0.50" disabled>
       </div>
 
-      <!-- 4줄: 스윕 -->
       <div class="field full">
         <div class="gen-actions">
           <input id="sweepStart" type="number" value="100"  aria-label="Sweep Start (Hz)" style="width:90px">
@@ -230,7 +226,6 @@ input[disabled]{opacity:.5;filter:grayscale(0.3)}
         </div>
       </div>
 
-      <!-- 5줄: 재생 컨트롤 -->
       <div class="field full">
         <div class="gen-actions">
           <button id="genStart" class="pill primary" title="Play">▶️</button>
@@ -312,10 +307,9 @@ if(!window._audio || !window._audio.masterGain){
   g.connect(audioCtx.destination);
   window._audio = Object.assign(window._audio||{}, { masterGain:g });
 }
-// (중요) 라이브러리 오디오는 WebAudio에 연결하지 않음
-window._audio._mediaSrcAttached = true;
+// (중요) 라이브러리 오디오는 WebAudio에 연결하지 않음 (브라우저 기본 경로 + 캡처 스트림은 비주얼만)
 
-// 사용자 제스처로 오디오 정책 해제
+/* 사용자 제스처로 오디오 정책 해제 */
 function resumeAC(){ if(audioCtx.state!=='running'){ audioCtx.resume().catch(()=>{}); } }
 ['pointerdown','touchstart','keydown','click'].forEach(ev=>{
   document.addEventListener(ev, resumeAC, { once:true, passive:true });
@@ -335,6 +329,16 @@ player.crossOrigin = "anonymous";
 player.playsInline = true;
 player.loop = false;
 
+/* 볼륨: HTMLMediaElement 자체 제어 */
+function applyPlayerVolumeFromSlider(){
+  const v = parseFloat(vol.value || '1'); 
+  player.volume = (isNaN(v)?1:v);
+}
+vol.addEventListener('input', applyPlayerVolumeFromSlider);
+vol.addEventListener('change', applyPlayerVolumeFromSlider);
+player.addEventListener('loadedmetadata', applyPlayerVolumeFromSlider);
+
+/* status thumb */
 function setStatus(img){
   if(!img){
     statusThumb.classList.remove('loaded');
@@ -394,9 +398,8 @@ async function load(path=""){
         player.src = abs(full);
         const art = abs(thumb);
         setStatus(art);
-        // Media Session 메타데이터
         setNowPlaying({ title: name.replace(/\.[^.]+$/,''), artist: '5DIO', art });
-        setTimeout(()=>{ player.play().catch(()=>{}); }, 60);
+        setTimeout(()=>{ applyPlayerVolumeFromSlider(); player.play().catch(()=>{}); }, 60);
       };
       card.append(img); lib.append(card);
     }
@@ -411,7 +414,7 @@ btnBack.onclick = () => {
 };
 btnRefresh.onclick = () => load(cwd);
 
-/* drag-to-scroll */
+/* drag-to-scroll (iTunes 스타일) */
 let isDown=false,sx=0,sl=0;
 lib.addEventListener('mousedown',e=>{isDown=true;sx=e.pageX;sl=lib.scrollLeft;});
 ['mouseleave','mouseup'].forEach(ev=>lib.addEventListener(ev,()=>{isDown=false;}));
@@ -420,14 +423,9 @@ lib.addEventListener('mousemove',e=>{if(!isDown) return; lib.scrollLeft = sl - (
 /* 초기 루트 로드 */
 load("");
 
-/* 볼륨/루프/타이머 */
+/* 루프/타이머 */
 player.muted = false;
-player.volume = vol ? (+vol.value || 1) : 1;
-vol.addEventListener('input', (ev)=>{
-  const v = parseFloat(ev.target.value || '1') || 1;
-  player.volume = v;
-  if(window._audio?.masterGain) window._audio.masterGain.gain.value = v; // 제너레이터도 동기화
-});
+applyPlayerVolumeFromSlider();
 document.getElementById('loop').addEventListener('change', e=>{ player.loop = e.target.checked; });
 
 let timerHandle=null;
@@ -458,7 +456,7 @@ btnLoadList.onclick = ()=>{
     const img=document.createElement("img"); img.loading="lazy";
     const t=abs(thumb);
     img.src=t; img.onerror=()=>img.src="https://placehold.co/300x300/222/888?text=Audio";
-    c.onclick=()=>{ resumeAC(); player.pause(); player.currentTime=0; player.src=abs(path); setStatus(t); setNowPlaying({title:path.split('/').pop().replace(/\.[^.]+$/,''),artist:'5DIO',art:t}); setTimeout(()=>player.play().catch(()=>{}),60); };
+    c.onclick=()=>{ resumeAC(); player.pause(); player.currentTime=0; player.src=abs(path); setStatus(t); setNowPlaying({title:path.split('/').pop().replace(/\.[^.]+$/,''),artist:'5DIO',art:t}); setTimeout(()=>{ applyPlayerVolumeFromSlider(); player.play().catch(()=>{}); },60); };
     c.append(img); lib.append(c);
   });
 };
@@ -661,7 +659,7 @@ applyLang();
 
 /* ===== Library: 사운드 출력 진단 로그 ===== */
 player.addEventListener('play', ()=>{ if(audioCtx.state!=='running') audioCtx.resume().catch(()=>{}); });
-['play','pause','volumechange','canplay','stalled','error'].forEach(ev=>{
+['play','pause','volumechange','canplay','stalled','error','loadedmetadata'].forEach(ev=>{
   player.addEventListener(ev, ()=>{
     console.log('[5DO::DIAG]', ev, {
       acState: audioCtx.state, muted: player.muted, vol: player.volume,
@@ -672,9 +670,9 @@ player.addEventListener('play', ()=>{ if(audioCtx.state!=='running') audioCtx.re
 });
 </script>
 
-<!-- ===== Background Playback (Media Session) + Radial Visualizer (5DO tuned) ===== -->
+<!-- ===== Background Playback (Media Session) + Radial Visualizer ===== -->
 <script>
-/* Media Session: 백그라운드/락스크린 컨트롤 */
+/* Media Session */
 (function(){
   const audio = document.getElementById('player');
   if(!audio) return;
@@ -724,7 +722,7 @@ player.addEventListener('play', ()=>{ if(audioCtx.state!=='running') audioCtx.re
   playerEl.addEventListener('play', resumeAC);
 })();
 
-/* Radial Spectrum (5DO 색감 튜닝) — Library Player 전용 */
+/* Radial Spectrum (Library Player 전용) */
 (function(){
   const player = document.getElementById('player');
   if(!player) return;
