@@ -8,122 +8,113 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <style>
 :root{
-  --bg:#0b0f17; --panel:#12141b; --card:#181b25; --ink:#e5e7eb;
+  --bg:#0b0f17; --panel:#101522; --card:#171d2b; --ink:#e6edf5;
   --muted:#9aa3b7; --border:#222738; --accent:#9cff8b;
 }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',Roboto,Arial}
+a{color:var(--accent)}
 
-/* Header / Tabs / Lang / Hamburger */
+/* ==== Header / App title / Lang / Hamburger ==== */
 header{
-  position:relative;
-  display:flex;align-items:center;justify-content:center;gap:10px;
-  padding:12px;background:var(--panel);border-bottom:1px solid var(--border)
+  position:relative; display:flex; align-items:center; justify-content:center;
+  padding:12px 14px; background:var(--panel); border-bottom:1px solid var(--border);
 }
-
-/* ▼ 햄버거: 3px 아래로 */
-.menu-container{
-  position:absolute;top:10px;left:10px; /* 기존 7px → 10px */
-  display:flex;align-items:center;z-index:1000
+.app-title{
+  position:absolute; top:12px; left:50%; transform:translateX(-50%);
+  font-weight:800; font-size:1.1rem; color:var(--accent); letter-spacing:.2px;
 }
-.menu-button{font-size:24px;color:#fff;cursor:pointer;line-height:1}
-/* 아이콘 미세정렬(글자와 baseline 맞춤) */
-.menu-button{transform:translateY(1px)}
+.menu-container{ position:absolute; top:10px; left:10px; display:flex; align-items:center; z-index:1000 }
+.menu-button{ font-size:24px; color:#fff; cursor:pointer; line-height:1; transform:translateY(1px) } /* 3px 하향 + 1px 정렬 보정 */
+.dropdown{ position:absolute; top:34px; left:0; display:none; flex-direction:column; width:200px;
+  background:#121826; border:1px solid #2b3249; border-radius:10px; padding:6px; z-index:1100; }
+.dropdown.show{ display:flex }
+.dropdown a{ text-decoration:underline; padding:8px 10px; border-radius:8px }
+.dropdown a:hover{ background:#1a2236 }
+.backdrop{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:900 }
+.lang-toggle{ position:absolute; right:12px; top:12px; background:#151b24; border:1px solid #2b3249;
+  color:#e7effa; padding:4px 8px; border-radius:8px; cursor:pointer }
 
-.dropdown-menu{
-  display:none;flex-direction:column;position:absolute;background:rgba(0,0,0,0.9);
-  padding:8px 10px;border-radius:10px;width:160px;top:28px;left:0;z-index:1100
-}
-.dropdown-menu a{
-  color:#fff;text-decoration:underline;display:block;
-  padding:8px 12px;border-radius:6px;cursor:pointer
-}
-.dropdown-menu a:hover{background:rgba(255,255,255,0.1)}
-.menu-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:900}
+/* ==== Tabs ==== */
+.tabs{ display:flex; gap:8px; }
+.tab{ padding:6px 10px; border:1px solid var(--border); border-radius:8px; background:#171d2b; color:#dfe7f6; cursor:pointer; font-size:.85rem }
+.tab.active{ background:#1f2739; border-color:#334 }
+.section{ display:none } .section.active{ display:block }
 
-.logo{font-weight:700;color:var(--accent);font-size:1.2rem;margin-left:46px}
-.tabs{display:flex;gap:8px;align-items:center;position:absolute;left:50%;transform:translateX(-50%)}
-.tab{padding:6px 10px;font-size:.8rem;border:1px solid var(--border);border-radius:8px;background:#171d2b;color:#cfead1;cursor:pointer}
-.tab.active{background:#1f2739;border-color:#334}
-.section{display:none}.section.active{display:block}
-.lang-toggle{position:absolute;right:12px;top:12px;color:#fff;border:1px solid #444;padding:4px 8px;border-radius:6px;cursor:pointer;background:#171d2b}
+/* ==== Library ==== */
+#navRow{ display:flex; justify-content:center; gap:10px; padding:10px }
+.btn{ background:#1b2133; border:1px solid #2b3249; color:#e6edf5; border-radius:10px; padding:8px 10px; cursor:pointer }
+.btn:hover{ background:#202945 }
 
-/* Library */
-#navRow{display:flex;justify-content:center;gap:8px;padding:8px}
-.btn{background:#1e2232;border:1px solid #2c3147;color:#eee;border-radius:10px;padding:8px 10px;font-size:1.1rem;cursor:pointer}
-.btn:hover{background:#2a3148}
-#library{display:flex;overflow-x:auto;gap:10px;padding:10px;scroll-behavior:smooth;scroll-snap-type:x mandatory}
-.card{flex:0 0 auto;width:160px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:6px;scroll-snap-align:start}
-.card img{width:100%;aspect-ratio:1/1;object-fit:contain;background:#0f1320;border-radius:8px}
+.library-strip{ display:flex; overflow-x:auto; gap:10px; padding:12px; scroll-snap-type:x mandatory }
+.card{ flex:0 0 auto; width:160px; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:8px; scroll-snap-align:start }
+.card img{ width:100%; aspect-ratio:1/1; object-fit:contain; background:#0f1320; border-radius:8px }
 
-/* Controls + Status thumb */
-.controls{display:flex;flex-direction:column;gap:12px;padding:12px;background:#0f1320;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
-.statusRow{display:flex;align-items:center;gap:18px;justify-content:center}
+/* Status + controls */
+.controls{ display:flex; flex-direction:column; gap:12px; padding:12px; background:#0f1320; border-top:1px solid var(--border); border-bottom:1px solid var(--border) }
+.statusRow{ display:flex; gap:16px; align-items:center; justify-content:center }
 #statusThumb{
-  width:124px;height:124px;border-radius:16px;
-  background:#0d0f18;border:1px solid #2d334a;
-  position:relative;overflow:hidden;background-size:cover;background-position:center;
+  width:124px; height:124px; border-radius:16px; background:#0d0f18; border:1px solid #2d334a;
+  position:relative; overflow:hidden; background-size:cover; background-position:center;
 }
 #statusThumb.loading::before{
-  content:"";position:absolute;inset:-30%;
-  background:conic-gradient(from 0deg at 50% 50%,#10283e,#1b3a5b,#234a72,#1b3a5b,#10283e);
-  filter:blur(28px);opacity:.9;animation:aurora 6.5s linear infinite;
+  content:""; position:absolute; inset:-30%;
+  background:conic-gradient(from 0deg at 50% 50%, #10283e, #1b3a5b, #234a72, #1b3a5b, #10283e);
+  filter:blur(28px); opacity:.9; animation:aurora 6.5s linear infinite;
 }
-#statusThumb.loaded::before{content:none}
-@keyframes aurora{
-  0%{transform:rotate(0) scale(1.05)}
-  50%{transform:rotate(180deg) scale(1.10)}
-  100%{transform:rotate(360deg) scale(1.05)}
-}
-.ctrlStack{display:flex;flex-direction:column;gap:10px}
-.ctrlLine{display:flex;align-items:center;gap:8px}
-audio{width:92%;display:block;margin:8px auto}
+#statusThumb.loaded::before{ content:none }
+@keyframes aurora{ 0%{transform:rotate(0) scale(1.05)} 50%{transform:rotate(180deg) scale(1.1)} 100%{transform:rotate(360deg) scale(1.05)} }
+.ctrlCol{ display:flex; flex-direction:column; gap:10px }
+.ctrlLine{ display:flex; align-items:center; gap:8px }
+audio{ width:92%; display:block; margin:6px auto 0 }
 
-/* Radial Visualizer (Library 전용) */
-#radialVizWrap{
-  display:none;justify-content:center;align-items:center;
-  padding:12px 0; background:#0b0f17;
-  border-top:1px solid #20263a; border-bottom:1px solid #20263a;
-}
-#radialViz{ width:min(640px,92vw); height:240px; display:block; }
+/* ==== Bar Spectrum (라디얼 대체) ==== */
+#barVizWrap{ display:none; padding:8px 0; background:#0b0f17; border-top:1px solid #20263a }
+#barViz{ display:block; width:100%; height:100px }
 
-/* Generator */
-.gen-wrap{padding:12px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.field{background:#141a27;border:1px solid #2a3044;border-radius:12px;padding:10px;display:flex;flex-direction:column;justify-content:center}
-.field h4{margin:0 0 8px;color:#dfe7f6;font-size:.95rem}
-.field.full{grid-column:1/-1}
-.gen-actions{display:flex;gap:12px;align-items:center;justify-content:center}
-.pill{padding:8px 12px;border-radius:999px;border:1px solid #2c3147;background:#1b2333;color:#e9eefc;cursor:pointer}
-.pill.primary{background:#21324e;border-color:#355;color:#cfead1}
-input[disabled]{opacity:.5;filter:grayscale(0.3)}
+/* ==== Generator ==== */
+.gen-wrap{ padding:12px }
+.grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px }
+.field{ background:#141a27; border:1px solid #2a3044; border-radius:12px; padding:10px; display:flex; flex-direction:column; justify-content:center }
+.field h4{ margin:0 0 8px; font-size:.95rem; color:#dfe7f6 }
+.field.full{ grid-column:1/-1 }
+.gen-actions{ display:flex; gap:12px; align-items:center; justify-content:center }
+.pill{ padding:8px 12px; border-radius:999px; border:1px solid #2c3147; background:#1b2333; color:#e9eefc; cursor:pointer }
+.pill.primary{ background:#21324e; border-color:#355; color:#cfead1 }
+input[disabled]{ opacity:.6; filter:grayscale(.2) }
+
+/* 모바일 대응 */
+@media (max-width:640px){
+  .card{ width:140px }
+}
 </style>
 </head>
 <body>
 
-<!-- Hamburger -->
+<!-- Hamburger + Backdrop -->
 <div class="menu-container">
-  <div id="menuButton" class="menu-button">☰</div>
-  <nav id="dropdownMenu" class="dropdown-menu">
-    <a href="https://5dshop.co.kr" target="_blank" rel="noopener" class="menu-item">Shop</a>
-    <a href="texts/faq.txt" class="menu-item">FAQ</a>
-    <a href="texts/manual.txt" class="menu-item">Manual</a>
-    <a href="texts/contact.txt" class="menu-item">Contact</a>
-    <a href="texts/about.txt" class="menu-item">About</a>
-  </nav>
-  <div id="menuBackdrop" class="menu-backdrop"></div>
+  <div id="menuBtn" class="menu-button">☰</div>
+  <div id="menuDrop" class="dropdown">
+    <a href="https://5dshop.co.kr" target="_blank" rel="noopener">Shop</a>
+    <a href="texts/faq.txt"    class="menu-text">FAQ</a>
+    <a href="texts/manual.txt" class="menu-text">Manual</a>
+    <a href="texts/contact.txt"class="menu-text">Contact</a>
+    <a href="texts/about.txt"  class="menu-text">About</a>
+  </div>
+  <div id="backdrop" class="backdrop"></div>
 </div>
 
 <header>
-  <div class="logo">5DO Pro</div>
   <div class="tabs">
-    <div class="tab active" data-tab="lib">5DO</div>
-    <div class="tab" data-tab="gen">Freq. Gen.</div>
+    <div class="tab active" data-target="lib">5DO</div>
+    <div class="tab" data-target="gen">Freq. Gen.</div>
   </div>
+  <div class="app-title">5DO Pro</div>
   <button id="langToggle" class="lang-toggle">EN</button>
 </header>
 
-<section id="section-lib" class="section active" aria-label="Library">
+<!-- ============ Library ============ -->
+<section id="lib" class="section active" aria-label="Library">
   <div id="navRow">
     <button id="btnBack" class="btn" title="Back">⬅️</button>
     <button id="btnRefresh" class="btn" title="Refresh">🔄</button>
@@ -131,29 +122,30 @@ input[disabled]{opacity:.5;filter:grayscale(0.3)}
     <button id="btnLoadList" class="btn" title="Load Playlist">📜</button>
   </div>
 
-  <div id="library"></div>
+  <div id="library" class="library-strip"></div>
 
-  <!-- Radial Visualizer -->
-  <div id="radialVizWrap"><canvas id="radialViz"></canvas></div>
+  <!-- Bar Spectrum -->
+  <div id="barVizWrap"><canvas id="barViz"></canvas></div>
 
   <div class="controls">
     <div class="statusRow">
       <div id="statusThumb" class="loading"></div>
-      <div class="ctrlStack">
+      <div class="ctrlCol">
         <div class="ctrlLine">
-          <label for="vol" id="lblVol">Volume</label>
+          <label id="lblVol" for="vol">Volume</label>
           <input id="vol" type="range" min="0" max="1" step="0.01" value="1">
         </div>
         <div class="ctrlLine">
           <label><input type="checkbox" id="loop"> <span id="lblLoop">Loop</span></label>
         </div>
         <div class="ctrlLine">
-          <label for="timer" id="lblTimer">Timer</label>
+          <label id="lblTimer" for="timer">Timer</label>
           <select id="timer">
-            <option value="0">Off</option><option value="5">5 min</option>
-            <option value="10">10 min</option><option value="15">15 min</option>
-            <option value="20">20 min</option><option value="30">30 min</option>
-            <option value="45">45 min</option><option value="60">60 min</option>
+            <option value="0">Off</option>
+            <option value="5">5 min</option><option value="10">10 min</option>
+            <option value="15">15 min</option><option value="20">20 min</option>
+            <option value="30">30 min</option><option value="45">45 min</option>
+            <option value="60">60 min</option>
           </select>
         </div>
       </div>
@@ -162,7 +154,8 @@ input[disabled]{opacity:.5;filter:grayscale(0.3)}
   </div>
 </section>
 
-<section id="section-gen" class="section" aria-label="Generator">
+<!-- ============ Generator ============ -->
+<section id="gen" class="section" aria-label="Generator">
   <div class="gen-wrap">
     <div class="field full">
       <canvas id="oscGen" height="100"></canvas>
@@ -186,12 +179,12 @@ input[disabled]{opacity:.5;filter:grayscale(0.3)}
       <div class="field">
         <h4 id="lblBB">Binaural</h4>
         <label><input id="genBinaural" type="checkbox"> <span id="lblBBEnable">Enable</span></label>
-        <label for="genBeat" id="lblBBdiff">Difference (Hz)</label>
+        <label id="lblBBdiff" for="genBeat">Difference (Hz)</label>
         <input id="genBeat" type="number" min="0" max="1000" step="0.1" value="7">
       </div>
       <div class="field">
         <h4 id="lblHarmonics">Harmonics</h4>
-        <label for="genHarmonics" id="lblHarmHelp">Multiplier</label>
+        <label id="lblHarmHelp" for="genHarmonics">Multiplier</label>
         <input id="genHarmonics" type="number" min="1" max="8" step="1" value="1">
       </div>
 
@@ -226,257 +219,33 @@ input[disabled]{opacity:.5;filter:grayscale(0.3)}
 </section>
 
 <script>
-/* ========== Hamburger & Backdrop ========== */
-const menuBtn = document.getElementById("menuButton");
-const menu = document.getElementById("dropdownMenu");
-const backdrop = document.getElementById("menuBackdrop");
-menuBtn.onclick = ()=>{
-  const open = menu.style.display==="flex";
-  menu.style.display = open ? "none" : "flex";
-  backdrop.style.display = open ? "none" : "block";
-};
-backdrop.onclick = ()=>{ menu.style.display="none"; backdrop.style.display="none"; };
-
-/* 메뉴(Shop 제외)는 텍스트 모달로 열기 */
-function openTextModal(url){
-  fetch(url, {cache:'no-store'})
-    .then(r=> r.ok ? r.text() : Promise.reject(r.status))
-    .then(txt=>{
-      alert(txt); // 간단 모달 대체 (필요시 커스텀 모달로 교체 가능)
-      menu.style.display="none"; backdrop.style.display="none";
-    })
-    .catch(()=>{ alert('⚠️ 내용을 불러올 수 없습니다.'); });
-}
-document.querySelectorAll('.dropdown-menu .menu-item').forEach(a=>{
-  if(a.textContent.trim()!=='Shop'){
-    a.addEventListener('click', (e)=>{ e.preventDefault(); openTextModal(a.getAttribute('href')); });
-  }
-});
-
-/* ========== Tabs ========== */
-const tabs = document.querySelectorAll(".tab");
-tabs.forEach(t=>t.onclick=()=>{
-  tabs.forEach(x=>x.classList.remove("active"));
-  t.classList.add("active");
-  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
-  document.getElementById("section-"+t.dataset.tab).classList.add("active");
-  if (t.dataset.tab==="gen") player.pause();
-});
-
-/* ========== Supabase (public path) ========== */
+/* ========= Constants ========= */
 const SUPABASE_URL="https://xdjgumqdwedgzwqturcx.supabase.co";
 const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
 const BUCKET="media";
-const sb = supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-const PUBLIC_BASE = SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/object/public/" + BUCKET + "/";
-const enc = s => s.split("/").filter(Boolean).map(encodeURIComponent).join("/");
-const abs = p => PUBLIC_BASE + enc(p);
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const PUBLIC_BASE=SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/object/public/" + BUCKET + "/";
+const enc=s=>s.split('/').filter(Boolean).map(encodeURIComponent).join('/');
+const abs=p=>PUBLIC_BASE + enc(p);
 
-/* ========== Audio pipeline (GainNode 우회: iOS 포함 전환경 동일) ========== */
-let audioCtx = window.audioCtx || new (window.AudioContext||window.webkitAudioContext)();
-window.audioCtx = audioCtx;
-const player = document.getElementById("player");
-player.crossOrigin="anonymous"; player.playsInline=true;
-
-let srcNode=null, gainNode=null, analyserNode=null;
-function ensureAudioUnlocked(){
-  if(audioCtx.state!=='running') audioCtx.resume().catch(()=>{});
-}
-['pointerdown','touchstart','keydown','click'].forEach(ev=>{
-  document.addEventListener(ev, ensureAudioUnlocked, { once:true, passive:true });
+/* ========= Header / Menu / Tabs / Lang ========= */
+const menuBtn=document.getElementById('menuBtn'), drop=document.getElementById('menuDrop'), backdrop=document.getElementById('backdrop');
+menuBtn.onclick=()=>{ const on=drop.style.display==='flex'; drop.style.display=on?'none':'flex'; backdrop.style.display=on?'none':'block'; };
+backdrop.onclick=()=>{ drop.style.display='none'; backdrop.style.display='none'; };
+document.querySelectorAll('.menu-text').forEach(a=>{
+  a.addEventListener('click',e=>{e.preventDefault(); fetch(a.href,{cache:'no-store'}).then(r=>r.text()).then(t=>alert(t)).catch(()=>alert('⚠️ 불러올 수 없습니다.')); drop.style.display='none'; backdrop.style.display='none';});
 });
 
-function ensurePipeline(){
-  if(!gainNode){ gainNode = audioCtx.createGain(); gainNode.gain.value = parseFloat(vol.value||'1')||1; }
-  if(!analyserNode){ analyserNode = audioCtx.createAnalyser(); analyserNode.fftSize=1024; analyserNode.smoothingTimeConstant=0.88; }
-  if(!srcNode){
-    try{
-      srcNode = audioCtx.createMediaElementSource(player);
-      srcNode.connect(gainNode);
-      gainNode.connect(analyserNode);
-      analyserNode.connect(audioCtx.destination);
-    }catch(e){ /* 이미 연결되어 있으면 무시 */ }
-  }
-}
+const tabs=document.querySelectorAll('.tab'), sections=document.querySelectorAll('.section');
+tabs.forEach(t=>t.onclick=()=>{ tabs.forEach(x=>x.classList.remove('active')); sections.forEach(s=>s.classList.remove('active')); t.classList.add('active'); document.getElementById(t.dataset.target).classList.add('active'); if(t.dataset.target==='gen') player.pause(); });
 
-/* 볼륨 */
-const vol = document.getElementById("vol");
-function applyPlayerVolumeFromSlider(){
-  const v = parseFloat(vol.value||'1'); ensurePipeline(); if(gainNode) gainNode.gain.value = isNaN(v)?1:v;
-}
-vol.addEventListener('input', applyPlayerVolumeFromSlider);
-vol.addEventListener('change', applyPlayerVolumeFromSlider);
-player.addEventListener('loadedmetadata', applyPlayerVolumeFromSlider);
-
-/* 루프/타이머 */
-document.getElementById('loop').addEventListener('change', e=>{ player.loop = e.target.checked; });
-let timerHandle=null;
-document.getElementById('timer').addEventListener('change', e=>{
-  if(timerHandle){ clearTimeout(timerHandle); timerHandle=null; }
-  const mins = parseInt(e.target.value||"0",10);
-  if(mins>0){ timerHandle = setTimeout(()=>{ try{ player.pause(); }catch{} }, mins*60*1000); }
-});
-
-/* 상태 썸네일 */
-const statusThumb = document.getElementById("statusThumb");
-function setStatus(img){
-  if(!img){
-    statusThumb.classList.remove('loaded');
-    statusThumb.classList.add('loading');
-    statusThumb.style.backgroundImage = "";
-    return;
-  }
-  statusThumb.classList.add('loaded');
-  statusThumb.classList.remove('loading');
-  statusThumb.style.backgroundImage = `url('${img}')`;
-}
-
-/* Library 목록 */
-const lib = document.getElementById("library");
-async function list(path=""){
-  const {data,error} = await sb.storage.from(BUCKET).list(path,{limit:1000,sortBy:{column:"name",order:"asc"}});
-  if(error){ console.warn(error); return []; }
-  return data||[];
-}
-let cwd="";
-async function load(path=""){
-  cwd = path; lib.innerHTML=""; setStatus(""); // 로딩
-  const rows = await list(path);
-  for(const e of rows){
-    const name=e.name; const full=(path?path+"/":"")+name;
-
-    // 폴더
-    if(!name.includes(".")){
-      const card=document.createElement("div");
-      card.className="card"; card.dataset.kind="folder"; card.dataset.path=full;
-      const img=document.createElement("img"); img.loading="lazy";
-      img.src = abs(full + "/folder.png");
-      img.onerror = ()=> img.src="https://placehold.co/300x300/111/aaa?text=Folder";
-      card.onclick=()=>{ ensureAudioUnlocked(); load(full); };
-      card.append(img); lib.append(card);
-      continue;
-    }
-    // 오디오
-    if(/\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(name)){
-      const card=document.createElement("div");
-      card.className="card"; card.dataset.kind="audio"; card.dataset.path=full;
-      const img=document.createElement("img"); img.loading="lazy";
-      const thumb = full.replace(/\.[^.]+$/, ".png");
-      img.src = abs(thumb);
-      img.onerror = ()=> img.src="https://placehold.co/300x300/222/888?text=Audio";
-      card.onclick=()=>{
-        ensureAudioUnlocked(); ensurePipeline();
-        player.pause(); player.currentTime=0; player.src = abs(full);
-        const art = abs(thumb); setStatus(art);
-        setTimeout(()=>{ applyPlayerVolumeFromSlider(); player.play().catch(()=>{}); }, 60);
-      };
-      card.append(img); lib.append(card);
-    }
-  }
-}
-/* nav */
-const btnBack = document.getElementById("btnBack");
-const btnRefresh = document.getElementById("btnRefresh");
-btnBack.onclick = ()=>{ if(!cwd) return; const seg=cwd.split("/"); seg.pop(); load(seg.join("/")); };
-btnRefresh.onclick = ()=> load(cwd);
-/* iTunes 스타일 드래그 스크롤 */
-let isDown=false,sx=0,sl=0;
-lib.addEventListener('mousedown',e=>{isDown=true;sx=e.pageX;sl=lib.scrollLeft;});
-['mouseleave','mouseup'].forEach(ev=>lib.addEventListener(ev,()=>{isDown=false;}));
-lib.addEventListener('mousemove',e=>{if(!isDown) return; lib.scrollLeft = sl - (e.pageX - sx)*1.5;});
-
-/* 초기 루트 */
-load("");
-
-/* Playlist (localStorage) */
-const btnSaveList=document.getElementById("btnSaveList");
-const btnLoadList=document.getElementById("btnLoadList");
-btnSaveList.onclick=()=>{
-  const name = prompt(isKo?"플레이리스트 이름?":"Playlist name?"); if(!name) return;
-  const items=[...lib.querySelectorAll(".card")].filter(c=>c.dataset.kind==="audio")
-    .map(c=>({path:c.dataset.path, thumb:c.dataset.path.replace(/\.[^.]+$/,'.png')}));
-  const all=JSON.parse(localStorage.getItem("playlists")||"{}"); all[name]=items;
-  localStorage.setItem("playlists", JSON.stringify(all));
-  alert((isKo?"저장됨: ":"Saved: ")+name);
-};
-btnLoadList.onclick=()=>{
-  const all=JSON.parse(localStorage.getItem("playlists")||"{}");
-  const names=Object.keys(all); if(!names.length){ alert(isKo?"플레이리스트가 없습니다.":"No playlists."); return; }
-  const sel=prompt((isKo?"선택: ":"Select: ")+"\n"+names.join("\n")); if(!sel||!all[sel]) return;
-  lib.innerHTML=""; setStatus("");
-  all[sel].forEach(({path,thumb})=>{
-    const c=document.createElement("div"); c.className="card"; c.dataset.kind="audio"; c.dataset.path=path;
-    const img=document.createElement("img"); img.loading="lazy";
-    const t=abs(thumb);
-    img.src=t; img.onerror=()=>img.src="https://placehold.co/300x300/222/888?text=Audio";
-    c.onclick=()=>{ ensureAudioUnlocked(); ensurePipeline(); player.pause(); player.currentTime=0; player.src=abs(path); setStatus(t); setTimeout(()=>{ applyPlayerVolumeFromSlider(); player.play().catch(()=>{}); },60); };
-    c.append(img); lib.append(c);
-  });
-};
-
-/* ========== Generator (WebAudio) ========== */
-const waveSel  = document.getElementById("genWave");
-const freqInp  = document.getElementById("genFreq");
-const lvlInp   = document.getElementById("genLevel");
-const bbChk    = document.getElementById("genBinaural");
-const beatInp  = document.getElementById("genBeat");
-const harmInp  = document.getElementById("genHarmonics");
-const dutyInp  = document.getElementById("genDuty");
-
-const genGain = (function(){ const g = audioCtx.createGain(); g.connect(audioCtx.destination); return g; })();
-let genRunning=false; let genMeta=[];
-
-function clearGen(){ genMeta.forEach(o=>{try{o.node.stop()}catch{} try{o.node.disconnect()}catch{}}); genMeta=[]; }
-function buildGenNodes(baseFreq,useBB,beat,harmonics,wave){
-  clearGen();
-  const mk=(f,m=1,b=0)=>{ const o=audioCtx.createOscillator(); o.type=wave; o.frequency.value=f*m+b; o.connect(genGain); o.start(); genMeta.push({node:o,mult:m,beatAdd:b}); };
-  if(useBB){ mk(baseFreq,1,0); mk(baseFreq,1,beat);} else { mk(baseFreq,1,0); }
-  for(let m=2;m<=harmonics;m++){ if(useBB){ mk(baseFreq,m,0); mk(baseFreq,m,beat);} else { mk(baseFreq,m,0);} }
-}
-function startGenerator(){
-  ensureAudioUnlocked(); if(!player.paused) player.pause();
-  if(genRunning) clearGen();
-  const wave=waveSel.value, base=+freqInp.value||432, lvl=+lvlInp.value||0.5, useBB=!!bbChk.checked, beat=+beatInp.value||7, harm=Math.max(1,Math.min(8,parseInt(harmInp.value)||1));
-  genGain.gain.value=lvl; buildGenNodes(base,useBB,beat,harm,wave); dutyInp.disabled=(wave!=="square"); genRunning=true;
-}
-function stopGenerator(){ if(!genRunning) return; clearGen(); genRunning=false; genGain.gain.setTargetAtTime(0,audioCtx.currentTime,0.02); }
-function updateGenerator(){
-  if(!genRunning) return;
-  const wave=waveSel.value, base=+freqInp.value||432, useBB=!!bbChk.checked, beat=+beatInp.value||7, harm=Math.max(1,Math.min(8,parseInt(harmInp.value)||1));
-  buildGenNodes(base,useBB,beat,harm,wave);
-}
-freqInp.oninput=updateGenerator; waveSel.oninput=()=>{ dutyInp.disabled=(waveSel.value!=="square"); updateGenerator(); };
-bbChk.oninput=updateGenerator; beatInp.oninput=updateGenerator; harmInp.oninput=updateGenerator; lvlInp.oninput=e=>{ genGain.gain.value=+e.target.value; };
-document.getElementById('sweepGo').onclick=()=>{
-  if(!genRunning||genMeta.length===0) return;
-  const s=+document.getElementById('sweepStart').value||100, e=+document.getElementById('sweepEnd').value||1000, t=+document.getElementById('sweepTime').value||10;
-  const now=audioCtx.currentTime; genMeta.forEach(o=>{ const sf=s*o.mult+(o.beatAdd||0), ef=e*o.mult+(o.beatAdd||0);
-    try{ o.node.frequency.cancelScheduledValues(now); o.node.frequency.setValueAtTime(sf,now); o.node.frequency.linearRampToValueAtTime(ef,now+t);}catch{} });
-};
-document.getElementById("genStart").onclick=()=>{ audioCtx.resume(); startGenerator(); };
-document.getElementById("genStop").onclick = stopGenerator;
-
-/* Generator mini scope */
-(function genScope(){
-  const cvs=document.getElementById("oscGen"); const ctx2=cvs.getContext("2d");
-  const analyser=audioCtx.createAnalyser(); analyser.fftSize=2048; genGain.connect(analyser);
-  const buf=new Uint8Array(analyser.fftSize);
-  function resize(){ cvs.width=cvs.clientWidth||window.innerWidth; } resize(); window.addEventListener("resize",resize);
-  (function draw(){ requestAnimationFrame(draw); analyser.getByteTimeDomainData(buf);
-    ctx2.fillStyle="#090b11"; ctx2.fillRect(0,0,cvs.width,cvs.height);
-    ctx2.lineWidth=2; ctx2.strokeStyle="#9cff8b"; ctx2.beginPath();
-    const dx=cvs.width/buf.length; for(let i=0,x=0;i<buf.length;i++,x+=dx){ const y=(buf[i]/128)*(cvs.height/2); i?ctx2.lineTo(x,y):ctx2.moveTo(x,y); }
-    ctx2.lineTo(cvs.width,cvs.height/2); ctx2.stroke(); })();
-})();
-
-/* EN/KO Toggle */
-const langBtn=document.getElementById("langToggle"); let isKo=false;
+const langBtn=document.getElementById('langToggle'); let isKo=false;
 function applyLang(){
   document.getElementById("lblVol").textContent   = isKo ? "볼륨" : "Volume";
   document.getElementById("lblLoop").textContent  = isKo ? "반복" : "Loop";
   document.getElementById("lblTimer").textContent = isKo ? "타이머" : "Timer";
-  document.querySelector('.tab[data-tab="lib"]').textContent = "5DO";
-  document.querySelector('.tab[data-tab="gen"]').textContent = isKo ? "주파수 생성기" : "Freq. Gen.";
+  document.querySelector('.tab[data-target="lib"]').textContent = "5DO";
+  document.querySelector('.tab[data-target="gen"]').textContent = isKo ? "주파수 생성기" : "Freq. Gen.";
   document.getElementById("lblFreq").textContent   = isKo ? "주파수 (Hz)" : "Frequency (Hz)";
   document.getElementById("lblWave").textContent   = isKo ? "파형" : "Waveform";
   document.getElementById("lblBB").textContent     = isKo ? "바이노럴" : "Binaural";
@@ -487,80 +256,222 @@ function applyLang(){
   document.getElementById("lblLevel").textContent   = isKo ? "레벨" : "Level";
   document.getElementById("lblDuty").textContent    = isKo ? "듀티 사이클" : "Duty Cycle";
 }
-langBtn.onclick=()=>{ isKo=!isKo; langBtn.textContent=isKo?"KO":"EN"; applyLang(); };
+langBtn.onclick=()=>{ isKo=!isKo; langBtn.textContent=isKo?'KO':'EN'; applyLang(); };
 applyLang();
 
-/* 플레이 시 오디오 정책/파이프라인 보장 */
+/* ========= Audio pipeline (iOS 대응: GainNode) ========= */
+let audioCtx = window.audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+window.audioCtx = audioCtx;
+const player=document.getElementById('player'); player.crossOrigin='anonymous'; player.playsInline=true;
+let srcNode=null, gainNode=null, analyserNode=null;
+
+function ensureAudioUnlocked(){ if(audioCtx.state!=='running') audioCtx.resume().catch(()=>{}); }
+['pointerdown','touchstart','keydown','click'].forEach(ev=>{ document.addEventListener(ev, ensureAudioUnlocked, { once:true, passive:true }); });
+
+function ensurePipeline(){
+  if(!gainNode){ gainNode=audioCtx.createGain(); gainNode.gain.value=parseFloat(vol.value||'1')||1; }
+  if(!analyserNode){ analyserNode=audioCtx.createAnalyser(); analyserNode.fftSize=1024; analyserNode.smoothingTimeConstant=0.85; }
+  if(!srcNode){
+    try{
+      srcNode=audioCtx.createMediaElementSource(player);
+      srcNode.connect(gainNode);
+      gainNode.connect(analyserNode);
+      analyserNode.connect(audioCtx.destination);
+    }catch(e){ /* already connected - ignore */ }
+  }
+}
+const vol=document.getElementById('vol');
+function applyPlayerVolumeFromSlider(){ const v=parseFloat(vol.value||'1'); ensurePipeline(); if(gainNode) gainNode.gain.value=isNaN(v)?1:v; }
+vol.addEventListener('input',applyPlayerVolumeFromSlider);
+vol.addEventListener('change',applyPlayerVolumeFromSlider);
+player.addEventListener('loadedmetadata',applyPlayerVolumeFromSlider);
 player.addEventListener('play', ()=>{ ensureAudioUnlocked(); ensurePipeline(); });
 
-/* ===== Radial Visualizer (gainNode → analyserNode 사용) ===== */
-(function(){
-  const wrap = document.getElementById('radialVizWrap');
-  const canvas = document.getElementById('radialViz');
-  const ctx = canvas.getContext('2d');
+/* ========= Loop / Timer ========= */
+document.getElementById('loop').addEventListener('change',e=>player.loop=e.target.checked);
+let timerHandle=null;
+document.getElementById('timer').addEventListener('change',e=>{
+  if(timerHandle){ clearTimeout(timerHandle); timerHandle=null; }
+  const m=parseInt(e.target.value||'0',10); if(m>0) timerHandle=setTimeout(()=>{ try{ player.pause(); }catch{} }, m*60*1000);
+});
 
-  function resize(){
-    const dpr = Math.max(1, window.devicePixelRatio || 1);
-    const rect = canvas.getBoundingClientRect();
-    canvas.width  = Math.floor(rect.width  * dpr);
-    canvas.height = Math.floor(rect.height * dpr);
-    ctx.setTransform(dpr,0,0,dpr,0,0);
+/* ========= Status Thumb ========= */
+const statusThumb=document.getElementById('statusThumb');
+function setStatus(img){
+  if(!img){ statusThumb.classList.remove('loaded'); statusThumb.classList.add('loading'); statusThumb.style.backgroundImage=''; return; }
+  statusThumb.classList.add('loaded'); statusThumb.classList.remove('loading'); statusThumb.style.backgroundImage=`url('${img}')`;
+}
+
+/* ========= Library (Supabase) ========= */
+const lib=document.getElementById('library');
+const sbClient = sb; const encPath=s=>s.split('/').filter(Boolean).map(encodeURIComponent).join('/');
+async function list(path=""){
+  const {data,error}=await sbClient.storage.from(BUCKET).list(path,{limit:1000,sortBy:{column:"name",order:"asc"}});
+  if(error){ console.warn('[list]',error); return []; } return data||[];
+}
+let cwd="";
+async function load(path=""){
+  cwd=path; lib.innerHTML=""; setStatus(""); // loading anim
+  const rows=await list(path);
+  for(const e of rows){
+    const name=e.name; const full=(path?path+'/':'')+name;
+
+    // 폴더
+    if(!name.includes('.')){
+      const card=document.createElement('div'); card.className='card'; card.dataset.kind='folder'; card.dataset.path=full;
+      const img=document.createElement('img'); img.loading='lazy';
+      img.src=abs(full+'/folder.png'); img.onerror=()=>img.src='https://placehold.co/300x300/111/aaa?text=Folder';
+      card.onclick=()=>{ ensureAudioUnlocked(); load(full); };
+      card.append(img); lib.append(card);
+      continue;
+    }
+    // 오디오
+    if(/\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(name)){
+      const card=document.createElement('div'); card.className='card'; card.dataset.kind='audio'; card.dataset.path=full;
+      const img=document.createElement('img'); img.loading='lazy';
+      const thumb=full.replace(/\.[^.]+$/,'.png');
+      img.src=abs(thumb); img.onerror=()=>img.src='https://placehold.co/300x300/222/888?text=Audio';
+      card.onclick=()=>{
+        ensureAudioUnlocked(); ensurePipeline();
+        player.pause(); player.currentTime=0; player.src=abs(full);
+        const art=abs(thumb); setStatus(art);
+        setTimeout(()=>{ applyPlayerVolumeFromSlider(); player.play().catch(()=>{}); }, 60);
+      };
+      card.append(img); lib.append(card);
+    }
   }
+}
+/* nav */
+const btnBack=document.getElementById('btnBack'), btnRefresh=document.getElementById('btnRefresh');
+btnBack.onclick=()=>{ if(!cwd) return; const a=cwd.split('/'); a.pop(); load(a.join('/')); };
+btnRefresh.onclick=()=>load(cwd);
+/* Drag scroll */
+let isDown=false,sx=0,sl=0;
+lib.addEventListener('mousedown',e=>{isDown=true;sx=e.pageX;sl=lib.scrollLeft;});
+['mouseleave','mouseup'].forEach(ev=>lib.addEventListener(ev,()=>{isDown=false;}));
+lib.addEventListener('mousemove',e=>{ if(!isDown) return; lib.scrollLeft = sl - (e.pageX - sx)*1.5; });
+
+/* 초기 루트 */
+load("");
+
+/* ========= Playlist (localStorage) ========= */
+document.getElementById('btnSaveList').onclick=()=>{
+  const name=prompt(isKo?'플레이리스트 이름?':'Playlist name?'); if(!name) return;
+  const items=[...lib.querySelectorAll('.card')].filter(c=>c.dataset.kind==='audio')
+    .map(c=>({path:c.dataset.path, thumb:c.dataset.path.replace(/\.[^.]+$/,'.png')}));
+  const all=JSON.parse(localStorage.getItem('playlists')||'{}'); all[name]=items;
+  localStorage.setItem('playlists', JSON.stringify(all));
+  alert((isKo?'저장됨: ':'Saved: ')+name);
+};
+document.getElementById('btnLoadList').onclick=()=>{
+  const all=JSON.parse(localStorage.getItem('playlists')||'{}'), names=Object.keys(all);
+  if(!names.length){ alert(isKo?'플레이리스트가 없습니다.':'No playlists.'); return; }
+  const sel=prompt((isKo?'선택: ':'Select: ')+"\n"+names.join('\n')); if(!sel||!all[sel]) return;
+  lib.innerHTML=""; setStatus("");
+  all[sel].forEach(({path,thumb})=>{
+    const c=document.createElement('div'); c.className='card'; c.dataset.kind='audio'; c.dataset.path=path;
+    const img=document.createElement('img'); img.loading='lazy'; const t=abs(thumb);
+    img.src=t; img.onerror=()=>img.src='https://placehold.co/300x300/222/888?text=Audio';
+    c.onclick=()=>{ ensureAudioUnlocked(); ensurePipeline(); player.pause(); player.currentTime=0; player.src=abs(path); setStatus(t);
+      setTimeout(()=>{ applyPlayerVolumeFromSlider(); player.play().catch(()=>{}); },60); };
+    c.append(img); lib.append(c);
+  });
+};
+
+/* ========= Bar Spectrum Visualizer ========= */
+(function(){
+  const wrap=document.getElementById('barVizWrap');
+  const canvas=document.getElementById('barViz'); const ctx=canvas.getContext('2d',{alpha:true});
+  function resize(){ const dpr=Math.min(window.devicePixelRatio||1,2); canvas.width=Math.floor(canvas.clientWidth*dpr); canvas.height=Math.floor(canvas.clientHeight*dpr); ctx.setTransform(dpr,0,0,dpr,0,0); }
   new ResizeObserver(resize).observe(canvas); resize();
-
-  let rafId=0, running=false;
-  const data = new Uint8Array(1024/2); // fftSize=1024 → 512 bins(예상)
-
+  const data=new Uint8Array(512); let raf=0;
   function draw(){
-    rafId = requestAnimationFrame(draw);
+    raf=requestAnimationFrame(draw);
     if(!analyserNode) return;
     analyserNode.getByteFrequencyData(data);
-
-    const cw=canvas.clientWidth, ch=canvas.clientHeight;
-    ctx.clearRect(0,0,cw,ch);
-    const cx=cw/2, cy=ch/2;
-    const innerR=48; const outerR=Math.min(cw,ch)/2-10; const maxBar=outerR-innerR;
-
-    ctx.fillStyle='#0b0f17'; ctx.fillRect(0,0,cw,ch);
-    ctx.beginPath(); ctx.arc(cx,cy,innerR,0,Math.PI*2); ctx.fillStyle='#0e1422'; ctx.fill();
-
-    const grad = ctx.createRadialGradient(cx,cy,innerR,cx,cy,outerR);
-    grad.addColorStop(0.0,'#7ef1c0'); grad.addColorStop(0.5,'#55d0ff'); grad.addColorStop(1.0,'#a38cff');
-
-    for(let i=0;i<data.length;i++){
-      const t=i/data.length, ang=t*Math.PI*2, v=data[i]/255, eased=Math.pow(v,0.8);
-      const len=innerR + eased * maxBar * 1.25;
-      const x1=cx + innerR*Math.cos(ang), y1=cy + innerR*Math.sin(ang);
-      const x2=cx + len*Math.cos(ang),   y2=cy + len*Math.sin(ang);
-      ctx.strokeStyle=grad; ctx.lineWidth=1.5+(1.5*(1-t));
-      ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    const W=canvas.clientWidth,H=canvas.clientHeight,n=data.length,barW=W/n;
+    ctx.clearRect(0,0,W,H);
+    for(let i=0;i<n;i++){
+      const v=data[i]/255, h=v*H, x=i*barW, y=H-h;
+      const g=ctx.createLinearGradient(x,y,x,y+h);
+      g.addColorStop(0,'#7ef1c0'); g.addColorStop(0.5,'#55d0ff'); g.addColorStop(1,'#a38cff');
+      ctx.fillStyle=g; const wScale=1.0+(1-i/n)*0.4;
+      ctx.fillRect(x,y,barW*wScale,h);
     }
-    ctx.beginPath(); ctx.arc(cx,cy,outerR,0,Math.PI*2); ctx.strokeStyle='rgba(126,241,192,0.4)'; ctx.lineWidth=1.2; ctx.stroke();
   }
-
-  function start(){ if(running) return; ensurePipeline(); running=true; wrap.style.display="flex"; draw(); }
-  function stop(){ running=false; cancelAnimationFrame(rafId); ctx.clearRect(0,0,canvas.width,canvas.height); wrap.style.display="none"; }
-
-  player.addEventListener('play', start);
+  function start(){ wrap.style.display='block'; if(!raf) draw(); }
+  function stop(){ wrap.style.display='none'; if(raf) cancelAnimationFrame(raf); raf=0; ctx.clearRect(0,0,canvas.width,canvas.height); }
+  player.addEventListener('play', ()=>{ ensureAudioUnlocked(); ensurePipeline(); start(); });
   player.addEventListener('pause', stop);
+  player.addEventListener('ended', stop);
   player.addEventListener('emptied', stop);
 })();
 
-/* ===== Library 진입 ===== */
-const libTabBtn = document.querySelector('.tab[data-tab="lib"]');
-const genTabBtn = document.querySelector('.tab[data-tab="gen"]');
-libTabBtn && libTabBtn.addEventListener('click', ()=>{ /* 라이브러리 탭 재진입 시 비주얼 자동 활성화는 play 이벤트가 처리 */ });
+/* ========= Generator (Osc, Harmonics, Binaural, Sweep, Presets) ========= */
+const waveSel=document.getElementById('genWave');
+const freqInp=document.getElementById('genFreq');
+const lvlInp=document.getElementById('genLevel');
+const bbChk=document.getElementById('genBinaural');
+const beatInp=document.getElementById('genBeat');
+const harmInp=document.getElementById('genHarmonics');
+const dutyInp=document.getElementById('genDuty');
 
-/* ===== 진단 로그 ===== */
-['play','pause','volumechange','canplay','stalled','error','loadedmetadata'].forEach(ev=>{
-  player.addEventListener(ev, ()=>{
-    console.log('[5DO::DIAG]', ev, {
-      acState: audioCtx.state, vol: (gainNode?gainNode.gain.value:player.volume),
-      src: player.currentSrc || player.src, paused: player.paused, readyState: player.readyState,
-      error: player.error ? (player.error.code + ' ' + (player.error.message || '')) : null
-    });
-  });
-});
+const genGain=(()=>{ const g=audioCtx.createGain(); g.connect(audioCtx.destination); return g; })();
+let genRunning=false; let genMeta=[];
+
+function clearGen(){ genMeta.forEach(o=>{try{o.node.stop()}catch{} try{o.node.disconnect()}catch{}}); genMeta=[]; }
+function buildGenNodes(base,useBB,beat,harm,wave){
+  clearGen();
+  const mk=(f,m=1,b=0)=>{ const o=audioCtx.createOscillator(); o.type=wave; o.frequency.value=f*m+b; o.connect(genGain); o.start(); genMeta.push({node:o,mult:m,beatAdd:b}); };
+  if(useBB){ mk(base,1,0); mk(base,1,beat);} else { mk(base,1,0); }
+  for(let m=2;m<=harm;m++){ if(useBB){ mk(base,m,0); mk(base,m,beat);} else { mk(base,m,0);} }
+}
+function startGenerator(){
+  ensureAudioUnlocked(); if(!player.paused) player.pause();
+  if(genRunning) clearGen();
+  const wave=waveSel.value, base=+freqInp.value||432, lvl=+lvlInp.value||0.5, useBB=!!bbChk.checked, beat=+beatInp.value||7, harm=Math.max(1,Math.min(8,parseInt(harmInp.value)||1));
+  genGain.gain.value=lvl; buildGenNodes(base,useBB,beat,harm,wave); dutyInp.disabled=(wave!=='square'); genRunning=true;
+}
+function stopGenerator(){ if(!genRunning) return; clearGen(); genRunning=false; genGain.gain.setTargetAtTime(0,audioCtx.currentTime,0.02); }
+function updateGenerator(){ if(!genRunning) return; const wave=waveSel.value, base=+freqInp.value||432, useBB=!!bbChk.checked, beat=+beatInp.value||7, harm=Math.max(1,Math.min(8,parseInt(harmInp.value)||1)); buildGenNodes(base,useBB,beat,harm,wave); }
+freqInp.oninput=updateGenerator; waveSel.oninput=()=>{ dutyInp.disabled=(waveSel.value!=='square'); updateGenerator(); };
+bbChk.oninput=updateGenerator; beatInp.oninput=updateGenerator; harmInp.oninput=updateGenerator; lvlInp.oninput=e=>{ genGain.gain.value=+e.target.value; };
+
+document.getElementById('sweepGo').onclick=()=>{
+  if(!genRunning||genMeta.length===0) return;
+  const s=+document.getElementById('sweepStart').value||100, e=+document.getElementById('sweepEnd').value||1000, t=+document.getElementById('sweepTime').value||10;
+  const now=audioCtx.currentTime; genMeta.forEach(o=>{ const sf=s*o.mult+(o.beatAdd||0), ef=e*o.mult+(o.beatAdd||0);
+    try{ o.node.frequency.cancelScheduledValues(now); o.node.frequency.setValueAtTime(sf,now); o.node.frequency.linearRampToValueAtTime(ef,now+t);}catch{} });
+};
+document.getElementById('genStart').onclick=()=>{ audioCtx.resume(); startGenerator(); };
+document.getElementById('genStop').onclick = stopGenerator;
+
+/* Presets */
+document.getElementById('btnSavePreset').onclick=()=>{
+  const name=prompt(isKo?'프리셋 이름?':'Preset name?'); if(!name) return;
+  const p={ wave:waveSel.value, freq:+freqInp.value, binaural:bbChk.checked, beat:+beatInp.value, harm:+harmInp.value, level:+lvlInp.value };
+  const all=JSON.parse(localStorage.getItem('presets')||'{}'); all[name]=p; localStorage.setItem('presets',JSON.stringify(all)); alert((isKo?'저장됨: ':'Saved: ')+name);
+};
+document.getElementById('btnLoadPreset').onclick=()=>{
+  const all=JSON.parse(localStorage.getItem('presets')||'{}'), names=Object.keys(all);
+  if(!names.length){ alert(isKo?'프리셋이 없습니다.':'No presets.'); return; }
+  const sel=prompt((isKo?'선택: ':'Select: ')+"\n"+names.join('\n')); if(!sel||!all[sel]) return;
+  const p=all[sel]; waveSel.value=p.wave; freqInp.value=p.freq; bbChk.checked=p.binaural; beatInp.value=p.beat; harmInp.value=p.harm; lvlInp.value=p.level;
+  updateGenerator();
+};
+
+/* Mini scope (Generator) */
+(function genScope(){
+  const cvs=document.getElementById("oscGen"); const ctx=cvs.getContext("2d");
+  const an=audioCtx.createAnalyser(); an.fftSize=2048; genGain.connect(an);
+  const buf=new Uint8Array(an.fftSize);
+  function resize(){ cvs.width=cvs.clientWidth||window.innerWidth; } resize(); window.addEventListener("resize",resize);
+  (function loop(){ requestAnimationFrame(loop); an.getByteTimeDomainData(buf);
+    ctx.fillStyle="#090b11"; ctx.fillRect(0,0,cvs.width,cvs.height);
+    ctx.lineWidth=2; ctx.strokeStyle="#9cff8b"; ctx.beginPath();
+    const dx=cvs.width/buf.length; for(let i=0,x=0;i<buf.length;i++,x+=dx){ const y=(buf[i]/128)*(cvs.height/2); i?ctx.lineTo(x,y):ctx.moveTo(x,y); }
+    ctx.lineTo(cvs.width,cvs.height/2); ctx.stroke(); })();
+})();
 </script>
 </body>
 </html>
