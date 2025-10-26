@@ -21,7 +21,7 @@ header{
   padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--border)
 }
 .menu-container{
-  position:absolute;top:8px;left:10px;  /* 아이콘 살짝 위로 */
+  position:absolute;top:6px;left:10px;  /* 아이콘 살짝 위로 */
   display:flex;align-items:center;z-index:1000
 }
 .menu-button{font-size:24px;color:#fff;cursor:pointer;line-height:1}
@@ -74,18 +74,14 @@ audio{width:92%;display:block;margin:8px auto}
 
 /* Generator */
 .gen-wrap{padding:12px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.field{background:#141a27;border:1px solid #2a3044;border-radius:12px;padding:10px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}  /* ✅ 모바일에서도 2열 유지 */
+.field{background:#141a27;border:1px solid #2a3044;border-radius:12px;padding:10px;display:flex;flex-direction:column;justify-content:center}
 .field h4{margin:0 0 8px;color:#dfe7f6;font-size:.95rem}
-.field label{display:block;font-size:.85rem;color:#9aa3b7;margin-bottom:4px}
-.field input[type="number"],.field select,.field input[type="range"]{
-  width:100%;background:#101522;color:#e9eefc;border:1px solid #2a3044;border-radius:8px;padding:6px}
-.full{grid-column:1/-1}
-.gen-actions{display:flex;gap:10px;align-items:center}
+.field.full{grid-column:1/-1}
+.gen-actions{display:flex;gap:12px;align-items:center;justify-content:center}
 .pill{padding:8px 12px;border-radius:999px;border:1px solid #2c3147;background:#1b2333;color:#e9eefc;cursor:pointer}
 .pill.primary{background:#21324e;border-color:#355;color:#cfead1}
 input[disabled]{opacity:.5;filter:grayscale(0.3)}
-@media (max-width:640px){ .grid{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
@@ -150,8 +146,13 @@ input[disabled]{opacity:.5;filter:grayscale(0.3)}
 
 <section id="section-gen" class="section" aria-label="Generator">
   <div class="gen-wrap">
+    <!-- 오실레이터 미니 스코프(옵션: 필요 시 제거 가능) -->
+    <div class="field full">
+      <canvas id="oscGen" height="100"></canvas>
+    </div>
+
     <div class="grid">
-      <!-- 1) 주파수 & 파형 -->
+      <!-- 1줄: 주파수 & 파형 -->
       <div class="field">
         <h4 id="lblFreq">Frequency (Hz)</h4>
         <input id="genFreq" type="number" min="1" max="24000" step="0.1" value="440">
@@ -166,7 +167,7 @@ input[disabled]{opacity:.5;filter:grayscale(0.3)}
         </select>
       </div>
 
-      <!-- 2) 바이노럴 & 하모닉스 -->
+      <!-- 2줄: 바이노럴 & 하모닉스 -->
       <div class="field">
         <h4 id="lblBB">Binaural</h4>
         <label><input id="genBinaural" type="checkbox"> <span id="lblBBEnable">Enable</span></label>
@@ -179,7 +180,7 @@ input[disabled]{opacity:.5;filter:grayscale(0.3)}
         <input id="genHarmonics" type="number" min="1" max="8" step="1" value="1">
       </div>
 
-      <!-- 3) 레벨 & 듀티사이클 -->
+      <!-- 3줄: 레벨 & 듀티사이클 -->
       <div class="field">
         <h4 id="lblLevel">Level</h4>
         <input id="genLevel" type="range" min="0" max="1" step="0.01" value="0.5">
@@ -189,7 +190,7 @@ input[disabled]{opacity:.5;filter:grayscale(0.3)}
         <input id="genDuty" type="range" min="0.05" max="0.95" step="0.01" value="0.50" disabled>
       </div>
 
-      <!-- 4) 재생 컨트롤 -->
+      <!-- 4줄: 재생 컨트롤 전체폭 -->
       <div class="field full">
         <div class="gen-actions">
           <button id="genStart" class="pill primary" title="Play">▶️</button>
@@ -380,7 +381,7 @@ btnLoadList.onclick = ()=>{
   });
 };
 
-/* ========== Generator (harmonics + reordered UI) ========== */
+/* ========== Generator (harmonics + reordered UI, 2열 유지) ========== */
 const genStart = document.getElementById("genStart");
 const genStop  = document.getElementById("genStop");
 const waveSel  = document.getElementById("genWave");
@@ -413,7 +414,6 @@ function startGenerator(){
 
   genGain.gain.value=lvl;
 
-  // 기본(좌/우 동일) 또는 바이노럴(좌: f, 우: f+beat)
   function makeVoice(f){
     const o=audioCtx.createOscillator();
     o.type=wave;
@@ -424,27 +424,44 @@ function startGenerator(){
   }
 
   if(useBB){
-    // 좌
     makeVoice(freq);
-    // 우 (간단: 동일 출력; 고급 스테레오패닝은 스테레오패너 지원 브라우저에서 추가 가능)
     makeVoice(freq+beat);
   }else{
     makeVoice(freq);
   }
 
-  // 하모닉스 (배수)
   for(let i=2;i<=harm;i++){
     makeVoice(freq*i);
     if(useBB) makeVoice((freq+beat)*i);
   }
 
-  // Duty Cycle: UI만 제공(안전). square에서만 활성화
   dutyInp.disabled = (wave!=="square"); // 다음 단계에서 PWM/PeriodicWave로 구현 예정
-
   genRunning=true;
 }
 genStart.addEventListener("click", startGenerator);
 genStop .addEventListener("click",  stopGenerator);
+
+/* Generator mini scope (from generator output) */
+(function genScope(){
+  const cvs = document.getElementById("oscGen"); const ctx2 = cvs.getContext("2d");
+  const analyser = audioCtx.createAnalyser(); analyser.fftSize=2048;
+  genGain.connect(analyser);
+  const buf = new Uint8Array(analyser.fftSize);
+  function resize(){ cvs.width = cvs.clientWidth || window.innerWidth; }
+  resize(); window.addEventListener("resize", resize);
+  (function draw(){
+    requestAnimationFrame(draw);
+    analyser.getByteTimeDomainData(buf);
+    ctx2.fillStyle="#090b11"; ctx2.fillRect(0,0,cvs.width,cvs.height);
+    ctx2.lineWidth=2; ctx2.strokeStyle="#9cff8b"; ctx2.beginPath();
+    const dx=cvs.width/buf.length;
+    for(let i=0,x=0;i<buf.length;i++,x+=dx){
+      const y=(buf[i]/128)*(cvs.height/2);
+      i?ctx2.lineTo(x,y):ctx2.moveTo(x,y);
+    }
+    ctx2.lineTo(cvs.width,cvs.height/2); ctx2.stroke();
+  })();
+})();
 
 /* Presets */
 document.getElementById("btnSavePreset").onclick = ()=>{
