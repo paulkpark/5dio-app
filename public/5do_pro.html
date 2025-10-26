@@ -620,20 +620,6 @@ function applyLang(){
 langBtn.onclick=()=>{ isKo=!isKo; langBtn.textContent=isKo?"KO":"EN"; applyLang(); };
 applyLang();
 </script>
-document.querySelectorAll('.menu-item').forEach(link => {
-  if (link.textContent.trim() !== 'Shop') {
-    link.addEventListener('click', (e) => {
-      e.preventDefault();
-      const url = link.getAttribute('href');
-      fetch(url)
-        .then(res => res.text())
-        .then(text => {
-          document.getElementById('infoContent').innerText = text;
-          // 메뉴 닫기
-          document.getElementById('menuToggle').checked = false;
-        });
-    });
-  }
-});
+
 </body>
 </html>
