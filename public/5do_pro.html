@@ -62,7 +62,8 @@ audio{width:92%;display:block;margin:8px auto}
 .gen-actions{display:flex;gap:10px;align-items:center}
 .pill{padding:8px 12px;border-radius:999px;border:1px solid #2c3147;background:#1b2333;color:#e9eefc;cursor:pointer}
 .pill.primary{background:#21324e;border-color:#355;color:#cfead1}
-#oscGen{width:100%;height:140px;background:#0a0d14;border:1px solid #20263a;border-radius:12px;margin-top:12px}
+
+/* (oscGen 제거로 관련 스타일 없음) */
 
 @media (max-width:640px){ .grid{grid-template-columns:1fr} }
 </style>
@@ -161,8 +162,7 @@ audio{width:92%;display:block;margin:8px auto}
           <button id="btnSavePreset" class="pill" title="Save Preset">💾 Save</button>
           <button id="btnLoadPreset" class="pill" title="Load Preset">🔁 Load</button>
         </div>
-        <!-- Generator oscilloscope: 단 하나만 -->
-        <canvas id="oscGen"></canvas>
+        <!-- (요청대로: Generator 하단 오실로스코프 완전히 제거) -->
       </div>
     </div>
   </div>
@@ -194,12 +194,8 @@ const sb = supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const PUBLIC = SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/object/public/" + BUCKET + "/";
 const RENDER = SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/render/image/public/" + BUCKET + "/";
 const enc = p => p.split("/").filter(Boolean).map(encodeURIComponent).join("/");
-const abs = p => PUBLIC + enc(p);
-const imgx = (p, q='') => RENDER + enc(p) + (q?('?'+q):'');
-
-/* === Cache buster (세션 단위) === */
-window.__MEDIA_REV = Date.now();
-const bust = (u)=> u + (u.includes('?') ? '&' : '?') + 'v=' + window.__MEDIA_REV;
+const abs = p => PUBLIC + enc(p);                         // 원본(객체) URL
+const imgx = (p, q='') => RENDER + enc(p) + (q?('?'+q):''); // imgproxy URL
 
 /* ========== Audio pipeline (singleton & resume) ========== */
 const audioCtx = window.audioCtx || new (window.AudioContext||window.webkitAudioContext)();
@@ -246,42 +242,40 @@ const btnRefresh = document.getElementById("btnRefresh");
 const statusThumb = document.getElementById("statusThumb");
 let cwd = "";
 
-/* 안전한 폴더 썸네일 세팅 (imgproxy → 원본 → 대소문자 변형 → placeholder) */
+/* 안전 폴더 썸네일: imgproxy → 원본 → 대소문자 변형 → placeholder */
 function setFolderThumb(img, fullPath){
-  const u1 = bust(imgx(fullPath + '/folder.png', 'width=360&quality=70&format=webp'));
-  const u2 = bust(abs(fullPath + '/folder.png'));
-  const u3 = bust(imgx(fullPath + '/Folder.png', 'width=360&quality=70&format=webp'));
+  const u1 = imgx(fullPath + '/folder.png', 'width=360&quality=70&format=webp');
+  const u2 = abs(fullPath + '/folder.png');
+  const u3 = imgx(fullPath + '/Folder.png', 'width=360&quality=70&format=webp');
   const u4 = 'https://placehold.co/300x300/111/aaa?text=Folder';
 
   img.onload = () => img.classList.add('loaded');
   img.onerror = function(){
     if (!this._step) { this._step = 1; this.src = u2; return; }
     if (this._step === 1) { this._step = 2; this.src = u3; return; }
-    console.warn("[Folder thumb failed]", fullPath);
     this.src = u4;
   };
   img.src = u1;
 }
 
-/* 안전한 트랙 썸네일 세팅 (imgproxy → 원본 → .PNG → placeholder) */
+/* 안전 트랙 썸네일: imgproxy → 원본 → .PNG → placeholder */
 function setTrackThumb(img, fullPathWithExt){
   const base = fullPathWithExt.replace(/\.[^.]+$/, '');
-  const u1 = bust(imgx(base + '.png', 'width=360&quality=70&format=webp'));
-  const u2 = bust(abs(base + '.png'));
-  const u3 = bust(imgx(base + '.PNG', 'width=360&quality=70&format=webp'));
+  const u1 = imgx(base + '.png', 'width=360&quality=70&format=webp');
+  const u2 = abs(base + '.png');
+  const u3 = imgx(base + '.PNG', 'width=360&quality=70&format=webp');
   const u4 = 'https://placehold.co/300x300/222/888?text=Audio';
 
   img.onload = () => img.classList.add('loaded');
   img.onerror = function(){
     if (!this._step) { this._step = 1; this.src = u2; return; }
     if (this._step === 1) { this._step = 2; this.src = u3; return; }
-    console.warn("[Audio thumb failed]", fullPathWithExt);
     this.src = u4;
   };
   img.src = u1;
 }
 
-/* 상태 썸네일 (로딩/현재 트랙) */
+/* 상태 썸네일 (현재 트랙) */
 function setStatus(img){
   if(!img){
     statusThumb.classList.remove('loaded');
@@ -330,9 +324,9 @@ async function load(p=""){
       card.onclick=()=>{
         unlockAudio();
         player.pause(); player.currentTime=0;
-        player.src = abs(full);                 // 오디오 URL은 캐시버스터 없이(성능)
+        player.src = abs(full);                 // 오디오는 캐시 사용(성능)
         const base = full.replace(/\.[^.]+$/, '');
-        const st = bust(imgx(base + '.png', 'width=360&quality=70&format=webp'));
+        const st = imgx(base + '.png', 'width=360&quality=70&format=webp');
         setStatus(st);
       };
       card.append(img); lib.append(card);
@@ -373,7 +367,7 @@ btnLoadList.onclick = ()=>{
   all[sel].forEach(({path,thumb})=>{
     const c=document.createElement("div"); c.className="card"; c.dataset.kind="audio"; c.dataset.path=path;
     const img=document.createElement("img"); img.loading="lazy";
-    const t=bust(imgx(thumb,"width=360&quality=70&format=webp"));
+    const t=imgx(thumb,"width=360&quality=70&format=webp");
     img.src=t; img.onerror=()=>img.src="https://placehold.co/300x300/222/888?text=Audio";
     c.onclick=()=>{ unlockAudio(); player.pause(); player.currentTime=0; player.src=abs(path); setStatus(t); };
     c.append(img); libEl.append(c);
@@ -392,7 +386,7 @@ player.loop = loopChk.checked; loopChk.onchange = ()=> player.loop = loopChk.che
 let timerId=null; timerSel.onchange=()=>{ if(timerId) clearTimeout(timerId); const m=+timerSel.value;
   if(m>0) timerId=setTimeout(()=>{ player.pause(); player.currentTime=0; alert(isKo?`${m}분 후 정지되었습니다.`:`Playback stopped after ${m} minutes.`); }, m*60000); };
 
-/* ========== Generator (single oscilloscope) ========== */
+/* ========== Generator (oscilloscope 제거) ========== */
 const genStart = document.getElementById("genStart");
 const genStop  = document.getElementById("genStop");
 const waveSel  = document.getElementById("genWave");
@@ -432,27 +426,6 @@ function startGenerator(){
 }
 genStart.addEventListener("click", startGenerator);
 genStop .addEventListener("click",  stopGenerator);
-
-/* 단일 Generator 오실로스코프 - 중복 없음 */
-(function genScope(){
-  const cvs = document.getElementById("oscGen"); const ctx = cvs.getContext("2d");
-  const analyserGen = audioCtx.createAnalyser(); genGain.connect(analyserGen);
-  analyserGen.fftSize = 2048; const buf = new Uint8Array(analyserGen.fftSize);
-  function resize(){ cvs.width = cvs.clientWidth || window.innerWidth; cvs.height = 140; }
-  resize(); window.addEventListener("resize", resize);
-  (function draw(){
-    requestAnimationFrame(draw);
-    analyserGen.getByteTimeDomainData(buf);
-    ctx.fillStyle="#0a0d14"; ctx.fillRect(0,0,cvs.width,cvs.height);
-    ctx.lineWidth=2; ctx.strokeStyle="#77d0ff"; ctx.beginPath();
-    const dx=cvs.width/buf.length;
-    for(let i=0,x=0;i<buf.length;i++,x+=dx){
-      const y=(buf[i]/128)*(cvs.height/2);
-      i?ctx.lineTo(x,y):ctx.moveTo(x,y);
-    }
-    ctx.lineTo(cvs.width,cvs.height/2); ctx.stroke();
-  })();
-})();
 
 /* ========== EN/KO Toggle ========== */
 const langBtn = document.getElementById("langToggle"); let isKo=false;
