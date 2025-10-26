@@ -21,7 +21,7 @@ header{
   padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--border)
 }
 .menu-container{
-  position:absolute;top:14px;left:10px; /* 타이틀과 수평 정렬되도록 약간 내림 */
+  position:absolute;top:14px;left:10px;
   display:flex;align-items:center;z-index:1000
 }
 .menu-button{font-size:24px;color:#fff;cursor:pointer;line-height:1}
@@ -36,7 +36,7 @@ header{
 .dropdown-menu a:hover{background:rgba(255,255,255,0.1)}
 .menu-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:900}
 
-.logo{font-weight:700;color:var(--accent);font-size:1.2rem;margin-left:50px} /* 햄버거와 간격 확보 */
+.logo{font-weight:700;color:var(--accent);font-size:1.2rem;margin-left:50px} /* 햄버거와 간격 */
 .tabs{display:flex;gap:6px;align-items:center}
 .tab{padding:4px 8px;font-size:.74rem;border:1px solid var(--border);border-radius:8px;background:#171d2b;color:#cfead1;cursor:pointer}
 .tab.active{background:#1f2739;border-color:#334}
@@ -86,15 +86,8 @@ audio{width:92%;display:block;margin:8px auto}
 input[disabled]{opacity:.5;filter:grayscale(0.3)}
 
 /* Modal for text files */
-.modal {
-  display:none; position:fixed; top:0; left:0; right:0; bottom:0;
-  background:rgba(0,0,0,0.7); z-index:1200;
-}
-.modal-content {
-  background:#12141b; color:#fff; margin:10% auto; padding:20px;
-  border-radius:12px; width:90%; max-width:700px; border:1px solid #2a3044;
-  line-height:1.6; white-space:pre-wrap;
-}
+.modal { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); z-index:1200; }
+.modal-content { background:#12141b; color:#fff; margin:10% auto; padding:20px; border-radius:12px; width:90%; max-width:700px; border:1px solid #2a3044; line-height:1.6; white-space:pre-wrap; }
 .close { float:right; cursor:pointer; font-size:1.5rem; }
 .modal h2{margin-top:0}
 </style>
@@ -105,9 +98,9 @@ input[disabled]{opacity:.5;filter:grayscale(0.3)}
 <div class="menu-container">
   <div id="menuButton" class="menu-button">☰</div>
   <nav id="dropdownMenu" class="dropdown-menu">
-    <!-- ✅ Shop: 새 탭으로 열리는 순수 링크 -->
+    <!-- Shop: 새 탭 -->
     <a href="https://5dshop.co.kr" target="_blank" rel="noopener" class="menu-item">Shop</a>
-    <!-- ✅ 나머지는 텍스트 파일을 모달로 로딩 -->
+    <!-- 텍스트는 모달 로딩 -->
     <a href="texts/faq.txt" class="menu-item">FAQ</a>
     <a href="texts/manual.txt" class="menu-item">Manual</a>
     <a href="texts/contact.txt" class="menu-item">Contact</a>
@@ -125,7 +118,7 @@ input[disabled]{opacity:.5;filter:grayscale(0.3)}
   <button id="langToggle" class="lang-toggle">EN</button>
 </header>
 
-<!-- Modal to display text files -->
+<!-- Modal -->
 <div id="menuModal" class="modal" aria-hidden="true">
   <div class="modal-content">
     <span id="modalClose" class="close" aria-label="Close">&times;</span>
@@ -263,7 +256,7 @@ function openModalWithText(text){
   menu.style.display="none"; backdrop.style.display="none";
 }
 
-/* ✅ 메뉴 항목에 핸들러 부착 (Shop 제외) */
+/* 메뉴 항목(Shop 제외) 핸들러 */
 document.querySelectorAll('.dropdown-menu .menu-item').forEach(link=>{
   if (link.textContent.trim() !== 'Shop') {
     link.addEventListener('click', (e)=>{
@@ -287,7 +280,7 @@ tabs.forEach(t=>t.onclick=()=>{
   if (t.dataset.tab==="gen") player.pause();
 });
 
-/* ========== Supabase (Simple public path) ========== */
+/* ========== Supabase (public path) ========== */
 const SUPABASE_URL="https://xdjgumqdwedgzwqturcx.supabase.co";
 const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
 const BUCKET="media";
@@ -299,17 +292,22 @@ const abs = p => PUBLIC_BASE + enc(p);
 /* ========== Audio pipeline ========== */
 const audioCtx = window.audioCtx || new (window.AudioContext||window.webkitAudioContext)();
 window.audioCtx = audioCtx;
-function unlockAudio(){ if(audioCtx.state!=="running") audioCtx.resume().catch(()=>{}); }
-['pointerdown','touchstart','keydown'].forEach(ev => document.addEventListener(ev, unlockAudio, { once:true }));
 
-const player = document.getElementById("player");
-player.crossOrigin = "anonymous";
-if (!window._audio) {
-  const masterGain = audioCtx.createGain(); masterGain.connect(audioCtx.destination);
-  const mediaSrc   = audioCtx.createMediaElementSource(player); mediaSrc.connect(masterGain);
-  window._audio = { masterGain };
+// 제너레이터 마스터 게인
+if(!window._audio || !window._audio.masterGain){
+  const g = audioCtx.createGain();
+  g.gain.value = 1;
+  g.connect(audioCtx.destination);
+  window._audio = Object.assign(window._audio||{}, { masterGain:g });
 }
-player.addEventListener("play", unlockAudio);
+// (중요) 라이브러리 오디오는 WebAudio에 연결하지 않음
+window._audio._mediaSrcAttached = true;
+
+// 사용자 제스처로 오디오 정책 해제
+function resumeAC(){ if(audioCtx.state!=='running'){ audioCtx.resume().catch(()=>{}); } }
+['pointerdown','touchstart','keydown','click'].forEach(ev=>{
+  document.addEventListener(ev, resumeAC, { once:true, passive:true });
+});
 
 /* ========== Library ========== */
 const lib = document.getElementById("library");
@@ -318,7 +316,12 @@ const btnRefresh = document.getElementById("btnRefresh");
 const btnSaveList = document.getElementById("btnSaveList");
 const btnLoadList = document.getElementById("btnLoadList");
 const statusThumb = document.getElementById("statusThumb");
-let cwd = "";
+
+const player = document.getElementById("player");
+const vol = document.getElementById("vol");
+player.crossOrigin = "anonymous";
+player.playsInline = true;
+player.loop = false;
 
 function setStatus(img){
   if(!img){
@@ -342,6 +345,7 @@ async function list(path=""){
   return data||[];
 }
 
+let cwd = "";
 async function load(path=""){
   cwd = path;
   lib.innerHTML = "";
@@ -359,7 +363,7 @@ async function load(path=""){
       const img = document.createElement("img"); img.loading="lazy";
       img.src = abs(full + "/folder.png");
       img.onerror = () => img.src = "https://placehold.co/300x300/111/aaa?text=Folder";
-      card.onclick = () => { unlockAudio(); load(full); };
+      card.onclick = () => { resumeAC(); load(full); };
       card.append(img); lib.append(card);
       continue;
     }
@@ -373,10 +377,12 @@ async function load(path=""){
       img.src = abs(thumb);
       img.onerror = () => img.src = "https://placehold.co/300x300/222/888?text=Audio";
       card.onclick = () => {
-        unlockAudio();
-        player.pause(); player.currentTime = 0;
+        resumeAC();
+        player.pause(); player.currentTime=0;
         player.src = abs(full);
         setStatus(abs(thumb));
+        // 자동재생 시도(사용자 제스처면 허용)
+        setTimeout(()=>{ player.play().catch(()=>{}); }, 60);
       };
       card.append(img); lib.append(card);
     }
@@ -400,7 +406,26 @@ lib.addEventListener('mousemove',e=>{if(!isDown) return; lib.scrollLeft = sl - (
 /* 초기 루트 로드 */
 load("");
 
-/* ========== Playlist (localStorage) ========== */
+/* 볼륨/루프/타이머 */
+player.muted = false;
+player.volume = vol ? (+vol.value || 1) : 1;
+vol.addEventListener('input', (ev)=>{
+  const v = parseFloat(ev.target.value || '1') || 1;
+  player.volume = v;
+  if(window._audio?.masterGain) window._audio.masterGain.gain.value = v; // 제너레이터도 동기화
+});
+document.getElementById('loop').addEventListener('change', e=>{ player.loop = e.target.checked; });
+
+let timerHandle=null;
+document.getElementById('timer').addEventListener('change', e=>{
+  if(timerHandle){ clearTimeout(timerHandle); timerHandle=null; }
+  const mins = parseInt(e.target.value||"0",10);
+  if(mins>0){
+    timerHandle = setTimeout(()=>{ try{ player.pause(); }catch{} }, mins*60*1000);
+  }
+});
+
+/* Playlist (localStorage) */
 btnSaveList.onclick = ()=>{
   const name = prompt(isKo?"플레이리스트 이름?":"Playlist name?"); if(!name) return;
   const items = [...lib.querySelectorAll(".card")].filter(c=>c.dataset.kind==="audio")
@@ -419,14 +444,12 @@ btnLoadList.onclick = ()=>{
     const img=document.createElement("img"); img.loading="lazy";
     const t=abs(thumb);
     img.src=t; img.onerror=()=>img.src="https://placehold.co/300x300/222/888?text=Audio";
-    c.onclick=()=>{ unlockAudio(); player.pause(); player.currentTime=0; player.src=abs(path); setStatus(t); };
+    c.onclick=()=>{ resumeAC(); player.pause(); player.currentTime=0; player.src=abs(path); setStatus(t); setTimeout(()=>player.play().catch(()=>{}),60); };
     c.append(img); lib.append(c);
   });
 };
 
-/* ========== Generator ========== */
-const genStart = document.getElementById("genStart");
-const genStop  = document.getElementById("genStop");
+/* ========== Generator (WebAudio) ========== */
 const waveSel  = document.getElementById("genWave");
 const freqInp  = document.getElementById("genFreq");
 const lvlInp   = document.getElementById("genLevel");
@@ -469,7 +492,7 @@ function buildGenNodes(baseFreq, useBB, beat, harmonics, wave){
   }
 }
 function startGenerator(){
-  unlockAudio();
+  resumeAC();
   if(!player.paused) player.pause();
   if(genRunning) clearGen();
 
@@ -600,17 +623,15 @@ document.getElementById("btnLoadPreset").onclick = ()=>{
   alert((isKo?"불러옴: ":"Loaded: ")+sel);
 };
 
-/* ========== EN/KO Toggle ========== */
+/* EN/KO Toggle */
 const langBtn = document.getElementById("langToggle"); let isKo=false;
 function applyLang(){
-  // Library labels
   document.getElementById("lblVol").textContent   = isKo ? "볼륨" : "Volume";
   document.getElementById("lblLoop").textContent  = isKo ? "반복" : "Loop";
   document.getElementById("lblTimer").textContent = isKo ? "타이머" : "Timer";
   document.querySelector('.tab[data-tab="lib"]').textContent = "5DO";
   document.querySelector('.tab[data-tab="gen"]').textContent = isKo ? "주파수 생성기" : "Freq. Gen.";
 
-  // Generator labels
   document.getElementById("lblFreq").textContent   = isKo ? "주파수 (Hz)" : "Frequency (Hz)";
   document.getElementById("lblWave").textContent   = isKo ? "파형" : "Waveform";
   document.getElementById("lblBB").textContent     = isKo ? "바이노럴" : "Binaural";
@@ -623,6 +644,18 @@ function applyLang(){
 }
 langBtn.onclick=()=>{ isKo=!isKo; langBtn.textContent=isKo?"KO":"EN"; applyLang(); };
 applyLang();
+
+/* ===== 최종 출력 보장 & 진단 ===== */
+player.addEventListener('play', ()=>{ if(audioCtx.state!=='running') audioCtx.resume().catch(()=>{}); });
+['play','pause','volumechange','canplay','stalled','error'].forEach(ev=>{
+  player.addEventListener(ev, ()=>{
+    console.log('[5DO::DIAG]', ev, {
+      acState: audioCtx.state, muted: player.muted, vol: player.volume,
+      src: player.currentSrc || player.src, paused: player.paused, readyState: player.readyState,
+      error: player.error ? (player.error.code + ' ' + (player.error.message || '')) : null
+    });
+  });
+});
 </script>
 </body>
 </html>
