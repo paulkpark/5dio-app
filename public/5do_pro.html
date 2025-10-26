@@ -1,244 +1,443 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8" />
 <title>5DO Pro</title>
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<link rel="preconnect" href="https://xdjgumqdwedgzwqturcx.supabase.co">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <style>
-  body{margin:0;background:#090b11;color:#fff;font-family:sans-serif;overflow:hidden}
-  header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#111;border-bottom:1px solid #222;}
-  .logo{font-weight:700;color:#9cff8b;font-size:1.2rem;margin-left:32px;}
-  .lang-toggle{cursor:pointer;font-size:0.9rem;background:#1a1a1a;padding:4px 10px;border-radius:8px;}
-  .hamburger{position:absolute;top:12px;left:10px;cursor:pointer;font-size:24px;}
-  .menu{position:absolute;top:48px;left:0;background:#151515;width:33%;display:none;flex-direction:column;padding:10px;z-index:10;}
-  .menu.open{display:flex;}
-  .menu a{color:#fff;text-decoration:none;padding:8px 0;}
-  .library-section,.generator-section{display:none;padding:10px;}
-  .active-section{display:block;}
-  .status-thumb{width:124px;height:124px;background:black no-repeat center/cover;border-radius:12px;margin-right:10px;}
-  .controls{display:flex;align-items:center;gap:10px;margin-top:8px;}
-  .volume-slider,.timer-select{height:20px;}
-  .thumbnail-container{display:flex;overflow-x:auto;gap:10px;padding:10px 0;}
-  .thumb{width:120px;height:120px;background:#222 center/cover no-repeat;border-radius:12px;flex-shrink:0;}
-  .thumb.loaded{box-shadow:0 0 10px #0f0;}
-  .osc-wrap{margin-top:10px;}
-  canvas{width:100%;height:100px;background:#000;display:block;}
-  .tab-bar{display:flex;gap:6px;padding:6px;background:#111;border-bottom:1px solid #222;}
-  .tab{padding:6px 10px;background:#171d2b;border:1px solid #333;border-radius:6px;cursor:pointer;}
-  .tab.active{background:#1f2739;}
-  .icon-btn{background:none;border:none;color:#fff;font-size:20px;cursor:pointer;}
+:root{
+  --bg:#0b0d13; --panel:#12141b; --card:#181b25; --ink:#e5e7eb;
+  --muted:#9aa3b7; --border:#222738; --accent:#9cff8b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',Roboto,Arial}
+
+/* Header / Tabs / Lang / Hamburger */
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--border);position:relative}
+.logo{font-weight:700;color:var(--accent);font-size:1.2rem;margin-left:40px}
+.tabs{display:flex;gap:6px}
+.tab{padding:4px 8px;font-size:.74rem;border:1px solid var(--border);border-radius:8px;background:#171d2b;color:#cfead1;cursor:pointer}
+.tab.active{background:#1f2739;border-color:#334}
+.section{display:none}.section.active{display:block}
+.lang-toggle{color:#fff;border:1px solid #444;padding:4px 8px;border-radius:6px;cursor:pointer;background:#171d2b}
+
+.menu-container{position:absolute;top:12px;left:10px;z-index:1000}
+.menu-button{font-size:24px;color:#fff;cursor:pointer}
+.dropdown-menu{display:none;flex-direction:column;position:absolute;background:rgba(0,0,0,0.9);
+  padding:8px 10px;border-radius:10px;width:160px}
+.dropdown-menu a{color:#fff;padding:6px 10px;text-decoration:none;border-radius:6px}
+.dropdown-menu a:hover{background:rgba(255,255,255,0.1)}
+.menu-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:900}
+
+/* Library */
+#oscLib{width:100%;height:120px;background:#090b11;border-bottom:1px solid var(--border);display:block}
+#navRow{display:flex;justify-content:center;gap:8px;padding:8px}
+.btn{background:#1e2232;border:1px solid #2c3147;color:#eee;border-radius:10px;padding:8px 10px;font-size:1.2rem;cursor:pointer}
+.btn:hover{background:#2a3148}
+#library{display:flex;overflow-x:auto;gap:10px;padding:10px;scroll-behavior:smooth;scroll-snap-type:x mandatory}
+.card{flex:0 0 auto;width:160px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:6px;scroll-snap-align:start}
+.card img{width:100%;aspect-ratio:1/1;object-fit:contain;background:#0f1320;border-radius:8px}
+
+.controls{display:flex;flex-direction:column;gap:12px;padding:12px;background:#0f1320;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.statusRow{display:flex;align-items:center;gap:18px}
+#statusThumb{width:124px;height:124px;border-radius:16px;background:radial-gradient(circle at center,#1a1f2f 40%,#0d0f18 100%);
+  border:1px solid #2d334a;box-shadow:0 0 12px rgba(80,180,255,.15);background-size:cover;background-position:center;position:relative;overflow:hidden}
+#statusThumb::before{content:'';position:absolute;inset:0;border-radius:50%;
+  background:radial-gradient(circle,rgba(100,200,255,.25),transparent 60%);animation:pulse 2s infinite ease-in-out}
+#statusThumb.loaded::before{display:none}
+@keyframes pulse{0%,100%{transform:scale(.8);opacity:.5}50%{transform:scale(1.1);opacity:1}}
+.ctrlStack{display:flex;flex-direction:column;gap:10px}
+.ctrlLine{display:flex;align-items:center;gap:8px}
+audio{width:92%;display:block;margin:8px auto}
+
+/* Generator */
+.gen-wrap{padding:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field{background:#141a27;border:1px solid #2a3044;border-radius:12px;padding:10px}
+.field h4{margin:0 0 8px;color:#dfe7f6;font-size:.95rem}
+.field label{display:block;font-size:.85rem;color:#9aa3b7;margin-bottom:4px}
+.field input[type="number"],.field select,.field input[type="range"]{
+  width:100%;background:#101522;color:#e9eefc;border:1px solid #2a3044;border-radius:8px;padding:6px}
+.full{grid-column:1/-1}
+.gen-actions{display:flex;gap:10px;align-items:center}
+.pill{padding:8px 12px;border-radius:999px;border:1px solid #2c3147;background:#1b2333;color:#e9eefc;cursor:pointer}
+.pill.primary{background:#21324e;border-color:#355;color:#cfead1}
+#oscGen{width:100%;height:140px;background:#0a0d14;border:1px solid #20263a;border-radius:12px;margin-top:12px}
+
+@media (max-width:640px){ .grid{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
-<div class="hamburger" id="hamburger">☰</div>
+
+<!-- Hamburger -->
+<div class="menu-container">
+  <div id="menuButton" class="menu-button">☰</div>
+  <div id="dropdownMenu" class="dropdown-menu">
+    <a href="https://5dshop.co.kr" target="_blank">Shop</a>
+    <a href="#">FAQ</a><a href="#">Manual</a><a href="#">Contact</a><a href="#">About</a>
+  </div>
+  <div id="menuBackdrop" class="menu-backdrop"></div>
+</div>
+
 <header>
   <div class="logo">5DO Pro</div>
-  <div class="lang-toggle" id="langToggle">EN</div>
+  <div class="tabs">
+    <div class="tab active" data-tab="lib">5DO</div>
+    <div class="tab" data-tab="gen">Freq. Gen.</div>
+  </div>
+  <button id="langToggle" class="lang-toggle">EN</button>
 </header>
-<div class="menu" id="menu">
-  <a href="https://5dshop.co.kr" target="_blank">Shop</a>
-  <a href="#">FAQ</a>
-  <a href="#">Manual</a>
-  <a href="#">Contact</a>
-  <a href="#">About</a>
-</div>
 
-<div class="tab-bar">
-  <div class="tab active" id="tabLibrary">5DO</div>
-  <div class="tab" id="tabGen">Freq. Gen.</div>
-</div>
+<!-- Library oscilloscope -->
+<canvas id="oscLib"></canvas>
 
-<!-- ========== LIBRARY PLAYER SECTION ========== -->
-<section class="library-section active-section" id="librarySection">
-  <div style="display:flex;align-items:center;gap:10px;">
-    <div class="status-thumb" id="statusThumb"></div>
-    <div class="controls">
-      <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="1" class="volume-slider">
-      <button id="loopBtn" class="icon-btn">🔁</button>
-      <select id="timerSelect" class="timer-select">
-        <option value="0">Timer</option>
-        <option value="5">5 min</option>
-        <option value="10">10 min</option>
-        <option value="15">15 min</option>
-        <option value="20">20 min</option>
-        <option value="30">30 min</option>
-        <option value="45">45 min</option>
-        <option value="60">60 min</option>
-      </select>
-      <button id="playBtn" class="icon-btn">▶️</button>
-      <button id="stopBtn" class="icon-btn">⏹️</button>
+<section id="section-lib" class="section active" aria-label="Library">
+  <div id="navRow">
+    <button id="btnBack" class="btn" title="Back">⬅️</button>
+    <button id="btnRefresh" class="btn" title="Refresh">🔄</button>
+    <button id="btnSaveList" class="btn" title="Save Playlist">💾</button>
+    <button id="btnLoadList" class="btn" title="Load Playlist">📜</button>
+  </div>
+
+  <div id="library"></div>
+
+  <div class="controls">
+    <div class="statusRow">
+      <div id="statusThumb"></div>
+      <div class="ctrlStack">
+        <div class="ctrlLine">
+          <label for="vol" id="lblVol">Volume</label>
+          <input id="vol" type="range" min="0" max="1" step="0.01" value="1">
+        </div>
+        <div class="ctrlLine">
+          <label><input type="checkbox" id="loop"> <span id="lblLoop">Loop</span></label>
+        </div>
+        <div class="ctrlLine">
+          <label for="timer" id="lblTimer">Timer</label>
+          <select id="timer">
+            <option value="0">Off</option><option value="5">5 min</option>
+            <option value="10">10 min</option><option value="15">15 min</option>
+            <option value="20">20 min</option><option value="30">30 min</option>
+            <option value="45">45 min</option><option value="60">60 min</option>
+          </select>
+        </div>
+      </div>
     </div>
+    <audio id="player" controls preload="none" playsinline controlslist="nodownload noplaybackrate"></audio>
   </div>
-  <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:6px;">
-    <button id="backBtn" class="icon-btn">⏪</button>
-    <button id="refreshBtn" class="icon-btn">🔄</button>
-  </div>
-  <div class="thumbnail-container" id="thumbContainer"></div>
-  <div class="osc-wrap"><canvas id="oscCanvas"></canvas></div>
 </section>
 
-<!-- ========== GENERATOR SECTION ========== -->
-<section class="generator-section" id="genSection">
-  <div style="margin-top:10px;">
-    <button id="genPlay" class="icon-btn">▶️</button>
-    <button id="genStop" class="icon-btn">⏹️</button>
-    <input type="number" id="freqInput" value="432" min="1" max="20000" step="1">
+<section id="section-gen" class="section" aria-label="Generator">
+  <div class="gen-wrap">
+    <div class="grid">
+      <div class="field">
+        <h4>Waveform</h4>
+        <select id="genWave">
+          <option value="sine">Sine</option>
+          <option value="square">Square</option>
+          <option value="sawtooth">Saw</option>
+          <option value="triangle">Triangle</option>
+        </select>
+      </div>
+      <div class="field">
+        <h4>Level</h4>
+        <input id="genLevel" type="range" min="0" max="1" step="0.01" value="0.5">
+      </div>
+      <div class="field">
+        <h4>Frequency (Hz)</h4>
+        <input id="genFreq" type="number" min="1" max="24000" step="0.1" value="440">
+      </div>
+      <div class="field">
+        <h4>Binaural Beat</h4>
+        <label><input id="genBinaural" type="checkbox"> Enable</label>
+        <label for="genBeat">Difference (Hz)</label>
+        <input id="genBeat" type="number" min="0" max="1000" step="0.1" value="7">
+      </div>
+
+      <div class="field full">
+        <div class="gen-actions">
+          <button id="genStart" class="pill primary" title="Play">▶️</button>
+          <button id="genStop"  class="pill"          title="Stop">⏹️</button>
+          <button id="btnSavePreset" class="pill" title="Save Preset">💾 Save</button>
+          <button id="btnLoadPreset" class="pill" title="Load Preset">🔁 Load</button>
+        </div>
+        <!-- Generator oscilloscope: 단 하나만 -->
+        <canvas id="oscGen"></canvas>
+      </div>
+    </div>
   </div>
-  <div class="osc-wrap"><canvas id="genOsc"></canvas></div>
 </section>
 
 <script>
-/* ===== CACHE BUSTER ===== */
+/* ========== Hamburger ========== */
+const menuBtn = document.getElementById("menuButton");
+const menu = document.getElementById("dropdownMenu");
+const backdrop = document.getElementById("menuBackdrop");
+menuBtn.onclick = ()=>{ const o = menu.style.display==="flex"; menu.style.display=o?"none":"flex"; backdrop.style.display=o?"none":"block"; };
+backdrop.onclick = ()=>{ menu.style.display="none"; backdrop.style.display="none"; };
+
+/* ========== Tabs ========== */
+const tabs = document.querySelectorAll(".tab");
+tabs.forEach(t=>t.onclick=()=>{
+  tabs.forEach(x=>x.classList.remove("active"));
+  t.classList.add("active");
+  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+  document.getElementById("section-"+t.dataset.tab).classList.add("active");
+  if (t.dataset.tab==="gen") player.pause(); // 제너레이터 탭 들어갈 때 라이브러리 재생 멈춤
+});
+
+/* ========== Supabase ========== */
+const SUPABASE_URL="https://xdjgumqdwedgzwqturcx.supabase.co";
+const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
+const BUCKET="media";
+const sb = supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const PUBLIC = SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/object/public/" + BUCKET + "/";
+const RENDER = SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/render/image/public/" + BUCKET + "/";
+const enc = p => p.split("/").filter(Boolean).map(encodeURIComponent).join("/");
+const abs = p => PUBLIC + enc(p);
+const imgx = (p,query="") => RENDER + enc(p) + (query?("?"+query):"");
+
+/* === Cache buster (세션 단위) === */
 window.__MEDIA_REV = Date.now();
-const bust = (u)=> u+(u.includes('?')?'&':'?')+'v='+window.__MEDIA_REV;
+const bust = (u)=> u + (u.includes('?') ? '&' : '?') + 'v=' + window.__MEDIA_REV;
 
-/* ===== UI ELEMENTS ===== */
-const hamburger=document.getElementById('hamburger');
-const menu=document.getElementById('menu');
-hamburger.onclick=()=>menu.classList.toggle('open');
-document.body.addEventListener('click',e=>{if(!menu.contains(e.target)&&e.target!==hamburger)menu.classList.remove('open')});
+/* ========== Audio pipeline (singleton & resume) ========== */
+const audioCtx = window.audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+window.audioCtx = audioCtx;
+function unlockAudio(){ if(audioCtx.state!=="running") audioCtx.resume().catch(()=>{}); }
+['pointerdown','touchstart','keydown'].forEach(ev => document.addEventListener(ev, unlockAudio, { once:true }));
 
-/* ===== TAB SWITCH ===== */
-const tabLib=document.getElementById('tabLibrary');
-const tabGen=document.getElementById('tabGen');
-const libSec=document.getElementById('librarySection');
-const genSec=document.getElementById('genSection');
-tabLib.onclick=()=>{tabLib.classList.add('active');tabGen.classList.remove('active');libSec.classList.add('active-section');genSec.classList.remove('active-section');}
-tabGen.onclick=()=>{tabGen.classList.add('active');tabLib.classList.remove('active');genSec.classList.add('active-section');libSec.classList.remove('active-section');}
+const player = document.getElementById("player");
+player.crossOrigin = "anonymous";
 
-/* ===== LANGUAGE TOGGLE ===== */
-const langToggle=document.getElementById('langToggle');
-let lang='EN';
-langToggle.onclick=()=>{
-  lang = lang==='EN'?'KO':'EN';
-  langToggle.textContent=lang;
-  // 필요 시 label 번역 로직 추가
-};
-
-/* ===== AUDIO PLAYER ===== */
-const statusThumb=document.getElementById('statusThumb');
-const volumeSlider=document.getElementById('volumeSlider');
-const loopBtn=document.getElementById('loopBtn');
-const timerSelect=document.getElementById('timerSelect');
-const playBtn=document.getElementById('playBtn');
-const stopBtn=document.getElementById('stopBtn');
-
-let audioCtx,srcNode,gainNode,analyser;
-const audioEl=new Audio();
-audioEl.crossOrigin="anonymous";
-let currentTrack=null;
-let loop=false;
-
-playBtn.onclick=()=>audioEl.play();
-stopBtn.onclick=()=>{audioEl.pause();audioEl.currentTime=0;}
-loopBtn.onclick=()=>{loop=!loop;audioEl.loop=loop;loopBtn.style.opacity=loop?1:0.5;}
-volumeSlider.oninput=()=>{audioEl.volume=volumeSlider.value;}
-timerSelect.onchange=()=>{
-  const min=parseInt(timerSelect.value);
-  if(min>0)setTimeout(()=>audioEl.pause(),min*60000);
-};
-
-/* ===== LIBRARY THUMBNAILS ===== */
-const thumbContainer=document.getElementById('thumbContainer');
-const backBtn=document.getElementById('backBtn');
-const refreshBtn=document.getElementById('refreshBtn');
-let currentPath='';
-
-function setStatusThumb(url){
-  if(!url){statusThumb.style.background='black';statusThumb.style.backgroundImage='';}
-  else{statusThumb.style.background='none';statusThumb.style.backgroundImage=`url(${url})`;}
+if (!window._audio) {
+  const masterGain = audioCtx.createGain(); masterGain.connect(audioCtx.destination);
+  const mediaSrc   = audioCtx.createMediaElementSource(player); mediaSrc.connect(masterGain);
+  const analyserLib= audioCtx.createAnalyser(); masterGain.connect(analyserLib);
+  analyserLib.fftSize = 2048;
+  window._audio = { masterGain, mediaSrc, analyserLib };
 }
+player.addEventListener("play", unlockAudio);
 
-function loadLibrary(){
-  thumbContainer.innerHTML='';
-  // 이 부분에서 Supabase fetch → thumbnails
-  const demoThumbs=[
-    'https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/render/image/public/media/Brainwave_States/folder.png',
-    'https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/render/image/public/media/Nature_Resonance/folder.png'
-  ];
-  demoThumbs.forEach((t,i)=>{
-    const div=document.createElement('div');
-    div.className='thumb';
-    const url=bust(t);
-    div.style.backgroundImage=`url(${url})`;
-    div.onclick=()=>{
-      currentTrack=url;
-      audioEl.src=demoThumbs[i].replace('render/image','object/public');
-      setStatusThumb(url);
+/* Library oscilloscope (player output) */
+(function libScope(){
+  const cvs = document.getElementById("oscLib"); const ctx = cvs.getContext("2d");
+  const buf = new Uint8Array(window._audio.analyserLib.fftSize);
+  function resize(){ cvs.width = cvs.clientWidth || window.innerWidth; cvs.height = 120; }
+  resize(); window.addEventListener("resize", resize);
+  (function draw(){
+    requestAnimationFrame(draw);
+    window._audio.analyserLib.getByteTimeDomainData(buf);
+    ctx.fillStyle="#090b11"; ctx.fillRect(0,0,cvs.width,cvs.height);
+    ctx.lineWidth=2; ctx.strokeStyle="#9cff8b"; ctx.beginPath();
+    const dx=cvs.width/buf.length;
+    for(let i=0,x=0;i<buf.length;i++,x+=dx){
+      const y=(buf[i]/128)*(cvs.height/2);
+      i?ctx.lineTo(x,y):ctx.moveTo(x,y);
     }
-    thumbContainer.appendChild(div);
+    ctx.lineTo(cvs.width,cvs.height/2); ctx.stroke();
+  })();
+})();
+
+/* ========== Library Browser ========== */
+const lib = document.getElementById("library");
+const btnBack = document.getElementById("btnBack");
+const btnRefresh = document.getElementById("btnRefresh");
+const statusThumb = document.getElementById("statusThumb");
+let cwd = "";
+
+/* 폴더/파일 나열 */
+async function list(p=""){
+  const {data,error} = await sb.storage.from(BUCKET).list(p,{limit:1000,sortBy:{column:"name",order:"asc"}});
+  if(error){ console.warn("[list]",error); return []; }
+  return data||[];
+}
+
+function setStatus(img){
+  if(!img){
+    statusThumb.classList.remove('loaded');
+    statusThumb.style.background="radial-gradient(circle at center,#1a1f2f 40%,#0d0f18 100%)";
+    statusThumb.style.boxShadow="0 0 12px rgba(80,180,255,.15)";
+    statusThumb.style.border="1px solid #2d334a";
+    statusThumb.style.backgroundImage="";
+  }else{
+    statusThumb.classList.add('loaded');
+    statusThumb.style.background="none"; statusThumb.style.boxShadow="none";
+    statusThumb.style.border="1px solid rgba(255,255,255,.12)";
+    statusThumb.style.backgroundImage=`url('${img}')`;
+    statusThumb.style.backgroundSize="cover"; statusThumb.style.backgroundPosition="center";
+  }
+}
+
+async function load(p=""){
+  cwd = p; lib.innerHTML = ""; setStatus("");
+  const items = await list(p);
+
+  for (const e of items){
+    const name = e.name; const full = (p?p+"/":"")+name;
+
+    /* 폴더 카드 */
+    if (!name.includes(".")){
+      const card=document.createElement("div"); card.className="card"; card.dataset.kind="folder"; card.dataset.path=full;
+      const img=document.createElement("img"); img.loading="lazy";
+      // folder.png → 캐시 버스터 포함, imgproxy로 리사이즈 (가볍고 빠름)
+      img.src=bust(imgx(full+"/folder.png","width=360&quality=70&format=webp"));
+      img.onerror=()=>img.src="https://placehold.co/300x300/111/aaa?text=Folder";
+      card.onclick=()=>{ unlockAudio(); load(full); };
+      card.append(img); lib.append(card);
+      continue;
+    }
+
+    /* 음원 카드 */
+    if (/\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(name)){
+      const card=document.createElement("div"); card.className="card"; card.dataset.kind="audio"; card.dataset.path=full;
+      // 음원 썸네일 png (같은 이름).png → bust 적용
+      const png = full.replace(/\.[^.]+$/,".png");
+      const thumbUrl = bust(imgx(png, "width=360&quality=70&format=webp"));
+      const img=document.createElement("img"); img.loading="lazy"; img.src=thumbUrl;
+      img.onerror=()=>img.src="https://placehold.co/300x300/222/888?text=Audio";
+      // 클릭 시 '로드만' (자동재생 금지) + 상태 썸네일도 bust 반영
+      card.onclick=()=>{
+        unlockAudio();
+        player.pause(); player.currentTime=0;
+        player.src = abs(full);         // 오디오는 굳이 캐시버스트 불필요(성능)
+        setStatus(thumbUrl);            // 상태 썸네일은 bust 적용
+      };
+      card.append(img); lib.append(card);
+    }
+  }
+}
+
+btnBack.onclick = ()=>{ if(!cwd) return; const a=cwd.split('/'); a.pop(); load(a.join('/')); };
+btnRefresh.onclick = ()=> load(cwd);
+
+/* drag-to-scroll */
+let isDown=false,sx=0,sl=0;
+lib.addEventListener('mousedown',e=>{isDown=true;sx=e.pageX;sl=lib.scrollLeft;});
+['mouseleave','mouseup'].forEach(ev=>lib.addEventListener(ev,()=>{isDown=false;}));
+lib.addEventListener('mousemove',e=>{if(!isDown) return; lib.scrollLeft = sl - (e.pageX - sx)*1.5;});
+
+/* 초기 루트 로드 */
+load("");
+
+/* ========== Playlist (localStorage) ========== */
+const btnSaveList = document.getElementById("btnSaveList");
+const btnLoadList = document.getElementById("btnLoadList");
+btnSaveList.onclick = ()=>{
+  const name = prompt(isKo?"플레이리스트 이름?":"Playlist name?"); if(!name) return;
+  const items = [...lib.querySelectorAll(".card")].filter(c=>c.dataset.kind==="audio")
+    .map(c=>({path:c.dataset.path, thumb:c.dataset.path.replace(/\.[^.]+$/,".png")}));
+  const all = JSON.parse(localStorage.getItem("playlists")||"{}"); all[name]=items;
+  localStorage.setItem("playlists", JSON.stringify(all));
+  alert((isKo?"저장됨: ":"Saved: ")+name);
+};
+btnLoadList.onclick = ()=>{
+  const all = JSON.parse(localStorage.getItem("playlists")||"{}");
+  const names = Object.keys(all); if(!names.length){ alert(isKo?"플레이리스트가 없습니다.":"No playlists found."); return; }
+  const sel = prompt((isKo?"선택: ":"Select: ")+"\n"+names.join("\n")); if(!sel||!all[sel]) return;
+  lib.innerHTML=""; setStatus("");
+  all[sel].forEach(({path,thumb})=>{
+    const c=document.createElement("div"); c.className="card"; c.dataset.kind="audio"; c.dataset.path=path;
+    const t=bust(imgx(thumb,"width=360&quality=70&format=webp"));
+    const img=document.createElement("img"); img.loading="lazy"; img.src=t;
+    img.onerror=()=>img.src="https://placehold.co/300x300/222/888?text=Audio";
+    c.onclick=()=>{ unlockAudio(); player.pause(); player.currentTime=0; player.src=abs(path); setStatus(t); };
+    c.append(img); lib.append(c);
   });
-}
-backBtn.onclick=()=>loadLibrary();
-refreshBtn.onclick=()=>loadLibrary();
-loadLibrary();
-
-/* ===== OSCILLOSCOPE (Library) ===== */
-const oscCanvas=document.getElementById('oscCanvas');
-const ctx=oscCanvas.getContext('2d');
-function initAudioCtx(){
-  if(!audioCtx){
-    audioCtx=new AudioContext();
-    srcNode=audioCtx.createMediaElementSource(audioEl);
-    gainNode=audioCtx.createGain();
-    analyser=audioCtx.createAnalyser();
-    srcNode.connect(gainNode).connect(analyser).connect(audioCtx.destination);
-    analyser.fftSize=2048;
-  }
-}
-audioEl.onplay=()=>{initAudioCtx();drawOsc();};
-function drawOsc(){
-  requestAnimationFrame(drawOsc);
-  const buffer=new Uint8Array(analyser.fftSize);
-  analyser.getByteTimeDomainData(buffer);
-  ctx.fillStyle='#000';ctx.fillRect(0,0,oscCanvas.width,oscCanvas.height);
-  ctx.strokeStyle='#9cff8b';ctx.beginPath();
-  const slice=oscCanvas.width/buffer.length;let x=0;
-  for(let i=0;i<buffer.length;i++){
-    const y=(buffer[i]/128)*oscCanvas.height/2;
-    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
-    x+=slice;
-  }
-  ctx.stroke();
-}
-
-/* ===== GENERATOR ===== */
-const genOsc=document.getElementById('genOsc');
-const genCtx=genOsc.getContext('2d');
-const genPlay=document.getElementById('genPlay');
-const genStop=document.getElementById('genStop');
-const freqInput=document.getElementById('freqInput');
-let oscNode=null;
-
-function initGenCtx(){
-  if(!audioCtx)initAudioCtx();
-}
-genPlay.onclick=()=>{
-  initGenCtx();
-  oscNode=audioCtx.createOscillator();
-  oscNode.frequency.value=parseFloat(freqInput.value);
-  oscNode.connect(gainNode);
-  oscNode.start();
-  drawGenOsc();
-};
-genStop.onclick=()=>{
-  if(oscNode){oscNode.stop();oscNode.disconnect();oscNode=null;}
 };
 
-function drawGenOsc(){
-  requestAnimationFrame(drawGenOsc);
-  const buffer=new Uint8Array(analyser.fftSize);
-  analyser.getByteTimeDomainData(buffer);
-  genCtx.fillStyle='#000';genCtx.fillRect(0,0,genOsc.width,genOsc.height);
-  genCtx.strokeStyle='#9cff8b';genCtx.beginPath();
-  const slice=genOsc.width/buffer.length;let x=0;
-  for(let i=0;i<buffer.length;i++){
-    const y=(buffer[i]/128)*genOsc.height/2;
-    i===0?genCtx.moveTo(x,y):genCtx.lineTo(x,y);
-    x+=slice;
-  }
-  genCtx.stroke();
+/* ========== Volume / Loop / Timer ========== */
+const vol = document.getElementById("vol");
+const loopChk = document.getElementById("loop");
+const timerSel = document.getElementById("timer");
+let desiredGain = parseFloat(vol.value||"1");
+window._audio.masterGain.gain.value = desiredGain;
+vol.addEventListener("input",()=>{ desiredGain = +vol.value; if(!player.muted) window._audio.masterGain.gain.value = desiredGain; });
+player.addEventListener("volumechange",()=>{ window._audio.masterGain.gain.value = player.muted ? 0 : desiredGain; });
+player.loop = loopChk.checked; loopChk.onchange = ()=> player.loop = loopChk.checked;
+let timerId=null; timerSel.onchange=()=>{ if(timerId) clearTimeout(timerId); const m=+timerSel.value;
+  if(m>0) timerId=setTimeout(()=>{ player.pause(); player.currentTime=0; alert(`Playback stopped after ${m} minutes.`); }, m*60000); };
+
+/* ========== Generator (single oscilloscope) ========== */
+const genStart = document.getElementById("genStart");
+const genStop  = document.getElementById("genStop");
+const waveSel  = document.getElementById("genWave");
+const freqInp  = document.getElementById("genFreq");
+const lvlInp   = document.getElementById("genLevel");
+const bbChk    = document.getElementById("genBinaural");
+const beatInp  = document.getElementById("genBeat");
+
+/* 오디오 라우팅: Generator → masterGain */
+const genGain = (function(){ const g = audioCtx.createGain(); g.connect(window._audio.masterGain); return g; })();
+let genNodes = [], genRunning=false;
+
+function stopGenerator(){ if(!genRunning) return;
+  genNodes.forEach(n=>{try{n.stop&&n.stop()}catch{} try{n.disconnect&&n.disconnect()}catch{}});
+  genNodes=[]; genRunning=false; genGain.gain.setTargetAtTime(0,audioCtx.currentTime,0.02);
 }
+function startGenerator(){
+  unlockAudio();
+  if(!player.paused) player.pause();
+  if(genRunning) stopGenerator();
+  const wave=waveSel.value, freq=parseFloat(freqInp.value||"440"), lvl=parseFloat(lvlInp.value||"0.5");
+  const useBB=!!bbChk.checked, beat=parseFloat(beatInp.value||"7");
+  genGain.gain.value=lvl;
+  if(useBB){
+    const l=audioCtx.createOscillator(), r=audioCtx.createOscillator();
+    l.type=wave; r.type=wave; l.frequency.value=freq; r.frequency.value=freq+beat;
+    try{
+      const pl=audioCtx.createStereoPanner(), pr=audioCtx.createStereoPanner();
+      pl.pan.value=-1; pr.pan.value=+1; l.connect(pl).connect(genGain); r.connect(pr).connect(genGain);
+      genNodes=[l,r,pl,pr];
+    }catch{ l.connect(genGain); r.connect(genGain); genNodes=[l,r]; }
+    l.start(); r.start();
+  }else{
+    const o=audioCtx.createOscillator(); o.type=wave; o.frequency.value=freq; o.connect(genGain); o.start(); genNodes=[o];
+  }
+  genRunning=true;
+}
+genStart.addEventListener("click", startGenerator);
+genStop .addEventListener("click",  stopGenerator);
+
+/* 단일 Generator 오실로스코프 - 중복 없음 */
+(function genScope(){
+  const cvs = document.getElementById("oscGen"); const ctx = cvs.getContext("2d");
+  const analyserGen = audioCtx.createAnalyser(); genGain.connect(analyserGen);
+  analyserGen.fftSize = 2048; const buf = new Uint8Array(analyserGen.fftSize);
+  function resize(){ cvs.width = cvs.clientWidth || window.innerWidth; cvs.height = 140; }
+  resize(); window.addEventListener("resize", resize);
+  (function draw(){
+    requestAnimationFrame(draw);
+    analyserGen.getByteTimeDomainData(buf);
+    ctx.fillStyle="#0a0d14"; ctx.fillRect(0,0,cvs.width,cvs.height);
+    ctx.lineWidth=2; ctx.strokeStyle="#77d0ff"; ctx.beginPath();
+    const dx=cvs.width/buf.length;
+    for(let i=0,x=0;i<buf.length;i++,x+=dx){
+      const y=(buf[i]/128)*(cvs.height/2);
+      i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+    }
+    ctx.lineTo(cvs.width,cvs.height/2); ctx.stroke();
+  })();
+})();
+
+/* ========== EN/KO Toggle ========== */
+const langBtn = document.getElementById("langToggle"); let isKo=false;
+function applyLang(){
+  document.getElementById("lblVol").textContent = isKo ? "볼륨" : "Volume";
+  document.getElementById("lblLoop").textContent = isKo ? "반복" : "Loop";
+  document.getElementById("lblTimer").textContent= isKo ? "타이머" : "Timer";
+  document.querySelector('.tab[data-tab="lib"]').textContent = isKo ? "5DO" : "5DO";
+  document.querySelector('.tab[data-tab="gen"]').textContent = isKo ? "주파수 생성기" : "Freq. Gen.";
+  const sel = document.getElementById("timer");
+  const en = ["Off","5 min","10 min","15 min","20 min","30 min","45 min","60 min"];
+  const ko = ["끔","5분","10분","15분","20분","30분","45분","60분"];
+  sel.querySelectorAll("option").forEach((o,i)=>o.textContent=isKo?ko[i]:en[i]);
+}
+langBtn.onclick=()=>{ isKo=!isKo; langBtn.textContent=isKo?"KO":"EN"; applyLang(); };
+applyLang();
 </script>
 </body>
 </html>
