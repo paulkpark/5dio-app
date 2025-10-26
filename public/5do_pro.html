@@ -45,10 +45,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:10px;
 .statusRow{display:flex;align-items:center;gap:18px}
 #statusThumb{width:124px;height:124px;border-radius:16px;background:radial-gradient(circle at center,#1a1f2f 40%,#0d0f18 100%);
   border:1px solid #2d334a;box-shadow:0 0 12px rgba(80,180,255,.15);background-size:cover;background-position:center;position:relative;overflow:hidden}
-#statusThumb::before{content:'';position:absolute;inset:0;border-radius:50%;
-  background:radial-gradient(circle,rgba(100,200,255,.25),transparent 60%);animation:pulse 2s infinite ease-in-out}
 #statusThumb.loaded::before{display:none}
-@keyframes pulse{0%,100%{transform:scale(.8);opacity:.5}50%{transform:scale(1.1);opacity:1}}
 .ctrlStack{display:flex;flex-direction:column;gap:10px}
 .ctrlLine{display:flex;align-items:center;gap:8px}
 audio{width:92%;display:block;margin:8px auto}
@@ -186,7 +183,7 @@ tabs.forEach(t=>t.onclick=()=>{
   t.classList.add("active");
   document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
   document.getElementById("section-"+t.dataset.tab).classList.add("active");
-  if (t.dataset.tab==="gen") player.pause(); // 제너레이터 탭 들어갈 때 라이브러리 재생 멈춤
+  if (t.dataset.tab==="gen") player.pause(); // 제너레이터 탭으로 갈 때 라이브러리 재생 정지
 });
 
 /* ========== Supabase ========== */
@@ -198,7 +195,7 @@ const PUBLIC = SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/object/public/" + 
 const RENDER = SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/render/image/public/" + BUCKET + "/";
 const enc = p => p.split("/").filter(Boolean).map(encodeURIComponent).join("/");
 const abs = p => PUBLIC + enc(p);
-const imgx = (p,query="") => RENDER + enc(p) + (query?("?"+query):"");
+const imgx = (p, q='') => RENDER + enc(p) + (q?('?'+q):'');
 
 /* === Cache buster (세션 단위) === */
 window.__MEDIA_REV = Date.now();
@@ -249,13 +246,42 @@ const btnRefresh = document.getElementById("btnRefresh");
 const statusThumb = document.getElementById("statusThumb");
 let cwd = "";
 
-/* 폴더/파일 나열 */
-async function list(p=""){
-  const {data,error} = await sb.storage.from(BUCKET).list(p,{limit:1000,sortBy:{column:"name",order:"asc"}});
-  if(error){ console.warn("[list]",error); return []; }
-  return data||[];
+/* 안전한 폴더 썸네일 세팅 (imgproxy → 원본 → 대소문자 변형 → placeholder) */
+function setFolderThumb(img, fullPath){
+  const u1 = bust(imgx(fullPath + '/folder.png', 'width=360&quality=70&format=webp'));
+  const u2 = bust(abs(fullPath + '/folder.png'));
+  const u3 = bust(imgx(fullPath + '/Folder.png', 'width=360&quality=70&format=webp'));
+  const u4 = 'https://placehold.co/300x300/111/aaa?text=Folder';
+
+  img.onload = () => img.classList.add('loaded');
+  img.onerror = function(){
+    if (!this._step) { this._step = 1; this.src = u2; return; }
+    if (this._step === 1) { this._step = 2; this.src = u3; return; }
+    console.warn("[Folder thumb failed]", fullPath);
+    this.src = u4;
+  };
+  img.src = u1;
 }
 
+/* 안전한 트랙 썸네일 세팅 (imgproxy → 원본 → .PNG → placeholder) */
+function setTrackThumb(img, fullPathWithExt){
+  const base = fullPathWithExt.replace(/\.[^.]+$/, '');
+  const u1 = bust(imgx(base + '.png', 'width=360&quality=70&format=webp'));
+  const u2 = bust(abs(base + '.png'));
+  const u3 = bust(imgx(base + '.PNG', 'width=360&quality=70&format=webp'));
+  const u4 = 'https://placehold.co/300x300/222/888?text=Audio';
+
+  img.onload = () => img.classList.add('loaded');
+  img.onerror = function(){
+    if (!this._step) { this._step = 1; this.src = u2; return; }
+    if (this._step === 1) { this._step = 2; this.src = u3; return; }
+    console.warn("[Audio thumb failed]", fullPathWithExt);
+    this.src = u4;
+  };
+  img.src = u1;
+}
+
+/* 상태 썸네일 (로딩/현재 트랙) */
 function setStatus(img){
   if(!img){
     statusThumb.classList.remove('loaded');
@@ -272,6 +298,13 @@ function setStatus(img){
   }
 }
 
+/* Supabase list */
+async function list(p=""){
+  const {data,error} = await sb.storage.from(BUCKET).list(p,{limit:1000,sortBy:{column:"name",order:"asc"}});
+  if(error){ console.warn("[list]",error); return []; }
+  return data||[];
+}
+
 async function load(p=""){
   cwd = p; lib.innerHTML = ""; setStatus("");
   const items = await list(p);
@@ -279,13 +312,11 @@ async function load(p=""){
   for (const e of items){
     const name = e.name; const full = (p?p+"/":"")+name;
 
-    /* 폴더 카드 */
+    /* 폴더 카드 (확장자 없는 항목을 폴더로 취급) */
     if (!name.includes(".")){
       const card=document.createElement("div"); card.className="card"; card.dataset.kind="folder"; card.dataset.path=full;
       const img=document.createElement("img"); img.loading="lazy";
-      // folder.png → 캐시 버스터 포함, imgproxy로 리사이즈 (가볍고 빠름)
-      img.src=bust(imgx(full+"/folder.png","width=360&quality=70&format=webp"));
-      img.onerror=()=>img.src="https://placehold.co/300x300/111/aaa?text=Folder";
+      setFolderThumb(img, full);
       card.onclick=()=>{ unlockAudio(); load(full); };
       card.append(img); lib.append(card);
       continue;
@@ -294,42 +325,42 @@ async function load(p=""){
     /* 음원 카드 */
     if (/\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(name)){
       const card=document.createElement("div"); card.className="card"; card.dataset.kind="audio"; card.dataset.path=full;
-      // 음원 썸네일 png (같은 이름).png → bust 적용
-      const png = full.replace(/\.[^.]+$/,".png");
-      const thumbUrl = bust(imgx(png, "width=360&quality=70&format=webp"));
-      const img=document.createElement("img"); img.loading="lazy"; img.src=thumbUrl;
-      img.onerror=()=>img.src="https://placehold.co/300x300/222/888?text=Audio";
-      // 클릭 시 '로드만' (자동재생 금지) + 상태 썸네일도 bust 반영
+      const img=document.createElement("img"); img.loading="lazy";
+      setTrackThumb(img, full);
       card.onclick=()=>{
         unlockAudio();
         player.pause(); player.currentTime=0;
-        player.src = abs(full);         // 오디오는 굳이 캐시버스트 불필요(성능)
-        setStatus(thumbUrl);            // 상태 썸네일은 bust 적용
+        player.src = abs(full);                 // 오디오 URL은 캐시버스터 없이(성능)
+        const base = full.replace(/\.[^.]+$/, '');
+        const st = bust(imgx(base + '.png', 'width=360&quality=70&format=webp'));
+        setStatus(st);
       };
       card.append(img); lib.append(card);
     }
   }
 }
 
+/* nav */
+const libEl = document.getElementById("library");
+const btnSaveList = document.getElementById("btnSaveList");
+const btnLoadList = document.getElementById("btnLoadList");
 btnBack.onclick = ()=>{ if(!cwd) return; const a=cwd.split('/'); a.pop(); load(a.join('/')); };
 btnRefresh.onclick = ()=> load(cwd);
 
 /* drag-to-scroll */
 let isDown=false,sx=0,sl=0;
-lib.addEventListener('mousedown',e=>{isDown=true;sx=e.pageX;sl=lib.scrollLeft;});
-['mouseleave','mouseup'].forEach(ev=>lib.addEventListener(ev,()=>{isDown=false;}));
-lib.addEventListener('mousemove',e=>{if(!isDown) return; lib.scrollLeft = sl - (e.pageX - sx)*1.5;});
+libEl.addEventListener('mousedown',e=>{isDown=true;sx=e.pageX;sl=libEl.scrollLeft;});
+['mouseleave','mouseup'].forEach(ev=>libEl.addEventListener(ev,()=>{isDown=false;}));
+libEl.addEventListener('mousemove',e=>{if(!isDown) return; libEl.scrollLeft = sl - (e.pageX - sx)*1.5;});
 
 /* 초기 루트 로드 */
 load("");
 
 /* ========== Playlist (localStorage) ========== */
-const btnSaveList = document.getElementById("btnSaveList");
-const btnLoadList = document.getElementById("btnLoadList");
 btnSaveList.onclick = ()=>{
   const name = prompt(isKo?"플레이리스트 이름?":"Playlist name?"); if(!name) return;
-  const items = [...lib.querySelectorAll(".card")].filter(c=>c.dataset.kind==="audio")
-    .map(c=>({path:c.dataset.path, thumb:c.dataset.path.replace(/\.[^.]+$/,".png")}));
+  const items = [...libEl.querySelectorAll(".card")].filter(c=>c.dataset.kind==="audio")
+    .map(c=>({path:c.dataset.path, thumb:c.dataset.path.replace(/\.[^.]+$/,'.png')}));
   const all = JSON.parse(localStorage.getItem("playlists")||"{}"); all[name]=items;
   localStorage.setItem("playlists", JSON.stringify(all));
   alert((isKo?"저장됨: ":"Saved: ")+name);
@@ -338,14 +369,14 @@ btnLoadList.onclick = ()=>{
   const all = JSON.parse(localStorage.getItem("playlists")||"{}");
   const names = Object.keys(all); if(!names.length){ alert(isKo?"플레이리스트가 없습니다.":"No playlists found."); return; }
   const sel = prompt((isKo?"선택: ":"Select: ")+"\n"+names.join("\n")); if(!sel||!all[sel]) return;
-  lib.innerHTML=""; setStatus("");
+  libEl.innerHTML=""; setStatus("");
   all[sel].forEach(({path,thumb})=>{
     const c=document.createElement("div"); c.className="card"; c.dataset.kind="audio"; c.dataset.path=path;
+    const img=document.createElement("img"); img.loading="lazy";
     const t=bust(imgx(thumb,"width=360&quality=70&format=webp"));
-    const img=document.createElement("img"); img.loading="lazy"; img.src=t;
-    img.onerror=()=>img.src="https://placehold.co/300x300/222/888?text=Audio";
+    img.src=t; img.onerror=()=>img.src="https://placehold.co/300x300/222/888?text=Audio";
     c.onclick=()=>{ unlockAudio(); player.pause(); player.currentTime=0; player.src=abs(path); setStatus(t); };
-    c.append(img); lib.append(c);
+    c.append(img); libEl.append(c);
   });
 };
 
@@ -359,7 +390,7 @@ vol.addEventListener("input",()=>{ desiredGain = +vol.value; if(!player.muted) w
 player.addEventListener("volumechange",()=>{ window._audio.masterGain.gain.value = player.muted ? 0 : desiredGain; });
 player.loop = loopChk.checked; loopChk.onchange = ()=> player.loop = loopChk.checked;
 let timerId=null; timerSel.onchange=()=>{ if(timerId) clearTimeout(timerId); const m=+timerSel.value;
-  if(m>0) timerId=setTimeout(()=>{ player.pause(); player.currentTime=0; alert(`Playback stopped after ${m} minutes.`); }, m*60000); };
+  if(m>0) timerId=setTimeout(()=>{ player.pause(); player.currentTime=0; alert(isKo?`${m}분 후 정지되었습니다.`:`Playback stopped after ${m} minutes.`); }, m*60000); };
 
 /* ========== Generator (single oscilloscope) ========== */
 const genStart = document.getElementById("genStart");
