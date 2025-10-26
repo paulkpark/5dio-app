@@ -21,7 +21,7 @@ header{
   padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--border)
 }
 .menu-container{
-  position:absolute;top:6px;left:10px;  /* 아이콘 살짝 위로 */
+  position:absolute;top:14px;left:10px; /* 타이틀과 수평 정렬되도록 약간 내림 */
   display:flex;align-items:center;z-index:1000
 }
 .menu-button{font-size:24px;color:#fff;cursor:pointer;line-height:1}
@@ -41,7 +41,6 @@ header{
 .lang-toggle{color:#fff;border:1px solid #444;padding:4px 8px;border-radius:6px;cursor:pointer;background:#171d2b}
 
 /* Library */
-#oscLib{width:100%;height:120px;background:#090b11;border-bottom:1px solid var(--border);display:block}
 #navRow{display:flex;justify-content:center;gap:8px;padding:8px}
 .btn{background:#1e2232;border:1px solid #2c3147;color:#eee;border-radius:10px;padding:8px 10px;font-size:1.2rem;cursor:pointer}
 .btn:hover{background:#2a3148}
@@ -82,6 +81,19 @@ audio{width:92%;display:block;margin:8px auto}
 .pill{padding:8px 12px;border-radius:999px;border:1px solid #2c3147;background:#1b2333;color:#e9eefc;cursor:pointer}
 .pill.primary{background:#21324e;border-color:#355;color:#cfead1}
 input[disabled]{opacity:.5;filter:grayscale(0.3)}
+
+/* Modal for text files */
+.modal {
+  display:none; position:fixed; top:0; left:0; right:0; bottom:0;
+  background:rgba(0,0,0,0.7); z-index:1200;
+}
+.modal-content {
+  background:#12141b; color:#fff; margin:10% auto; padding:20px;
+  border-radius:12px; width:90%; max-width:700px; border:1px solid #2a3044;
+  line-height:1.6; white-space:pre-wrap;
+}
+.close { float:right; cursor:pointer; font-size:1.5rem; }
+.modal h2{margin-top:0}
 </style>
 </head>
 <body>
@@ -90,8 +102,11 @@ input[disabled]{opacity:.5;filter:grayscale(0.3)}
 <div class="menu-container">
   <div id="menuButton" class="menu-button">☰</div>
   <div id="dropdownMenu" class="dropdown-menu">
-    <a href="https://5dshop.co.kr" target="_blank">Shop</a>
-    <a href="#">FAQ</a><a href="#">Manual</a><a href="#">Contact</a><a href="#">About</a>
+    <a href="https://5dshop.co.kr" target="_blank" data-kind="external">Shop</a>
+    <a href="#" data-file="faq">FAQ</a>
+    <a href="#" data-file="manual">Manual</a>
+    <a href="#" data-file="contact">Contact</a>
+    <a href="#" data-file="about">About</a>
   </div>
   <div id="menuBackdrop" class="menu-backdrop"></div>
 </div>
@@ -105,8 +120,13 @@ input[disabled]{opacity:.5;filter:grayscale(0.3)}
   <button id="langToggle" class="lang-toggle">EN</button>
 </header>
 
-<!-- Library oscilloscope -->
-<canvas id="oscLib"></canvas>
+<!-- Modal to display text files -->
+<div id="menuModal" class="modal" aria-hidden="true">
+  <div class="modal-content">
+    <span id="modalClose" class="close" aria-label="Close">&times;</span>
+    <div id="modalBody">Loading...</div>
+  </div>
+</div>
 
 <section id="section-lib" class="section active" aria-label="Library">
   <div id="navRow">
@@ -146,7 +166,7 @@ input[disabled]{opacity:.5;filter:grayscale(0.3)}
 
 <section id="section-gen" class="section" aria-label="Generator">
   <div class="gen-wrap">
-    <!-- 오실레이터 미니 스코프(옵션: 필요 시 제거 가능) -->
+    <!-- 🔭 Generator 전용 오실로스코프 (한 개만 사용) -->
     <div class="field full">
       <canvas id="oscGen" height="100"></canvas>
     </div>
@@ -155,7 +175,7 @@ input[disabled]{opacity:.5;filter:grayscale(0.3)}
       <!-- 1줄: 주파수 & 파형 -->
       <div class="field">
         <h4 id="lblFreq">Frequency (Hz)</h4>
-        <input id="genFreq" type="number" min="1" max="24000" step="0.1" value="440">
+        <input id="genFreq" type="number" min="1" max="24000" step="0.1" value="432"> <!-- ✅ 기본 432 Hz -->
       </div>
       <div class="field">
         <h4 id="lblWave">Waveform</h4>
@@ -190,7 +210,17 @@ input[disabled]{opacity:.5;filter:grayscale(0.3)}
         <input id="genDuty" type="range" min="0.05" max="0.95" step="0.01" value="0.50" disabled>
       </div>
 
-      <!-- 4줄: 재생 컨트롤 전체폭 -->
+      <!-- 4줄: 스윕 컨트롤(전체폭) -->
+      <div class="field full">
+        <div class="gen-actions">
+          <input id="sweepStart" type="number" value="100"  aria-label="Sweep Start (Hz)" style="width:90px">
+          <input id="sweepEnd"   type="number" value="1000" aria-label="Sweep End (Hz)"   style="width:90px">
+          <input id="sweepTime"  type="number" value="10"   aria-label="Sweep Time (s)"   style="width:90px">
+          <button id="sweepGo" class="pill" title="Sweep">Sweep</button>
+        </div>
+      </div>
+
+      <!-- 5줄: 재생 컨트롤(전체폭) -->
       <div class="field full">
         <div class="gen-actions">
           <button id="genStart" class="pill primary" title="Play">▶️</button>
@@ -204,12 +234,46 @@ input[disabled]{opacity:.5;filter:grayscale(0.3)}
 </section>
 
 <script>
-/* ========== Hamburger ========== */
+/* ========== Hamburger & Modal for text files ========== */
 const menuBtn = document.getElementById("menuButton");
 const menu = document.getElementById("dropdownMenu");
 const backdrop = document.getElementById("menuBackdrop");
-menuBtn.onclick = ()=>{ const o = menu.style.display==="flex"; menu.style.display=o?"none":"flex"; backdrop.style.display=o?"none":"block"; };
+const modal = document.getElementById("menuModal");
+const modalBody = document.getElementById("modalBody");
+const modalClose = document.getElementById("modalClose");
+
+menuBtn.onclick = ()=>{
+  const open = menu.style.display==="flex";
+  menu.style.display = open ? "none" : "flex";
+  backdrop.style.display = open ? "none" : "block";
+};
 backdrop.onclick = ()=>{ menu.style.display="none"; backdrop.style.display="none"; };
+modalClose.onclick = ()=>{ modal.style.display="none"; };
+window.addEventListener('click',e=>{ if(e.target===modal) modal.style.display="none"; });
+
+function openModalWithText(text, title){
+  modalBody.textContent = text;
+  modal.style.display = "block";
+  // 메뉴 닫기
+  menu.style.display="none";
+  backdrop.style.display="none";
+}
+function loadMenuContent(file){
+  fetch(`texts/${file}.txt`, {cache:'no-store'})
+    .then(r=> r.ok ? r.text() : Promise.reject(r.status))
+    .then(t=> openModalWithText(t, file))
+    .catch(()=> openModalWithText("⚠️ 내용을 불러올 수 없습니다.", file));
+}
+// 메뉴 항목 이벤트 연결
+document.querySelectorAll('.dropdown-menu a').forEach(a=>{
+  const kind = a.dataset.kind;
+  if(kind==="external") return; // Shop: 외부 링크 그대로
+  const file = a.dataset.file;  // faq, manual, contact, about
+  a.addEventListener('click', (e)=>{
+    e.preventDefault();
+    loadMenuContent(file);
+  });
+});
 
 /* ========== Tabs ========== */
 const tabs = document.querySelectorAll(".tab");
@@ -242,31 +306,9 @@ player.crossOrigin = "anonymous";
 if (!window._audio) {
   const masterGain = audioCtx.createGain(); masterGain.connect(audioCtx.destination);
   const mediaSrc   = audioCtx.createMediaElementSource(player); mediaSrc.connect(masterGain);
-  const analyserLib= audioCtx.createAnalyser(); masterGain.connect(analyserLib);
-  analyserLib.fftSize = 2048;
-  window._audio = { masterGain, mediaSrc, analyserLib };
+  window._audio = { masterGain };
 }
 player.addEventListener("play", unlockAudio);
-
-/* Library oscilloscope (player output) */
-(function libScope(){
-  const cvs = document.getElementById("oscLib"); const ctx = cvs.getContext("2d");
-  const buf = new Uint8Array(window._audio.analyserLib.fftSize);
-  function resize(){ cvs.width = cvs.clientWidth || window.innerWidth; cvs.height = 120; }
-  resize(); window.addEventListener("resize", resize);
-  (function draw(){
-    requestAnimationFrame(draw);
-    window._audio.analyserLib.getByteTimeDomainData(buf);
-    ctx.fillStyle="#090b11"; ctx.fillRect(0,0,cvs.width,cvs.height);
-    ctx.lineWidth=2; ctx.strokeStyle="#9cff8b"; ctx.beginPath();
-    const dx=cvs.width/buf.length;
-    for(let i=0,x=0;i<buf.length;i++,x+=dx){
-      const y=(buf[i]/128)*(cvs.height/2);
-      i?ctx.lineTo(x,y):ctx.moveTo(x,y);
-    }
-    ctx.lineTo(cvs.width,cvs.height/2); ctx.stroke();
-  })();
-})();
 
 /* ========== Library (Lite 로직) ========== */
 const lib = document.getElementById("library");
@@ -381,7 +423,7 @@ btnLoadList.onclick = ()=>{
   });
 };
 
-/* ========== Generator (harmonics + reordered UI, 2열 유지) ========== */
+/* ========== Generator (harmonics + 2열 + 실시간 반영 + Sweep) ========== */
 const genStart = document.getElementById("genStart");
 const genStop  = document.getElementById("genStop");
 const waveSel  = document.getElementById("genWave");
@@ -393,53 +435,118 @@ const harmInp  = document.getElementById("genHarmonics");
 const dutyInp  = document.getElementById("genDuty");
 
 const genGain = (function(){ const g = audioCtx.createGain(); g.connect(window._audio.masterGain); return g; })();
-let genNodes = [], genRunning=false;
+let genRunning=false;
+let genMeta=[]; // [{node, mult, beatAdd}...]
 
-function stopGenerator(){ if(!genRunning) return;
-  genNodes.forEach(n=>{try{n.stop&&n.stop()}catch{} try{n.disconnect&&n.disconnect()}catch{}});
-  genNodes=[]; genRunning=false; genGain.gain.setTargetAtTime(0,audioCtx.currentTime,0.02);
+function clearGen(){
+  genMeta.forEach(o=>{ try{o.node.stop()}catch{} try{o.node.disconnect()}catch{} });
+  genMeta = [];
+}
+function buildGenNodes(baseFreq, useBB, beat, harmonics, wave){
+  clearGen();
+  const mk = (freq, mult=1, beatAdd=0)=>{
+    const o=audioCtx.createOscillator();
+    o.type = wave;
+    o.frequency.value = freq*mult + beatAdd;
+    o.connect(genGain);
+    o.start();
+    genMeta.push({node:o, mult, beatAdd});
+  };
+  if(useBB){
+    mk(baseFreq, 1, 0);          // Left
+    mk(baseFreq, 1, beat);       // Right (간단: +beat)
+  }else{
+    mk(baseFreq, 1, 0);
+  }
+  for(let m=2;m<=harmonics;m++){
+    if(useBB){
+      mk(baseFreq, m, 0);
+      mk(baseFreq, m, beat);
+    }else{
+      mk(baseFreq, m, 0);
+    }
+  }
 }
 function startGenerator(){
   unlockAudio();
   if(!player.paused) player.pause();
-  if(genRunning) stopGenerator();
+  if(genRunning) clearGen();
 
-  const wave=waveSel.value;
-  const freq=parseFloat(freqInp.value||"440");
-  const lvl=parseFloat(lvlInp.value||"0.5");
-  const useBB=!!bbChk.checked;
-  const beat=parseFloat(beatInp.value||"7");
-  const harm=Math.max(1, Math.min(8, parseInt(harmInp.value)||1));
-  const duty=parseFloat(dutyInp.value||"0.5");
+  const wave = waveSel.value;
+  const base = parseFloat(freqInp.value||"432");
+  const lvl  = parseFloat(lvlInp.value||"0.5");
+  const useBB= !!bbChk.checked;
+  const beat = parseFloat(beatInp.value||"7");
+  const harm = Math.max(1, Math.min(8, parseInt(harmInp.value)||1));
 
-  genGain.gain.value=lvl;
+  genGain.gain.value = lvl;
+  buildGenNodes(base, useBB, beat, harm, wave);
 
-  function makeVoice(f){
-    const o=audioCtx.createOscillator();
-    o.type=wave;
-    o.frequency.value=f;
-    o.connect(genGain);
-    o.start();
-    genNodes.push(o);
-  }
-
-  if(useBB){
-    makeVoice(freq);
-    makeVoice(freq+beat);
-  }else{
-    makeVoice(freq);
-  }
-
-  for(let i=2;i<=harm;i++){
-    makeVoice(freq*i);
-    if(useBB) makeVoice((freq+beat)*i);
-  }
-
-  dutyInp.disabled = (wave!=="square"); // 다음 단계에서 PWM/PeriodicWave로 구현 예정
-  genRunning=true;
+  dutyInp.disabled = (wave!=="square"); // (PWM 확장 여지)
+  genRunning = true;
 }
-genStart.addEventListener("click", startGenerator);
-genStop .addEventListener("click",  stopGenerator);
+function stopGenerator(){
+  if(!genRunning) return;
+  clearGen();
+  genRunning=false;
+  genGain.gain.setTargetAtTime(0,audioCtx.currentTime,0.02);
+}
+function updateGenerator(){
+  if(!genRunning) return;
+  const wave = waveSel.value;
+  const base = parseFloat(freqInp.value||"432");
+  const useBB= !!bbChk.checked;
+  const beat = parseFloat(beatInp.value||"7");
+  const harm = Math.max(1, Math.min(8, parseInt(harmInp.value)||1));
+
+  const structureChanged =
+    (genMeta.length===0) ||
+    (wave !== genMeta._wave) ||
+    (useBB !== genMeta._bb) ||
+    (harm !== genMeta._harm);
+
+  if(structureChanged){
+    buildGenNodes(base, useBB, beat, harm, wave);
+    genMeta._wave = wave; genMeta._bb = useBB; genMeta._harm = harm;
+  }else{
+    genMeta.forEach(o=>{
+      const target = base*o.mult + (useBB ? (o.beatAdd?beat:0) : 0);
+      try{
+        o.node.frequency.cancelScheduledValues(audioCtx.currentTime);
+        o.node.frequency.setTargetAtTime(target, audioCtx.currentTime, 0.02);
+      }catch{}
+    });
+  }
+}
+freqInp.oninput = updateGenerator;
+waveSel.oninput = updateGenerator;
+bbChk .oninput = updateGenerator;
+beatInp.oninput = updateGenerator;
+harmInp.oninput = updateGenerator;
+lvlInp .oninput = e => { genGain.gain.value = parseFloat(e.target.value); };
+dutyInp.oninput = ()=>{};
+
+/* Sweep */
+document.getElementById('sweepGo').onclick = ()=>{
+  if(!genRunning || genMeta.length===0) return;
+  const s = +document.getElementById('sweepStart').value || 100;
+  const e = +document.getElementById('sweepEnd').value   || 1000;
+  const t = +document.getElementById('sweepTime').value  || 10;
+  const now = audioCtx.currentTime;
+  genMeta.forEach(o=>{
+    const startF = s*o.mult + (o.beatAdd||0);
+    const endF   = e*o.mult + (o.beatAdd||0);
+    try{
+      o.node.frequency.cancelScheduledValues(now);
+      o.node.frequency.setValueAtTime(startF, now);
+      o.node.frequency.linearRampToValueAtTime(endF, now + t);
+    }catch{}
+  });
+};
+const genStartBtn = document.getElementById("genStart");
+const genStopBtn  = document.getElementById("genStop");
+genStartBtn.addEventListener("click", ()=>{ audioCtx.resume(); startGenerator(); genMeta._wave=waveSel.value; genMeta._bb=!!bbChk.checked; genMeta._harm=(+harmInp.value||1); });
+genStopBtn .addEventListener("click", stopGenerator);
 
 /* Generator mini scope (from generator output) */
 (function genScope(){
@@ -467,7 +574,7 @@ genStop .addEventListener("click",  stopGenerator);
 document.getElementById("btnSavePreset").onclick = ()=>{
   const name = prompt(isKo?"프리셋 이름?":"Preset name?"); if(!name) return;
   const p = {
-    wave: waveSel.value, freq: +freqInp.value || 440, level: +lvlInp.value || 0.5,
+    wave: waveSel.value, freq: +freqInp.value || 432, level: +lvlInp.value || 0.5,
     binaural: !!bbChk.checked, beat: +beatInp.value || 7,
     harmonics: +harmInp.value || 1, duty: +dutyInp.value || 0.5
   };
@@ -481,17 +588,18 @@ document.getElementById("btnLoadPreset").onclick = ()=>{
   const sel = prompt((isKo?"선택: ":"Select: ")+"\n"+names.join("\n")); if(!sel||!all[sel]) return;
   const p = all[sel];
   waveSel.value = p.wave||"sine";
-  freqInp.value = p.freq||440;
-  lvlInp.value  = p.level||0.5;
+  freqInp.value = p.freq||432;
+  lvlInp.value  = p.level||0.5; genGain.gain.value = p.level||0.5;
   bbChk.checked = !!p.binaural;
   beatInp.value = p.beat||7;
   harmInp.value = p.harmonics||1;
   dutyInp.value = p.duty||0.5;
   dutyInp.disabled = (waveSel.value!=="square");
+  updateGenerator();
   alert((isKo?"불러옴: ":"Loaded: ")+sel);
 };
 
-/* ========== EN/KO Toggle (새 라벨 포함) ========== */
+/* ========== EN/KO Toggle ========== */
 const langBtn = document.getElementById("langToggle"); let isKo=false;
 function applyLang(){
   // Library labels
