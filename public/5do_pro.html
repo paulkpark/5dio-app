@@ -99,17 +99,14 @@ input[disabled]{opacity:.5;filter:grayscale(0.3)}
 <body>
 
 <!-- Hamburger -->
-<div class="menu-container">
-  <div id="menuButton" class="menu-button">☰</div>
-  <div id="dropdownMenu" class="dropdown-menu">
-    <a href="https://5dshop.co.kr" target="_blank" data-kind="external">Shop</a>
-    <a href="#" data-file="faq">FAQ</a>
-    <a href="#" data-file="manual">Manual</a>
-    <a href="#" data-file="contact">Contact</a>
-    <a href="#" data-file="about">About</a>
-  </div>
-  <div id="menuBackdrop" class="menu-backdrop"></div>
-</div>
+<!-- 햄버거 메뉴 내부 -->
+<nav class="dropdown-menu">
+  <a href="https://5dshop.co.kr" target="_blank" rel="noopener" class="menu-item">Shop</a>
+  <a href="/texts/faq.txt" class="menu-item">FAQ</a>
+  <a href="/texts/manual.txt" class="menu-item">Manual</a>
+  <a href="/texts/contact.txt" class="menu-item">Contact</a>
+  <a href="/texts/about.txt" class="menu-item">About</a>
+</nav>
 
 <header>
   <div class="logo">5DO Pro</div>
@@ -623,5 +620,20 @@ function applyLang(){
 langBtn.onclick=()=>{ isKo=!isKo; langBtn.textContent=isKo?"KO":"EN"; applyLang(); };
 applyLang();
 </script>
+document.querySelectorAll('.menu-item').forEach(link => {
+  if (link.textContent.trim() !== 'Shop') {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const url = link.getAttribute('href');
+      fetch(url)
+        .then(res => res.text())
+        .then(text => {
+          document.getElementById('infoContent').innerText = text;
+          // 메뉴 닫기
+          document.getElementById('menuToggle').checked = false;
+        });
+    });
+  }
+});
 </body>
 </html>
