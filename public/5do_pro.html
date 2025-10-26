@@ -41,11 +41,36 @@ header{display:flex;align-items:center;justify-content:space-between;gap:10px;
 .card{flex:0 0 auto;width:160px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:6px;scroll-snap-align:start}
 .card img{width:100%;aspect-ratio:1/1;object-fit:contain;background:#0f1320;border-radius:8px}
 
+/* Controls + Status thumb */
 .controls{display:flex;flex-direction:column;gap:12px;padding:12px;background:#0f1320;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
 .statusRow{display:flex;align-items:center;gap:18px}
-#statusThumb{width:124px;height:124px;border-radius:16px;background:radial-gradient(circle at center,#1a1f2f 40%,#0d0f18 100%);
-  border:1px solid #2d334a;box-shadow:0 0 12px rgba(80,180,255,.15);background-size:cover;background-position:center;position:relative;overflow:hidden}
-#statusThumb.loaded::before{display:none}
+#statusThumb{
+  width:124px;height:124px;border-radius:16px;
+  background:#0d0f18;
+  border:1px solid #2d334a;
+  position:relative;overflow:hidden;
+  background-size:cover;background-position:center;
+}
+/* 로딩 상태: 오로라 애니메이션 */
+#statusThumb.loading::before{
+  content:"";
+  position:absolute;inset:-30%;
+  background: conic-gradient(
+    from 0deg at 50% 50%,
+    #10283e, #1b3a5b, #234a72, #1b3a5b, #10283e
+  );
+  filter: blur(28px);
+  opacity:0.9;
+  animation: aurora 6.5s linear infinite;
+}
+/* 썸네일 로드 완료 시 애니메이션 제거 */
+#statusThumb.loaded::before{ content:none; }
+@keyframes aurora{
+  0%   { transform:rotate(0deg)   scale(1.05); }
+  50%  { transform:rotate(180deg) scale(1.10); }
+  100% { transform:rotate(360deg) scale(1.05); }
+}
+
 .ctrlStack{display:flex;flex-direction:column;gap:10px}
 .ctrlLine{display:flex;align-items:center;gap:8px}
 audio{width:92%;display:block;margin:8px auto}
@@ -104,7 +129,7 @@ audio{width:92%;display:block;margin:8px auto}
 
   <div class="controls">
     <div class="statusRow">
-      <div id="statusThumb"></div>
+      <div id="statusThumb" class="loading"></div>
       <div class="ctrlStack">
         <div class="ctrlLine">
           <label for="vol" id="lblVol">Volume</label>
@@ -242,6 +267,46 @@ const btnRefresh = document.getElementById("btnRefresh");
 const statusThumb = document.getElementById("statusThumb");
 let cwd = "";
 
+/* 상태 썸네일 (현재 트랙) - 로딩/완료 전환 */
+function setStatus(imgUrl){
+  if(!imgUrl){
+    statusThumb.classList.remove('loaded');
+    statusThumb.classList.add('loading');
+    statusThumb.style.backgroundImage = "";
+    return;
+  }
+  statusThumb.classList.add('loaded');
+  statusThumb.classList.remove('loading');
+  statusThumb.style.backgroundImage = `url('${imgUrl}')`;
+  statusThumb.style.backgroundSize = "cover";
+  statusThumb.style.backgroundPosition = "center";
+}
+
+/* 상태 썸네일 안전 폴백 체인 */
+function setStatusThumbSafe(trackPath) {
+  if (!trackPath) { setStatus(""); return; }
+  const base = trackPath.replace(/\.[^.]+$/, '');
+  const u1 = imgx(base + '.png', 'width=360&quality=70&format=webp'); // imgproxy
+  const u2 = abs(base + '.png');                                      // 원본
+  const u3 = imgx(base + '.PNG', 'width=360&quality=70&format=webp'); // 대문자
+  const u4 = 'https://placehold.co/300x300/222/888?text=Audio';       // placeholder
+
+  const t1 = new Image();
+  t1.onload  = () => setStatus(u1);
+  t1.onerror = () => {
+    const t2 = new Image();
+    t2.onload  = () => setStatus(u2);
+    t2.onerror = () => {
+      const t3 = new Image();
+      t3.onload  = () => setStatus(u3);
+      t3.onerror = () => setStatus(u4);
+      t3.src = u3;
+    };
+    t2.src = u2;
+  };
+  t1.src = u1;
+}
+
 /* 안전 폴더 썸네일: imgproxy → 원본 → 대소문자 변형 → placeholder */
 function setFolderThumb(img, fullPath){
   const u1 = imgx(fullPath + '/folder.png', 'width=360&quality=70&format=webp');
@@ -275,23 +340,6 @@ function setTrackThumb(img, fullPathWithExt){
   img.src = u1;
 }
 
-/* 상태 썸네일 (현재 트랙) */
-function setStatus(img){
-  if(!img){
-    statusThumb.classList.remove('loaded');
-    statusThumb.style.background="radial-gradient(circle at center,#1a1f2f 40%,#0d0f18 100%)";
-    statusThumb.style.boxShadow="0 0 12px rgba(80,180,255,.15)";
-    statusThumb.style.border="1px solid #2d334a";
-    statusThumb.style.backgroundImage="";
-  }else{
-    statusThumb.classList.add('loaded');
-    statusThumb.style.background="none"; statusThumb.style.boxShadow="none";
-    statusThumb.style.border="1px solid rgba(255,255,255,.12)";
-    statusThumb.style.backgroundImage=`url('${img}')`;
-    statusThumb.style.backgroundSize="cover"; statusThumb.style.backgroundPosition="center";
-  }
-}
-
 /* Supabase list */
 async function list(p=""){
   const {data,error} = await sb.storage.from(BUCKET).list(p,{limit:1000,sortBy:{column:"name",order:"asc"}});
@@ -300,7 +348,7 @@ async function list(p=""){
 }
 
 async function load(p=""){
-  cwd = p; lib.innerHTML = ""; setStatus("");
+  cwd = p; lib.innerHTML = ""; setStatus(""); // 폴더 전환 시 로딩(오로라) 상태
   const items = await list(p);
 
   for (const e of items){
@@ -324,10 +372,8 @@ async function load(p=""){
       card.onclick=()=>{
         unlockAudio();
         player.pause(); player.currentTime=0;
-        player.src = abs(full);                 // 오디오는 캐시 사용(성능)
-        const base = full.replace(/\.[^.]+$/, '');
-        const st = imgx(base + '.png', 'width=360&quality=70&format=webp');
-        setStatus(st);
+        player.src = abs(full);                 // 오디오: 캐시 유지
+        setStatusThumbSafe(full);               // 상태 썸네일: 안전 폴백
       };
       card.append(img); lib.append(card);
     }
@@ -369,7 +415,7 @@ btnLoadList.onclick = ()=>{
     const img=document.createElement("img"); img.loading="lazy";
     const t=imgx(thumb,"width=360&quality=70&format=webp");
     img.src=t; img.onerror=()=>img.src="https://placehold.co/300x300/222/888?text=Audio";
-    c.onclick=()=>{ unlockAudio(); player.pause(); player.currentTime=0; player.src=abs(path); setStatus(t); };
+    c.onclick=()=>{ unlockAudio(); player.pause(); player.currentTime=0; player.src=abs(path); setStatusThumbSafe(path); };
     c.append(img); libEl.append(c);
   });
 };
@@ -386,7 +432,7 @@ player.loop = loopChk.checked; loopChk.onchange = ()=> player.loop = loopChk.che
 let timerId=null; timerSel.onchange=()=>{ if(timerId) clearTimeout(timerId); const m=+timerSel.value;
   if(m>0) timerId=setTimeout(()=>{ player.pause(); player.currentTime=0; alert(isKo?`${m}분 후 정지되었습니다.`:`Playback stopped after ${m} minutes.`); }, m*60000); };
 
-/* ========== Generator (oscilloscope 제거) ========== */
+/* ========== Generator (oscilloscope 제거된 상태) ========== */
 const genStart = document.getElementById("genStart");
 const genStop  = document.getElementById("genStop");
 const waveSel  = document.getElementById("genWave");
