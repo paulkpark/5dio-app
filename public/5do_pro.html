@@ -21,7 +21,7 @@ header{
   padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--border)
 }
 .menu-container{
-  position:absolute;top:14px;left:10px;
+  position:absolute;top:12px;left:10px;
   display:flex;align-items:center;z-index:1000
 }
 .menu-button{font-size:24px;color:#fff;cursor:pointer;line-height:1}
@@ -36,7 +36,7 @@ header{
 .dropdown-menu a:hover{background:rgba(255,255,255,0.1)}
 .menu-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:900}
 
-.logo{font-weight:700;color:var(--accent);font-size:1.2rem;margin-left:50px} /* 햄버거와 간격 */
+.logo{font-weight:700;color:var(--accent);font-size:1.2rem;margin-left:50px}
 .tabs{display:flex;gap:6px;align-items:center}
 .tab{padding:4px 8px;font-size:.74rem;border:1px solid var(--border);border-radius:8px;background:#171d2b;color:#cfead1;cursor:pointer}
 .tab.active{background:#1f2739;border-color:#334}
@@ -90,6 +90,18 @@ input[disabled]{opacity:.5;filter:grayscale(0.3)}
 .modal-content { background:#12141b; color:#fff; margin:10% auto; padding:20px; border-radius:12px; width:90%; max-width:700px; border:1px solid #2a3044; line-height:1.6; white-space:pre-wrap; }
 .close { float:right; cursor:pointer; font-size:1.5rem; }
 .modal h2{margin-top:0}
+
+/* Radial Visualizer (Library 전용) */
+#radialVizWrap{
+  display:none;justify-content:center;align-items:center;
+  padding:12px 0; background:#0b0f17;
+  border-top:1px solid #20263a; border-bottom:1px solid #20263a;
+}
+#radialViz{
+  width:min(640px,92vw);
+  height:240px;
+  display:block;
+}
 </style>
 </head>
 <body>
@@ -98,9 +110,7 @@ input[disabled]{opacity:.5;filter:grayscale(0.3)}
 <div class="menu-container">
   <div id="menuButton" class="menu-button">☰</div>
   <nav id="dropdownMenu" class="dropdown-menu">
-    <!-- Shop: 새 탭 -->
     <a href="https://5dshop.co.kr" target="_blank" rel="noopener" class="menu-item">Shop</a>
-    <!-- 텍스트는 모달 로딩 -->
     <a href="texts/faq.txt" class="menu-item">FAQ</a>
     <a href="texts/manual.txt" class="menu-item">Manual</a>
     <a href="texts/contact.txt" class="menu-item">Contact</a>
@@ -135,6 +145,9 @@ input[disabled]{opacity:.5;filter:grayscale(0.3)}
   </div>
 
   <div id="library"></div>
+
+  <!-- Radial Visualizer: 라이브러리 플레이어 전용 -->
+  <div id="radialVizWrap"><canvas id="radialViz"></canvas></div>
 
   <div class="controls">
     <div class="statusRow">
@@ -207,7 +220,7 @@ input[disabled]{opacity:.5;filter:grayscale(0.3)}
         <input id="genDuty" type="range" min="0.05" max="0.95" step="0.01" value="0.50" disabled>
       </div>
 
-      <!-- 4줄: 스윕 컨트롤(전체폭) -->
+      <!-- 4줄: 스윕 -->
       <div class="field full">
         <div class="gen-actions">
           <input id="sweepStart" type="number" value="100"  aria-label="Sweep Start (Hz)" style="width:90px">
@@ -217,7 +230,7 @@ input[disabled]{opacity:.5;filter:grayscale(0.3)}
         </div>
       </div>
 
-      <!-- 5줄: 재생 컨트롤(전체폭) -->
+      <!-- 5줄: 재생 컨트롤 -->
       <div class="field full">
         <div class="gen-actions">
           <button id="genStart" class="pill primary" title="Play">▶️</button>
@@ -252,7 +265,6 @@ window.addEventListener('click',e=>{ if(e.target===modal) modal.style.display="n
 function openModalWithText(text){
   modalBody.textContent = text;
   modal.style.display = "block";
-  // 메뉴 닫기
   menu.style.display="none"; backdrop.style.display="none";
 }
 
@@ -289,7 +301,7 @@ const PUBLIC_BASE = SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/object/public
 const enc = s => s.split("/").filter(Boolean).map(encodeURIComponent).join("/");
 const abs = p => PUBLIC_BASE + enc(p);
 
-/* ========== Audio pipeline ========== */
+/* ========== Audio pipeline (Generator 전용 WebAudio) ========== */
 const audioCtx = window.audioCtx || new (window.AudioContext||window.webkitAudioContext)();
 window.audioCtx = audioCtx;
 
@@ -380,8 +392,10 @@ async function load(path=""){
         resumeAC();
         player.pause(); player.currentTime=0;
         player.src = abs(full);
-        setStatus(abs(thumb));
-        // 자동재생 시도(사용자 제스처면 허용)
+        const art = abs(thumb);
+        setStatus(art);
+        // Media Session 메타데이터
+        setNowPlaying({ title: name.replace(/\.[^.]+$/,''), artist: '5DIO', art });
         setTimeout(()=>{ player.play().catch(()=>{}); }, 60);
       };
       card.append(img); lib.append(card);
@@ -444,7 +458,7 @@ btnLoadList.onclick = ()=>{
     const img=document.createElement("img"); img.loading="lazy";
     const t=abs(thumb);
     img.src=t; img.onerror=()=>img.src="https://placehold.co/300x300/222/888?text=Audio";
-    c.onclick=()=>{ resumeAC(); player.pause(); player.currentTime=0; player.src=abs(path); setStatus(t); setTimeout(()=>player.play().catch(()=>{}),60); };
+    c.onclick=()=>{ resumeAC(); player.pause(); player.currentTime=0; player.src=abs(path); setStatus(t); setNowPlaying({title:path.split('/').pop().replace(/\.[^.]+$/,''),artist:'5DIO',art:t}); setTimeout(()=>player.play().catch(()=>{}),60); };
     c.append(img); lib.append(c);
   });
 };
@@ -645,7 +659,7 @@ function applyLang(){
 langBtn.onclick=()=>{ isKo=!isKo; langBtn.textContent=isKo?"KO":"EN"; applyLang(); };
 applyLang();
 
-/* ===== 최종 출력 보장 & 진단 ===== */
+/* ===== Library: 사운드 출력 진단 로그 ===== */
 player.addEventListener('play', ()=>{ if(audioCtx.state!=='running') audioCtx.resume().catch(()=>{}); });
 ['play','pause','volumechange','canplay','stalled','error'].forEach(ev=>{
   player.addEventListener(ev, ()=>{
@@ -656,6 +670,173 @@ player.addEventListener('play', ()=>{ if(audioCtx.state!=='running') audioCtx.re
     });
   });
 });
+</script>
+
+<!-- ===== Background Playback (Media Session) + Radial Visualizer (5DO tuned) ===== -->
+<script>
+/* Media Session: 백그라운드/락스크린 컨트롤 */
+(function(){
+  const audio = document.getElementById('player');
+  if(!audio) return;
+
+  audio.playsInline = true;
+  audio.muted = false;
+
+  if ('mediaSession' in navigator) {
+    function updateMeta() {
+      const title  = (window._5doNow && window._5doNow.title)  || '5DO Pro';
+      const artist = (window._5doNow && window._5doNow.artist) || '5DIO';
+      const art    = (window._5doNow && window._5doNow.art)    || '';
+      try {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title, artist, album: '5DO',
+          artwork: art ? [{ src: art, sizes: '512x512', type: 'image/png' }] : []
+        });
+      } catch(_) {}
+    }
+    navigator.mediaSession.setActionHandler('play', async () => {
+      try { await audio.play(); } catch {}
+      navigator.mediaSession.playbackState = 'playing';
+    });
+    navigator.mediaSession.setActionHandler('pause', () => {
+      audio.pause(); navigator.mediaSession.playbackState = 'paused';
+    });
+    navigator.mediaSession.setActionHandler('stop', () => {
+      audio.pause(); audio.currentTime = 0; navigator.mediaSession.playbackState = 'none';
+    });
+    const STEP = 10;
+    navigator.mediaSession.setActionHandler('seekbackward', (d) => { audio.currentTime = Math.max(0, audio.currentTime - (d.seekOffset || STEP)); });
+    navigator.mediaSession.setActionHandler('seekforward',  (d) => { audio.currentTime = Math.min(audio.duration||1e9, audio.currentTime + (d.seekOffset || STEP)); });
+    navigator.mediaSession.setActionHandler('seekto', (d) => { if (typeof d.seekTime === 'number') audio.currentTime = d.seekTime; });
+    ['loadedmetadata','play','pause'].forEach(ev=> audio.addEventListener(ev, ()=>{
+      navigator.mediaSession.playbackState = audio.paused ? 'paused' : 'playing'; updateMeta();
+    }));
+    window.setNowPlaying = function({title, artist, art}){ window._5doNow = {title,artist,art}; updateMeta(); };
+  }
+
+  const AC = window.audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+  window.audioCtx = AC;
+  function resumeAC(){ if(AC.state!=='running'){ AC.resume().catch(()=>{}); } }
+  ['pointerdown','touchstart','keydown','click'].forEach(ev=>{
+    document.addEventListener(ev, resumeAC, { once:true, passive:true });
+  });
+  const playerEl = document.getElementById('player');
+  playerEl.addEventListener('play', resumeAC);
+})();
+
+/* Radial Spectrum (5DO 색감 튜닝) — Library Player 전용 */
+(function(){
+  const player = document.getElementById('player');
+  if(!player) return;
+
+  const wrap = document.getElementById('radialVizWrap');
+  const canvas = document.getElementById('radialViz');
+  const ctx = canvas.getContext('2d');
+
+  const AC = window.audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+  const analyser = AC.createAnalyser();
+  analyser.fftSize = 1024;
+  analyser.smoothingTimeConstant = 0.88;
+  const data = new Uint8Array(analyser.frequencyBinCount);
+
+  let srcNode = null;
+  function connectAnalyser(){
+    try{ srcNode && srcNode.disconnect(); }catch{}
+    srcNode = null;
+    const stream = player.captureStream ? player.captureStream() :
+                   (player.mozCaptureStream ? player.mozCaptureStream() : null);
+    if(stream){
+      try{
+        srcNode = AC.createMediaStreamSource(stream);
+        srcNode.connect(analyser);
+        return true;
+      }catch(e){ console.warn('[RadialViz] connect failed', e); }
+    }
+    return false;
+  }
+
+  function resize(){
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    const rect = canvas.getBoundingClientRect();
+    canvas.width  = Math.floor(rect.width  * dpr);
+    canvas.height = Math.floor(rect.height * dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  new ResizeObserver(resize).observe(canvas); resize();
+
+  let rafId = 0, running=false;
+  function draw(){
+    rafId = requestAnimationFrame(draw);
+    analyser.getByteFrequencyData(data);
+    const cw = canvas.clientWidth, ch = canvas.clientHeight;
+    ctx.clearRect(0,0,cw,ch);
+
+    const cx = cw/2, cy = ch/2;
+    const innerR = 48;
+    const outerR = Math.min(cw,ch)/2 - 10;
+    const maxBar = outerR - innerR;
+
+    // 배경
+    ctx.fillStyle='#0b0f17';
+    ctx.fillRect(0,0,cw,ch);
+
+    // 중앙 원
+    ctx.beginPath(); ctx.arc(cx, cy, innerR, 0, Math.PI*2);
+    ctx.fillStyle='#0e1422'; ctx.fill();
+
+    // 5DO 네온 그라데이션
+    const grad = ctx.createRadialGradient(cx,cy,innerR,cx,cy,outerR);
+    grad.addColorStop(0.0,'#7ef1c0');  
+    grad.addColorStop(0.5,'#55d0ff');  
+    grad.addColorStop(1.0,'#a38cff');  
+
+    for(let i=0;i<data.length;i++){
+      const t = i/data.length;
+      const ang = t*Math.PI*2;
+      const v = data[i]/255;
+      const eased = Math.pow(v,0.8);
+      const len = innerR + eased * maxBar * 1.25;
+
+      const x1 = cx + innerR*Math.cos(ang);
+      const y1 = cy + innerR*Math.sin(ang);
+      const x2 = cx + len*Math.cos(ang);
+      const y2 = cy + len*Math.sin(ang);
+
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 1.5 + (1.5*(1-t)); // 저역 굵게, 고역 얇게
+      ctx.beginPath();
+      ctx.moveTo(x1,y1);
+      ctx.lineTo(x2,y2);
+      ctx.stroke();
+    }
+
+    // 외곽 링
+    ctx.beginPath();
+    ctx.arc(cx, cy, outerR, 0, Math.PI*2);
+    ctx.strokeStyle = 'rgba(126,241,192,0.4)';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+  }
+
+  function start(){ if(running) return; if(!connectAnalyser()) return; running=true; wrap.style.display="flex"; draw(); }
+  function stop(){ running=false; cancelAnimationFrame(rafId); try{ srcNode && srcNode.disconnect(); }catch{} ctx.clearRect(0,0,canvas.width,canvas.height); wrap.style.display="none"; }
+
+  player.addEventListener('play', ()=>{ if(AC.state!=='running'){ AC.resume(); } start(); });
+  player.addEventListener('pause', stop);
+  player.addEventListener('emptied', stop);
+
+  // 탭 전환 시 자동 정지/재시작
+  const libTabBtn = document.querySelector('.tab[data-tab="lib"]');
+  const genTabBtn = document.querySelector('.tab[data-tab="gen"]');
+  function onTabChange(){
+    const libActive = document.getElementById('section-lib')?.classList.contains('active');
+    if(libActive && !player.paused) start(); else stop();
+  }
+  libTabBtn && libTabBtn.addEventListener('click', onTabChange);
+  genTabBtn && genTabBtn.addEventListener('click', onTabChange);
+
+  if(!player.paused && player.currentSrc) start();
+})();
 </script>
 </body>
 </html>
