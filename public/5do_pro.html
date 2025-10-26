@@ -15,23 +15,30 @@
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',Roboto,Arial}
 
 /* Header / Tabs / Lang / Hamburger */
-header{display:flex;align-items:center;justify-content:space-between;gap:10px;
-  padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--border);position:relative}
-.logo{font-weight:700;color:var(--accent);font-size:1.2rem;margin-left:40px}
-.tabs{display:flex;gap:6px}
+header{
+  position:relative;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--border)
+}
+.menu-container{
+  position:absolute;top:8px;left:10px;  /* 아이콘 살짝 위로 */
+  display:flex;align-items:center;z-index:1000
+}
+.menu-button{font-size:24px;color:#fff;cursor:pointer;line-height:1}
+.dropdown-menu{
+  display:none;flex-direction:column;position:absolute;background:rgba(0,0,0,0.9);
+  padding:8px 10px;border-radius:10px;width:160px;top:28px;left:0
+}
+.dropdown-menu a{color:#fff;padding:6px 10px;text-decoration:none;border-radius:6px}
+.dropdown-menu a:hover{background:rgba(255,255,255,0.1)}
+.menu-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:900}
+
+.logo{font-weight:700;color:var(--accent);font-size:1.2rem;margin-left:50px} /* 햄버거와 간격 확보 */
+.tabs{display:flex;gap:6px;align-items:center}
 .tab{padding:4px 8px;font-size:.74rem;border:1px solid var(--border);border-radius:8px;background:#171d2b;color:#cfead1;cursor:pointer}
 .tab.active{background:#1f2739;border-color:#334}
 .section{display:none}.section.active{display:block}
 .lang-toggle{color:#fff;border:1px solid #444;padding:4px 8px;border-radius:6px;cursor:pointer;background:#171d2b}
-
-/* Hamburger */
-.menu-container{position:absolute;top:12px;left:10px;z-index:1000}
-.menu-button{font-size:24px;color:#fff;cursor:pointer}
-.dropdown-menu{display:none;flex-direction:column;position:absolute;background:rgba(0,0,0,0.9);
-  padding:8px 10px;border-radius:10px;width:160px}
-.dropdown-menu a{color:#fff;padding:6px 10px;text-decoration:none;border-radius:6px}
-.dropdown-menu a:hover{background:rgba(255,255,255,0.1)}
-.menu-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:900}
 
 /* Library */
 #oscLib{width:100%;height:120px;background:#090b11;border-bottom:1px solid var(--border);display:block}
@@ -47,31 +54,20 @@ header{display:flex;align-items:center;justify-content:space-between;gap:10px;
 .statusRow{display:flex;align-items:center;gap:18px}
 #statusThumb{
   width:124px;height:124px;border-radius:16px;
-  background:#0d0f18;
-  border:1px solid #2d334a;
-  position:relative;overflow:hidden;
-  background-size:cover;background-position:center;
+  background:#0d0f18;border:1px solid #2d334a;
+  position:relative;overflow:hidden;background-size:cover;background-position:center;
 }
-/* 로딩 상태: 오로라 애니메이션 */
 #statusThumb.loading::before{
-  content:"";
-  position:absolute;inset:-30%;
-  background: conic-gradient(
-    from 0deg at 50% 50%,
-    #10283e, #1b3a5b, #234a72, #1b3a5b, #10283e
-  );
-  filter: blur(28px);
-  opacity:0.9;
-  animation: aurora 6.5s linear infinite;
+  content:"";position:absolute;inset:-30%;
+  background:conic-gradient(from 0deg at 50% 50%,#10283e,#1b3a5b,#234a72,#1b3a5b,#10283e);
+  filter:blur(28px);opacity:.9;animation:aurora 6.5s linear infinite;
 }
-/* 썸네일 로드 완료 시 애니메이션 제거 */
-#statusThumb.loaded::before{ content:none; }
+#statusThumb.loaded::before{content:none}
 @keyframes aurora{
-  0%   { transform:rotate(0deg)   scale(1.05); }
-  50%  { transform:rotate(180deg) scale(1.10); }
-  100% { transform:rotate(360deg) scale(1.05); }
+  0%{transform:rotate(0) scale(1.05)}
+  50%{transform:rotate(180deg) scale(1.10)}
+  100%{transform:rotate(360deg) scale(1.05)}
 }
-
 .ctrlStack{display:flex;flex-direction:column;gap:10px}
 .ctrlLine{display:flex;align-items:center;gap:8px}
 audio{width:92%;display:block;margin:8px auto}
@@ -88,9 +84,7 @@ audio{width:92%;display:block;margin:8px auto}
 .gen-actions{display:flex;gap:10px;align-items:center}
 .pill{padding:8px 12px;border-radius:999px;border:1px solid #2c3147;background:#1b2333;color:#e9eefc;cursor:pointer}
 .pill.primary{background:#21324e;border-color:#355;color:#cfead1}
-
-/* (Generator 하단 오실로스코프는 제거됨) */
-
+input[disabled]{opacity:.5;filter:grayscale(0.3)}
 @media (max-width:640px){ .grid{grid-template-columns:1fr} }
 </style>
 </head>
@@ -157,6 +151,11 @@ audio{width:92%;display:block;margin:8px auto}
 <section id="section-gen" class="section" aria-label="Generator">
   <div class="gen-wrap">
     <div class="grid">
+      <!-- 1) 주파수 & 파형 -->
+      <div class="field">
+        <h4 id="lblFreq">Frequency (Hz)</h4>
+        <input id="genFreq" type="number" min="1" max="24000" step="0.1" value="440">
+      </div>
       <div class="field">
         <h4 id="lblWave">Waveform</h4>
         <select id="genWave">
@@ -166,29 +165,38 @@ audio{width:92%;display:block;margin:8px auto}
           <option value="triangle">Triangle</option>
         </select>
       </div>
+
+      <!-- 2) 바이노럴 & 하모닉스 -->
+      <div class="field">
+        <h4 id="lblBB">Binaural</h4>
+        <label><input id="genBinaural" type="checkbox"> <span id="lblBBEnable">Enable</span></label>
+        <label for="genBeat" id="lblBBdiff">Difference (Hz)</label>
+        <input id="genBeat" type="number" min="0" max="1000" step="0.1" value="7">
+      </div>
+      <div class="field">
+        <h4 id="lblHarmonics">Harmonics</h4>
+        <label for="genHarmonics" id="lblHarmHelp">Multiplier</label>
+        <input id="genHarmonics" type="number" min="1" max="8" step="1" value="1">
+      </div>
+
+      <!-- 3) 레벨 & 듀티사이클 -->
       <div class="field">
         <h4 id="lblLevel">Level</h4>
         <input id="genLevel" type="range" min="0" max="1" step="0.01" value="0.5">
       </div>
       <div class="field">
-        <h4 id="lblFreq">Frequency (Hz)</h4>
-        <input id="genFreq" type="number" min="1" max="24000" step="0.1" value="440">
-      </div>
-      <div class="field">
-        <h4 id="lblBB">Binaural Beat</h4>
-        <label><input id="genBinaural" type="checkbox"> <span id="lblBBEnable">Enable</span></label>
-        <label for="genBeat" id="lblBBdiff">Difference (Hz)</label>
-        <input id="genBeat" type="number" min="0" max="1000" step="0.1" value="7">
+        <h4 id="lblDuty">Duty Cycle</h4>
+        <input id="genDuty" type="range" min="0.05" max="0.95" step="0.01" value="0.50" disabled>
       </div>
 
+      <!-- 4) 재생 컨트롤 -->
       <div class="field full">
         <div class="gen-actions">
           <button id="genStart" class="pill primary" title="Play">▶️</button>
           <button id="genStop"  class="pill"          title="Stop">⏹️</button>
-          <button id="btnSavePreset" class="pill" title="Save Preset">💾 Save</button>
-          <button id="btnLoadPreset" class="pill" title="Load Preset">🔁 Load</button>
+          <button id="btnSavePreset" class="pill" title="Save Preset">💾</button>
+          <button id="btnLoadPreset" class="pill" title="Load Preset">📜</button>
         </div>
-        <!-- (Generator 하단 오실로스코프는 제거됨) -->
       </div>
     </div>
   </div>
@@ -217,8 +225,6 @@ const SUPABASE_URL="https://xdjgumqdwedgzwqturcx.supabase.co";
 const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
 const BUCKET="media";
 const sb = supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-
-// Lite 방식: 원본 객체 URL만 사용
 const PUBLIC_BASE = SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/object/public/" + BUCKET + "/";
 const enc = s => s.split("/").filter(Boolean).map(encodeURIComponent).join("/");
 const abs = p => PUBLIC_BASE + enc(p);
@@ -261,7 +267,7 @@ player.addEventListener("play", unlockAudio);
   })();
 })();
 
-/* ========== Library Browser (Lite 로직 이식) ========== */
+/* ========== Library (Lite 로직) ========== */
 const lib = document.getElementById("library");
 const btnBack = document.getElementById("btnBack");
 const btnRefresh = document.getElementById("btnRefresh");
@@ -270,7 +276,6 @@ const btnLoadList = document.getElementById("btnLoadList");
 const statusThumb = document.getElementById("statusThumb");
 let cwd = "";
 
-/* 상태 썸네일: Lite 방식(단순/빠름) */
 function setStatus(img){
   if(!img){
     statusThumb.classList.remove('loaded');
@@ -306,34 +311,30 @@ async function load(path=""){
     // 폴더
     if(!name.includes(".")){
       const card = document.createElement("div");
-      card.className = "card";
-      const img = document.createElement("img");
-      img.loading="lazy";
+      card.className = "card"; card.dataset.kind="folder"; card.dataset.path=full;
+      const img = document.createElement("img"); img.loading="lazy";
       img.src = abs(full + "/folder.png");
       img.onerror = () => img.src = "https://placehold.co/300x300/111/aaa?text=Folder";
       card.onclick = () => { unlockAudio(); load(full); };
-      card.append(img);
-      lib.append(card);
+      card.append(img); lib.append(card);
       continue;
     }
 
     // 오디오
     if(/\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(name)){
       const card = document.createElement("div");
-      card.className = "card";
-      const img = document.createElement("img");
-      img.loading="lazy";
+      card.className = "card"; card.dataset.kind="audio"; card.dataset.path=full;
+      const img = document.createElement("img"); img.loading="lazy";
       const thumb = full.replace(/\.[^.]+$/, ".png");
       img.src = abs(thumb);
       img.onerror = () => img.src = "https://placehold.co/300x300/222/888?text=Audio";
       card.onclick = () => {
         unlockAudio();
         player.pause(); player.currentTime = 0;
-        player.src = abs(full);           // 오디오는 캐시 그대로 사용
-        setStatus(abs(thumb));            // 상태 썸네일 즉시 갱신 (Lite와 동일)
+        player.src = abs(full);
+        setStatus(abs(thumb));
       };
-      card.append(img);
-      lib.append(card);
+      card.append(img); lib.append(card);
     }
   }
 }
@@ -358,11 +359,8 @@ load("");
 /* ========== Playlist (localStorage) ========== */
 btnSaveList.onclick = ()=>{
   const name = prompt(isKo?"플레이리스트 이름?":"Playlist name?"); if(!name) return;
-  const items = [...lib.querySelectorAll(".card")].filter(c=>c.firstChild && c.dataset?.kind!=="folder")
-    .map(c=>{
-      const path = c.dataset?.path || "";
-      return { path, thumb: path.replace(/\.[^.]+$/,'.png') };
-    });
+  const items = [...lib.querySelectorAll(".card")].filter(c=>c.dataset.kind==="audio")
+    .map(c=>({path:c.dataset.path, thumb:c.dataset.path.replace(/\.[^.]+$/,'.png')}));
   const all = JSON.parse(localStorage.getItem("playlists")||"{}"); all[name]=items;
   localStorage.setItem("playlists", JSON.stringify(all));
   alert((isKo?"저장됨: ":"Saved: ")+name);
@@ -382,19 +380,7 @@ btnLoadList.onclick = ()=>{
   });
 };
 
-/* ========== Volume / Loop / Timer ========== */
-const vol = document.getElementById("vol");
-const loopChk = document.getElementById("loop");
-const timerSel = document.getElementById("timer");
-let desiredGain = parseFloat(vol.value||"1");
-window._audio.masterGain.gain.value = desiredGain;
-vol.addEventListener("input",()=>{ desiredGain = +vol.value; if(!player.muted) window._audio.masterGain.gain.value = desiredGain; });
-player.addEventListener("volumechange",()=>{ window._audio.masterGain.gain.value = player.muted ? 0 : desiredGain; });
-player.loop = loopChk.checked; loopChk.onchange = ()=> player.loop = loopChk.checked;
-let timerId=null; timerSel.onchange=()=>{ if(timerId) clearTimeout(timerId); const m=+timerSel.value;
-  if(m>0) timerId=setTimeout(()=>{ player.pause(); player.currentTime=0; alert(isKo?`${m}분 후 정지되었습니다.`:`Playback stopped after ${m} minutes.`); }, m*60000); };
-
-/* ========== Generator (play/stop, presets) ========== */
+/* ========== Generator (harmonics + reordered UI) ========== */
 const genStart = document.getElementById("genStart");
 const genStop  = document.getElementById("genStop");
 const waveSel  = document.getElementById("genWave");
@@ -402,6 +388,8 @@ const freqInp  = document.getElementById("genFreq");
 const lvlInp   = document.getElementById("genLevel");
 const bbChk    = document.getElementById("genBinaural");
 const beatInp  = document.getElementById("genBeat");
+const harmInp  = document.getElementById("genHarmonics");
+const dutyInp  = document.getElementById("genDuty");
 
 const genGain = (function(){ const g = audioCtx.createGain(); g.connect(window._audio.masterGain); return g; })();
 let genNodes = [], genRunning=false;
@@ -414,35 +402,57 @@ function startGenerator(){
   unlockAudio();
   if(!player.paused) player.pause();
   if(genRunning) stopGenerator();
-  const wave=waveSel.value, freq=parseFloat(freqInp.value||"440"), lvl=parseFloat(lvlInp.value||"0.5");
-  const useBB=!!bbChk.checked, beat=parseFloat(beatInp.value||"7");
+
+  const wave=waveSel.value;
+  const freq=parseFloat(freqInp.value||"440");
+  const lvl=parseFloat(lvlInp.value||"0.5");
+  const useBB=!!bbChk.checked;
+  const beat=parseFloat(beatInp.value||"7");
+  const harm=Math.max(1, Math.min(8, parseInt(harmInp.value)||1));
+  const duty=parseFloat(dutyInp.value||"0.5");
+
   genGain.gain.value=lvl;
-  if(useBB){
-    const l=audioCtx.createOscillator(), r=audioCtx.createOscillator();
-    l.type=wave; r.type=wave; l.frequency.value=freq; r.frequency.value=freq+beat;
-    try{
-      const pl=audioCtx.createStereoPanner(), pr=audioCtx.createStereoPanner();
-      pl.pan.value=-1; pr.pan.value=+1; l.connect(pl).connect(genGain); r.connect(pr).connect(genGain);
-      genNodes=[l,r,pl,pr];
-    }catch{ l.connect(genGain); r.connect(genGain); genNodes=[l,r]; }
-    l.start(); r.start();
-  }else{
-    const o=audioCtx.createOscillator(); o.type=wave; o.frequency.value=freq; o.connect(genGain); o.start(); genNodes=[o];
+
+  // 기본(좌/우 동일) 또는 바이노럴(좌: f, 우: f+beat)
+  function makeVoice(f){
+    const o=audioCtx.createOscillator();
+    o.type=wave;
+    o.frequency.value=f;
+    o.connect(genGain);
+    o.start();
+    genNodes.push(o);
   }
+
+  if(useBB){
+    // 좌
+    makeVoice(freq);
+    // 우 (간단: 동일 출력; 고급 스테레오패닝은 스테레오패너 지원 브라우저에서 추가 가능)
+    makeVoice(freq+beat);
+  }else{
+    makeVoice(freq);
+  }
+
+  // 하모닉스 (배수)
+  for(let i=2;i<=harm;i++){
+    makeVoice(freq*i);
+    if(useBB) makeVoice((freq+beat)*i);
+  }
+
+  // Duty Cycle: UI만 제공(안전). square에서만 활성화
+  dutyInp.disabled = (wave!=="square"); // 다음 단계에서 PWM/PeriodicWave로 구현 예정
+
   genRunning=true;
 }
 genStart.addEventListener("click", startGenerator);
 genStop .addEventListener("click",  stopGenerator);
 
-/* (옵션) Preset 저장/로드 */
+/* Presets */
 document.getElementById("btnSavePreset").onclick = ()=>{
   const name = prompt(isKo?"프리셋 이름?":"Preset name?"); if(!name) return;
   const p = {
-    wave: waveSel.value,
-    freq: +freqInp.value || 440,
-    level: +lvlInp.value || 0.5,
-    binaural: !!bbChk.checked,
-    beat: +beatInp.value || 7
+    wave: waveSel.value, freq: +freqInp.value || 440, level: +lvlInp.value || 0.5,
+    binaural: !!bbChk.checked, beat: +beatInp.value || 7,
+    harmonics: +harmInp.value || 1, duty: +dutyInp.value || 0.5
   };
   const all = JSON.parse(localStorage.getItem("gen_presets")||"{}"); all[name]=p;
   localStorage.setItem("gen_presets", JSON.stringify(all));
@@ -458,10 +468,13 @@ document.getElementById("btnLoadPreset").onclick = ()=>{
   lvlInp.value  = p.level||0.5;
   bbChk.checked = !!p.binaural;
   beatInp.value = p.beat||7;
+  harmInp.value = p.harmonics||1;
+  dutyInp.value = p.duty||0.5;
+  dutyInp.disabled = (waveSel.value!=="square");
   alert((isKo?"불러옴: ":"Loaded: ")+sel);
 };
 
-/* ========== EN/KO Toggle (Generator 라벨 포함) ========== */
+/* ========== EN/KO Toggle (새 라벨 포함) ========== */
 const langBtn = document.getElementById("langToggle"); let isKo=false;
 function applyLang(){
   // Library labels
@@ -470,17 +483,17 @@ function applyLang(){
   document.getElementById("lblTimer").textContent = isKo ? "타이머" : "Timer";
   document.querySelector('.tab[data-tab="lib"]').textContent = "5DO";
   document.querySelector('.tab[data-tab="gen"]').textContent = isKo ? "주파수 생성기" : "Freq. Gen.";
+
   // Generator labels
-  document.getElementById("lblWave").textContent  = isKo ? "파형" : "Waveform";
-  document.getElementById("lblLevel").textContent = isKo ? "레벨" : "Level";
-  document.getElementById("lblFreq").textContent  = isKo ? "주파수 (Hz)" : "Frequency (Hz)";
-  document.getElementById("lblBB").textContent    = isKo ? "바이노럴 비트" : "Binaural Beat";
-  document.getElementById("lblBBEnable").textContent = isKo ? "활성화" : "Enable";
-  document.getElementById("lblBBdiff").textContent   = isKo ? "차이 (Hz)" : "Difference (Hz)";
-  const sel = document.getElementById("timer");
-  const en = ["Off","5 min","10 min","15 min","20 min","30 min","45 min","60 min"];
-  const ko = ["끔","5분","10분","15분","20분","30분","45분","60분"];
-  sel.querySelectorAll("option").forEach((o,i)=>o.textContent=isKo?ko[i]:en[i]);
+  document.getElementById("lblFreq").textContent   = isKo ? "주파수 (Hz)" : "Frequency (Hz)";
+  document.getElementById("lblWave").textContent   = isKo ? "파형" : "Waveform";
+  document.getElementById("lblBB").textContent     = isKo ? "바이노럴" : "Binaural";
+  document.getElementById("lblBBEnable").textContent= isKo ? "활성화" : "Enable";
+  document.getElementById("lblBBdiff").textContent  = isKo ? "차이 (Hz)" : "Difference (Hz)";
+  document.getElementById("lblHarmonics").textContent = isKo ? "하모닉스" : "Harmonics";
+  document.getElementById("lblHarmHelp").textContent  = isKo ? "배수" : "Multiplier";
+  document.getElementById("lblLevel").textContent   = isKo ? "레벨" : "Level";
+  document.getElementById("lblDuty").textContent    = isKo ? "듀티 사이클" : "Duty Cycle";
 }
 langBtn.onclick=()=>{ isKo=!isKo; langBtn.textContent=isKo?"KO":"EN"; applyLang(); };
 applyLang();
