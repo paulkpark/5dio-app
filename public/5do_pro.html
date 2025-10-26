@@ -24,6 +24,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:10px;
 .section{display:none}.section.active{display:block}
 .lang-toggle{color:#fff;border:1px solid #444;padding:4px 8px;border-radius:6px;cursor:pointer;background:#171d2b}
 
+/* Hamburger */
 .menu-container{position:absolute;top:12px;left:10px;z-index:1000}
 .menu-button{font-size:24px;color:#fff;cursor:pointer}
 .dropdown-menu{display:none;flex-direction:column;position:absolute;background:rgba(0,0,0,0.9);
@@ -88,7 +89,7 @@ audio{width:92%;display:block;margin:8px auto}
 .pill{padding:8px 12px;border-radius:999px;border:1px solid #2c3147;background:#1b2333;color:#e9eefc;cursor:pointer}
 .pill.primary{background:#21324e;border-color:#355;color:#cfead1}
 
-/* (oscGen 제거로 관련 스타일 없음) */
+/* (Generator 하단 오실로스코프는 제거됨) */
 
 @media (max-width:640px){ .grid{grid-template-columns:1fr} }
 </style>
@@ -157,7 +158,7 @@ audio{width:92%;display:block;margin:8px auto}
   <div class="gen-wrap">
     <div class="grid">
       <div class="field">
-        <h4>Waveform</h4>
+        <h4 id="lblWave">Waveform</h4>
         <select id="genWave">
           <option value="sine">Sine</option>
           <option value="square">Square</option>
@@ -166,17 +167,17 @@ audio{width:92%;display:block;margin:8px auto}
         </select>
       </div>
       <div class="field">
-        <h4>Level</h4>
+        <h4 id="lblLevel">Level</h4>
         <input id="genLevel" type="range" min="0" max="1" step="0.01" value="0.5">
       </div>
       <div class="field">
-        <h4>Frequency (Hz)</h4>
+        <h4 id="lblFreq">Frequency (Hz)</h4>
         <input id="genFreq" type="number" min="1" max="24000" step="0.1" value="440">
       </div>
       <div class="field">
-        <h4>Binaural Beat</h4>
-        <label><input id="genBinaural" type="checkbox"> Enable</label>
-        <label for="genBeat">Difference (Hz)</label>
+        <h4 id="lblBB">Binaural Beat</h4>
+        <label><input id="genBinaural" type="checkbox"> <span id="lblBBEnable">Enable</span></label>
+        <label for="genBeat" id="lblBBdiff">Difference (Hz)</label>
         <input id="genBeat" type="number" min="0" max="1000" step="0.1" value="7">
       </div>
 
@@ -187,7 +188,7 @@ audio{width:92%;display:block;margin:8px auto}
           <button id="btnSavePreset" class="pill" title="Save Preset">💾 Save</button>
           <button id="btnLoadPreset" class="pill" title="Load Preset">🔁 Load</button>
         </div>
-        <!-- (요청대로: Generator 하단 오실로스코프 완전히 제거) -->
+        <!-- (Generator 하단 오실로스코프는 제거됨) -->
       </div>
     </div>
   </div>
@@ -211,16 +212,16 @@ tabs.forEach(t=>t.onclick=()=>{
   if (t.dataset.tab==="gen") player.pause(); // 제너레이터 탭으로 갈 때 라이브러리 재생 정지
 });
 
-/* ========== Supabase ========== */
+/* ========== Supabase (Lite와 동일한 단순 경로) ========== */
 const SUPABASE_URL="https://xdjgumqdwedgzwqturcx.supabase.co";
 const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
 const BUCKET="media";
 const sb = supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-const PUBLIC = SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/object/public/" + BUCKET + "/";
-const RENDER = SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/render/image/public/" + BUCKET + "/";
-const enc = p => p.split("/").filter(Boolean).map(encodeURIComponent).join("/");
-const abs = p => PUBLIC + enc(p);                         // 원본(객체) URL
-const imgx = (p, q='') => RENDER + enc(p) + (q?('?'+q):''); // imgproxy URL
+
+// Lite 방식: 원본 객체 URL만 사용
+const PUBLIC_BASE = SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/object/public/" + BUCKET + "/";
+const enc = s => s.split("/").filter(Boolean).map(encodeURIComponent).join("/");
+const abs = p => PUBLIC_BASE + enc(p);
 
 /* ========== Audio pipeline (singleton & resume) ========== */
 const audioCtx = window.audioCtx || new (window.AudioContext||window.webkitAudioContext)();
@@ -260,138 +261,96 @@ player.addEventListener("play", unlockAudio);
   })();
 })();
 
-/* ========== Library Browser ========== */
+/* ========== Library Browser (Lite 로직 이식) ========== */
 const lib = document.getElementById("library");
 const btnBack = document.getElementById("btnBack");
 const btnRefresh = document.getElementById("btnRefresh");
+const btnSaveList = document.getElementById("btnSaveList");
+const btnLoadList = document.getElementById("btnLoadList");
 const statusThumb = document.getElementById("statusThumb");
 let cwd = "";
 
-/* 상태 썸네일 (현재 트랙) - 로딩/완료 전환 */
-function setStatus(imgUrl){
-  if(!imgUrl){
+/* 상태 썸네일: Lite 방식(단순/빠름) */
+function setStatus(img){
+  if(!img){
     statusThumb.classList.remove('loaded');
     statusThumb.classList.add('loading');
+    statusThumb.style.background = "none";
     statusThumb.style.backgroundImage = "";
     return;
   }
   statusThumb.classList.add('loaded');
   statusThumb.classList.remove('loading');
-  statusThumb.style.backgroundImage = `url('${imgUrl}')`;
+  statusThumb.style.background = "none";
+  statusThumb.style.backgroundImage = `url('${img}')`;
   statusThumb.style.backgroundSize = "cover";
   statusThumb.style.backgroundPosition = "center";
 }
 
-/* 상태 썸네일 안전 폴백 체인 */
-function setStatusThumbSafe(trackPath) {
-  if (!trackPath) { setStatus(""); return; }
-  const base = trackPath.replace(/\.[^.]+$/, '');
-  const u1 = imgx(base + '.png', 'width=360&quality=70&format=webp'); // imgproxy
-  const u2 = abs(base + '.png');                                      // 원본
-  const u3 = imgx(base + '.PNG', 'width=360&quality=70&format=webp'); // 대문자
-  const u4 = 'https://placehold.co/300x300/222/888?text=Audio';       // placeholder
-
-  const t1 = new Image();
-  t1.onload  = () => setStatus(u1);
-  t1.onerror = () => {
-    const t2 = new Image();
-    t2.onload  = () => setStatus(u2);
-    t2.onerror = () => {
-      const t3 = new Image();
-      t3.onload  = () => setStatus(u3);
-      t3.onerror = () => setStatus(u4);
-      t3.src = u3;
-    };
-    t2.src = u2;
-  };
-  t1.src = u1;
-}
-
-/* 안전 폴더 썸네일: imgproxy → 원본 → 대소문자 변형 → placeholder */
-function setFolderThumb(img, fullPath){
-  const u1 = imgx(fullPath + '/folder.png', 'width=360&quality=70&format=webp');
-  const u2 = abs(fullPath + '/folder.png');
-  const u3 = imgx(fullPath + '/Folder.png', 'width=360&quality=70&format=webp');
-  const u4 = 'https://placehold.co/300x300/111/aaa?text=Folder';
-
-  img.onload = () => img.classList.add('loaded');
-  img.onerror = function(){
-    if (!this._step) { this._step = 1; this.src = u2; return; }
-    if (this._step === 1) { this._step = 2; this.src = u3; return; }
-    this.src = u4;
-  };
-  img.src = u1;
-}
-
-/* 안전 트랙 썸네일: imgproxy → 원본 → .PNG → placeholder */
-function setTrackThumb(img, fullPathWithExt){
-  const base = fullPathWithExt.replace(/\.[^.]+$/, '');
-  const u1 = imgx(base + '.png', 'width=360&quality=70&format=webp');
-  const u2 = abs(base + '.png');
-  const u3 = imgx(base + '.PNG', 'width=360&quality=70&format=webp');
-  const u4 = 'https://placehold.co/300x300/222/888?text=Audio';
-
-  img.onload = () => img.classList.add('loaded');
-  img.onerror = function(){
-    if (!this._step) { this._step = 1; this.src = u2; return; }
-    if (this._step === 1) { this._step = 2; this.src = u3; return; }
-    this.src = u4;
-  };
-  img.src = u1;
-}
-
-/* Supabase list */
-async function list(p=""){
-  const {data,error} = await sb.storage.from(BUCKET).list(p,{limit:1000,sortBy:{column:"name",order:"asc"}});
-  if(error){ console.warn("[list]",error); return []; }
+async function list(path=""){
+  const {data,error} = await sb.storage.from(BUCKET).list(path,{limit:1000,sortBy:{column:"name",order:"asc"}});
+  if(error){ console.warn(error); return []; }
   return data||[];
 }
 
-async function load(p=""){
-  cwd = p; lib.innerHTML = ""; setStatus(""); // 폴더 전환 시 로딩(오로라) 상태
-  const items = await list(p);
+async function load(path=""){
+  cwd = path;
+  lib.innerHTML = "";
+  setStatus(""); // 로딩 상태
 
-  for (const e of items){
-    const name = e.name; const full = (p?p+"/":"")+name;
+  const rows = await list(path);
+  for(const e of rows){
+    const name = e.name;
+    const full = (path? path + "/" : "") + name;
 
-    /* 폴더 카드 (확장자 없는 항목을 폴더로 취급) */
-    if (!name.includes(".")){
-      const card=document.createElement("div"); card.className="card"; card.dataset.kind="folder"; card.dataset.path=full;
-      const img=document.createElement("img"); img.loading="lazy";
-      setFolderThumb(img, full);
-      card.onclick=()=>{ unlockAudio(); load(full); };
-      card.append(img); lib.append(card);
+    // 폴더
+    if(!name.includes(".")){
+      const card = document.createElement("div");
+      card.className = "card";
+      const img = document.createElement("img");
+      img.loading="lazy";
+      img.src = abs(full + "/folder.png");
+      img.onerror = () => img.src = "https://placehold.co/300x300/111/aaa?text=Folder";
+      card.onclick = () => { unlockAudio(); load(full); };
+      card.append(img);
+      lib.append(card);
       continue;
     }
 
-    /* 음원 카드 */
-    if (/\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(name)){
-      const card=document.createElement("div"); card.className="card"; card.dataset.kind="audio"; card.dataset.path=full;
-      const img=document.createElement("img"); img.loading="lazy";
-      setTrackThumb(img, full);
-      card.onclick=()=>{
+    // 오디오
+    if(/\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(name)){
+      const card = document.createElement("div");
+      card.className = "card";
+      const img = document.createElement("img");
+      img.loading="lazy";
+      const thumb = full.replace(/\.[^.]+$/, ".png");
+      img.src = abs(thumb);
+      img.onerror = () => img.src = "https://placehold.co/300x300/222/888?text=Audio";
+      card.onclick = () => {
         unlockAudio();
-        player.pause(); player.currentTime=0;
-        player.src = abs(full);                 // 오디오: 캐시 유지
-        setStatusThumbSafe(full);               // 상태 썸네일: 안전 폴백
+        player.pause(); player.currentTime = 0;
+        player.src = abs(full);           // 오디오는 캐시 그대로 사용
+        setStatus(abs(thumb));            // 상태 썸네일 즉시 갱신 (Lite와 동일)
       };
-      card.append(img); lib.append(card);
+      card.append(img);
+      lib.append(card);
     }
   }
 }
 
 /* nav */
-const libEl = document.getElementById("library");
-const btnSaveList = document.getElementById("btnSaveList");
-const btnLoadList = document.getElementById("btnLoadList");
-btnBack.onclick = ()=>{ if(!cwd) return; const a=cwd.split('/'); a.pop(); load(a.join('/')); };
-btnRefresh.onclick = ()=> load(cwd);
+btnBack.onclick = () => {
+  if(!cwd) return;
+  const seg = cwd.split("/"); seg.pop();
+  load(seg.join("/"));
+};
+btnRefresh.onclick = () => load(cwd);
 
 /* drag-to-scroll */
 let isDown=false,sx=0,sl=0;
-libEl.addEventListener('mousedown',e=>{isDown=true;sx=e.pageX;sl=libEl.scrollLeft;});
-['mouseleave','mouseup'].forEach(ev=>libEl.addEventListener(ev,()=>{isDown=false;}));
-libEl.addEventListener('mousemove',e=>{if(!isDown) return; libEl.scrollLeft = sl - (e.pageX - sx)*1.5;});
+lib.addEventListener('mousedown',e=>{isDown=true;sx=e.pageX;sl=lib.scrollLeft;});
+['mouseleave','mouseup'].forEach(ev=>lib.addEventListener(ev,()=>{isDown=false;}));
+lib.addEventListener('mousemove',e=>{if(!isDown) return; lib.scrollLeft = sl - (e.pageX - sx)*1.5;});
 
 /* 초기 루트 로드 */
 load("");
@@ -399,8 +358,11 @@ load("");
 /* ========== Playlist (localStorage) ========== */
 btnSaveList.onclick = ()=>{
   const name = prompt(isKo?"플레이리스트 이름?":"Playlist name?"); if(!name) return;
-  const items = [...libEl.querySelectorAll(".card")].filter(c=>c.dataset.kind==="audio")
-    .map(c=>({path:c.dataset.path, thumb:c.dataset.path.replace(/\.[^.]+$/,'.png')}));
+  const items = [...lib.querySelectorAll(".card")].filter(c=>c.firstChild && c.dataset?.kind!=="folder")
+    .map(c=>{
+      const path = c.dataset?.path || "";
+      return { path, thumb: path.replace(/\.[^.]+$/,'.png') };
+    });
   const all = JSON.parse(localStorage.getItem("playlists")||"{}"); all[name]=items;
   localStorage.setItem("playlists", JSON.stringify(all));
   alert((isKo?"저장됨: ":"Saved: ")+name);
@@ -409,14 +371,14 @@ btnLoadList.onclick = ()=>{
   const all = JSON.parse(localStorage.getItem("playlists")||"{}");
   const names = Object.keys(all); if(!names.length){ alert(isKo?"플레이리스트가 없습니다.":"No playlists found."); return; }
   const sel = prompt((isKo?"선택: ":"Select: ")+"\n"+names.join("\n")); if(!sel||!all[sel]) return;
-  libEl.innerHTML=""; setStatus("");
+  lib.innerHTML=""; setStatus("");
   all[sel].forEach(({path,thumb})=>{
     const c=document.createElement("div"); c.className="card"; c.dataset.kind="audio"; c.dataset.path=path;
     const img=document.createElement("img"); img.loading="lazy";
-    const t=imgx(thumb,"width=360&quality=70&format=webp");
+    const t=abs(thumb);
     img.src=t; img.onerror=()=>img.src="https://placehold.co/300x300/222/888?text=Audio";
-    c.onclick=()=>{ unlockAudio(); player.pause(); player.currentTime=0; player.src=abs(path); setStatusThumbSafe(path); };
-    c.append(img); libEl.append(c);
+    c.onclick=()=>{ unlockAudio(); player.pause(); player.currentTime=0; player.src=abs(path); setStatus(t); };
+    c.append(img); lib.append(c);
   });
 };
 
@@ -432,7 +394,7 @@ player.loop = loopChk.checked; loopChk.onchange = ()=> player.loop = loopChk.che
 let timerId=null; timerSel.onchange=()=>{ if(timerId) clearTimeout(timerId); const m=+timerSel.value;
   if(m>0) timerId=setTimeout(()=>{ player.pause(); player.currentTime=0; alert(isKo?`${m}분 후 정지되었습니다.`:`Playback stopped after ${m} minutes.`); }, m*60000); };
 
-/* ========== Generator (oscilloscope 제거된 상태) ========== */
+/* ========== Generator (play/stop, presets) ========== */
 const genStart = document.getElementById("genStart");
 const genStop  = document.getElementById("genStop");
 const waveSel  = document.getElementById("genWave");
@@ -441,7 +403,6 @@ const lvlInp   = document.getElementById("genLevel");
 const bbChk    = document.getElementById("genBinaural");
 const beatInp  = document.getElementById("genBeat");
 
-/* 오디오 라우팅: Generator → masterGain */
 const genGain = (function(){ const g = audioCtx.createGain(); g.connect(window._audio.masterGain); return g; })();
 let genNodes = [], genRunning=false;
 
@@ -473,14 +434,49 @@ function startGenerator(){
 genStart.addEventListener("click", startGenerator);
 genStop .addEventListener("click",  stopGenerator);
 
-/* ========== EN/KO Toggle ========== */
+/* (옵션) Preset 저장/로드 */
+document.getElementById("btnSavePreset").onclick = ()=>{
+  const name = prompt(isKo?"프리셋 이름?":"Preset name?"); if(!name) return;
+  const p = {
+    wave: waveSel.value,
+    freq: +freqInp.value || 440,
+    level: +lvlInp.value || 0.5,
+    binaural: !!bbChk.checked,
+    beat: +beatInp.value || 7
+  };
+  const all = JSON.parse(localStorage.getItem("gen_presets")||"{}"); all[name]=p;
+  localStorage.setItem("gen_presets", JSON.stringify(all));
+  alert((isKo?"저장됨: ":"Saved: ")+name);
+};
+document.getElementById("btnLoadPreset").onclick = ()=>{
+  const all = JSON.parse(localStorage.getItem("gen_presets")||"{}");
+  const names = Object.keys(all); if(!names.length){ alert(isKo?"프리셋이 없습니다.":"No presets."); return; }
+  const sel = prompt((isKo?"선택: ":"Select: ")+"\n"+names.join("\n")); if(!sel||!all[sel]) return;
+  const p = all[sel];
+  waveSel.value = p.wave||"sine";
+  freqInp.value = p.freq||440;
+  lvlInp.value  = p.level||0.5;
+  bbChk.checked = !!p.binaural;
+  beatInp.value = p.beat||7;
+  alert((isKo?"불러옴: ":"Loaded: ")+sel);
+};
+
+/* ========== EN/KO Toggle (Generator 라벨 포함) ========== */
 const langBtn = document.getElementById("langToggle"); let isKo=false;
 function applyLang(){
-  document.getElementById("lblVol").textContent = isKo ? "볼륨" : "Volume";
-  document.getElementById("lblLoop").textContent = isKo ? "반복" : "Loop";
-  document.getElementById("lblTimer").textContent= isKo ? "타이머" : "Timer";
-  document.querySelector('.tab[data-tab="lib"]').textContent = isKo ? "5DO" : "5DO";
+  // Library labels
+  document.getElementById("lblVol").textContent   = isKo ? "볼륨" : "Volume";
+  document.getElementById("lblLoop").textContent  = isKo ? "반복" : "Loop";
+  document.getElementById("lblTimer").textContent = isKo ? "타이머" : "Timer";
+  document.querySelector('.tab[data-tab="lib"]').textContent = "5DO";
   document.querySelector('.tab[data-tab="gen"]').textContent = isKo ? "주파수 생성기" : "Freq. Gen.";
+  // Generator labels
+  document.getElementById("lblWave").textContent  = isKo ? "파형" : "Waveform";
+  document.getElementById("lblLevel").textContent = isKo ? "레벨" : "Level";
+  document.getElementById("lblFreq").textContent  = isKo ? "주파수 (Hz)" : "Frequency (Hz)";
+  document.getElementById("lblBB").textContent    = isKo ? "바이노럴 비트" : "Binaural Beat";
+  document.getElementById("lblBBEnable").textContent = isKo ? "활성화" : "Enable";
+  document.getElementById("lblBBdiff").textContent   = isKo ? "차이 (Hz)" : "Difference (Hz)";
   const sel = document.getElementById("timer");
   const en = ["Off","5 min","10 min","15 min","20 min","30 min","45 min","60 min"];
   const ko = ["끔","5분","10분","15분","20분","30분","45분","60분"];
