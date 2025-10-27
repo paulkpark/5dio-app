@@ -1,0 +1,94 @@
+📖 5DO 사용자 매뉴얼 (5th Dimensional Oscillator Manual)
+
+1. 소개 | Introduction
+
+5DO(5th Dimensional Oscillator)는 주파수와 힐링 사운드를 통해 공간의 에너지를 조율하고 확장하는 차세대 사운드 플레이어입니다.
+5DO (5th Dimensional Oscillator) is a next-generation sound player designed to shape and expand the energy of your space through frequencies and healing sound.
+
+Quantum Torus X와 함께 사용할 때, 주파수 공진 효과가 극대화됩니다.
+When used with Quantum Torus X, the frequency resonance effect is maximized.
+
+⸻
+
+2. 접속 방법 | How to Access
+
+5DO는 웹 브라우저에서 바로 실행할 수 있으며, 별도의 설치가 필요 없습니다.
+5DO runs directly in your web browser. No installation required.
+
+최적의 사운드를 위해 Bluetooth, AUX, 또는 USB-DAC 출력 장치를 연결하는 것을 권장합니다.
+For best audio quality, connect via Bluetooth, AUX, or USB-DAC.
+
+⸻
+
+3. 힐링 사운드 라이브러리 | Healing Sound Library
+
+화이트 노이즈(White Noise), 바이노럴(Binaural), 자연음(Nature), 명상음악(Meditation Music) 등 다양한 카테고리의 힐링 사운드를 제공합니다.
+You can choose from a variety of healing sound categories such as White Noise, Binaural, Nature Sounds, and Meditation Music.
+	• 썸네일을 눌러 음원을 선택합니다.
+Tap the thumbnail to select a sound.
+	• 플레이어에서 재생·일시정지·반복을 제어할 수 있습니다.
+Use the player bar to play, pause, or loop.
+	• 취침 타이머 기능도 지원합니다.
+A sleep timer is also available.
+
+⸻
+
+4. 주파수 생성기 | Frequency Generator
+
+1Hz에서 20kHz까지 원하는 주파수를 생성하고 재생할 수 있습니다.
+You can generate and play frequencies from 1 Hz to 20 kHz.
+	• 바이노럴 모드에서는 좌우 채널에 서로 다른 주파수를 출력할 수 있습니다.
+Binaural mode allows you to send different frequencies to each channel.
+	• 자주 쓰는 주파수는 프리셋으로 저장할 수 있습니다.
+Save your favorite frequencies as presets for quick access.
+
+⸻
+
+5. Quantum Torus X 연결 | Quantum Torus X Connection
+
+5DO는 Quantum Torus X의 스칼라 공진 효과를 극대화하도록 설계되었습니다.
+5DO is designed to maximize the scalar resonance effect of Quantum Torus X.
+	• AUX 또는 Bluetooth로 연결하세요.
+Connect via AUX or Bluetooth.
+	• 안정적인 전원 환경과 적절한 볼륨 세팅을 권장합니다.
+Use stable power and moderate volume for best performance.
+
+⸻
+
+6. 시각화 기능 | Visualization
+
+바 스펙트럼 애널라이저가 재생 중인 오디오에 실시간으로 반응합니다.
+The real-time bar spectrum visualizer reacts to your audio in real time.
+
+공진장을 눈으로 확인하며 더욱 깊은 몰입감을 경험할 수 있습니다.
+This lets you “see” the resonance field while listening.
+
+⸻
+
+7. 설정 | Settings
+	• 언어 전환 (한국어 / 영어)
+Language toggle (KO / EN)
+	• 반복 재생 및 타이머 기능
+Loop and timer settings
+	• 볼륨 및 게인 조절
+Volume and gain control
+
+⸻
+
+8. 문제 해결 | Troubleshooting
+	• 소리가 안 들릴 경우 → 화면을 한 번 터치하고, 출력 장치 연결을 확인하세요.
+No sound? Tap the screen once and check your output device.
+	• 재생이 안 될 경우 → 새로고침 후 다시 시도하세요.
+If playback is blocked, refresh the page.
+	• 출력이 약할 경우 → 볼륨을 올리거나 다른 출력 모드를 시도해보세요.
+Weak output? Adjust volume or change the output mode.
+
+⸻
+
+9. 개발 및 라이선스 | Developer & License
+
+5DO는 SPINIT에서 개발했습니다.
+5DO is developed by SPINIT.
+
+© 2025 모든 권리 보유.
+© 2025 All Rights Reserved.

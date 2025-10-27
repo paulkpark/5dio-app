@@ -1,0 +1,70 @@
+❓ 5DO FAQ (자주 묻는 질문)
+
+Q1. 5DO가 무엇인가요?
+
+5DO(5th Dimensional Oscillator)는 주파수와 힐링 사운드를 통해 공간의 에너지를 디자인하는 차세대 사운드 플레이어입니다.
+5DO (5th Dimensional Oscillator) is a next-generation sound player designed to shape the energy of a space through frequencies and healing sound.
+
+⸻
+
+Q2. 별도로 설치해야 하나요?
+
+아니요. 5DO는 웹 브라우저에서 바로 실행되므로 설치가 필요 없습니다.
+No installation is required. 5DO runs directly in your web browser.
+
+⸻
+
+Q3. 어떤 기기에서 사용할 수 있나요?
+
+스마트폰, 태블릿, PC 등 대부분의 디바이스에서 사용 가능하며 Bluetooth, AUX, USB-DAC 오디오 출력도 지원합니다.
+5DO works on smartphones, tablets, and computers. It supports Bluetooth, AUX, and USB-DAC audio output.
+
+⸻
+
+Q4. 주파수 범위는 어떻게 되나요?
+
+1Hz부터 20kHz까지의 주파수를 생성하고 재생할 수 있습니다.
+You can generate and play frequencies from 1 Hz to 20 kHz.
+
+⸻
+
+Q5. ‘바이노럴 모드’란 무엇인가요?
+
+바이노럴 모드는 좌·우 채널에 서로 다른 주파수를 출력하여 몰입감 있는 힐링 사운드를 만들어내는 기능입니다.
+Binaural mode allows you to send different frequencies to the left and right channels.
+
+팁: 바이노럴 비트는 심층 이완이나 명상에 도움이 될 수 있습니다.
+Tip: Binaural beats can support deep relaxation or meditation.
+
+⸻
+
+Q6. Quantum Torus X는 어떻게 연결하나요?
+
+Quantum Torus X를 AUX 또는 Bluetooth로 연결하세요. 5DO는 스칼라 공진 효과를 극대화하도록 설계되었습니다.
+Connect your Quantum Torus X via AUX or Bluetooth. 5DO is designed to maximize its scalar resonance effect.
+
+⸻
+ 
+Q7. 소리가 안 나올 때 어떻게 해야 하나요?
+	• 화면을 한 번 터치해 오디오를 활성화하세요.
+	• 출력 장치 연결 상태를 확인하세요.
+	• 새로고침 후 다시 시도하세요.
+	• 브라우저의 사운드 재생 허용 여부를 확인하세요.
+	• Tap the screen once to unlock audio.
+	• Check your output device connection.
+	• Refresh the page if needed.
+	• Ensure your browser allows sound playback.
+
+⸻
+
+Q8. 오프라인에서도 사용할 수 있나요?
+
+5DO는 온라인 사용을 기반으로 설계되었습니다. 힐링 사운드 파일은 보안 서버에서 스트리밍됩니다.
+5DO is designed for online use. Healing sound files are streamed from a secure server.
+
+⸻
+
+Q9. 누가 개발했나요?
+
+5DO는 SPINIT에서 개발했습니다.
+5DO is developed by SPINIT.
