@@ -501,6 +501,96 @@ document.getElementById('btnLoadPreset').onclick=()=>{
     ctx.lineTo(cvs.width,cvs.height/2); ctx.stroke(); })();
 })();
 </script>
+<!-- === 5DO Pro: Final Unified Icon Integration === -->
+<style id="fiveDOIconStyle">
+  .iconbar{display:flex;align-items:center;gap:10px}
+  .icon-btn{
+    width:36px;height:36px;border-radius:10px;
+    border:1px solid #2b3249;background:#121829;color:#55d0ff;
+    display:inline-flex;align-items:center;justify-content:center;
+    cursor:pointer;transition:transform .15s ease, box-shadow .25s ease, color .25s ease, border-color .25s ease;
+  }
+  .icon-btn:hover{transform:scale(1.06);box-shadow:0 0 8px rgba(85,208,255,.35);color:#7ef1c0;border-color:#3a4568;}
+  .icon-btn:active{transform:scale(0.98)}
+  .icon{width:20px;height:20px;display:block}
+</style>
 
+<svg id="fiveDOIconSprite" width="0" height="0" style="position:absolute;left:-9999px;top:-9999px">
+  <symbol id="ico-back" viewBox="0 0 24 24">
+    <path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+  <symbol id="ico-refresh" viewBox="0 0 24 24">
+    <path d="M21 12a9 9 0 1 0-3.2 6.8M21 12v6m0 0h-6"
+          fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+  <symbol id="ico-play" viewBox="0 0 24 24">
+    <polygon points="8,5 19,12 8,19" fill="currentColor"/>
+  </symbol>
+  <symbol id="ico-stop" viewBox="0 0 24 24">
+    <rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/>
+  </symbol>
+  <symbol id="ico-save" viewBox="0 0 24 24">
+    <path d="M5 5h14v14H5z M9 5v4h6V5" fill="none" stroke="currentColor" stroke-width="2"/>
+    <path d="M8 13h8v6H8z" fill="currentColor"/>
+  </symbol>
+  <symbol id="ico-load" viewBox="0 0 24 24">
+    <path d="M12 3v14m0 0l4-4m-4 4l-4-4M5 21h14"
+          fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+</svg>
+
+<script id="fiveDOIconPatch">
+(function(){
+  if(window.__fiveDOIconPatched__) return;
+  window.__fiveDOIconPatched__=true;
+
+  function mkBtn(id,title,sym){
+    const b=document.createElement('button');
+    b.id=id; b.className='icon-btn'; b.title=title;
+    const s=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    s.classList.add('icon');
+    const u=document.createElementNS('http://www.w3.org/2000/svg','use');
+    u.setAttributeNS('http://www.w3.org/1999/xlink','href','#'+sym);
+    s.appendChild(u); b.appendChild(s);
+    return b;
+  }
+
+  // 상단 네비 아이콘
+  const nav=document.getElementById('navRow');
+  if(nav){
+    nav.innerHTML='';
+    const bar=document.createElement('div'); bar.className='iconbar';
+    const back=mkBtn('btnBack','Back','ico-back');
+    const ref =mkBtn('btnRefresh','Refresh','ico-refresh');
+    const save=mkBtn('btnSaveList','Save','ico-save');
+    const load=mkBtn('btnLoadList','Load','ico-load');
+    bar.append(back,ref,save,load);
+    nav.append(bar);
+
+    back.onclick=()=>{if(window.navBack)navBack();else{const a=(window.cwd||'').split('/');a.pop();if(window.load)load(a.join('/'));}};
+    ref.onclick =()=>{if(window.load)load(window.cwd||'');};
+    save.onclick=()=>{if(window.btnSaveList&&btnSaveList.onclick)btnSaveList.onclick();};
+    load.onclick=()=>{if(window.btnLoadList&&btnLoadList.onclick)btnLoadList.onclick();};
+  }
+
+  // Generator 버튼 교체
+  [['genStart','ico-play','Play'],['genStop','ico-stop','Stop'],
+   ['btnSavePreset','ico-save','Save'],['btnLoadPreset','ico-load','Load']]
+  .forEach(([id,sym,title])=>{
+     const el=document.getElementById(id); if(!el)return;
+     el.innerHTML='';
+     const s=document.createElementNS('http://www.w3.org/2000/svg','svg');
+     s.classList.add('icon');
+     const u=document.createElementNS('http://www.w3.org/2000/svg','use');
+     u.setAttributeNS('http://www.w3.org/1999/xlink','href','#'+sym);
+     s.appendChild(u); el.appendChild(s);
+     el.classList.add('icon-btn'); el.title=title;
+  });
+})();
+</script>
+<!-- === /5DO Pro: Final Unified Icon Integration === -->
 </body>
 </html>
