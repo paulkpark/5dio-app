@@ -26,10 +26,26 @@ header{
   border-bottom:1px solid var(--border);
 }
 .left-pack{ display:flex; align-items:center; gap:10px; justify-self:start; }
+
+/* ✅ Lite와 동일한 햄버거 스타일 + 7px 상향 */
+.nav-toggle{display:none}
+.hamburger{
+  width:36px;height:32px;border-radius:8px;border:1px solid var(--border);
+  background:#1c2130;display:flex;align-items:center;justify-content:center;cursor:pointer;
+  margin-right:8px; position:relative; top:-7px; /* ← 위로 7px */
+}
+.hamburger span,.hamburger span:before,.hamburger span:after{
+  display:block;background:#cfd6e6;height:2px;width:18px;position:relative;border-radius:2px}
+.hamburger span:before,.hamburger span:after{content:"";position:absolute;left:0}
+.hamburger span:before{top:-6px}.hamburger span:after{top:6px}
+
 .menu-container{ position:relative; display:flex; align-items:center; z-index:1000 }
-.menu-button{ font-size:24px; color:#fff; cursor:pointer; line-height:1; transform:translateY(3px) } /* 햄버거 3px 하향 */
 .app-title{ position:static; transform:none; font-weight:800; font-size:1.1rem; color:var(--accent); letter-spacing:.2px; white-space:nowrap; }
+
 header .tabs{ justify-self:center; display:flex; gap:8px; }
+.tab{ padding:6px 10px; border:1px solid var(--border); border-radius:8px; background:#171d2b; color:#dfe7f6; cursor:pointer; font-size:.85rem }
+.tab.active{ background:#1f2739; border-color:#334 }
+
 .lang-toggle{ justify-self:end; position:relative; right:auto; top:auto; background:#151b24; border:1px solid #2b3249;
   color:#e7effa; padding:4px 8px; border-radius:8px; cursor:pointer }
 
@@ -41,8 +57,6 @@ header .tabs{ justify-self:center; display:flex; gap:8px; }
 .dropdown a:hover{ background:#1a2236 }
 .backdrop{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:900 }
 
-.tab{ padding:6px 10px; border:1px solid var(--border); border-radius:8px; background:#171d2b; color:#dfe7f6; cursor:pointer; font-size:.85rem }
-.tab.active{ background:#1f2739; border-color:#334 }
 .section{ display:none } .section.active{ display:block }
 
 /* ==== Library ==== */
@@ -99,7 +113,8 @@ input[disabled]{ opacity:.6; filter:grayscale(.2) }
 <header>
   <div class="left-pack">
     <div class="menu-container">
-      <div id="menuBtn" class="menu-button">☰</div>
+      <!-- ✅ Lite 동일 형태의 프레임 햄버거, 클릭시 드롭다운 토글 -->
+      <div id="menuBtn" class="hamburger"><span></span></div>
       <div id="menuDrop" class="dropdown">
         <a href="https://5dshop.co.kr" target="_blank" rel="noopener">Shop</a>
         <a href="texts/faq.txt"     class="menu-text">FAQ</a>
@@ -268,7 +283,7 @@ function applyLang(){
   document.getElementById("lblHarmHelp").textContent=L.harmHelp;
   document.getElementById("lblLevel").textContent=L.level;
   document.getElementById("lblDuty").textContent=L.duty;
-  document.getElementById("sweepGo").textContent=L.sweep;  // ✅ Sweep 버튼 다국어 적용
+  document.getElementById("sweepGo").textContent=L.sweep;
 }
 langBtn.onclick=()=>{ isKo=!isKo; langBtn.textContent=isKo?'KO':'EN'; applyLang(); };
 applyLang();
@@ -330,7 +345,7 @@ async function load(path=""){
   for(const e of rows){
     const name=e.name; const full=(path?path+'/':'')+name;
 
-    // 폴더 (확장자 없는 엔트리)
+    // 폴더
     if(!name.includes('.')){
       const card=document.createElement('div'); card.className='card'; card.dataset.kind='folder'; card.dataset.path=full;
       const img=document.createElement('img'); img.loading='lazy';
