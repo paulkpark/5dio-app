@@ -317,5 +317,54 @@ applyLang();
 /* Init */
 load("");
 </script>
+<!-- Modal (텍스트 표시용) -->
+<div id="textModal" style="
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);
+  z-index:2000;align-items:center;justify-content:center;">
+  <div style="
+    background:#0f1320;padding:20px;max-width:90%;max-height:80%;
+    border-radius:12px;overflow:auto;color:#e7effa;">
+    <button id="textModalClose" 
+      style="float:right;background:none;border:none;color:#9cff8b;font-size:18px;cursor:pointer;">✕</button>
+    <pre id="textModalContent" style="white-space:pre-wrap;font-family:inherit;margin-top:20px;"></pre>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://xdjgumqdwedgzwqturcx.supabase.co";
+const TEXT_BUCKET = "text";  // 버킷 이름
+const modal = document.getElementById('textModal');
+const modalContent = document.getElementById('textModalContent');
+document.getElementById('textModalClose').onclick = ()=> modal.style.display = 'none';
+
+// 메뉴명 → 파일명 매핑
+const textFiles = {
+  "FAQ": "faq.txt",
+  "Manual": "manual.txt",
+  "Contact": "contact.txt",
+  "About": "about.txt"
+};
+
+document.querySelectorAll('nav.side-menu a.mbtn').forEach(link=>{
+  const label = link.textContent.trim();
+  if(textFiles[label]){
+    link.addEventListener('click', async e=>{
+      e.preventDefault();
+      const file = textFiles[label];
+      const url = `${SUPABASE_URL}/storage/v1/object/public/${TEXT_BUCKET}/${encodeURIComponent(file)}?t=${Date.now()}`;
+      try{
+        const res = await fetch(url);
+        if(!res.ok) throw new Error(`File not found: ${file}`);
+        const text = await res.text();
+        modalContent.textContent = text;
+        modal.style.display = 'flex';
+      }catch(err){
+        modalContent.textContent = `⚠️ Unable to load: ${file}`;
+        modal.style.display = 'flex';
+      }
+    });
+  }
+});
+</script>
 </body>
 </html>
