@@ -30,6 +30,12 @@ header{
 .hamburger span:before,.hamburger span:after{content:"";position:absolute;left:0}
 .hamburger span:before{top:-6px}.hamburger span:after{top:6px}
 
+/* Lang toggle */
+.lang-toggle{
+  background:#151b24;border:1px solid #2b3249;color:#e7effa;
+  padding:4px 8px;border-radius:8px;cursor:pointer
+}
+
 /* Side menu */
 .side-menu{position:fixed;top:0;left:0;width:33%;max-width:220px;height:100vh;background:#0f1320;
   border-right:1px solid var(--border);padding:14px;overflow-y:auto;transform:translateX(-100%);
@@ -87,15 +93,17 @@ audio{width:92%;display:block;margin:10px auto}
 </head>
 <body>
 <input id="navToggle" class="nav-toggle" type="checkbox">
+
 <header>
   <div style="display:flex;align-items:center;gap:10px">
     <label for="navToggle" class="hamburger"><span></span></label>
     <div class="logo">5DO Lite</div>
   </div>
+  <button id="langToggle" class="lang-toggle">EN</button>
 </header>
 
 <nav class="side-menu">
-  <a class="mbtn" href="https://5dshop.co.kr" target="_blank">Shop</a>
+  <a class="mbtn" href="https://5dshop.co.kr" target="_blank" rel="noopener">Shop</a>
   <a class="mbtn" href="#">FAQ</a>
   <a class="mbtn" href="#">Manual</a>
   <a class="mbtn" href="#">Contact</a>
@@ -103,7 +111,6 @@ audio{width:92%;display:block;margin:10px auto}
 </nav>
 <div class="backdrop" id="backdrop"></div>
 
-<!-- (기존 오실로스코프 캔버스 제거) -->
 <!-- 바 스펙트럼 전용 영역 고정 표시 -->
 <div id="barVizWrap"><canvas id="barViz"></canvas></div>
 
@@ -117,9 +124,9 @@ audio{width:92%;display:block;margin:10px auto}
   <div class="status">
     <div id="statusThumb"></div>
     <div class="ctrl-stack">
-      <div class="ctrl-line"><label for="vol">Volume</label><input id="vol" type="range" min="0" max="1" step="0.01" value="1"></div>
-      <div class="ctrl-line"><label><input type="checkbox" id="loop"> Loop</label></div>
-      <div class="ctrl-line"><label for="timer">Timer</label>
+      <div class="ctrl-line"><label id="lblVol" for="vol">Volume</label><input id="vol" type="range" min="0" max="1" step="0.01" value="1"></div>
+      <div class="ctrl-line"><label><input type="checkbox" id="loop"> <span id="lblLoop">Loop</span></label></div>
+      <div class="ctrl-line"><label id="lblTimer" for="timer">Timer</label>
         <select id="timer">
           <option value="0">Off</option><option value="5">5 min</option><option value="10">10 min</option>
           <option value="15">15 min</option><option value="20">20 min</option><option value="30">30 min</option>
@@ -133,12 +140,14 @@ audio{width:92%;display:block;margin:10px auto}
 <audio id="player" controls preload="none" playsinline controlslist="nodownload noplaybackrate"></audio>
 
 <script>
+/* ==== Supabase ==== */
 const SUPABASE_URL="https://xdjgumqdwedgzwqturcx.supabase.co";
 const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
 const BUCKET="media";
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const PUBLIC_BASE=SUPABASE_URL+"/storage/v1/object/public/"+BUCKET+"/";
 
+/* ==== DOM ==== */
 const lib=document.getElementById("library");
 const btnBack=document.getElementById("navBack");
 const btnRefresh=document.getElementById("navRefresh");
@@ -148,7 +157,7 @@ const loopChk=document.getElementById("loop");
 const vol=document.getElementById("vol");
 const timerSel=document.getElementById("timer");
 
-/* Audio */
+/* ==== Audio ==== */
 player.crossOrigin="anonymous";
 const audioCtx=new (window.AudioContext||window.webkitAudioContext)();
 const mediaNode=audioCtx.createMediaElementSource(player);
@@ -157,17 +166,14 @@ const analyser=audioCtx.createAnalyser();
 mediaNode.connect(gainNode);
 gainNode.connect(analyser);
 analyser.connect(audioCtx.destination);
-analyser.fftSize=1024;            // (바 스펙트럼용) 해상도 설정
+analyser.fftSize=1024;
 analyser.smoothingTimeConstant=0.85;
 
-let desiredGain=+vol.value||1;
-gainNode.gain.value=desiredGain;
-vol.addEventListener("input",()=>gainNode.gain.value=vol.value);
+gainNode.gain.value=+vol.value||1;
+vol.addEventListener("input",()=>gainNode.gain.value=+vol.value||0);
 
 /* Unlock */
-function ensureAudioUnlocked(){
-  if(audioCtx.state!=="running") audioCtx.resume();
-}
+function ensureAudioUnlocked(){ if(audioCtx.state!=="running") audioCtx.resume(); }
 document.addEventListener("pointerdown",ensureAudioUnlocked,{once:true});
 
 /* Loop/Timer */
@@ -179,7 +185,7 @@ timerSel.onchange=()=>{
   if(min>0) timerId=setTimeout(()=>{player.pause();player.currentTime=0;alert("Timer stopped playback.");},min*60000);
 };
 
-/* === Status Thumb === */
+/* Status Thumb */
 const setStatus=(img)=>{
   if(!img){
     statusThumb.classList.remove('loaded');
@@ -198,7 +204,7 @@ const setStatus=(img)=>{
   }
 };
 
-/* === Library === */
+/* Library */
 let cwd="";
 const enc=s=>s.split("/").filter(Boolean).map(encodeURIComponent).join("/");
 const abs=p=>PUBLIC_BASE+enc(p);
@@ -211,8 +217,7 @@ async function load(path=""){
   cwd=path;lib.innerHTML="";setStatus("");
   const rows=await list(path);
   for(const e of rows){
-    const name=e.name;
-    const full=(path?path+"/":"")+name;
+    const name=e.name; const full=(path?path+"/":"")+name;
     if(!name.includes(".")){
       const card=document.createElement("div");card.className="card";
       const img=document.createElement("img");
@@ -233,7 +238,7 @@ async function load(path=""){
         player.pause();player.currentTime=0;
         player.src=abs(full);
         setStatus(abs(thumb));
-        // 사용자가 play 버튼으로 재생(자동재생 차단 이슈 회피)
+        // 사용자가 플레이 버튼으로 재생하도록 유지 (자동재생 차단 회피)
       };
       card.append(img);lib.append(card);
     }
@@ -258,11 +263,10 @@ const sideMenu=document.querySelector("nav.side-menu");
 backdrop.addEventListener("click",()=>navToggle.checked=false);
 sideMenu.addEventListener("click",e=>{if(e.target.closest("a"))navToggle.checked=false;});
 
-/* === Bar Spectrum Visualizer (항상 표시, 재생 중에만 draw) === */
+/* === Bar Spectrum Visualizer (항상 표시, 재생 중 draw) === */
 (function(){
   const canvas=document.getElementById('barViz');
   const ctx=canvas.getContext('2d',{alpha:true});
-
   function resize(){
     const dpr=Math.min(window.devicePixelRatio||1,2);
     canvas.width=Math.floor(canvas.clientWidth*dpr);
@@ -270,10 +274,7 @@ sideMenu.addEventListener("click",e=>{if(e.target.closest("a"))navToggle.checked
     ctx.setTransform(dpr,0,0,dpr,0,0);
   }
   new ResizeObserver(resize).observe(canvas); resize();
-
-  const data=new Uint8Array(512);
-  let raf=0;
-
+  const data=new Uint8Array(512); let raf=0;
   function draw(){
     raf=requestAnimationFrame(draw);
     analyser.getByteFrequencyData(data);
@@ -284,18 +285,34 @@ sideMenu.addEventListener("click",e=>{if(e.target.closest("a"))navToggle.checked
       const g=ctx.createLinearGradient(x,y,x,y+h);
       g.addColorStop(0,'#7ef1c0'); g.addColorStop(0.5,'#55d0ff'); g.addColorStop(1,'#a38cff');
       ctx.fillStyle=g;
-      const wScale=1.0+(1-i/n)*0.4; // 저음부 약간 두껍게
+      const wScale=1.0+(1-i/n)*0.4;
       ctx.fillRect(x,y,barW*wScale,h);
     }
   }
   function startViz(){ if(!raf) draw(); }
   function stopViz(){ if(raf){ cancelAnimationFrame(raf); raf=0; } ctx.clearRect(0,0,canvas.width,canvas.height); }
-
   player.addEventListener('play',  ()=>{ ensureAudioUnlocked(); startViz(); });
   player.addEventListener('pause', stopViz);
   player.addEventListener('ended', stopViz);
   player.addEventListener('emptied', stopViz);
 })();
+
+/* === Language Toggle === */
+const langBtn=document.getElementById('langToggle');
+let isKo=false;
+function applyLang(){
+  const L = {
+    en:{ vol:'Volume', loop:'Loop', timer:'Timer', backTitle:'Back', refTitle:'Refresh' },
+    ko:{ vol:'볼륨',  loop:'반복', timer:'타이머', backTitle:'뒤로', refTitle:'새로고침' }
+  }[isKo?'ko':'en'];
+  document.getElementById('lblVol').textContent   = L.vol;
+  document.getElementById('lblLoop').textContent  = L.loop;
+  document.getElementById('lblTimer').textContent = L.timer;
+  btnBack.title = L.backTitle;
+  btnRefresh.title = L.refTitle;
+}
+langBtn.onclick=()=>{ isKo=!isKo; langBtn.textContent=isKo?'KO':'EN'; applyLang(); };
+applyLang();
 
 /* Init */
 load("");
