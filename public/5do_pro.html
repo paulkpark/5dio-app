@@ -591,6 +591,185 @@ document.getElementById('btnLoadPreset').onclick=()=>{
   });
 })();
 </script>
-<!-- === /5DO Pro: Final Unified Icon Integration === -->
+<!-- === 5DO PRO: playback & auto-play guard & generator fix (drop-in) === -->
+<script>
+(function(){
+  // ====== 공통 오디오(플레이어) ======
+  const A = document.getElementById('audio') || document.querySelector('audio');
+  if (!A) return;
+
+  // 사용자 제스처 이후에만 소리 나게 (iOS/Safari 대응)
+  async function ensurePlayerGraph(){
+    try{
+      if (!window.playerCtx) {
+        window.playerCtx = new (window.AudioContext||window.webkitAudioContext)({latencyHint:'interactive'});
+        try {
+          // 이미 연결되어 있으면 createMediaElementSource에서 에러 -> 무시
+          const node = playerCtx.createMediaElementSource(A);
+          window.playerGain  = playerCtx.createGain();
+          window.masterGain  = playerCtx.createGain();
+          try{ node.connect(playerGain); }catch(_){}
+          try{ playerGain.connect(masterGain); masterGain.connect(playerCtx.destination); }catch(_){}
+          if (playerGain.gain.value === 0) playerGain.gain.value = 0.8;
+          if (masterGain.gain.value === 0) masterGain.gain.value = 0.6;
+        } catch(_) {
+          // 이미 만들어진 경우: 그래프는 기존 것을 사용
+        }
+      }
+      if (playerCtx.state === 'suspended') { try{ await playerCtx.resume(); }catch(_){} }
+      A.muted = false;
+      if (A.volume === 0) A.volume = 0.8;
+      A.playsInline = true; A.autoplay = false;
+    }catch(e){}
+  }
+
+  // 자동재생 가드: 새 소스 로딩 시에는 사용자가 Play 누르기 전에는 재생 불가
+  let userPressedPlay = false;
+  let guardAutoPlay   = false;
+
+  function markNewSource(){
+    guardAutoPlay   = true;
+    userPressedPlay = false;
+  }
+  // 소스가 바뀌거나 다시 로드될 때 가드 ON
+  ['loadstart','loadedmetadata','emptied'].forEach(ev=>A.addEventListener(ev, markNewSource));
+
+  // 누군가(기존 코드 포함)가 play()를 호출해도, 사용자가 Play를 누르기 전이면 즉시 멈춘다
+  A.addEventListener('play', ()=>{
+    if (guardAutoPlay && !userPressedPlay) {
+      // 즉시 중단 → 수동 재생만 허용
+      A.pause();
+    }
+  }, true);
+
+  // 페이지 최초 제스처에서만 그래프 생성/Resume
+  const unlockOnce = ()=>ensurePlayerGraph();
+  document.addEventListener('pointerdown', unlockOnce, {once:true, capture:true});
+  document.addEventListener('touchstart', unlockOnce, {once:true, capture:true, passive:true});
+
+  // Play/Pause 버튼 다시 바인딩 (기존 리스너와 충돌 방지: clone 후 교체)
+  function rebindPlayerTransport(){
+    const playSel = '[data-action="play"], #ppBtn, #playPause, .pp-btn, button[title="Play"], button[title="Play/Pause"]';
+    const stopSel = '[data-action="stop"], #stopBtn, .stop-btn, button[title="Stop"]';
+    let pp = document.querySelector(playSel);
+    let st = document.querySelector(stopSel);
+
+    if (pp){
+      const b = pp.cloneNode(true);
+      pp.parentNode.replaceChild(b, pp);
+      pp = b;
+      pp.addEventListener('click', async ()=>{
+        await ensurePlayerGraph();
+        // 이제부터는 수동 재생
+        userPressedPlay = true;
+        guardAutoPlay   = false;
+        try{
+          if (A.paused) { await A.play(); }
+          else { A.pause(); }
+        }catch(_){}
+      });
+    }
+
+    if (st){
+      const s = st.cloneNode(true);
+      st.parentNode.replaceChild(s, st);
+      st = s;
+      st.addEventListener('click', ()=>{
+        // Stop: 수동 상태 해제
+        userPressedPlay = false;
+        guardAutoPlay   = true;
+        A.pause();
+        A.currentTime = 0;
+      });
+    }
+  }
+  rebindPlayerTransport();
+
+  // ====== Generator(주파수) Play/Stop 복구 ======
+  // 기존 UI 객체가 있으면 그걸 사용
+  function rebindGenerator(){
+    const UI = window.UI || {};
+    // 버튼 탐색 (여러 후보를 수용)
+    const genPlayBtn = UI.genPlayPause || document.getElementById('genPlay') || document.getElementById('genPlayPause') || document.querySelector('[data-gen="play"]');
+    const genStopBtn = UI.genStop      || document.getElementById('genStop') || document.querySelector('[data-gen="stop"]');
+
+    // 생성기 그래프 준비
+    function ensureGenGraph(){
+      try{
+        if (!window.genCtx) window.genCtx = new (window.AudioContext||window.webkitAudioContext)({latencyHint:'interactive'});
+        if (genCtx.state==='suspended'){ genCtx.resume().catch(()=>{}); }
+        // 기존 setupGenerator가 있으면 그대로 사용 (오실레이터/게인/패닝 등 내부 그래프 구성)
+        if ((!window.lGain || !window.rGain || !window.lOsc || !window.rOsc || !window.genMasterGain) && typeof window.setupGenerator === 'function'){
+          window.setupGenerator();
+        }
+      }catch(_){}
+    }
+
+    function desired(){
+      // UI 컨트롤이 없을 수도 있으니 안전하게 읽기
+      const L = ((UI.lLevel?.value ?? 50)|0)/100;
+      const R = ((UI.rLevel?.value ?? 50)|0)/100;
+      const M = ((UI.masterGain?.value ?? 50)|0)/100;
+      const B = ((UI.balance?.value ?? 0)|0)/100;
+      return {L,R,M,B};
+    }
+    function applyDesired(d){
+      try{ if (window.genMasterGain) genMasterGain.gain.value = d.M; }catch(_){}
+      try{ if (window.genPan)        genPan.pan.value         = d.B; }catch(_){}
+      try{ if (window.lGain)         lGain.gain.value         = d.L; }catch(_){}
+      try{ if (window.rGain)         rGain.gain.value         = d.R; }catch(_){}
+    }
+    function muteGen(){
+      try{ if (window.lGain) lGain.gain.value = 0; }catch(_){}
+      try{ if (window.rGain) rGain.gain.value = 0; }catch(_){}
+      try{ if (window.genGain) genGain.gain.value = 0; }catch(_){}
+      try{ if (window.__genGain) __genGain.gain.value = 0; }catch(_){}
+    }
+
+    async function startGen(){
+      ensureGenGraph();
+      try{ await genCtx.resume(); }catch(_){}
+      applyDesired(desired());
+      window.__genState = 'playing';
+      if (genPlayBtn) genPlayBtn.setAttribute('data-state','pause');
+    }
+    function stopGen(){
+      muteGen();
+      window.__genState = 'stopped';
+      if (genPlayBtn) genPlayBtn.removeAttribute('data-state');
+    }
+    function toggleGen(){
+      if (window.__genState!=='playing') startGen();
+      else stopGen();
+    }
+
+    // 버튼 리바인딩(기존 핸들러 제거)
+    if (genPlayBtn){
+      const b = genPlayBtn.cloneNode(true);
+      genPlayBtn.parentNode.replaceChild(b, genPlayBtn);
+      b.addEventListener('click', toggleGen);
+    }
+    if (genStopBtn){
+      const s = genStopBtn.cloneNode(true);
+      genStopBtn.parentNode.replaceChild(s, genStopBtn);
+      s.addEventListener('click', stopGen);
+    }
+  }
+  rebindGenerator();
+
+  // ====== 썸네일 선택 시 "바로 재생" 막기 (혹시 기존 코드가 play() 호출해도 방지) ======
+  // 라이브러리 썸네일 영역에서 클릭하면 src만 교체하고, 재생은 Play 버튼으로만.
+  const gallery = document.getElementById('library') || document.querySelector('.library') || document.getElementById('thumbStrip') || document;
+  gallery.addEventListener('click', ()=>{
+    // 새 트랙 로드 → 수동만 허용
+    guardAutoPlay   = true;
+    userPressedPlay = false;
+    // 혹시 재생이 걸리면 즉시 중단
+    if (!A.paused) A.pause();
+  }, true);
+
+})();
+</script>
+<!-- === /5DO PRO: playback & auto-play guard & generator fix === -->
 </body>
 </html>
