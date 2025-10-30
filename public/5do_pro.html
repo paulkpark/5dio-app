@@ -360,12 +360,13 @@ async function load(path=""){
       const img=document.createElement('img'); img.loading='lazy';
       const thumb=full.replace(/\.[^.]+$/,'.png');
       img.src=abs(thumb); img.onerror=()=>img.src='https://placehold.co/300x300/222/888?text=Audio';
-      card.onclick=()=>{
-        ensureAudioUnlocked(); ensurePipeline();
-        player.pause(); player.currentTime=0; player.src=abs(full);
-        const art=abs(thumb); setStatus(art);
-        setTimeout(()=>{ applyPlayerVolumeFromSlider(); player.play().catch(()=>{}); }, 60);
-      };
+card.onclick=()=>{
+  ensureAudioUnlocked(); ensurePipeline();
+  player.pause(); player.currentTime=0; player.src=abs(full);
+  const art=abs(thumb); setStatus(art);
+  // ❌ 자동재생 제거 → 사용자가 직접 Play 버튼 눌러야 함
+  applyPlayerVolumeFromSlider();
+};
       card.append(img); lib.append(card);
     }
   }
