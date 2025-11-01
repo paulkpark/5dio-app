@@ -86,7 +86,7 @@
 
 
 /* Tabs for Pro */
-.tabs{justify-self:center;display:flex;gap:8px;}
+.tabs{justify-self:center;display:flex;gap:8px}
 .tab{ padding:6px 10px; border:1px solid #334; border-radius:8px; background:#171d2b; color:#dfe7f6; cursor:pointer; font-size:.85rem }
 .tab.active{ background:#1f2739; border-color:#556 }
 .section{ display:none } .section.active{ display:block }
@@ -105,6 +105,9 @@
 .pill.primary{ background:#21324e; border-color:#355; color:#cfead1 }
 input[disabled]{ opacity:.6; filter:grayscale(.2) }
 
+.controls-adv{display:flex;gap:8px;justify-content:center;margin:10px 0}
+.pill{padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:#171d2b;color:#e7effa;cursor:pointer}
+.pill.primary{background:#24304a}
 </style>
 </head>
 <body>
@@ -123,9 +126,7 @@ input[disabled]{ opacity:.6; filter:grayscale(.2) }
     </div>
     <div class="logo">5DO Pro</div>
   </div>
-  <div class="right-pack">
-    <button id="langToggle" title="EN/KO">KO</button>
-  </div>
+  <div class="right-pack"><button id="langToggle" title="EN/KO">KO</button></div>
 
   <div class="tabs">
     <div class="tab active" data-target="lib">5DO</div>
@@ -240,9 +241,16 @@ input[disabled]{ opacity:.6; filter:grayscale(.2) }
           <button id="btnLoadPreset" class="pill" title="Load Preset">📜</button>
         </div>
       </div>
+    
+    </div>
+    <div class="controls-adv">
+      <button id="loopToggle" class="pill">Loop ⟳</button>
+      <button id="timerBtn" class="pill">Timer ⏲</button>
+      <button id="playlistBtn" class="pill">Playlist ♪</button>
     </div>
   </div>
 </section>
+
 <div class="visual-wrap">
   <canvas id="vizCanvas" height="140"></canvas>
 </div>
@@ -642,6 +650,152 @@ document.addEventListener('DOMContentLoaded', ()=>{
   if (!window.lang) window.lang = localStorage.getItem('lang') || 'ko';
   updateGeneratorLang();
 });
+</script>
+
+
+<script>
+(function(){
+  const $ = s=>document.querySelector(s);
+  function ensureCtx(){
+    let ctx = window.audioCtx;
+    if(!ctx){
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      window.audioCtx = ctx;
+    }
+    return ctx;
+  }
+  const genFreq = $('#genFreq');
+  const genWave = $('#genWave');
+  const genStart= $('#genStart');
+  const genStop = $('#genStop');
+  const btnSave = $('#btnSavePreset');
+  const btnLoad = $('#btnLoadPreset');
+  const genBinaural = $('#genBinaural');
+  const genBeat = $('#genBeat');
+  const genHarm = $('#genHarmonics');
+
+  let oscL=null, oscR=null, gainL=null, gainR=null, merger=null;
+  function stopAll(){
+    try{ oscL && oscL.stop ? oscL.stop() : oscL && oscL.o && oscL.o.stop(); }catch(e){}
+    try{ oscR && oscR.stop ? oscR.stop() : oscR && oscR.o && oscR.o.stop(); }catch(e){}
+    try{ oscL && oscL.disconnect ? oscL.disconnect() : oscL && oscL.o && oscL.o.disconnect(); }catch(e){}
+    try{ oscR && oscR.disconnect ? oscR.disconnect() : oscR && oscR.o && oscR.o.disconnect(); }catch(e){}
+    try{ gainL && gainL.disconnect && gainL.disconnect(); }catch(e){}
+    try{ gainR && gainR.disconnect && gainR.disconnect(); }catch(e){}
+    try{ merger && merger.disconnect && merger.disconnect(); }catch(e){}
+    oscL=oscR=gainL=gainR=merger=null;
+  }
+
+  function makeOsc(ctx, f, type){
+    const o = ctx.createOscillator();
+    o.type = type||'sine';
+    o.frequency.value = f;
+    const g = ctx.createGain();
+    g.gain.value = 0.2;
+    o.connect(g);
+    return {osc:o, gain:g};
+  }
+
+  async function startGen(){
+    const ctx = ensureCtx();
+    try{ await ctx.resume(); }catch(e){}
+    stopAll();
+    const base = parseFloat(genFreq?.value||432);
+    const type = genWave?.value || 'sine';
+    const BB = !!(genBinaural && genBinaural.checked);
+    const diff = parseFloat(genBeat?.value||0);
+    const harm = Math.max(1, parseInt(genHarm?.value||1,10));
+
+    const fL = base*harm;
+    const fR = BB ? (base*harm + diff) : fL;
+
+    const L = makeOsc(ctx, fL, type);
+    const R = makeOsc(ctx, fR, type);
+    const mix = ctx.createChannelMerger(2);
+    L.gain.connect(mix, 0, 0);
+    R.gain.connect(mix, 0, 1);
+    mix.connect(ctx.destination);
+    L.osc.start(); R.osc.start();
+    oscL=L.osc; oscR=R.osc; gainL=L.gain; gainR=R.gain; merger=mix;
+  }
+
+  genStart && genStart.addEventListener('click', startGen);
+  genStop && genStop.addEventListener('click', stopAll);
+
+  function savePreset(){
+    const obj = {
+      freq: genFreq?.value||"432",
+      wave: genWave?.value||"sine",
+      binaural: !!(genBinaural && genBinaural.checked),
+      beat: genBeat?.value||"7",
+      harm: genHarm?.value||"1"
+    };
+    localStorage.setItem('genPreset', JSON.stringify(obj));
+    alert((window.lang==='en')?'Preset saved':'프리셋 저장됨');
+  }
+  function loadPreset(){
+    const s = localStorage.getItem('genPreset');
+    if(!s) return alert((window.lang==='en')?'No preset':'프리셋 없음');
+    try{
+      const o = JSON.parse(s);
+      if(genFreq) genFreq.value = o.freq||"432";
+      if(genWave) genWave.value = o.wave||"sine";
+      if(genBinaural) genBinaural.checked = !!o.binaural;
+      if(genBeat) genBeat.value = o.beat||"7";
+      if(genHarm) genHarm.value = o.harm||"1";
+    }catch(e){}
+    alert((window.lang==='en')?'Preset loaded':'프리셋 불러옴');
+  }
+  btnSave && btnSave.addEventListener('click', savePreset);
+  btnLoad && btnLoad.addEventListener('click', loadPreset);
+})();
+</script>
+
+
+<script>
+(function(){
+  const $=s=>document.querySelector(s);
+  const player = $('#player');
+  const loopBtn = $('#loopToggle');
+  const timerBtn= $('#timerBtn');
+
+  let loop=false; let timerId=null;
+  function setLoop(v){ loop=!!v; loopBtn && loopBtn.classList.toggle('primary', loop); }
+  loopBtn && loopBtn.addEventListener('click', ()=> setLoop(!loop));
+  player && player.addEventListener('ended', ()=>{ if(loop){ try{ player.currentTime=0; player.play(); }catch(e){} } });
+
+  timerBtn && timerBtn.addEventListener('click', ()=>{
+    const mins = prompt((window.lang==='en')?'Sleep timer (minutes)':'수면 타이머 (분)');
+    if(mins===null) return;
+    const m = parseInt(mins,10);
+    if(isNaN(m)||m<=0){ alert((window.lang==='en')?'Invalid minutes':'분 값을 확인하세요'); return; }
+    if(timerId) clearTimeout(timerId);
+    timerId = setTimeout(()=>{ try{ player.pause(); }catch(e){} }, m*60000);
+    alert((window.lang==='en')?`Timer set: ${m} min`:`타이머 설정: ${m}분`);
+  });
+
+  // Simple playlist based on visible file cards (click order)
+  let playlist=[]; let idx=-1;
+  function rebuild(){
+    playlist=[];
+    document.querySelectorAll('.files .card').forEach(card=>{
+      const url = card.getAttribute('data-url') || card.dataset.url || '';
+      if(url) playlist.push(url);
+    });
+  }
+  function playAt(i){
+    if(i<0 || i>=playlist.length) return;
+    idx=i; player.src = playlist[idx]; player.play().catch(()=>{});
+  }
+  document.addEventListener('click', (e)=>{
+    const card = e.target.closest('.files .card');
+    if(!card) return;
+    rebuild();
+    const cards = Array.from(document.querySelectorAll('.files .card'));
+    const i = cards.indexOf(card);
+    if(i>=0) playAt(i);
+  });
+})();
 </script>
 
 </body>
