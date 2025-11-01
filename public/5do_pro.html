@@ -374,10 +374,29 @@ async function load(path=""){
 };
 card.onclick=()=>{
   ensureAudioUnlocked(); ensurePipeline();
-  player.pause(); player.currentTime=0; player.src=abs(full);
-  const art=abs(thumb); setStatus(art);
-  // ❌ 자동재생 제거 → 사용자가 직접 Play 버튼 눌러야 함
-  applyPlayerVolumeFromSlider();
+  player.pause(); player.currentTime=0; 
+  player.src = abs(full);
+
+  const base = full.replace(/\.[^.]+$/, '');
+  const tryJpg = abs(base + '.jpg');
+  const tryPng = abs(base + '.png');
+
+  function setThumb(url){
+    setStatus(url);
+    applyPlayerVolumeFromSlider();
+  }
+
+  // 1) JPG 먼저 테스트
+  const img = new Image();
+  img.onload = ()=> setThumb(tryJpg);
+  img.onerror = ()=>{
+    // 2) PNG 테스트
+    const img2 = new Image();
+    img2.onload = ()=> setThumb(tryPng);
+    img2.onerror = ()=> setThumb('https://placehold.co/300x300/222/888?text=Audio');
+    img2.src = tryPng;
+  };
+  img.src = tryJpg;
 };
       card.append(img); lib.append(card);
     }
