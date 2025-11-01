@@ -349,7 +349,13 @@ async function load(path=""){
     if(!name.includes('.')){
       const card=document.createElement('div'); card.className='card'; card.dataset.kind='folder'; card.dataset.path=full;
       const img=document.createElement('img'); img.loading='lazy';
-      img.src=abs(full+'/folder.png'); img.onerror=()=>img.src='https://placehold.co/300x300/111/aaa?text=Folder';
+      let folderBase = abs(full + '/folder');
+    img.src = folderBase + '.jpg';
+    img.onerror = () => {
+    img.onerror = null;
+    img.src = folderBase + '.png';
+    img.onerror = () => img.src = 'https://placehold.co/300x300/222/888?text=Folder';
+};
       card.onclick=()=>{ ensureAudioUnlocked(); load(full); };
       card.append(img); lib.append(card);
       continue;
