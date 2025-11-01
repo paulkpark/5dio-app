@@ -6,9 +6,11 @@
 <title>5DO Lite</title>
 <style>
   :root{
-    --bg:#0b0f17; --panel:#101826; --panel2:#0f1524; --border:#334; --text:#cfead1; --muted:#8fb1a0; --accent:#7ef1c0;
+    --bg:#0b0f17; --panel:#101826; --panel2:#0f1524; --border:#334;
+    --text:#cfead1; --muted:#8fb1a0; --accent:#7ef1c0; --accent2:#55d0ff; --accent3:#a38cff;
   }
-  html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui, -apple-system, Segoe UI, Roboto, Apple SD Gothic Neo, Noto Sans KR, sans-serif}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,Noto Sans KR,sans-serif}
   a{color:inherit;text-decoration:none}
 
   /* Header */
@@ -37,14 +39,25 @@
   /* Lang toggle */
   #langToggle{min-width:44px;height:28px;padding:0 10px;border:1px solid var(--border);border-radius:10px;background:#131c2b;color:var(--text);cursor:pointer}
 
-  /* Library strip (iTunes 스타일 가로 스크롤) */
+  /* Toolbar */
   .toolbar{display:flex;align-items:center;gap:10px;padding:10px 14px 6px}
-  .icon-btn{width:34px;height:34px;border:1px solid var(--border);border-radius:10px;background:#131c2b;display:grid;place-items:center;cursor:pointer}
-  .icon-btn:active{transform:translateY(1px)}
+  .icon-btn{width:38px;height:38px;border:1px solid rgba(120,180,200,.22);border-radius:12px;background:#0f1524;
+    display:grid;place-items:center;cursor:pointer;box-shadow:inset 0 0 12px rgba(126,241,192,.08)}
+  .icon-btn:hover{box-shadow:inset 0 0 16px rgba(126,241,192,.12)}
+  .icon{width:20px;height:20px;display:block}
+  .icon path{stroke:url(#grad);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 2px rgba(126,241,192,.35))}
+  svg defs linearGradient stop:nth-child(1){stop-color:var(--accent)}
+  svg defs linearGradient stop:nth-child(2){stop-color:var(--accent2)}
+  svg defs linearGradient stop:nth-child(3){stop-color:var(--accent3)}
+
+  /* Horizontal thumbnails */
   .strip{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding:10px 14px}
+  .strip::-webkit-scrollbar{height:8px}
+  .strip::-webkit-scrollbar-thumb{background:#1a2438;border-radius:8px}
   .card{min-width:120px;scroll-snap-align:start;background:#0f1524;border:1px solid #283044;border-radius:14px;padding:8px;display:flex;flex-direction:column;gap:6px;cursor:pointer}
-  .thumb{width:100%;aspect-ratio:1/1;border-radius:10px;background:#09101c;display:grid;place-items:center;color:#7a8c90;font-size:.85rem;overflow:hidden;background-size:cover;background-position:center}
-  .label{font-size:.8rem;color:#9fb8aa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .thumb{width:100%;aspect-ratio:1/1;border-radius:10px;background:#09101c;overflow:hidden;background-size:cover;background-position:center}
+  .thumb[data-src]{background-image:none} /* lazy 상태 */
+  .label{display:none}
 
   /* Player + status */
   .player-wrap{padding:0 14px 14px}
@@ -65,9 +78,13 @@
   .status-thumb.loaded::before{ display:none; }
   @keyframes spinGlow{to{transform:rotate(360deg)}}
   audio{width:100%;margin-top:6px;background:#0f1524;border:1px solid #273246;border-radius:12px}
-
-  /* helper */
   .muted{color:#7ea296}
+
+  /* Spectrum Visualizer (bottom) */
+  .visual-wrap{padding:6px 12px 14px}
+  #vizCanvas{width:100%;height:140px;display:block;background:linear-gradient(180deg,#0e1524 0%, #0b0f17 100%);
+    border-top:1px solid #243145;border-bottom:1px solid #243145;border-radius:12px}
+
 </style>
 </head>
 <body>
@@ -92,12 +109,35 @@
 </header>
 <div class="menu-backdrop" id="menuBackdrop"></div>
 
-<!-- Library toolbar -->
+<!-- Toolbar with gradient defs -->
 <div class="toolbar">
-  <button id="btnBack" class="icon-btn" title="Back">⟲</button>
-  <button id="btnRoot" class="icon-btn" title="Root">⌂</button>
-  <button id="btnRefresh" class="icon-btn" title="Refresh">↻</button>
-  <div class="muted" style="margin-left:auto;font-size:.85rem" id="pathHint"></div>
+  <svg width="0" height="0" style="position:absolute;left:-9999px;top:-9999px">
+    <defs>
+      <linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%"  stop-color="#7ef1c0"/>
+        <stop offset="50%" stop-color="#55d0ff"/>
+        <stop offset="100%" stop-color="#a38cff"/>
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <button id="btnBack" class="icon-btn" title="Back" aria-label="Back">
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M14 6l-6 6 6 6M19 12H8"></path>
+    </svg>
+  </button>
+
+  <button id="btnRoot" class="icon-btn" title="Root" aria-label="Root">
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 4a4 4 0 0 1 4 4v1h2a2 2 0 0 1 2 2v7h-6v-4H10v4H4v-7a2 2 0 0 1 2-2h2V8a4 4 0 0 1 4-4z"></path>
+    </svg>
+  </button>
+
+  <button id="btnRefresh" class="icon-btn" title="Refresh" aria-label="Refresh">
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v6h-6"></path>
+    </svg>
+  </button>
 </div>
 
 <!-- Horizontal thumbnails -->
@@ -110,6 +150,11 @@
     <div class="muted" id="statusText"></div>
   </div>
   <audio id="player" controls crossorigin="anonymous"></audio>
+</div>
+
+<!-- Spectrum Visualizer -->
+<div class="visual-wrap">
+  <canvas id="vizCanvas" height="140"></canvas>
 </div>
 
 <!-- Modal for /texts/*.txt -->
@@ -125,73 +170,60 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (() => {
-  // ====== Supabase 설정 ======
+  // ===== Supabase =====
   const SUPA_URL = "https://xdjgumqdwedgzwqturcx.supabase.co";
   const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
   const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
   const BUCKET = 'media';
   const PUBLIC_BASE = `${SUPA_URL}/storage/v1/object/public/${BUCKET}`;
 
-  // ====== 상태 ======
-  const $ = (s)=>document.querySelector(s);
-  const $$= (s)=>Array.from(document.querySelectorAll(s));
+  // ===== El refs & state =====
+  const $ = s => document.querySelector(s);
+  const $$= s => Array.from(document.querySelectorAll(s));
+
+  const langBtn = $('#langToggle');
+  let lang = localStorage.getItem('lang') || 'ko';
+  const setLangLabel = ()=> langBtn.textContent = (lang==='en'?'EN':'KO'); setLangLabel();
 
   const strip = $('#strip');
   const player= $('#player');
   const statusThumb = $('#loadingThumb');
   const statusText  = $('#statusText');
-  const pathHint    = $('#pathHint');
 
-  let lang = localStorage.getItem('lang') || 'ko';
-  const langBtn = $('#langToggle');
-  const setLangLabel = () => langBtn.textContent = (lang==='en'?'EN':'KO');
-  setLangLabel();
+  // path stack & helpers
+  const pathStack = [];
+  const currentPath = ()=> pathStack.join('/');
 
-  // 경로 스택 (현재 폴더 추적)
-  const pathStack = []; // 예: [] => root, ['Brainwave_States'] => 그 폴더
-  const currentPath = () => pathStack.join('/');
-
-  // ====== 유틸: 이미지 폴백 로딩 (jpg -> png) ======
-  function setThumb(el, urls){
-    let i=0;
-    const tryOne=()=>{
-      if(i>=urls.length){ return; }
-      const url = urls[i++];
-      // <img> 또는 background-image 모두 지원
-      if(el.tagName==='IMG'){
-        const img = new Image();
-        img.onload = ()=>{ el.src = url; };
-        img.onerror= tryOne;
-        img.src = url;
-      }else{
-        const img = new Image();
-        img.onload = ()=>{ el.style.backgroundImage = `url("${url}")`; };
-        img.onerror= tryOne;
-        img.src = url;
+  // ===== Lazy loader =====
+  const io = new IntersectionObserver((entries)=>{
+    for(const e of entries){
+      if(e.isIntersecting){
+        const el = e.target;
+        const url = el.getAttribute('data-src');
+        if(url){
+          el.style.backgroundImage = `url("${url}")`;
+          el.removeAttribute('data-src');
+        }
+        io.unobserve(el);
       }
-    };
-    tryOne();
-  }
+    }
+  }, {root:null,rootMargin:'200px',threshold:0.01});
 
-  // 폴더 썸네일 URL들 (언어토글 반영)
-  function folderThumbUrls(folder){
-    const base = `${PUBLIC_BASE}/${encodeURIComponent(folder)}`;
-    const f = (lang==='en') ? 'folder_e' : 'folder';
-    return [`${base}/${f}.jpg`, `${base}/${f}.png`];
+  // ===== URL helpers (JPG only, lang-suffix) =====
+  function folderJpg(folder){
+    const name = (lang==='en') ? 'folder_e.jpg' : 'folder.jpg';
+    return `${PUBLIC_BASE}/${encodeURIComponent(folder)}/${name}`;
   }
-  // 트랙 썸네일 URL들 (언어토글 반영)
-  function trackThumbUrls(folder, trackFile){
+  function trackThumbJpg(folder, trackFile){
     const base = trackFile.replace(/\.(mp3|wav|m4a)$/i,'');
     const suffix = (lang==='en') ? '_E' : '';
-    const pre = `${PUBLIC_BASE}/${encodeURIComponent(folder)}/${encodeURIComponent(base)}${suffix}`;
-    return [`${pre}.jpg`, `${pre}.png`];
+    return `${PUBLIC_BASE}/${encodeURIComponent(folder)}/${encodeURIComponent(base+suffix)}.jpg`;
   }
-  // 오디오 URL
   function trackAudioUrl(folder, trackFile){
     return `${PUBLIC_BASE}/${encodeURIComponent(folder)}/${encodeURIComponent(trackFile)}`;
   }
 
-  // ====== 리스트 로딩 ======
+  // ===== List from Supabase =====
   async function listPath(path){
     const p = path ? path + '/' : '';
     const { data, error } = await supa.storage.from(BUCKET).list(p, {
@@ -200,96 +232,72 @@
     if(error){ console.warn(error); return []; }
     return data || [];
   }
+  const isFolder = item => !item?.metadata || !item?.metadata.mimetype;
+  const isAudio  = item => !!item?.metadata?.mimetype && /^audio\//.test(item.metadata.mimetype);
 
-  // 폴더/파일 구분(메타데이터 mimetype 유무로 구분)
-  function isFolder(item){ return !item?.metadata || !item?.metadata.mimetype; }
-  function isAudioFile(item){ return !!item?.metadata?.mimetype && /^audio\//.test(item.metadata.mimetype); }
-
-  // ====== 렌더 ======
+  // ===== Render =====
   async function render(){
-    strip.innerHTML='';
+    strip.innerHTML = '';
     const path = currentPath();
-    pathHint.textContent = path ? `/${path}` : '/';
-
     const items = await listPath(path);
-    // 폴더 먼저, 파일 나중
     const folders = items.filter(isFolder);
-    const files   = items.filter(isAudioFile);
+    const files   = items.filter(isAudio);
 
-    // 폴더 카드
+    // folders
     for(const f of folders){
       const card = document.createElement('div');
-      card.className='card';
-      card.setAttribute('data-folder', f.name);
+      card.className = 'card';
       const th = document.createElement('div');
       th.className='thumb';
-      th.textContent='Folder';
+      th.setAttribute('data-src', folderJpg(f.name)); // lazy
       card.appendChild(th);
-      const lb = document.createElement('div');
-      lb.className='label';
-      lb.textContent=f.name;
-      card.appendChild(lb);
-      // 썸네일 설정
-      setThumb(th, folderThumbUrls(f.name));
-
-      // 클릭: 하위 폴더로 이동
+      const lb = document.createElement('div'); lb.className='label'; card.appendChild(lb); // hidden label (kept for layout)
       card.addEventListener('click', (e)=>{
         e.preventDefault(); e.stopPropagation();
         pathStack.push(f.name);
         render();
       });
-
       strip.appendChild(card);
+      io.observe(th);
     }
 
-    // 파일(오디오) 카드
+    // files
     for(const file of files){
       const card = document.createElement('div');
       card.className='card';
-      card.setAttribute('data-folder', path || '');
-      card.setAttribute('data-file', file.name);
-
       const th = document.createElement('div');
       th.className='thumb';
-      th.textContent='Audio';
+      th.setAttribute('data-src', trackThumbJpg(path || '', file.name)); // lazy
       card.appendChild(th);
-      const lb = document.createElement('div');
-      lb.className='label';
-      lb.textContent=file.name.replace(/\.(mp3|wav|m4a)$/i,'');
-      card.appendChild(lb);
-
-      setThumb(th, trackThumbUrls(path || '', file.name));
-
-      // 클릭 시: **로드만**, 자동재생 금지
+      const lb = document.createElement('div'); lb.className='label'; card.appendChild(lb);
       card.addEventListener('click', (e)=>{
         e.preventDefault(); e.stopPropagation();
         const url = trackAudioUrl(path || '', file.name);
+        // 로드만 하고 자동재생 금지
         player.src = url;
         player.load?.();
-
-        // 로딩썸네일 교체 (네온 글로우 제거)
+        // 로딩 썸네일 갱신
         statusThumb.classList.add('loaded');
-        setThumb(statusThumb, trackThumbUrls(path || '', file.name));
-        statusText.textContent = lang==='en' ? 'Ready to play' : '재생 준비됨';
+        statusThumb.style.backgroundImage = `url("${trackThumbJpg(path || '', file.name)}")`;
+        statusText.textContent = (lang==='en' ? 'Ready to play' : '재생 준비됨');
       });
-
       strip.appendChild(card);
+      io.observe(th);
     }
   }
 
-  // ====== 햄버거 메뉴 ======
+  // ===== Menu =====
   (function initMenu(){
     const btn = $('#menuBtn');
     const pane= $('#sideMenu');
     const bd  = $('#menuBackdrop');
     const open = ()=>{ pane.classList.add('open'); bd.classList.add('show'); };
     const close= ()=>{ pane.classList.remove('open'); bd.classList.remove('show'); };
-
     btn.addEventListener('click', (e)=>{ e.stopPropagation(); pane.classList.contains('open')?close():open(); });
     bd.addEventListener('click', close);
     document.addEventListener('keydown', e=>{ if(e.key==='Escape') close(); });
 
-    // texts 로딩
+    // /texts modal
     $$('.menu-text').forEach(a=>{
       const file = a.getAttribute('data-file');
       a.addEventListener('click', async (e)=>{
@@ -300,37 +308,128 @@
           $('#txtBody').textContent = txt;
           $('#txtModal').style.display='flex';
           close();
-        }catch(err){
-          alert('문서를 불러올 수 없습니다. (/texts/*.txt 확인)');
-        }
+        }catch(err){ alert('문서를 불러올 수 없습니다. (/texts/*.txt 확인)'); }
       });
     });
     $('#txtClose').addEventListener('click', ()=> $('#txtModal').style.display='none');
     $('#txtModal').addEventListener('click', (e)=>{ if(e.target.id==='txtModal') $('#txtModal').style.display='none';});
   })();
 
-  // ====== 네비게이션 ======
+  // ===== Nav buttons =====
   $('#btnBack').addEventListener('click', ()=>{ if(pathStack.length) pathStack.pop(); render(); });
   $('#btnRoot').addEventListener('click', ()=>{ pathStack.length=0; render(); });
   $('#btnRefresh').addEventListener('click', ()=> render());
 
-  // ====== 언어 토글 ======
+  // ===== Lang toggle =====
   langBtn.addEventListener('click', ()=>{
     lang = (lang==='en'?'ko':'en');
     localStorage.setItem('lang', lang);
     setLangLabel();
-    // 썸네일/라벨 새로고침
+    // 상태 초기화 후 다시 렌더
+    statusThumb.classList.remove('loaded');
+    statusThumb.style.backgroundImage='';
+    statusText.textContent = (lang==='en' ? 'No track loaded' : '선곡되지 않음');
     render();
   });
 
-  // 초기 상태: 로딩 썸네일 네온 글로우(이미지 없음)
-  statusThumb.classList.remove('loaded');
-  statusText.textContent = lang==='en' ? 'No track loaded' : '선곡되지 않음';
+  // ===== Spectrum Visualizer (5DO 네온 바) =====
+  let audioCtx, analyser, sourceNode, vizRAF = 0;
+  const vizCanvas = document.getElementById('vizCanvas');
+  const vctx = vizCanvas.getContext('2d', {alpha:false});
+  function resizeViz(){
+    // 픽셀 밀도 대응
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    const cssW = vizCanvas.clientWidth || vizCanvas.parentElement.clientWidth;
+    const cssH = vizCanvas.clientHeight || 140;
+    vizCanvas.width  = Math.floor(cssW * dpr);
+    vizCanvas.height = Math.floor(cssH * dpr);
+    vctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener('resize', resizeViz); resizeViz();
 
-  // 초기 렌더
+  function ensureAudioGraph(){
+    if(!audioCtx){
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 1024;
+      analyser.smoothingTimeConstant = 0.78;
+      sourceNode = audioCtx.createMediaElementSource(player);
+      sourceNode.connect(analyser);
+      analyser.connect(audioCtx.destination);
+    }
+  }
+
+  function drawViz(){
+    const w = vizCanvas.width, h = vizCanvas.height;
+    vctx.clearRect(0,0,w,h);
+    // 배경
+    const gradBg = vctx.createLinearGradient(0,0,0,h);
+    gradBg.addColorStop(0,'#0e1524'); gradBg.addColorStop(1,'#0b0f17');
+    vctx.fillStyle = gradBg; vctx.fillRect(0,0,w,h);
+
+    const bufLen = analyser.frequencyBinCount;
+    const data = new Uint8Array(bufLen);
+    analyser.getByteFrequencyData(data);
+
+    const bars = Math.min(96, Math.floor(w/7));
+    const step = Math.floor(bufLen / bars);
+    const barW = Math.max(3, (w / bars) * 0.6);
+
+    for(let i=0;i<bars;i++){
+      const idx = i*step;
+      const v = data[idx] / 255; // 0~1
+      const barH = Math.max(4, v * (h*0.9));
+      const x = i * (w / bars) + (w / bars - barW)/2;
+      const y = h - barH;
+
+      const g = vctx.createLinearGradient(0,y,0,y+barH);
+      g.addColorStop(0,'#7ef1c0'); g.addColorStop(0.5,'#55d0ff'); g.addColorStop(1,'#a38cff');
+      vctx.fillStyle = g;
+      vctx.fillRect(x,y,barW,barH);
+
+      // 외곽선 살짝
+      vctx.globalAlpha = 0.18;
+      vctx.strokeStyle = '#bfe';
+      vctx.strokeRect(x+0.5,y+0.5,barW-1,barH-1);
+      vctx.globalAlpha = 1;
+    }
+  }
+
+  function startViz(){
+    cancelAnimationFrame(vizRAF);
+    const loop = ()=>{
+      vizRAF = requestAnimationFrame(loop);
+      if(!analyser) return;
+      drawViz();
+    };
+    vizRAF = requestAnimationFrame(loop);
+  }
+  function stopViz(){ cancelAnimationFrame(vizRAF); vizRAF = 0; }
+
+  // 사용자 제스처 후만 오디오 그래프 허용
+  player.addEventListener('play', async ()=>{
+    ensureAudioGraph();
+    if(audioCtx.state === 'suspended'){ try{ await audioCtx.resume(); }catch{} }
+    startViz();
+  });
+  player.addEventListener('pause', ()=> stopViz());
+  player.addEventListener('ended', ()=> stopViz());
+
+  // ===== Init =====
+  statusThumb.classList.remove('loaded');
+  statusText.textContent = (lang==='en' ? 'No track loaded' : '선곡되지 않음');
   render();
 
-  console.log('[5DO Lite] ready');
+  // ===== Menu open/close =====
+  const menuBtn = document.getElementById('menuBtn');
+  const sideMenu= document.getElementById('sideMenu');
+  const backdrop= document.getElementById('menuBackdrop');
+  const open = ()=>{ sideMenu.classList.add('open'); backdrop.classList.add('show'); };
+  const close= ()=>{ sideMenu.classList.remove('open'); backdrop.classList.remove('show'); };
+  menuBtn.addEventListener('click', (e)=>{ e.stopPropagation(); sideMenu.classList.contains('open')?close():open(); });
+  backdrop.addEventListener('click', close);
+
+  console.log('[5DO Lite] ready with spectrum + lazy JPG thumbnails');
 })();
 </script>
 </body>
