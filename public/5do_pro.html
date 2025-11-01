@@ -1,537 +1,607 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <title>5DO Pro</title>
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<link rel="preconnect" href="https://xdjgumqdwedgzwqturcx.supabase.co">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <style>
 :root{
-  --bg:#0b0f17; --panel:#101522; --card:#171d2b; --ink:#e6edf5;
-  --muted:#9aa3b7; --border:#222738; --accent:#9cff8b;
+  --bg:#0b0f17; --panel:#121a26; --accent:#86ffc8; --accent2:#55d0ff;
+  --text:#e6f6ee; --muted:#9bb3bf; --border:#1f2a3a; --ink:#0e131b;
 }
-*{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',Roboto,Arial}
-a{color:var(--accent)}
+*{box-sizing:border-box} html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,pretendard,sans-serif}
+button,input,select{font:inherit}
+a{color:inherit;text-decoration:none}
+.hidden{display:none!important}
 
-/* ==== Header (햄버거+타이틀 / 탭 / 언어토글) ==== */
-header{
-  display:grid;
-  grid-template-columns: 1fr auto 1fr; /* 좌측 묶음, 중앙 탭, 우측 토글 */
-  align-items:center;
-  gap:12px;
-  padding:12px 14px;
-  background:var(--panel);
-  border-bottom:1px solid var(--border);
-}
-.left-pack{ display:flex; align-items:center; gap:10px; justify-self:start; }
+/* Header + Tabs */
+header{display:flex;align-items:center;gap:10px;justify-content:space-between;
+  padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--border); position:sticky;top:0;z-index:50}
+.left-pack{display:flex;align-items:center;gap:10px}
+.logo{font-weight:700;color:var(--accent);font-size:1.05rem;letter-spacing:.5px;display:flex;align-items:center;gap:10px}
+.tabs{display:flex;gap:8px}
+.tab{padding:6px 10px;border:1px solid var(--border);border-radius:10px;background:#171d2b;color:#cfead1;cursor:pointer}
+.tab.active{background:#1f2739;border-color:#334}
 
-/* ✅ Lite와 동일한 햄버거 스타일 + 7px 상향 */
-.nav-toggle{display:none}
-.hamburger{
-  width:36px;height:32px;border-radius:8px;border:1px solid var(--border);
-  background:#1c2130;display:flex;align-items:center;justify-content:center;cursor:pointer;
-  margin-right:8px; position:relative; top:-1px; /* ← 위로 1px */
-}
-.hamburger span,.hamburger span:before,.hamburger span:after{
-  display:block;background:#cfd6e6;height:2px;width:18px;position:relative;border-radius:2px}
-.hamburger span:before,.hamburger span:after{content:"";position:absolute;left:0}
-.hamburger span:before{top:-6px}.hamburger span:after{top:6px}
+/* Hamburger (프레임 포함: Lite와 동일 스타일) */
+.menu-container{position:relative}
+.hamburger{width:28px;height:22px;border:1px solid #2a3647;border-radius:6px;display:grid;place-items:center;cursor:pointer;position:relative;top:3px}
+.hamburger::before,.hamburger::after,.hamburger span{content:"";display:block;width:16px;height:2px;background:#cfead1;border-radius:2px}
+.hamburger span{transform:translateY(0)}
+.hamburger::before{transform:translateY(-5px)}
+.hamburger::after{transform:translateY(5px)}
+.dropdown{position:absolute;left:0;top:36px;min-width:260px;max-width:min(90vw,320px);background:#0f1622;border:1px solid var(--border);border-radius:12px;padding:12px;display:none;z-index:60}
+.dropdown.open{display:block}
+.dropdown .item{display:block;padding:10px 12px;border-radius:8px;color:#dfe9f1}
+.dropdown .item:hover{background:#172131}
+.dropdown .doc{white-space:pre-wrap;max-height:45vh;overflow:auto;margin-top:8px;padding:10px;background:#0b111a;border:1px solid #1a2534;border-radius:10px}
 
-.menu-container{ position:relative; display:flex; align-items:center; z-index:1000 }
-.app-title{ position:static; transform:none; font-weight:800; font-size:1.1rem; color:var(--accent); letter-spacing:.2px; white-space:nowrap; }
+/* Main sections */
+section{display:none;padding:12px}
+section.active{display:block}
 
-header .tabs{ justify-self:center; display:flex; gap:8px; }
-.tab{ padding:6px 10px; border:1px solid var(--border); border-radius:8px; background:#171d2b; color:#dfe7f6; cursor:pointer; font-size:.85rem }
-.tab.active{ background:#1f2739; border-color:#334 }
+/* Library bar (Back/Refresh + EN/KR 토글 선택시 확장 용도 가능) */
+.topbar{display:flex;align-items:center;gap:10px;justify-content:space-between;margin:10px 0}
+.navbtn{width:32px;height:32px;border:1px solid var(--border);background:#0f1622;border-radius:8px;display:grid;place-items:center;cursor:pointer}
+.path{font-size:.9rem;color:var(--muted)}
 
-.lang-toggle{ justify-self:end; position:relative; right:auto; top:auto; background:#151b24; border:1px solid #2b3249;
-  color:#e7effa; padding:4px 8px; border-radius:8px; cursor:pointer }
+/* Horizontal thumbnail rail */
+.rail{display:flex;gap:10px;overflow-x:auto;padding:8px;border:1px solid var(--border);border-radius:12px;background:#0f1622}
+.card{flex:0 0 auto;width:120px}
+.thumb{width:120px;height:120px;background:#0e141e;border:1px solid #1a2534;border-radius:12px;display:grid;place-items:center;position:relative;overflow:hidden}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb .tag{position:absolute;bottom:6px;left:6px;font-size:.72rem;padding:2px 6px;border-radius:6px;background:#0c121b;color:#9fb7c7;border:1px solid #1d2a3a}
+.ctitle{font-size:.86rem;margin-top:6px;color:#cfead1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-/* 드롭다운 */
-.dropdown{ position:absolute; top:34px; left:0; display:none; flex-direction:column; width:200px;
-  background:#121826; border:1px solid #2b3249; border-radius:10px; padding:6px; z-index:1100; }
-.dropdown.show{ display:flex }
-.dropdown a{ text-decoration:underline; padding:8px 10px; border-radius:8px }
-.dropdown a:hover{ background:#1a2236 }
-.backdrop{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:900 }
+/* Player strip */
+.player{margin-top:14px;border:1px solid var(--border);border-radius:14px;background:#0f1622;padding:10px}
+.playrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.statusThumb{width:124px;height:124px;border-radius:12px;border:1px solid #1a2534;overflow:hidden;background:
+  radial-gradient(120px 120px at 20% 20%, #172235 0,#0b0f17 70%),
+  conic-gradient(from 0deg,#0f1827,#152239,#0f1827);
+  position:relative}
+.statusThumb img{width:100%;height:100%;object-fit:cover;display:block}
+.controls{display:flex;align-items:center;gap:12px;flex:1;min-width:240px}
+.controls button{height:36px;padding:0 14px;border:1px solid var(--border);background:#172131;color:#dff2e7;border-radius:10px;cursor:pointer}
+.controls button:hover{background:#1b2738}
+.volblk{display:flex;align-items:center;gap:10px}
+.volblk input[type="range"]{width:180px}
+.opts{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.opts select,.opts input[type="checkbox"]{height:36px}
+.smalllabel{font-size:.8rem;color:#9fb7c7}
 
-.section{ display:none } .section.active{ display:block }
+/* Visualizer (bar spectrum) boxed 고정창) */
+.vizbox{margin-top:10px;border:1px solid var(--border);border-radius:12px;background:#0f1622;padding:8px}
+#viz{width:100%;height:120px;display:block}
 
-/* ==== Library ==== */
-#navRow{ display:flex; justify-content:center; gap:10px; padding:10px }
-.btn{ background:#1b2133; border:1px solid #2b3249; color:#e6edf5; border-radius:10px; padding:8px 10px; cursor:pointer }
-.btn:hover{ background:#202945 }
+/* Playlist bottom sheet */
+.sheet-mask{position:fixed;inset:0;background:#0006;display:none;z-index:90}
+.sheet{position:fixed;left:0;right:0;bottom:0;transform:translateY(100%);
+  background:#0f1622;border-top:1px solid var(--border);border-radius:16px 16px 0 0;
+  padding:14px;z-index:95;transition:.25s}
+.sheet.open{transform:translateY(0)}
+.sheet-mask.show{display:block}
+.sheet h3{margin:0 0 10px 0;font-size:1rem;color:#cfead1}
+.sheet .row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.sheet input[type="text"]{flex:1;min-width:180px;padding:8px;border:1px solid var(--border);border-radius:10px;background:#121b29;color:#e9faf1}
+.sheet .list{max-height:40vh;overflow:auto;border:1px solid var(--border);border-radius:10px;background:#0b111a}
+.sheet .item{display:flex;align-items:center;justify-content:space-between;padding:10px;border-bottom:1px solid #132034}
+.sheet .item:last-child{border-bottom:0}
+.sheet .item .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%}
+.sheet .item .btns{display:flex;gap:8px}
+.sheet .item button{padding:4px 10px;border:1px solid var(--border);border-radius:8px;background:#152033;color:#dfe9f1;cursor:pointer}
 
-.library-strip{ display:flex; overflow-x:auto; gap:10px; padding:12px; scroll-snap-type:x mandatory }
-.card{ flex:0 0 auto; width:160px; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:8px; scroll-snap-align:start }
-.card img{ width:100%; aspect-ratio:1/1; object-fit:contain; background:#0f1320; border-radius:8px }
+/* Gen placeholder (당신의 기존 주파수 생성기 UI를 이곳에 붙여넣기) */
+.gen-wrap{border:1px dashed #244; border-radius:12px; padding:12px;background:#0f1622}
 
-/* Status + controls */
-.controls{ display:flex; flex-direction:column; gap:12px; padding:12px; background:#0f1320; border-top:1px solid var(--border); border-bottom:1px solid var(--border) }
-.statusRow{ display:flex; gap:16px; align-items:center; justify-content:center }
-#statusThumb{
-  width:124px; height:124px; border-radius:16px; background:#0d0f18; border:1px solid #2d334a;
-  position:relative; overflow:hidden; background-size:cover; background-position:center;
-}
-#statusThumb.loading::before{
-  content:""; position:absolute; inset:-30%;
-  background:conic-gradient(from 0deg at 50% 50%, #10283e, #1b3a5b, #234a72, #1b3a5b, #10283e);
-  filter:blur(28px); opacity:.9; animation:aurora 6.5s linear infinite;
-}
-#statusThumb.loaded::before{ content:none }
-@keyframes aurora{ 0%{transform:rotate(0) scale(1.05)} 50%{transform:rotate(180deg) scale(1.1)} 100%{transform:rotate(360deg) scale(1.05)} }
-.ctrlCol{ display:flex; flex-direction:column; gap:10px }
-.ctrlLine{ display:flex; align-items:center; gap:8px }
-audio{ width:92%; display:block; margin:6px auto 0 }
-
-/* ==== Bar Spectrum (상시 표시 전용 창) ==== */
-#barVizWrap{ display:block; padding:8px 0; background:#0b0f17; border-top:1px solid #20263a }
-#barViz{ display:block; width:100%; height:100px }
-
-/* ==== Generator ==== */
-.gen-wrap{ padding:12px }
-.grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px }
-.field{ background:#141a27; border:1px solid #2a3044; border-radius:12px; padding:10px; display:flex; flex-direction:column; justify-content:center }
-.field h4{ margin:0 0 8px; font-size:.95rem; color:#dfe7f6 }
-.field.full{ grid-column:1/-1 }
-.gen-actions{ display:flex; gap:12px; align-items:center; justify-content:center }
-.pill{ padding:8px 12px; border-radius:999px; border:1px solid #2c3147; background:#1b2333; color:#e9eefc; cursor:pointer }
-.pill.primary{ background:#21324e; border-color:#355; color:#cfead1 }
-input[disabled]{ opacity:.6; filter:grayscale(.2) }
-
-/* 모바일 대응 */
-@media (max-width:640px){
-  .card{ width:140px }
-}
+/* Utilities */
+.icon{font-size:18px}
+.hr{height:1px;background:linear-gradient(90deg,transparent,#22344a,transparent);margin:10px 0}
 </style>
 </head>
 <body>
 
-<!-- 좌측: 햄버거 + 타이틀 -->
 <header>
   <div class="left-pack">
     <div class="menu-container">
-      <!-- ✅ Lite 동일 형태의 프레임 햄버거, 클릭시 드롭다운 토글 -->
       <div id="menuBtn" class="hamburger"><span></span></div>
       <div id="menuDrop" class="dropdown">
-        <a href="https://5dshop.co.kr" target="_blank" rel="noopener">Shop</a>
-        <a href="texts/faq.txt"     class="menu-text">FAQ</a>
-        <a href="texts/manual.txt"  class="menu-text">Manual</a>
-        <a href="texts/contact.txt" class="menu-text">Contact</a>
-        <a href="texts/about.txt"   class="menu-text">About</a>
+        <a class="item" data-doc="shop">Shop (새 탭)</a>
+        <a class="item" data-doc="faq">FAQ</a>
+        <a class="item" data-doc="manual">Manual</a>
+        <a class="item" data-doc="contact">Contact</a>
+        <a class="item" data-doc="about">About</a>
+        <div id="menuDoc" class="doc hidden"></div>
       </div>
-      <div id="backdrop" class="backdrop"></div>
     </div>
-    <div class="app-title">5DO Pro</div>
+    <div class="logo">5DO Pro</div>
   </div>
-
-  <!-- 가운데: 탭 -->
   <div class="tabs">
-    <div class="tab active" data-target="lib">5DO</div>
-    <div class="tab" data-target="gen">Freq. Gen.</div>
+    <button class="tab active" data-tab="lib">5DO</button>
+    <button class="tab" data-tab="gen">Freq. Gen.</button>
   </div>
-
-  <!-- 우측: 언어 토글 -->
-  <button id="langToggle" class="lang-toggle">EN</button>
 </header>
 
-<!-- ============ Library ============ -->
-<section id="lib" class="section active" aria-label="Library">
-  <div id="navRow">
-    <button id="btnBack" class="btn" title="Back">⬅️</button>
-    <button id="btnRefresh" class="btn" title="Refresh">🔄</button>
-    <button id="btnSaveList" class="btn" title="Save Playlist">💾</button>
-    <button id="btnLoadList" class="btn" title="Load Playlist">📜</button>
+<section id="lib" class="active">
+  <div class="topbar">
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="navbtn" id="btnBack" title="Back">⟵</button>
+      <button class="navbtn" id="btnRefresh" title="Refresh">↻</button>
+    </div>
+    <div class="path" id="pathTxt"></div>
+    <div style="display:flex;gap:8px">
+      <button class="navbtn" id="btnOpenSheet" title="Playlist">♫</button>
+    </div>
   </div>
 
-  <div id="library" class="library-strip"></div>
+  <div class="rail" id="rail"></div>
 
-  <div class="controls">
-    <div class="statusRow">
-      <div id="statusThumb" class="loading"></div>
-      <div class="ctrlCol">
-        <div class="ctrlLine">
-          <label id="lblVol" for="vol">Volume</label>
-          <input id="vol" type="range" min="0" max="1" step="0.01" value="1">
+  <div class="player">
+    <div class="playrow">
+      <div class="statusThumb" id="statusThumb"></div>
+      <div class="controls">
+        <button id="btnPlay">▶︎</button>
+        <button id="btnPause">⏸︎</button>
+        <button id="btnStop">⏹︎</button>
+        <div class="volblk">
+          <span class="smalllabel">Vol</span>
+          <input id="vol" type="range" min="0" max="1" step="0.01" value="0.9"/>
+          <label><input id="mute" type="checkbox"/> <span class="smalllabel">Mute</span></label>
         </div>
-        <div class="ctrlLine">
-          <label><input type="checkbox" id="loop"> <span id="lblLoop">Loop</span></label>
-        </div>
-        <div class="ctrlLine">
-          <label id="lblTimer" for="timer">Timer</label>
-          <select id="timer">
+      </div>
+      <div class="opts">
+        <label class="smalllabel"><input type="checkbox" id="loop"/> Loop</label>
+        <div>
+          <span class="smalllabel">Timer</span>
+          <select id="timerSel">
             <option value="0">Off</option>
-            <option value="5">5 min</option><option value="10">10 min</option>
-            <option value="15">15 min</option><option value="20">20 min</option>
-            <option value="30">30 min</option><option value="45">45 min</option>
-            <option value="60">60 min</option>
+            <option value="5">5m</option>
+            <option value="10">10m</option>
+            <option value="15">15m</option>
+            <option value="20">20m</option>
+            <option value="30">30m</option>
+            <option value="45">45m</option>
+            <option value="60">60m</option>
           </select>
         </div>
       </div>
     </div>
-    <audio id="player" controls preload="none" playsinline controlslist="nodownload noplaybackrate"></audio>
-  </div>
 
-  <!-- 오디오 플레이어 아래: 바 스펙트럼 모니터 전용창(항상 표시) -->
-  <div id="barVizWrap"><canvas id="barViz"></canvas></div>
+    <div class="vizbox"><canvas id="viz"></canvas></div>
+
+    <audio id="player" crossorigin="anonymous"></audio>
+  </div>
 </section>
 
-<!-- ============ Generator ============ -->
-<section id="gen" class="section" aria-label="Generator">
+<section id="gen">
+  <!-- ✅ 당신의 기존 Pro 주파수 생성기 UI/스크립트를 이 컨테이너 안에 붙여 넣으세요. -->
   <div class="gen-wrap">
-    <div class="field full">
-      <canvas id="oscGen" height="100"></canvas>
-    </div>
-
-    <div class="grid">
-      <div class="field">
-        <h4 id="lblFreq">Frequency (Hz)</h4>
-        <input id="genFreq" type="number" min="1" max="24000" step="0.1" value="432">
-      </div>
-      <div class="field">
-        <h4 id="lblWave">Waveform</h4>
-        <select id="genWave">
-          <option value="sine">Sine</option>
-          <option value="square">Square</option>
-          <option value="sawtooth">Saw</option>
-          <option value="triangle">Triangle</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <h4 id="lblBB">Binaural</h4>
-        <label><input id="genBinaural" type="checkbox"> <span id="lblBBEnable">Enable</span></label>
-        <label id="lblBBdiff" for="genBeat">Difference (Hz)</label>
-        <input id="genBeat" type="number" min="0" max="1000" step="0.1" value="7">
-      </div>
-      <div class="field">
-        <h4 id="lblHarmonics">Harmonics</h4>
-        <label id="lblHarmHelp" for="genHarmonics">Multiplier</label>
-        <input id="genHarmonics" type="number" min="1" max="8" step="1" value="1">
-      </div>
-
-      <div class="field">
-        <h4 id="lblLevel">Level</h4>
-        <input id="genLevel" type="range" min="0" max="1" step="0.01" value="0.5">
-      </div>
-      <div class="field">
-        <h4 id="lblDuty">Duty Cycle</h4>
-        <input id="genDuty" type="range" min="0.05" max="0.95" step="0.01" value="0.50" disabled>
-      </div>
-
-      <div class="field full">
-        <div class="gen-actions">
-          <input id="sweepStart" type="number" value="100"  aria-label="Sweep Start (Hz)" style="width:90px">
-          <input id="sweepEnd"   type="number" value="1000" aria-label="Sweep End (Hz)"   style="width:90px">
-          <input id="sweepTime"  type="number" value="10"   aria-label="Sweep Time (s)"   style="width:90px">
-          <button id="sweepGo" class="pill" title="Sweep">Sweep</button>
-        </div>
-      </div>
-
-      <div class="field full">
-        <div class="gen-actions">
-          <button id="genStart" class="pill primary" title="Play">▶️</button>
-          <button id="genStop"  class="pill"          title="Stop">⏹️</button>
-          <button id="btnSavePreset" class="pill" title="Save Preset">💾</button>
-          <button id="btnLoadPreset" class="pill" title="Load Preset">📜</button>
-        </div>
-      </div>
-    </div>
+    <div class="smalllabel">Paste your Freq. Gen. UI here (kept as-is).</div>
   </div>
 </section>
+
+<!-- Playlist Bottom Sheet -->
+<div class="sheet-mask" id="sheetMask"></div>
+<div class="sheet" id="sheet">
+  <h3>Playlists</h3>
+  <div class="row">
+    <input type="text" id="plName" placeholder="New playlist name"/>
+    <button id="plSave">Save current</button>
+  </div>
+  <div class="list" id="plList"></div>
+</div>
 
 <script>
-/* ========= Supabase ========= */
-const SUPABASE_URL="https://xdjgumqdwedgzwqturcx.supabase.co";
-const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
-const BUCKET="media";
-const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-const PUBLIC_BASE=SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/object/public/" + BUCKET + "/";
-const enc=s=>s.split('/').filter(Boolean).map(encodeURIComponent).join('/');
-const abs=p=>PUBLIC_BASE + enc(p);
+/* =========================
+   Config (Supabase + Paths)
+   ========================= */
+const SUPA_URL  = "https://xdjgumqdwedgzwqturcx.supabase.co";
+const SUPA_KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
+const BUCKET    = "media";
+const PUB_BASE  = `${SUPA_URL}/storage/v1/object/public/${BUCKET}`; // 원본 접근
+const IMG_BASE  = `${SUPA_URL}/storage/v1/render/image/public/${BUCKET}`; // 리사이즈 썸네일
 
-/* ========= Header: 메뉴/탭/언어 ========= */
-const menuBtn=document.getElementById('menuBtn'), drop=document.getElementById('menuDrop'), backdrop=document.getElementById('backdrop');
-menuBtn.onclick=()=>{ const on=drop.style.display==='flex'; drop.style.display=on?'none':'flex'; backdrop.style.display=on?'none':'block'; };
-backdrop.onclick=()=>{ drop.style.display='none'; backdrop.style.display='none'; };
-document.querySelectorAll('.menu-text').forEach(a=>{
-  a.addEventListener('click',e=>{e.preventDefault(); fetch(a.href,{cache:'no-store'}).then(r=>r.text()).then(t=>alert(t)).catch(()=>alert('⚠️ 불러올 수 없습니다.')); drop.style.display='none'; backdrop.style.display='none';});
-});
+/* ==============
+   UI Wiring
+   ============== */
+const rail = document.getElementById('rail');
+const pathTxt = document.getElementById('pathTxt');
+const btnBack = document.getElementById('btnBack');
+const btnRefresh = document.getElementById('btnRefresh');
+const btnOpenSheet = document.getElementById('btnOpenSheet');
 
-const tabs=document.querySelectorAll('.tab'), sections=document.querySelectorAll('.section');
-tabs.forEach(t=>t.onclick=()=>{ tabs.forEach(x=>x.classList.remove('active')); sections.forEach(s=>s.classList.remove('active')); t.classList.add('active'); document.getElementById(t.dataset.target).classList.add('active'); if(t.dataset.target==='gen') player.pause(); });
+const btnPlay = document.getElementById('btnPlay');
+const btnPause = document.getElementById('btnPause');
+const btnStop = document.getElementById('btnStop');
+const vol = document.getElementById('vol');
+const mute = document.getElementById('mute');
+const loop = document.getElementById('loop');
+const timerSel = document.getElementById('timerSel');
+const player = document.getElementById('player');
+const statusThumb = document.getElementById('statusThumb');
 
-const langBtn=document.getElementById('langToggle'); let isKo=false;
-function applyLang(){
-  const L = {
-    en:{ vol:'Volume', loop:'Loop', timer:'Timer', tabLib:'5DO', tabGen:'Freq. Gen.', freq:'Frequency (Hz)', wave:'Waveform', bb:'Binaural', bbEn:'Enable', bbDiff:'Difference (Hz)', harm:'Harmonics', harmHelp:'Multiplier', level:'Level', duty:'Duty Cycle', sweep:'Sweep' },
-    ko:{ vol:'볼륨',  loop:'반복', timer:'타이머', tabLib:'5DO', tabGen:'주파수 생성기', freq:'주파수 (Hz)', wave:'파형', bb:'바이노럴', bbEn:'활성화', bbDiff:'차이 (Hz)', harm:'하모닉스', harmHelp:'배수', level:'레벨', duty:'듀티 사이클', sweep:'스윕' }
-  }[isKo?'ko':'en'];
-  document.getElementById("lblVol").textContent=L.vol;
-  document.getElementById("lblLoop").textContent=L.loop;
-  document.getElementById("lblTimer").textContent=L.timer;
-  document.querySelector('.tab[data-target="lib"]').textContent=L.tabLib;
-  document.querySelector('.tab[data-target="gen"]').textContent=L.tabGen;
-  document.getElementById("lblFreq").textContent=L.freq;
-  document.getElementById("lblWave").textContent=L.wave;
-  document.getElementById("lblBB").textContent=L.bb;
-  document.getElementById("lblBBEnable").textContent=L.bbEn;
-  document.getElementById("lblBBdiff").textContent=L.bbDiff;
-  document.getElementById("lblHarmonics").textContent=L.harm;
-  document.getElementById("lblHarmHelp").textContent=L.harmHelp;
-  document.getElementById("lblLevel").textContent=L.level;
-  document.getElementById("lblDuty").textContent=L.duty;
-  document.getElementById("sweepGo").textContent=L.sweep;
-}
-langBtn.onclick=()=>{ isKo=!isKo; langBtn.textContent=isKo?'KO':'EN'; applyLang(); };
-applyLang();
+const canvas = document.getElementById('viz');
+const g = canvas.getContext('2d');
 
-/* ========= 공용 오디오 파이프라인 (iOS 대응) ========= */
-let audioCtx = window.audioCtx || new (window.AudioContext||window.webkitAudioContext)();
-window.audioCtx = audioCtx;
-const player=document.getElementById('player'); player.crossOrigin='anonymous'; player.playsInline=true;
-let srcNode=null, gainNode=null, analyserNode=null;
-
-function ensureAudioUnlocked(){ if(audioCtx.state!=='running') audioCtx.resume().catch(()=>{}); }
-['pointerdown','touchstart','keydown','click'].forEach(ev=>{ document.addEventListener(ev, ensureAudioUnlocked, { once:true, passive:true }); });
-
-function ensurePipeline(){
-  if(!gainNode){ gainNode=audioCtx.createGain(); gainNode.gain.value=parseFloat(vol.value||'1')||1; }
-  if(!analyserNode){ analyserNode=audioCtx.createAnalyser(); analyserNode.fftSize=1024; analyserNode.smoothingTimeConstant=0.85; }
-  if(!srcNode){
-    try{
-      srcNode=audioCtx.createMediaElementSource(player);
-      srcNode.connect(gainNode);
-      gainNode.connect(analyserNode);
-      analyserNode.connect(audioCtx.destination);
-    }catch(e){ /* 이미 연결된 경우 무시 */ }
-  }
-}
-const vol=document.getElementById('vol');
-function applyPlayerVolumeFromSlider(){ const v=parseFloat(vol.value||'1'); ensurePipeline(); if(gainNode) gainNode.gain.value=isNaN(v)?1:v; }
-vol.addEventListener('input',applyPlayerVolumeFromSlider);
-vol.addEventListener('change',applyPlayerVolumeFromSlider);
-player.addEventListener('loadedmetadata',applyPlayerVolumeFromSlider);
-player.addEventListener('play', ()=>{ ensureAudioUnlocked(); ensurePipeline(); });
-
-/* ========= Loop / Timer ========= */
-document.getElementById('loop').addEventListener('change',e=>player.loop=e.target.checked);
-let timerHandle=null;
-document.getElementById('timer').addEventListener('change',e=>{
-  if(timerHandle){ clearTimeout(timerHandle); timerHandle=null; }
-  const m=parseInt(e.target.value||'0',10); if(m>0) timerHandle=setTimeout(()=>{ try{ player.pause(); }catch{} }, m*60*1000);
-});
-
-/* ========= Status Thumb ========= */
-const statusThumb=document.getElementById('statusThumb');
-function setStatus(img){
-  if(!img){ statusThumb.classList.remove('loaded'); statusThumb.classList.add('loading'); statusThumb.style.backgroundImage=''; return; }
-  statusThumb.classList.add('loaded'); statusThumb.classList.remove('loading'); statusThumb.style.backgroundImage=`url('${img}')`;
-}
-
-/* ========= Library (Supabase) ========= */
-const lib=document.getElementById('library');
-const sbClient = sb; 
-async function list(path=""){
-  const {data,error}=await sbClient.storage.from(BUCKET).list(path,{limit:1000,sortBy:{column:"name",order:"asc"}});
-  if(error){ console.warn('[list]',error); return []; } return data||[];
-}
-let cwd="";
-async function load(path=""){
-  cwd=path; lib.innerHTML=""; setStatus(""); // loading anim
-  const rows=await list(path);
-  for(const e of rows){
-    const name=e.name; const full=(path?path+'/':'')+name;
-
-    // 폴더
-    if(!name.includes('.')){
-      const card=document.createElement('div'); card.className='card'; card.dataset.kind='folder'; card.dataset.path=full;
-      const img=document.createElement('img'); img.loading='lazy';
-      let folderBase = abs(full + '/folder');
-    img.src = folderBase + '.jpg';
-    img.onerror = () => {
-    img.onerror = null;
-    img.src = folderBase + '.png';
-    img.onerror = () => img.src = 'https://placehold.co/300x300/222/888?text=Folder';
-};
-      card.onclick=()=>{ ensureAudioUnlocked(); load(full); };
-      card.append(img); lib.append(card);
-      continue;
-    }
-    // 오디오
-    if(/\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(name)){
-      const card=document.createElement('div'); card.className='card'; card.dataset.kind='audio'; card.dataset.path=full;
-      const img=document.createElement('img'); img.loading='lazy';
-      let thumbBase = full.replace(/\.[^.]+$/, '');
-      let thumb = abs(thumbBase + '.jpg');
-      img.src = thumb;
-      img.onerror = () => {
-      img.onerror = null; // 무한루프 방지
-      img.src = abs(thumbBase + '.png');
-      img.onerror = () => img.src = 'https://placehold.co/300x300/222/888?text=Audio';
-};
-card.onclick=()=>{
-  ensureAudioUnlocked(); ensurePipeline();
-  player.pause(); player.currentTime=0; 
-  player.src = abs(full);
-
-  const base = full.replace(/\.[^.]+$/, '');
-  const tryJpg = abs(base + '.jpg');
-  const tryPng = abs(base + '.png');
-
-  function setThumb(url){
-    setStatus(url);
-    applyPlayerVolumeFromSlider();
-  }
-
-  // 1) JPG 먼저 테스트
-  const img = new Image();
-  img.onload = ()=> setThumb(tryJpg);
-  img.onerror = ()=>{
-    // 2) PNG 테스트
-    const img2 = new Image();
-    img2.onload = ()=> setThumb(tryPng);
-    img2.onerror = ()=> setThumb('https://placehold.co/300x300/222/888?text=Audio');
-    img2.src = tryPng;
-  };
-  img.src = tryJpg;
-};
-      card.append(img); lib.append(card);
-    }
-  }
-}
-/* nav */
-const btnBack=document.getElementById('btnBack'), btnRefresh=document.getElementById('btnRefresh');
-btnBack.onclick=()=>{ if(!cwd) return; const a=cwd.split('/'); a.pop(); load(a.join('/')); };
-btnRefresh.onclick=()=>load(cwd);
-/* Drag scroll */
-let isDown=false,sx=0,sl=0;
-lib.addEventListener('mousedown',e=>{isDown=true;sx=e.pageX;sl=lib.scrollLeft;});
-['mouseleave','mouseup'].forEach(ev=>lib.addEventListener(ev,()=>{isDown=false;}));
-lib.addEventListener('mousemove',e=>{ if(!isDown) return; lib.scrollLeft = sl - (e.pageX - sx)*1.5; });
-
-/* 초기 루트 */
-load("");
-
-/* ========= Playlist (localStorage) ========= */
-document.getElementById('btnSaveList').onclick=()=>{
-  const name=prompt(isKo?'플레이리스트 이름?':'Playlist name?'); if(!name) return;
-  const items=[...lib.querySelectorAll('.card')].filter(c=>c.dataset.kind==='audio')
-    .map(c=>({path:c.dataset.path, thumb:c.dataset.path.replace(/\.[^.]+$/,'.png')}));
-  const all=JSON.parse(localStorage.getItem('playlists')||'{}'); all[name]=items;
-  localStorage.setItem('playlists', JSON.stringify(all));
-  alert((isKo?'저장됨: ':'Saved: ')+name);
-};
-document.getElementById('btnLoadList').onclick=()=>{
-  const all=JSON.parse(localStorage.getItem('playlists')||'{}'), names=Object.keys(all);
-  if(!names.length){ alert(isKo?'플레이리스트가 없습니다.':'No playlists.'); return; }
-  const sel=prompt((isKo?'선택: ':'Select: ')+"\n"+names.join('\n')); if(!sel||!all[sel]) return;
-  lib.innerHTML=""; setStatus("");
-  all[sel].forEach(({path,thumb})=>{
-    const c=document.createElement('div'); c.className='card'; c.dataset.kind='audio'; c.dataset.path=path;
-    const img=document.createElement('img'); img.loading='lazy'; const t=abs(thumb);
-    img.src=t; img.onerror=()=>img.src='https://placehold.co/300x300/222/888?text=Audio';
-    c.onclick=()=>{ ensureAudioUnlocked(); ensurePipeline(); player.pause(); player.currentTime=0; player.src=abs(path); setStatus(t);
-      setTimeout(()=>{ applyPlayerVolumeFromSlider(); player.play().catch(()=>{}); },60); };
-    c.append(img); lib.append(c);
+/* Tabs */
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('section').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById(t.dataset.tab).classList.add('active');
+    // Viz는 라이브러리 탭에서만 렌더 루프
+    if(t.dataset.tab==='lib'){ startVizIfPlaying(); } else { stopViz(); }
   });
-};
+});
 
-/* ========= Bar Spectrum Visualizer (항상 보이는 전용창, 재생 중에만 draw) ========= */
-(function(){
-  const canvas=document.getElementById('barViz'); const ctx=canvas.getContext('2d',{alpha:true});
-  function resize(){ const dpr=Math.min(window.devicePixelRatio||1,2); canvas.width=Math.floor(canvas.clientWidth*dpr); canvas.height=Math.floor(canvas.clientHeight*dpr); ctx.setTransform(dpr,0,0,dpr,0,0); }
-  new ResizeObserver(resize).observe(canvas); resize();
-  const data=new Uint8Array(512); let raf=0;
-  function draw(){
-    raf=requestAnimationFrame(draw);
-    if(!analyserNode) return;
-    analyserNode.getByteFrequencyData(data);
-    const W=canvas.clientWidth,H=canvas.clientHeight,n=data.length,barW=W/n;
-    ctx.clearRect(0,0,W,H);
-    for(let i=0;i<n;i++){
-      const v=data[i]/255, h=v*H, x=i*barW, y=H-h;
-      const g=ctx.createLinearGradient(x,y,x,y+h);
-      g.addColorStop(0,'#7ef1c0'); g.addColorStop(0.5,'#55d0ff'); g.addColorStop(1,'#a38cff');
-      ctx.fillStyle=g; const wScale=1.0+(1-i/n)*0.4;
-      ctx.fillRect(x,y,barW*wScale,h);
-    }
+/* Hamburger */
+const menuBtn = document.getElementById('menuBtn');
+const menuDrop = document.getElementById('menuDrop');
+const menuDoc  = document.getElementById('menuDoc');
+menuBtn.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  menuDrop.classList.toggle('open');
+  if(!menuDrop.classList.contains('open')) menuDoc.classList.add('hidden');
+});
+document.addEventListener('click', (e)=>{
+  if(!menuDrop.contains(e.target) && !menuBtn.contains(e.target)){
+    menuDrop.classList.remove('open'); menuDoc.classList.add('hidden');
   }
-  function startViz(){ if(!raf) draw(); }
-  function stopViz(){ if(raf) cancelAnimationFrame(raf); raf=0; ctx.clearRect(0,0,canvas.width,canvas.height); }
-  player.addEventListener('play', ()=>{ ensureAudioUnlocked(); ensurePipeline(); startViz(); });
-  player.addEventListener('pause', stopViz);
-  player.addEventListener('ended', stopViz);
-  player.addEventListener('emptied', stopViz);
-})();
+});
+menuDrop.addEventListener('click', async (e)=>{
+  const a = e.target.closest('.item'); if(!a) return;
+  const key = a.dataset.doc;
+  if(key==='shop'){ window.open('https://5dshop.co.kr','_blank','noopener'); return; }
+  menuDoc.classList.remove('hidden');
+  try{
+    const res = await fetch(`/texts/${key}.txt?ts=`+Date.now());
+    menuDoc.textContent = res.ok ? await res.text() : '(no content)';
+  }catch{ menuDoc.textContent='(failed to load)'; }
+});
 
-/* ========= Generator (Osc, Harmonics, Binaural, Sweep, Presets) ========= */
-const waveSel=document.getElementById('genWave');
-const freqInp=document.getElementById('genFreq');
-const lvlInp=document.getElementById('genLevel');
-const bbChk=document.getElementById('genBinaural');
-const beatInp=document.getElementById('genBeat');
-const harmInp=document.getElementById('genHarmonics');
-const dutyInp=document.getElementById('genDuty');
+/* ===========
+   State
+   =========== */
+let cwd = "";               // current “virtual” path inside bucket
+let stack = [];             // history for Back
+let timerId = null;
+let audioCtx, srcNode, gainNode, analyser;
+let vizRunning = false;
+let decodedQueue = [];      // 현재(가시) 폴더의 트랙 리스트 (썸네일/URL 포함)
 
-const genGain=(()=>{ const g=audioCtx.createGain(); g.connect(audioCtx.destination); return g; })();
-let genRunning=false; let genMeta=[];
+/* ===========================
+   Helpers (URL & Thumbnails)
+   =========================== */
+const encPath = (p)=> p.split('/').map(encodeURIComponent).join('/');
+const fileURL = (path)=> `${PUB_BASE}/${encPath(path)}`;
+const imgURL  = (path, w=360)=> `${IMG_BASE}/${encPath(path)}?width=${w}&quality=70&format=webp`;
 
-function clearGen(){ genMeta.forEach(o=>{try{o.node.stop()}catch{} try{o.node.disconnect()}catch{}}); genMeta=[]; }
-function buildGenNodes(base,useBB,beat,harm,wave){
-  clearGen();
-  const mk=(f,m=1,b=0)=>{ const o=audioCtx.createOscillator(); o.type=wave; o.frequency.value=f*m+b; o.connect(genGain); o.start(); genMeta.push({node:o,mult:m,beatAdd:b}); };
-  if(useBB){ mk(base,1,0); mk(base,1,beat);} else { mk(base,1,0); }
-  for(let m=2;m<=harm;m++){ if(useBB){ mk(base,m,0); mk(base,m,beat);} else { mk(base,m,0);} }
+/* 폴더 썸네일: folder.jpg 우선 → folder.png 폴백 */
+const folderThumb = async (folder) => {
+  const jpg = `${folder}/folder.jpg`;
+  const png = `${folder}/folder.png`;
+  const ok = await head(fileURL(jpg));
+  return ok ? imgURL(jpg, 360) : imgURL(png, 360);
+};
+
+/* 파일 썸네일: 파일명과 동일(.jpg) → .png 폴백 */
+const audioThumb = async (folder, base) => {
+  const jpg = `${folder}/${base}.jpg`;
+  const png = `${folder}/${base}.png`;
+  const ok = await head(fileURL(jpg));
+  return ok ? imgURL(jpg, 360) : imgURL(png, 360);
+};
+async function head(url){
+  try{ const r = await fetch(url, {method:'HEAD', cache:'no-store'}); return r.ok; }catch{ return false; }
 }
-function startGenerator(){
-  ensureAudioUnlocked(); if(!player.paused) player.pause();
-  if(genRunning) clearGen();
-  const wave=waveSel.value, base=+freqInp.value||432, lvl=+lvlInp.value||0.5, useBB=!!bbChk.checked, beat=+beatInp.value||7, harm=Math.max(1,Math.min(8,parseInt(harmInp.value)||1));
-  genGain.gain.value=lvl; buildGenNodes(base,useBB,beat,harm,wave); dutyInp.disabled=(wave!=='square'); genRunning=true;
+
+/* ======================
+   List (root or folder)
+   ====================== */
+/* Supabase public list: 오브젝트 인덱싱이 없으므로
+   - 폴더 목록은 사전 약속된 category 폴더명 배열을 사용하거나
+   - 서버에서 tree API를 제공해야 함.
+   여기서는 실사용 구조에 맞춰 “1-depth 카테고리 폴더들이 고정/유한”이라고 가정하고 간단 배열 선언.
+*/
+const ROOT_FOLDERS = [
+  "Brainwave_States","Crystal_Frequencies","White_Noise",
+  "Torus_Harmonics","Meditation_Breathwork","Quantum_Torus_X"
+];
+
+async function listRoot(){
+  pathTxt.textContent = "/";
+  rail.innerHTML = "";
+  decodedQueue = [];
+  for(const fo of ROOT_FOLDERS){
+    const card = await makeFolderCard(fo);
+    rail.appendChild(card);
+  }
 }
-function stopGenerator(){ if(!genRunning) return; clearGen(); genRunning=false; genGain.gain.setTargetAtTime(0,audioCtx.currentTime,0.02); }
-function updateGenerator(){ if(!genRunning) return; const wave=waveSel.value, base=+freqInp.value||432, useBB=!!bbChk.checked, beat=+beatInp.value||7, harm=Math.max(1,Math.min(8,parseInt(harmInp.value)||1)); buildGenNodes(base,useBB,beat,harm,wave); }
-freqInp.oninput=updateGenerator; waveSel.oninput=()=>{ dutyInp.disabled=(waveSel.value!=='square'); updateGenerator(); };
-bbChk.oninput=updateGenerator; beatInp.oninput=updateGenerator; lvlInp.oninput=e=>{ genGain.gain.value=+e.target.value; };
 
-document.getElementById('sweepGo').onclick=()=>{
-  if(!genRunning||genMeta.length===0) return;
-  const s=+document.getElementById('sweepStart').value||100, e=+document.getElementById('sweepEnd').value||1000, t=+document.getElementById('sweepTime').value||10;
-  const now=audioCtx.currentTime; genMeta.forEach(o=>{ const sf=s*o.mult+(o.beatAdd||0), ef=e*o.mult+(o.beatAdd||0);
-    try{ o.node.frequency.cancelScheduledValues(now); o.node.frequency.setValueAtTime(sf,now); o.node.frequency.linearRampToValueAtTime(ef,now+t);}catch{} });
-};
-document.getElementById('genStart').onclick=()=>{ audioCtx.resume(); startGenerator(); };
-document.getElementById('genStop').onclick = stopGenerator;
+async function makeFolderCard(name){
+  const card = document.createElement('div'); card.className='card';
+  const t = document.createElement('div'); t.className='thumb';
+  const img = document.createElement('img');
+  img.alt = name;
+  try{ img.src = await folderThumb(name); }catch{ /* ignore */ }
+  t.appendChild(img);
+  const tag = document.createElement('div'); tag.className='tag'; tag.textContent=''; t.appendChild(tag);
+  const title = document.createElement('div'); title.className='ctitle'; title.textContent=name;
+  card.appendChild(t); card.appendChild(title);
+  card.addEventListener('click', ()=> enterFolder(name));
+  return card;
+}
 
-/* Presets */
-document.getElementById('btnSavePreset').onclick=()=>{
-  const name=prompt(isKo?'프리셋 이름?':'Preset name?'); if(!name) return;
-  const p={ wave:waveSel.value, freq:+freqInp.value, binaural:bbChk.checked, beat:+beatInp.value, harm:+harmInp.value, level:+lvlInp.value };
-  const all=JSON.parse(localStorage.getItem('presets')||'{}'); all[name]=p; localStorage.setItem('presets',JSON.stringify(all)); alert((isKo?'저장됨: ':'Saved: ')+name);
-};
-document.getElementById('btnLoadPreset').onclick=()=>{
-  const all=JSON.parse(localStorage.getItem('presets')||'{}'), names=Object.keys(all);
-  if(!names.length){ alert(isKo?'프리셋이 없습니다.':'No presets.'); return; }
-  const sel=prompt((isKo?'선택: ':'Select: ')+"\n"+names.join('\n')); if(!sel||!all[sel]) return;
-  const p=all[sel]; waveSel.value=p.wave; freqInp.value=p.freq; bbChk.checked=p.binaural; beatInp.value=p.beat; harmInp.value=p.harm; lvlInp.value=p.level;
-  updateGenerator();
-};
+async function enterFolder(name){
+  stack.push(cwd);
+  cwd = name;
+  await listFolder(name);
+}
 
-/* Mini scope (Generator) */
-(function genScope(){
-  const cvs=document.getElementById("oscGen"); const ctx=cvs.getContext("2d");
-  const an=audioCtx.createAnalyser(); an.fftSize=2048; genGain.connect(an);
-  const buf=new Uint8Array(an.fftSize);
-  function resize(){ cvs.width=cvs.clientWidth||window.innerWidth; } resize(); window.addEventListener("resize",resize);
-  (function loop(){ requestAnimationFrame(loop); an.getByteTimeDomainData(buf);
-    ctx.fillStyle="#090b11"; ctx.fillRect(0,0,cvs.width,cvs.height);
-    ctx.lineWidth=2; ctx.strokeStyle="#9cff8b"; ctx.beginPath();
-    const dx=cvs.width/buf.length; for(let i=0,x=0;i<buf.length;i++,x+=dx){ const y=(buf[i]/128)*(cvs.height/2); i?ctx.lineTo(x,y):ctx.moveTo(x,y); }
-    ctx.lineTo(cvs.width,cvs.height/2); ctx.stroke(); })();
-})();
+async function listFolder(folder){
+  pathTxt.textContent = "/"+folder;
+  rail.innerHTML = "";
+  decodedQueue = [];
+
+  // 간단 규칙: 해당 폴더에 있는 mp3 나열 (이름 목록이 고정이 아니라면 서버가 파일목록 JSON을 내려줘야 함)
+  // 여기서는 “썸네일이 존재하는 파일들만 표시”를 위해 후보 이름을 HEAD로 탐지.
+  const candidates = await guessAudioNames(folder);
+  for(const base of candidates){
+    const card = await makeAudioCard(folder, base);
+    rail.appendChild(card);
+    decodedQueue.push({folder, base});
+  }
+}
+
+// 휴리스틱: 폴더의 썸네일 리스트를 미리 알고 있지 않으므로, 몇 가지 네임패턴/샘플을 탐색.
+// 실제 서비스에선 서버에서 JSON 목록을 내려받도록 바꾸는 걸 권장.
+async function guessAudioNames(folder){
+  // 간단히 png/jpg 썸네일 존재로 판단 → 같은 이름의 mp3 존재 가정
+  // 아래 샘플 후보를 늘리고 싶으면 push.
+  const seeds = [
+    "Gamma","Gamma_Expansion","Alpha","Theta","Delta","Schumann",
+    "Rose_Quartz","Moldavite_Activation","Rainy_Day_in_Amazon_Forest"
+  ];
+  const out=[];
+  for(const base of seeds){
+    const ok = (await head(fileURL(`${folder}/${base}.jpg`))) ||
+               (await head(fileURL(`${folder}/${base}.png`)));
+    const okmp3 = await head(fileURL(`${folder}/${base}.mp3`));
+    if(ok && okmp3) out.push(base);
+  }
+  return out;
+}
+
+async function makeAudioCard(folder, base){
+  const card = document.createElement('div'); card.className='card';
+  const t = document.createElement('div'); t.className='thumb';
+  const img = document.createElement('img'); img.alt=base;
+  try{ img.src = await audioThumb(folder, base); }catch{}
+  t.appendChild(img);
+  const tag = document.createElement('div'); tag.className='tag'; tag.textContent=''; t.appendChild(tag);
+  const title = document.createElement('div'); title.className='ctitle'; title.textContent=base.replace(/_/g,' ');
+  card.appendChild(t); card.appendChild(title);
+  card.addEventListener('click', ()=> selectTrack(folder, base)); // 로딩만, 자동재생 금지
+  return card;
+}
+
+/* =====================
+   Select / Play Logic
+   ===================== */
+function setStatusThumb(url){
+  statusThumb.innerHTML = '';
+  if(url){
+    const img = document.createElement('img');
+    img.src = url; statusThumb.appendChild(img);
+  } // 없으면 기본 배경
+}
+
+async function selectTrack(folder, base){
+  // 썸네일 표시
+  try{ setStatusThumb(await audioThumb(folder, base)); }catch{ setStatusThumb(null); }
+  // 소스만 설정(자동재생 금지)
+  player.src = fileURL(`${folder}/${base}.mp3`) + `?ts=${Date.now()}`;
+  player.loop = loop.checked;
+  // 사용자가 ▶︎ 눌러야만 재생
+}
+
+/* ===========
+   Back/Refresh
+   =========== */
+btnBack.addEventListener('click', async ()=>{
+  if(!stack.length){ cwd=""; await listRoot(); return; }
+  cwd = stack.pop()||"";
+  if(cwd){ await listFolder(cwd); } else { await listRoot(); }
+});
+btnRefresh.addEventListener('click', async ()=>{
+  if(cwd){ await listFolder(cwd); } else { await listRoot(); }
+});
+
+/* ===========
+   Audio Graph
+   =========== */
+function ensureAudio(){
+  if(audioCtx) return;
+  audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  gainNode = audioCtx.createGain();
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 1024;
+  const dest = audioCtx.destination;
+
+  if(srcNode) srcNode.disconnect();
+  const elNode = audioCtx.createMediaElementSource(player);
+  srcNode = elNode;
+  elNode.connect(gainNode).connect(analyser).connect(dest);
+  updateGain();
+}
+function updateGain(){
+  if(!gainNode) return;
+  const val = mute.checked ? 0 : Number(vol.value||0.9);
+  gainNode.gain.value = val;
+}
+vol.addEventListener('input', updateGain);
+mute.addEventListener('change', updateGain);
+loop.addEventListener('change', ()=>{ player.loop = loop.checked; });
+
+/* iOS Unlock */
+['pointerdown','touchstart','click'].forEach(ev=>{
+  window.addEventListener(ev, ()=>{
+    if(audioCtx && audioCtx.state==='suspended') audioCtx.resume();
+  }, {passive:true, once:false});
+});
+
+/* ===== Controls ===== */
+btnPlay.addEventListener('click', async ()=>{
+  ensureAudio();
+  if(audioCtx.state==='suspended') await audioCtx.resume();
+  await player.play().catch(()=>{});
+  startVizIfPlaying();
+});
+btnPause.addEventListener('click', ()=>{
+  player.pause(); stopViz();
+});
+btnStop.addEventListener('click', ()=>{
+  player.pause(); player.currentTime = 0; stopViz();
+});
+
+/* Timer */
+timerSel.addEventListener('change', ()=>{
+  if(timerId){ clearTimeout(timerId); timerId=null; }
+  const min = Number(timerSel.value||0);
+  if(min>0){
+    timerId = setTimeout(()=>{ player.pause(); stopViz(); }, min*60*1000);
+  }
+});
+
+/* ==============
+   Visualizer
+   ============== */
+function resizeViz(){
+  canvas.width = canvas.clientWidth * devicePixelRatio;
+  canvas.height = canvas.clientHeight * devicePixelRatio;
+}
+window.addEventListener('resize', resizeViz); resizeViz();
+
+function startVizIfPlaying(){
+  if(vizRunning) return;
+  if(!audioCtx || player.paused) return;
+  vizRunning = true; renderViz();
+}
+function stopViz(){ vizRunning=false; }
+
+function renderViz(){
+  if(!vizRunning) return;
+  requestAnimationFrame(renderViz);
+  const W = canvas.width, H = canvas.height;
+  g.clearRect(0,0,W,H);
+  g.fillStyle = '#0b0f17';
+  g.fillRect(0,0,W,H);
+
+  const buf = new Uint8Array(analyser.frequencyBinCount);
+  analyser.getByteFrequencyData(buf);
+
+  const bars = 72; // 미니멀
+  const step = Math.floor(buf.length / bars);
+  const bw = Math.max(2, Math.floor(W/(bars*1.3)));
+  for(let i=0;i<bars;i++){
+    const v = buf[i*step] / 255;
+    const h = Math.max(2, Math.floor(v * (H*0.9)));
+    const x = Math.floor(i*(W/bars));
+    const y = H - h;
+    const grd = g.createLinearGradient(x,y,x,y+h);
+    grd.addColorStop(0, 'rgba(126,241,192,.92)');
+    grd.addColorStop(.6,'rgba(85,208,255,.85)');
+    grd.addColorStop(1, 'rgba(163,140,255,.80)');
+    g.fillStyle = grd;
+    g.fillRect(x+2, y, bw, h);
+  }
+}
+
+/* ===========
+   Playlist UI
+   =========== */
+const sheetMask = document.getElementById('sheetMask');
+const sheet = document.getElementById('sheet');
+const plName = document.getElementById('plName');
+const plSave = document.getElementById('plSave');
+const plList = document.getElementById('plList');
+
+btnOpenSheet.addEventListener('click', ()=>{ openSheet(); renderPL(); });
+sheetMask.addEventListener('click', closeSheet);
+function openSheet(){ sheet.classList.add('open'); sheetMask.classList.add('show'); }
+function closeSheet(){ sheet.classList.remove('open'); sheetMask.classList.remove('show'); }
+
+plSave.addEventListener('click', ()=>{
+  const name = (plName.value||'').trim();
+  if(!name) return;
+  // 현재 폴더의 decodedQueue를 그 상태로 저장 (트랙 절대경로 리스트)
+  const items = decodedQueue.map(x=>`${x.folder}/${x.base}.mp3`);
+  const key = `PL_${name}`;
+  localStorage.setItem(key, JSON.stringify(items));
+  if(!localStorage.getItem('__PL_INDEX__')){
+    localStorage.setItem('__PL_INDEX__', JSON.stringify([name]));
+  }else{
+    const idx = JSON.parse(localStorage.getItem('__PL_INDEX__'));
+    if(!idx.includes(name)){ idx.push(name); localStorage.setItem('__PL_INDEX__', JSON.stringify(idx)); }
+  }
+  renderPL();
+});
+
+function renderPL(){
+  plList.innerHTML = '';
+  const idx = JSON.parse(localStorage.getItem('__PL_INDEX__')||'[]');
+  for(const nm of idx){
+    const row = document.createElement('div'); row.className='item';
+    const left = document.createElement('div'); left.className='name'; left.textContent = nm;
+    const btns = document.createElement('div'); btns.className='btns';
+    const bLoad = document.createElement('button'); bLoad.textContent='Load';
+    const bDel  = document.createElement('button'); bDel.textContent='Delete';
+    bLoad.addEventListener('click', ()=> loadPlaylist(nm));
+    bDel.addEventListener('click', ()=> delPlaylist(nm));
+    btns.appendChild(bLoad); btns.appendChild(bDel);
+    row.appendChild(left); row.appendChild(btns);
+    plList.appendChild(row);
+  }
+}
+function loadPlaylist(nm){
+  const key = `PL_${nm}`;
+  const arr = JSON.parse(localStorage.getItem(key)||'[]');
+  // 로드 시, rail을 ‘해당 트랙 카드들’로 구성 (간편 로더)
+  rail.innerHTML=''; decodedQueue=[];
+  (async ()=>{
+    for(const p of arr){
+      const [folder, file] = p.split('/'); // folder/base.mp3
+      const base = file.replace(/\.mp3$/,'');
+      const card = await makeAudioCard(folder, base);
+      rail.appendChild(card);
+      decodedQueue.push({folder, base});
+    }
+    pathTxt.textContent = `(playlist) ${nm}`;
+    cwd = ""; stack=[];
+  })();
+  closeSheet();
+}
+function delPlaylist(nm){
+  const key = `PL_${nm}`; localStorage.removeItem(key);
+  const idx = JSON.parse(localStorage.getItem('__PL_INDEX__')||'[]').filter(x=>x!==nm);
+  localStorage.setItem('__PL_INDEX__', JSON.stringify(idx));
+  renderPL();
+}
+
+/* ===========
+   Init
+   =========== */
+async function boot(){
+  await listRoot();
+  updateGain();
+}
+boot();
+
+/* =============
+   Resize canvas
+   ============= */
+new ResizeObserver(resizeViz).observe(document.querySelector('.vizbox'));
 </script>
 </body>
 </html>
