@@ -358,8 +358,14 @@ async function load(path=""){
     if(/\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(name)){
       const card=document.createElement('div'); card.className='card'; card.dataset.kind='audio'; card.dataset.path=full;
       const img=document.createElement('img'); img.loading='lazy';
-      const thumb=full.replace(/\.[^.]+$/,'.png');
-      img.src=abs(thumb); img.onerror=()=>img.src='https://placehold.co/300x300/222/888?text=Audio';
+      let thumbBase = full.replace(/\.[^.]+$/, '');
+      let thumb = abs(thumbBase + '.jpg');
+      img.src = thumb;
+      img.onerror = () => {
+      img.onerror = null; // 무한루프 방지
+      img.src = abs(thumbBase + '.png');
+      img.onerror = () => img.src = 'https://placehold.co/300x300/222/888?text=Audio';
+};
 card.onclick=()=>{
   ensureAudioUnlocked(); ensurePipeline();
   player.pause(); player.currentTime=0; player.src=abs(full);
