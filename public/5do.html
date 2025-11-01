@@ -420,15 +420,6 @@
   statusText.textContent = (lang==='en' ? 'No track loaded' : '선곡되지 않음');
   render();
 
-  // ===== Menu open/close =====
-  const menuBtn = document.getElementById('menuBtn');
-  const sideMenu= document.getElementById('sideMenu');
-  const backdrop= document.getElementById('menuBackdrop');
-  const open = ()=>{ sideMenu.classList.add('open'); backdrop.classList.add('show'); };
-  const close= ()=>{ sideMenu.classList.remove('open'); backdrop.classList.remove('show'); };
-  menuBtn.addEventListener('click', (e)=>{ e.stopPropagation(); sideMenu.classList.contains('open')?close():open(); });
-  backdrop.addEventListener('click', close);
-
   console.log('[5DO Lite] ready with spectrum + lazy JPG thumbnails');
 })();
 </script>
