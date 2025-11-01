@@ -28,9 +28,9 @@
   .hamburger span::after {position:absolute;top: 6px}
 
   .side-menu{display:none;position:absolute;top:34px;left:0;background:#0f1524;border:1px solid #324;
-    border-radius:12px;padding:10px;width:min(260px,80vw);box-shadow:0 20px 50px rgba(0,0,0,.45)}
+    border-radius:12px;padding:10px;width:min(260px,80vw);box-shadow:0 20px 50px rgba(0,0,0,.45)z-index:2001;}
   .side-menu.open{display:block}
-  .menu-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.25);backdrop-filter:saturate(120%) blur(2px);display:none}
+  .menu-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.25);backdrop-filter:saturate(120%) blur(2px);display:nonez-index:2000;}
   .menu-backdrop.show{display:block}
   .side-menu a{display:block;padding:10px;border-bottom:1px dashed #2f3a55}
   .side-menu a:last-child{border-bottom:none}
@@ -230,31 +230,65 @@ let graphConnected = false; // WebAudio graph connection state
     for(const e of entries){
       if(e.isIntersecting){
         const el = e.target;
-        const url = el.getAttribute('data-src');
-        if(url){
-          el.style.backgroundImage = `url("${url}")`;
-          el.removeAttribute('data-src');
+        const listJson = el.getAttribute('data-src-list');
+        const single = el.getAttribute('data-src');
+        const candidates = listJson ? JSON.parse(listJson) : (single ? [single] : []);
+        if(candidates.length){
+          // try sequentially with Image() to avoid broken bg
+          let idx = 0;
+          const tryNext = () => {
+            if(idx >= candidates.length){ el.removeAttribute('data-src-list'); io.unobserve(el); return; }
+            const url = candidates[idx++];
+            const img = new Image();
+            img.onload = () => {
+              el.style.backgroundImage = `url("${url}")`;
+              el.removeAttribute('data-src-list');
+              el.removeAttribute('data-src');
+              io.unobserve(el);
+            };
+            img.onerror = tryNext;
+            img.src = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now(); // bypass cache
+          };
+          tryNext();
+        } else {
+          io.unobserve(el);
         }
-        io.unobserve(el);
       }
     }
   }, {root:null,rootMargin:'200px',threshold:0.01});
+  // ===== URL helpers
+ (robust thumbnail candidates) =====
+  function joinPublic(folder, name){
+    const f = (folder && folder.length) ? `/${encodeURIComponent(folder)}` : '';
+    return `${PUBLIC_BASE}${f}/${encodeURIComponent(name)}`;
+  }
 
-  // ===== URL helpers (JPG only, lang-suffix) =====
-  function folderJpg(folder){
-    const name = (lang==='en') ? 'folder_e.jpg' : 'folder.jpg';
-    return `${PUBLIC_BASE}/${encodeURIComponent(folder)}/${name}`;
+  function folderThumbCandidates(folder){
+    // order: jpg (lang), jpg (default), png (lang), png (default)
+    const names = (lang==='en')
+      ? ['folder_e.jpg','folder.jpg','folder_e.png','folder.png']
+      : ['folder.jpg','folder_e.jpg','folder.png','folder_e.png'];
+    return names.map(n => joinPublic(folder, n));
   }
-  function trackThumbJpg(folder, trackFile){
+
+  function trackThumbCandidates(folder, trackFile){
     const base = trackFile.replace(/\.(mp3|wav|m4a)$/i,'');
-    const suffix = (lang==='en') ? '_E' : '';
-    return `${PUBLIC_BASE}/${encodeURIComponent(folder)}/${encodeURIComponent(base+suffix)}.jpg`;
+    const langSuffix = (lang==='en') ? '_E' : '';
+    const names = [
+      `${base}${langSuffix}.jpg`,
+      `${base}.jpg`,
+      `${base}${langSuffix}.png`,
+      `${base}.png`
+    ];
+    return names.map(n => joinPublic(folder, n));
   }
+
   function trackAudioUrl(folder, trackFile){
-    return `${PUBLIC_BASE}/${encodeURIComponent(folder)}/${encodeURIComponent(trackFile)}`;
+    return joinPublic(folder, trackFile);
   }
 
   // ===== List from Supabase =====
+ =====
   async function listPath(path){
     const p = path ? path + '/' : '';
     const { data, error } = await supa.storage.from(BUCKET).list(p, {
@@ -280,7 +314,7 @@ let graphConnected = false; // WebAudio graph connection state
       card.className = 'card';
       const th = document.createElement('div');
       th.className='thumb';
-      th.setAttribute('data-src', folderJpg(f.name)); // lazy
+      th.setAttribute('data-src-list', JSON.stringify(folderThumbCandidates(path || ''))); // lazy
       card.appendChild(th);
       const lb = document.createElement('div'); lb.className='label'; card.appendChild(lb); // hidden label (kept for layout)
       card.addEventListener('click', (e)=>{
@@ -298,7 +332,7 @@ let graphConnected = false; // WebAudio graph connection state
       card.className='card';
       const th = document.createElement('div');
       th.className='thumb';
-      th.setAttribute('data-src', trackThumbJpg(path || '', file.name)); // lazy
+      th.setAttribute('data-src-list', JSON.stringify(trackThumbCandidates(path || '', file.name))); // lazy
       card.appendChild(th);
       const lb = document.createElement('div'); lb.className='label'; card.appendChild(lb);
       card.addEventListener('click', (e)=>{
@@ -309,7 +343,7 @@ let graphConnected = false; // WebAudio graph connection state
         player.load?.();
         // 로딩 썸네일 갱신
         statusThumb.classList.add('loaded');
-        statusThumb.style.backgroundImage = `url("${trackThumbJpg(path || '', file.name)}")`;
+        statusThumb.style.backgroundImage = `url("${(function(){return (trackThumbCandidates(path||"", file.name)[0])})()}")`;
         statusText.textContent = (lang==='en' ? 'Ready to play' : '재생 준비됨');
       });
       strip.appendChild(card);
