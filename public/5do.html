@@ -244,12 +244,31 @@ async function load(path=""){
       img.onerror = () => img.src = 'https://placehold.co/300x300/222/888?text=Audio';
 };
       card.onclick=()=>{
-        ensureAudioUnlocked();
-        player.pause();player.currentTime=0;
-        player.src=abs(full);
-        setStatus(abs(thumb));
-        // 사용자가 플레이 버튼으로 재생하도록 유지 (자동재생 차단 회피)
-      };
+  ensureAudioUnlocked(); ensurePipeline();
+  player.pause(); player.currentTime=0; 
+  player.src = abs(full);
+
+  const base = full.replace(/\.[^.]+$/, '');
+  const tryJpg = abs(base + '.jpg');
+  const tryPng = abs(base + '.png');
+
+  function setThumb(url){
+    setStatus(url);
+    applyPlayerVolumeFromSlider();
+  }
+
+  // 1) JPG 먼저 테스트
+  const img = new Image();
+  img.onload = ()=> setThumb(tryJpg);
+  img.onerror = ()=>{
+    // 2) PNG 테스트
+    const img2 = new Image();
+    img2.onload = ()=> setThumb(tryPng);
+    img2.onerror = ()=> setThumb('https://placehold.co/300x300/222/888?text=Audio');
+    img2.src = tryPng;
+  };
+  img.src = tryJpg;
+};
       card.append(img);lib.append(card);
     }
   }
