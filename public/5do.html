@@ -28,9 +28,9 @@
   .hamburger span::after {position:absolute;top: 6px}
 
   .side-menu{display:none;position:absolute;top:34px;left:0;background:#0f1524;border:1px solid #324;
-    border-radius:12px;padding:10px;width:min(260px,80vw);box-shadow:0 20px 50px rgba(0,0,0,.45)}
+    border-radius:12px;padding:10px;width:min(260px,80vw);box-shadow:0 20px 50px rgba(0,0,0,.45) z-index:2001;}
   .side-menu.open{display:block}
-  .menu-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.25);backdrop-filter:saturate(120%) blur(2px);display:none}
+  .menu-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.25);backdrop-filter:saturate(120%) blur(2px);display:none z-index:2000;}
   .menu-backdrop.show{display:block}
   .side-menu a{display:block;padding:10px;border-bottom:1px dashed #2f3a55}
   .side-menu a:last-child{border-bottom:none}
@@ -194,31 +194,64 @@
   const pathStack = [];
   const currentPath = ()=> pathStack.join('/');
 
-  // ===== Lazy loader =====
+  
+  // ===== Lazy loader (robust with candidates) =====
+  function trySetBackground(el, urls){
+    if (!urls || urls.length===0) return;
+    const [first, ...rest] = urls;
+    const test = new Image();
+    const src = first + (first.includes('?') ? '&' : '?') + 't=' + Date.now();
+    test.onload = ()=>{ el.style.backgroundImage = `url("${src}")`; el.removeAttribute('data-src'); el.removeAttribute('data-src-list'); };
+    test.onerror = ()=> trySetBackground(el, rest);
+    test.src = src;
+  }
   const io = new IntersectionObserver((entries)=>{
     for(const e of entries){
       if(e.isIntersecting){
         const el = e.target;
-        const url = el.getAttribute('data-src');
-        if(url){
-          el.style.backgroundImage = `url("${url}")`;
+        const listAttr = el.getAttribute('data-src-list');
+        if (listAttr){
+          try {
+            const urls = JSON.parse(listAttr);
+            if (Array.isArray(urls) && urls.length) trySetBackground(el, urls);
+          } catch {}
           el.removeAttribute('data-src');
+        } else {
+          const url = el.getAttribute('data-src');
+          if(url){
+            el.style.backgroundImage = `url("${url}")`;
+            el.removeAttribute('data-src');
+          }
         }
         io.unobserve(el);
       }
     }
   }, {root:null,rootMargin:'200px',threshold:0.01});
 
-  // ===== URL helpers (JPG only, lang-suffix) =====
-  function folderJpg(folder){
-    const name = (lang==='en') ? 'folder_e.jpg' : 'folder.jpg';
-    return `${PUBLIC_BASE}/${encodeURIComponent(folder)}/${name}`;
+  // ===== URL helpers (JPG/PNG, lang-suffix, candidates) =====
+
+  function folderThumbCandidates(folder){
+    const base = `${PUBLIC_BASE}/${encodeURIComponent(folder)}/`;
+    const ko = ['folder.jpg','folder_e.jpg','folder.png','folder_e.png'].map(n=>base+n);
+    const en = ['folder_e.jpg','folder.jpg','folder_e.png','folder.png'].map(n=>base+n);
+    return (lang==='en') ? en : ko;
   }
-  function trackThumbJpg(folder, trackFile){
-    const base = trackFile.replace(/\.(mp3|wav|m4a)$/i,'');
-    const suffix = (lang==='en') ? '_E' : '';
-    return `${PUBLIC_BASE}/${encodeURIComponent(folder)}/${encodeURIComponent(base+suffix)}.jpg`;
+  function trackThumbCandidates(folder, trackFile){
+    const baseName = trackFile.replace(/\.(mp3|wav|m4a)$/i,'');
+    const base = `${PUBLIC_BASE}/${encodeURIComponent(folder)}/`;
+    const ko = [`${base}${encodeURIComponent(baseName)}.jpg`,
+                `${base}${encodeURIComponent(baseName+'_E')}.jpg`,
+                `${base}${encodeURIComponent(baseName)}.png`,
+                `${base}${encodeURIComponent(baseName+'_E')}.png`];
+    const en = [`${base}${encodeURIComponent(baseName+'_E')}.jpg`,
+                `${base}${encodeURIComponent(baseName)}.jpg`,
+                `${base}${encodeURIComponent(baseName+'_E')}.png`,
+                `${base}${encodeURIComponent(baseName)}.png`];
+    return (lang==='en') ? en : ko;
   }
+
+  function folderJpg(folder){ return folderThumbCandidates(folder)[0]; }
+  function trackThumbJpg(folder, trackFile){ return trackThumbCandidates(folder, trackFile)[0]; }
   function trackAudioUrl(folder, trackFile){
     return `${PUBLIC_BASE}/${encodeURIComponent(folder)}/${encodeURIComponent(trackFile)}`;
   }
@@ -249,7 +282,7 @@
       card.className = 'card';
       const th = document.createElement('div');
       th.className='thumb';
-      th.setAttribute('data-src', folderJpg(f.name)); // lazy
+      th.setAttribute('data-src-list', JSON.stringify(folderThumbCandidates(f.name))); // lazy with candidates
       card.appendChild(th);
       const lb = document.createElement('div'); lb.className='label'; card.appendChild(lb); // hidden label (kept for layout)
       card.addEventListener('click', (e)=>{
@@ -267,7 +300,7 @@
       card.className='card';
       const th = document.createElement('div');
       th.className='thumb';
-      th.setAttribute('data-src', trackThumbJpg(path || '', file.name)); // lazy
+      th.setAttribute('data-src-list', JSON.stringify(trackThumbCandidates(path || '', file.name))); // lazy with candidates
       card.appendChild(th);
       const lb = document.createElement('div'); lb.className='label'; card.appendChild(lb);
       card.addEventListener('click', (e)=>{
@@ -319,6 +352,26 @@
   $('#btnBack').addEventListener('click', ()=>{ if(pathStack.length) pathStack.pop(); render(); });
   $('#btnRoot').addEventListener('click', ()=>{ pathStack.length=0; render(); });
   $('#btnRefresh').addEventListener('click', ()=> render());
+
+  
+  // ===== Hamburger menu toggle =====
+  const menuBtn = $('#menuBtn');
+  const sideMenu = $('#sideMenu');
+  const menuBackdrop = $('#menuBackdrop');
+  function openMenu(){ sideMenu.classList.add('open'); menuBackdrop.classList.add('show'); }
+  function closeMenu(){ sideMenu.classList.remove('open'); menuBackdrop.classList.remove('show'); }
+  menuBtn?.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    if (sideMenu.classList.contains('open')) closeMenu(); else openMenu();
+  });
+  menuBackdrop?.addEventListener('click', closeMenu);
+  window.addEventListener('keydown', (e)=>{ if (e.key==='Escape') closeMenu(); });
+
+
+  // Open text files (Lite minimal action: just close the menu for now or implement later)
+  document.querySelectorAll('#sideMenu .menu-text').forEach(a=>{
+    a.addEventListener('click', (e)=>{ e.preventDefault(); closeMenu(); /* TODO: load txt if needed */ });
+  });
 
   // ===== Lang toggle =====
   langBtn.addEventListener('click', ()=>{
