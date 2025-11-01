@@ -108,6 +108,11 @@ input[disabled]{ opacity:.6; filter:grayscale(.2) }
 .controls-adv{display:flex;gap:8px;justify-content:center;margin:10px 0}
 .pill{padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:#171d2b;color:#e7effa;cursor:pointer}
 .pill.primary{background:#24304a}
+
+/* Align Binaural & Harmonics row */
+#gen .grid.align-row{ grid-template-columns: 1fr 1fr; align-items: stretch }
+#gen .grid.align-row .field{ display:flex; flex-direction:column; justify-content:flex-start }
+
 </style>
 </head>
 <body>
@@ -188,7 +193,7 @@ input[disabled]{ opacity:.6; filter:grayscale(.2) }
       <canvas id="oscGen" height="100"></canvas>
     </div>
 
-    <div class="grid">
+    <div class="grid align-row">
       <div class="field">
         <h4 id="lblFreq">Frequency (Hz)</h4>
         <input id="genFreq" type="number" min="1" max="24000" step="0.1" value="432">
@@ -230,15 +235,15 @@ input[disabled]{ opacity:.6; filter:grayscale(.2) }
           <input id="sweepEnd"   type="number" value="1000" aria-label="Sweep End (Hz)"   style="width:90px">
           <input id="sweepTime"  type="number" value="10"   aria-label="Sweep Time (s)"   style="width:90px">
           <button id="sweepGo" class="pill" title="Sweep">Sweep</button>
-        </div>
+        <select id="presetSelect" class="pill"></select></div>
       </div>
 
       <div class="field full">
         <div class="gen-actions">
-          <button id="genStart" class="pill primary" title="Play">▶️</button>
-          <button id="genStop"  class="pill"          title="Stop">⏹️</button>
-          <button id="btnSavePreset" class="pill" title="Save Preset">💾</button>
-          <button id="btnLoadPreset" class="pill" title="Load Preset">📜</button>
+          <button id="genStart" class="pill primary" title="Play" class="pill">Play</button>
+          <button id="genStop"  class="pill"          title="Stop" class="pill">Stop</button>
+          <button id="btnSavePreset" class="pill" title="Save Preset" class="pill">Save</button>
+          <button id="btnLoadPreset" class="pill" title="Load Preset" class="pill">📜</button>
         </div>
       </div>
     
@@ -428,7 +433,7 @@ input[disabled]{ opacity:.6; filter:grayscale(.2) }
     statusThumb.style.backgroundImage='';
     statusText.textContent = (lang==='en' ? 'No track loaded' : '선곡되지 않음');
     render();
-    try { updateGeneratorLang(); } catch {}
+    try { updateGeneratorLang(); if(window.renderPresetList) window.renderPresetList(); } catch {}
   });
 
   // ===== Spectrum Visualizer (5DO 네온 바) =====
@@ -637,10 +642,10 @@ function updateGeneratorLang(){
     const genStop  = byId('genStop');
     const btnSave  = byId('btnSavePreset');
     const btnLoad  = byId('btnLoadPreset');
-    if (genStart) genStart.title = L.playTitle;
-    if (genStop)  genStop.title  = L.stopTitle;
-    if (btnSave)  btnSave.title  = L.savePresetTitle;
-    if (btnLoad)  btnLoad.title  = L.loadPresetTitle;
+    if (genStart){ genStart.title = L.playTitle; genStart.textContent=L.btnPlay; }
+    if (genStop){  genStop.title  = L.stopTitle; genStop.textContent=L.btnStop; }
+    if (btnSave){ btnSave.title  = L.savePresetTitle; btnSave.textContent=L.btnSave; }
+    if (btnLoad){ btnLoad.title  = L.loadPresetTitle; btnLoad.textContent=L.btnLoad; }
   }catch(e){ /* no-op */ }
 }
 
@@ -746,8 +751,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
     }catch(e){}
     alert((window.lang==='en')?'Preset loaded':'프리셋 불러옴');
   }
-  btnSave && btnSave.addEventListener('click', savePreset);
-  btnLoad && btnLoad.addEventListener('click', loadPreset);
+  btnSave && btnSave.addEventListener('click', ()=>{ savePreset(); genSaveNamedPreset({freq:genFreq.value,wave:genWave.value,binaural:genBinaural?.checked,beat:genBeat.value,harm:genHarm.value}); });
+  btnLoad && btnLoad.addEventListener('click', ()=>{ const sel=document.getElementById('presetSelect'); if(sel && sel.value) genLoadNamedPreset(sel.value); else loadPreset(); });
 })();
 </script>
 
@@ -795,6 +800,45 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const i = cards.indexOf(card);
     if(i>=0) playAt(i);
   });
+})();
+</script>
+
+
+<script>
+(function(){
+  const KEY='genPresets';
+  function getPresets(){ try{ return JSON.parse(localStorage.getItem(KEY)||'[]'); }catch(e){ return []; } }
+  function setPresets(arr){ localStorage.setItem(KEY, JSON.stringify(arr.slice(0,10))); }
+  window.genSaveNamedPreset = function(data){
+    const name = prompt((window.lang==='en')?'Preset name':'프리셋 이름');
+    if(!name) return;
+    const list = getPresets().filter(p=>p.name!==name);
+    list.unshift({name, data});
+    setPresets(list);
+    alert((window.lang==='en')?'Preset saved':'프리셋 저장됨');
+    renderPresetList();
+  };
+  window.genLoadNamedPreset = function(name){
+    const list = getPresets();
+    const f = list.find(p=>p.name===name);
+    if(!f) return alert((window.lang==='en')?'No preset':'프리셋 없음');
+    const d = f.data||{};
+    const F = s=>document.querySelector(s);
+    F('#genFreq').value = d.freq||'432';
+    F('#genWave').value = d.wave||'sine';
+    F('#genBinaural').checked = !!d.binaural;
+    F('#genBeat').value = d.beat||'7';
+    F('#genHarmonics').value = d.harm||'1';
+    alert((window.lang==='en')?'Preset loaded':'프리셋 불러옴');
+  };
+  window.renderPresetList = function(){
+    const sel = document.getElementById('presetSelect');
+    if(!sel) return;
+    const list = getPresets();
+    sel.innerHTML = '<option value="">'+((window.lang==='en')?'Select Preset':'프리셋 선택')+'</option>';
+    list.forEach(p=>{ const opt=document.createElement('option'); opt.value=p.name; opt.textContent=p.name; sel.appendChild(opt); });
+  };
+  document.addEventListener('DOMContentLoaded', renderPresetList);
 })();
 </script>
 
