@@ -104,13 +104,12 @@ audio{width:92%;display:block;margin:10px auto}
 
 <nav class="side-menu">
   <a class="mbtn" href="https://5dshop.co.kr" target="_blank" rel="noopener">Shop</a>
-  <a class="mbtn" href="#">FAQ</a>
-  <a class="mbtn" href="#">Manual</a>
-  <a class="mbtn" href="#">Contact</a>
-  <a class="mbtn" href="#">About</a>
+  <a class="mbtn menu-text" href="texts/faq.txt">FAQ</a>
+  <a class="mbtn menu-text" href="texts/manual.txt">Manual</a>
+  <a class="mbtn menu-text" href="texts/contact.txt">Contact</a>
+  <a class="mbtn menu-text" href="texts/about.txt">About</a>
 </nav>
 <div class="backdrop" id="backdrop"></div>
-
 <!-- 바 스펙트럼 전용 영역 고정 표시 -->
 <div id="barVizWrap"><canvas id="barViz"></canvas></div>
 
@@ -360,40 +359,38 @@ load("");
 </div>
 
 <script>
-const SUPABASE_URL = "https://xdjgumqdwedgzwqturcx.supabase.co";
-const TEXT_BUCKET = "texts";  // 버킷 이름
+/* === Info panel loader: Pro 동작 매칭 (로컬 texts/*.txt) === */
 const modal = document.getElementById('textModal');
 const modalContent = document.getElementById('textModalContent');
 document.getElementById('textModalClose').onclick = ()=> modal.style.display = 'none';
 
-// 메뉴명 → 파일명 매핑
-const textFiles = {
-  "FAQ": "faq.txt",
-  "Manual": "manual.txt",
-  "Contact": "contact.txt",
-  "About": "about.txt"
-};
+function openTextPanel(title, url){
+  modalContent.textContent = 'Loading...';
+  modal.style.display = 'flex';
+  fetch(url + (url.includes('?') ? '&' : '?') + 't=' + Date.now())
+    .then(res => {
+      if(!res.ok) throw new Error(res.status + ' ' + res.statusText);
+      return res.text();
+    })
+    .then(txt => modalContent.textContent = txt)
+    .catch(err => modalContent.textContent = `⚠️ Failed to load: ${url}\n${err}`);
+}
 
-document.querySelectorAll('nav.side-menu a.mbtn').forEach(link=>{
-  const label = link.textContent.trim();
-  if(textFiles[label]){
-    link.addEventListener('click', async e=>{
-      e.preventDefault();
-      const file = textFiles[label];
-      const url = `${SUPABASE_URL}/storage/v1/object/public/${TEXT_BUCKET}/${encodeURIComponent(file)}?t=${Date.now()}`;
-      try{
-        const res = await fetch(url);
-        if(!res.ok) throw new Error(`File not found: ${file}`);
-        const text = await res.text();
-        modalContent.textContent = text;
-        modal.style.display = 'flex';
-      }catch(err){
-        modalContent.textContent = `⚠️ Unable to load: ${file}`;
-        modal.style.display = 'flex';
-      }
-    });
-  }
+/* 사이드메뉴: menu-text 링크를 가로채서 패널로 열기 */
+document.querySelectorAll('nav.side-menu a.menu-text').forEach(a=>{
+  a.addEventListener('click', (e)=>{
+    e.preventDefault();
+    const title = a.textContent.trim();
+    const url = a.getAttribute('href');
+    // 메뉴 닫기 (체크박스 토글 유지)
+    const navToggle = document.getElementById('navToggle');
+    if (navToggle) navToggle.checked = false;
+    openTextPanel(title, url);
+  });
 });
+
+/* 바깥 클릭으로 사이드메뉴 닫는 기존 로직은 그대로 두면 됨 */
 </script>
+
 </body>
 </html>
