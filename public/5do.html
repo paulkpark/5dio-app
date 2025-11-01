@@ -243,7 +243,7 @@ async function load(path=""){
       img.onerror = () => img.src = 'https://placehold.co/300x300/222/888?text=Audio';
 };
       card.onclick=()=>{
-  ensureAudioUnlocked(); ensurePipeline();
+  ensureAudioUnlocked();
   player.pause(); player.currentTime=0; 
   player.src = abs(full);
 
