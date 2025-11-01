@@ -4,438 +4,424 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <title>5DO Lite</title>
-<link rel="icon" href="favicon.ico">
 <style>
-:root{
-  --bg:#0b0f17; --panel:#101623; --accent:#73e6c3; --fg:#dfe7ef; --muted:#8ea0b4; --border:#1f2734;
-  --chip:#172132; --chip2:#1a2234;
-}
-*{box-sizing:border-box} html,body{height:100%}
-body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,Segoe UI,Helvetica,Arial}
-a{color:inherit;text-decoration:none}
-button{cursor:pointer}
+  :root{
+    --bg:#0b0f17; --panel:#101826; --panel2:#0f1524; --border:#334;
+    --text:#cfead1; --muted:#8fb1a0; --accent:#7ef1c0; --accent2:#55d0ff; --accent3:#a38cff;
+  }
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,Noto Sans KR,sans-serif}
+  a{color:inherit;text-decoration:none}
 
-header{
-  display:flex;align-items:center;gap:10px;justify-content:space-between;
-  padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10
-}
-.left-pack{display:flex;align-items:center;gap:10px}
-.app-title{font-weight:700;color:var(--accent);font-size:1.1rem;letter-spacing:.2px}
+  /* Header */
+  header{display:flex;align-items:center;gap:10px;justify-content:space-between;
+    padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
+  .left-pack{display:flex;align-items:center;gap:10px}
+  .logo{font-weight:700;color:var(--accent);font-size:1.05rem}
+  .right-pack{display:flex;align-items:center;gap:10px}
 
-/* hamburger with frame */
-.menu-container{position:relative}
-.hamburger{width:38px;height:28px;border:1px solid var(--border);border-radius:8px;display:grid;place-items:center;background:#0e1420}
-.hamburger span,.hamburger span::before,.hamburger span::after{
-  display:block;position:relative;width:18px;height:2px;background:#cfead1;border-radius:2px;content:"";
-}
-.hamburger span::before{position:absolute;top:-6px;content:"";width:18px;height:2px;background:#cfead1}
-.hamburger span::after {position:absolute;top: 6px;content:"";width:18px;height:2px;background:#cfead1}
-.dropdown{position:absolute;top:36px;left:0;background:var(--panel);border:1px solid var(--border);border-radius:12px;min-width:220px;display:none;flex-direction:column;overflow:hidden}
-.dropdown a{padding:10px 12px;border-bottom:1px solid var(--border)}
-.dropdown a:last-child{border-bottom:none}
-.backdrop{position:fixed;inset:0;background:#0008;display:none}
+  /* Hamburger (Lite 스타일 프레임) */
+  .menu-container{position:relative}
+  .hamburger{width:34px;height:26px;border:1px solid var(--border);border-radius:8px;display:grid;place-items:center;cursor:pointer;background:#131c2b}
+  .hamburger span,.hamburger span::before,.hamburger span::after{display:block;content:"";width:16px;height:2px;background:#cfead1;border-radius:2px;position:relative}
+  .hamburger span::before{position:absolute;top:-6px}
+  .hamburger span::after {position:absolute;top: 6px}
 
-.main{padding:16px;display:grid;gap:16px}
+  .side-menu{display:none;position:absolute;top:34px;left:0;background:#0f1524;border:1px solid #324;
+    border-radius:12px;padding:10px;width:min(260px,80vw);box-shadow:0 20px 50px rgba(0,0,0,.45)}
+  .side-menu.open{display:block}
+  .menu-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.25);backdrop-filter:saturate(120%) blur(2px);display:none}
+  .menu-backdrop.show{display:block}
+  .side-menu a{display:block;padding:10px;border-bottom:1px dashed #2f3a55}
+  .side-menu a:last-child{border-bottom:none}
+  .menu-text{text-decoration:underline;cursor:pointer}
 
-/* library strip */
-.nav-row{display:flex;align-items:center;gap:10px}
-.nav-btn{width:34px;height:34px;border:1px solid var(--border);background:var(--chip);border-radius:10px;display:grid;place-items:center}
-.nav-btn:hover{background:var(--chip2)}
-.nav-emoji{font-size:16px}
+  /* Lang toggle */
+  #langToggle{min-width:44px;height:28px;padding:0 10px;border:1px solid var(--border);border-radius:10px;background:#131c2b;color:var(--text);cursor:pointer}
 
-.scroller{
-  display:flex;gap:12px;overflow-x:auto;padding:10px;border:1px solid var(--border);
-  background:#0e1522;border-radius:14px;scroll-snap-type:x mandatory
-}
-.card{min-width:120px;max-width:120px;scroll-snap-align:start;background:#0f1726;border:1px solid var(--border);border-radius:14px;overflow:hidden}
-.thumb{width:100%;height:100px;display:block;background:#05070c;background-position:center;background-size:cover}
-.caption{padding:8px 9px;color:var(--muted);font-size:.86rem}
+  /* Toolbar */
+  .toolbar{display:flex;align-items:center;gap:10px;padding:10px 14px 6px}
+  .icon-btn{width:38px;height:38px;border:1px solid rgba(120,180,200,.22);border-radius:12px;background:#0f1524;
+    display:grid;place-items:center;cursor:pointer;box-shadow:inset 0 0 12px rgba(126,241,192,.08)}
+  .icon-btn:hover{box-shadow:inset 0 0 16px rgba(126,241,192,.12)}
+  .icon{width:20px;height:20px;display:block}
+  .icon path{stroke:url(#grad);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 2px rgba(126,241,192,.35))}
+  svg defs linearGradient stop:nth-child(1){stop-color:var(--accent)}
+  svg defs linearGradient stop:nth-child(2){stop-color:var(--accent2)}
+  svg defs linearGradient stop:nth-child(3){stop-color:var(--accent3)}
 
-/* player/status row */
-.player-row{display:flex;align-items:flex-start;gap:12px}
-.statusThumb{
-  width:124px;height:124px;border:1px solid var(--border);border-radius:16px;overflow:hidden;position:relative;background:#070a10;
-}
-.statusThumb .glow{
-  position:absolute;inset:0;background:
-  radial-gradient(120px 120px at 30% 30%, #14384a 0,#0e1624 60%, transparent 70%),
-  radial-gradient(160px 160px at 70% 60%, #1a3a2f 0,#0e1624 60%, transparent 70%);
-  animation:float 6s ease-in-out infinite alternate;
-}
-@keyframes float{
-  0%{transform:translate3d(0,0,0);opacity:.8}
-  100%{transform:translate3d(0,-6px,0);opacity:.95}
-}
-.statusThumb.ready .glow{display:none}
-.statusThumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none}
-.statusThumb.ready img{display:block}
+  /* Horizontal thumbnails */
+  .strip{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding:10px 14px}
+  .strip::-webkit-scrollbar{height:8px}
+  .strip::-webkit-scrollbar-thumb{background:#1a2438;border-radius:8px}
+  .card{min-width:120px;scroll-snap-align:start;background:#0f1524;border:1px solid #283044;border-radius:14px;padding:8px;display:flex;flex-direction:column;gap:6px;cursor:pointer}
+  .thumb{width:100%;aspect-ratio:1/1;border-radius:10px;background:#09101c;overflow:hidden;background-size:cover;background-position:center}
+  .thumb[data-src]{background-image:none} /* lazy 상태 */
+  .label{display:none}
 
-.controls{
-  flex:1;display:grid;gap:10px;grid-template-columns:1fr 110px 140px;align-items:center
-}
-.controls .vol{display:flex;align-items:center;gap:10px}
-.controls input[type="range"]{width:100%}
-.loopBtn{height:36px;border:1px solid var(--border);background:var(--chip);color:#cfead1;border-radius:10px}
-.timerSel{height:36px;border:1px solid var(--border);background:var(--chip);color:#cfead1;border-radius:10px;padding:0 8px}
+  /* Player + status */
+  .player-wrap{padding:0 14px 14px}
+  .status-wrap{display:flex;align-items:center;gap:12px;margin:6px 0 10px}
+  .status-thumb{
+    width:124px;height:124px;border-radius:14px;position:relative;overflow:hidden;
+    background: radial-gradient(120px 80px at 40% 35%, #1a2335 0%, #0b0f17 70%),
+                linear-gradient(135deg, rgba(126,241,192,.15), rgba(85,208,255,.12), rgba(163,140,255,.15));
+    box-shadow: 0 0 18px rgba(126,241,192,.25), inset 0 0 24px rgba(163,140,255,.15);
+    border:1px solid rgba(120,180,200,.12);
+    background-size: cover; background-position: center; background-repeat:no-repeat;
+  }
+  .status-thumb::before{
+    content:"";position:absolute;inset:-25% -25%;
+    background: conic-gradient(from 0deg,#7ef1c0,#55d0ff,#a38cff,#7ef1c0);
+    filter: blur(22px);opacity:.22;animation:spinGlow 6s linear infinite;
+  }
+  .status-thumb.loaded::before{ display:none; }
+  @keyframes spinGlow{to{transform:rotate(360deg)}}
+  audio{width:100%;margin-top:6px;background:#0f1524;border:1px solid #273246;border-radius:12px}
+  .muted{color:#7ea296}
 
-/* audio controls (native) */
-audio{width:100%;height:36px}
+  /* Spectrum Visualizer (bottom) */
+  .visual-wrap{padding:6px 12px 14px}
+  #vizCanvas{width:100%;height:140px;display:block;background:linear-gradient(180deg,#0e1524 0%, #0b0f17 100%);
+    border-top:1px solid #243145;border-bottom:1px solid #243145;border-radius:12px}
 
-/* visualizer panel (bar) */
-.viz-wrap{
-  border:1px solid var(--border);border-radius:14px;background:#0d1422;padding:10px;height:140px;display:flex;align-items:center;justify-content:center
-}
-#viz{width:100%;height:120px;display:block}
-
-/* footer spacing */
-.spacer{height:6px}
-
-/* responsive */
-@media (max-width:720px){
-  .controls{grid-template-columns:1fr;gap:8px}
-  .player-row{align-items:center}
-}
 </style>
-<script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 </head>
 <body>
+
 <header>
   <div class="left-pack">
     <div class="menu-container">
-      <div id="menuBtn" class="hamburger" style="margin-top:-2px"><span></span></div>
-      <nav id="menuDrop" class="dropdown">
-        <a href="https://5dshop.co.kr" target="_blank" rel="noopener">Shop</a>
-        <a href="texts/faq.txt"     class="menu-text" target="_blank">FAQ</a>
-        <a href="texts/manual.txt"  class="menu-text" target="_blank">Manual</a>
-        <a href="texts/contact.txt" class="menu-text" target="_blank">Contact</a>
-        <a href="texts/about.txt"   class="menu-text" target="_blank">About</a>
+      <div id="menuBtn" class="hamburger"><span></span></div>
+      <nav id="sideMenu" class="side-menu">
+        <a class="mbtn" href="https://5dshop.co.kr" target="_blank" rel="noopener">Shop</a>
+        <a class="mbtn menu-text" data-file="faq">FAQ</a>
+        <a class="mbtn menu-text" data-file="manual">Manual</a>
+        <a class="mbtn menu-text" data-file="contact">Contact</a>
+        <a class="mbtn menu-text" data-file="about">About</a>
       </nav>
-      <div id="backdrop" class="backdrop"></div>
     </div>
-    <div class="app-title">5DO Lite</div>
+    <div class="logo">5DO Lite</div>
+  </div>
+  <div class="right-pack">
+    <button id="langToggle" title="EN/KO">KO</button>
   </div>
 </header>
+<div class="menu-backdrop" id="menuBackdrop"></div>
 
-<main class="main">
+<!-- Toolbar with gradient defs -->
+<div class="toolbar">
+  <svg width="0" height="0" style="position:absolute;left:-9999px;top:-9999px">
+    <defs>
+      <linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%"  stop-color="#7ef1c0"/>
+        <stop offset="50%" stop-color="#55d0ff"/>
+        <stop offset="100%" stop-color="#a38cff"/>
+      </linearGradient>
+    </defs>
+  </svg>
 
-  <!-- Library nav -->
-  <div class="nav-row">
-    <button class="nav-btn" id="navBack"    title="Back"><span class="nav-emoji">◀️</span></button>
-    <button class="nav-btn" id="navRefresh" title="Refresh"><span class="nav-emoji">🔄</span></button>
+  <button id="btnBack" class="icon-btn" title="Back" aria-label="Back">
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M14 6l-6 6 6 6M19 12H8"></path>
+    </svg>
+  </button>
+
+  <button id="btnRoot" class="icon-btn" title="Root" aria-label="Root">
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 4a4 4 0 0 1 4 4v1h2a2 2 0 0 1 2 2v7h-6v-4H10v4H4v-7a2 2 0 0 1 2-2h2V8a4 4 0 0 1 4-4z"></path>
+    </svg>
+  </button>
+
+  <button id="btnRefresh" class="icon-btn" title="Refresh" aria-label="Refresh">
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v6h-6"></path>
+    </svg>
+  </button>
+</div>
+
+<!-- Horizontal thumbnails -->
+<div id="strip" class="strip" aria-label="Media Library"></div>
+
+<!-- Player -->
+<div class="player-wrap">
+  <div class="status-wrap">
+    <div id="loadingThumb" class="status-thumb" aria-label="loading thumbnail"></div>
+    <div class="muted" id="statusText"></div>
   </div>
+  <audio id="player" controls crossorigin="anonymous"></audio>
+</div>
 
-  <!-- Thumbnails scroller -->
-  <div id="thumbs" class="scroller" aria-label="media thumbnails"></div>
+<!-- Spectrum Visualizer -->
+<div class="visual-wrap">
+  <canvas id="vizCanvas" height="140"></canvas>
+</div>
 
-  <!-- Player + status/controls -->
-  <div class="player-row">
-    <div id="statusThumb" class="statusThumb" aria-label="loading status thumbnail">
-      <div class="glow"></div>
-      <img id="statusImg" alt="thumbnail">
+<!-- Modal for /texts/*.txt -->
+<div id="txtModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);align-items:center;justify-content:center;z-index:9999">
+  <div style="background:#0f1524;color:#cfead1;border:1px solid #334;max-width:720px;width:90%;max-height:75vh;overflow:auto;border-radius:14px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+    <div style="text-align:right;margin-bottom:8px">
+      <button id="txtClose" style="padding:6px 10px;border:1px solid #334;background:#192033;color:#cfead1;border-radius:8px;cursor:pointer">Close</button>
     </div>
-
-    <div class="controls">
-      <div class="vol">
-        <label style="min-width:52px;color:var(--muted)">Volume</label>
-        <input id="vol" type="range" min="0" max="1" step="0.01" value="0.9">
-      </div>
-
-      <button id="loopBtn" class="loopBtn" aria-pressed="false" title="Loop current track">Loop: Off</button>
-
-      <select id="timerSel" class="timerSel" title="Stop after preset">
-        <option value="">Timer: Off</option>
-        <option value="5">5 min</option>
-        <option value="10">10 min</option>
-        <option value="15">15 min</option>
-        <option value="20">20 min</option>
-        <option value="30">30 min</option>
-        <option value="45">45 min</option>
-        <option value="60">60 min</option>
-      </select>
-    </div>
+    <pre id="txtBody" style="white-space:pre-wrap;line-height:1.55;font-family:system-ui, Apple SD Gothic Neo, Noto Sans KR, sans-serif;"></pre>
   </div>
+</div>
 
-  <audio id="player" controls preload="none" crossorigin="anonymous"></audio>
-
-  <!-- Visualizer (bars) -->
-  <div class="viz-wrap">
-    <canvas id="viz"></canvas>
-  </div>
-
-  <div class="spacer"></div>
-</main>
-
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-/* -------------------- MENU -------------------- */
-(()=>{
-  const btn = document.getElementById('menuBtn');
-  const drop= document.getElementById('menuDrop');
-  const bd  = document.getElementById('backdrop');
-  const open = ()=>{ drop.style.display='flex'; bd.style.display='block'; };
-  const close= ()=>{ drop.style.display='none'; bd.style.display='none'; };
-  btn.addEventListener('click', (e)=>{ e.stopPropagation();
-    (drop.style.display==='flex') ? close() : open();
+(() => {
+  // ===== Supabase =====
+  const SUPA_URL = "https://xdjgumqdwedgzwqturcx.supabase.co";
+  const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
+  const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+  const BUCKET = 'media';
+  const PUBLIC_BASE = `${SUPA_URL}/storage/v1/object/public/${BUCKET}`;
+
+  // ===== El refs & state =====
+  const $ = s => document.querySelector(s);
+  const $$= s => Array.from(document.querySelectorAll(s));
+
+  const langBtn = $('#langToggle');
+  let lang = localStorage.getItem('lang') || 'ko';
+  const setLangLabel = ()=> langBtn.textContent = (lang==='en'?'EN':'KO'); setLangLabel();
+
+  const strip = $('#strip');
+  const player= $('#player');
+  const statusThumb = $('#loadingThumb');
+  const statusText  = $('#statusText');
+
+  // path stack & helpers
+  const pathStack = [];
+  const currentPath = ()=> pathStack.join('/');
+
+  // ===== Lazy loader =====
+  const io = new IntersectionObserver((entries)=>{
+    for(const e of entries){
+      if(e.isIntersecting){
+        const el = e.target;
+        const url = el.getAttribute('data-src');
+        if(url){
+          el.style.backgroundImage = `url("${url}")`;
+          el.removeAttribute('data-src');
+        }
+        io.unobserve(el);
+      }
+    }
+  }, {root:null,rootMargin:'200px',threshold:0.01});
+
+  // ===== URL helpers (JPG only, lang-suffix) =====
+  function folderJpg(folder){
+    const name = (lang==='en') ? 'folder_e.jpg' : 'folder.jpg';
+    return `${PUBLIC_BASE}/${encodeURIComponent(folder)}/${name}`;
+  }
+  function trackThumbJpg(folder, trackFile){
+    const base = trackFile.replace(/\.(mp3|wav|m4a)$/i,'');
+    const suffix = (lang==='en') ? '_E' : '';
+    return `${PUBLIC_BASE}/${encodeURIComponent(folder)}/${encodeURIComponent(base+suffix)}.jpg`;
+  }
+  function trackAudioUrl(folder, trackFile){
+    return `${PUBLIC_BASE}/${encodeURIComponent(folder)}/${encodeURIComponent(trackFile)}`;
+  }
+
+  // ===== List from Supabase =====
+  async function listPath(path){
+    const p = path ? path + '/' : '';
+    const { data, error } = await supa.storage.from(BUCKET).list(p, {
+      limit: 1000, sortBy: { column:'name', order:'asc' }
+    });
+    if(error){ console.warn(error); return []; }
+    return data || [];
+  }
+  const isFolder = item => !item?.metadata || !item?.metadata.mimetype;
+  const isAudio  = item => !!item?.metadata?.mimetype && /^audio\//.test(item.metadata.mimetype);
+
+  // ===== Render =====
+  async function render(){
+    strip.innerHTML = '';
+    const path = currentPath();
+    const items = await listPath(path);
+    const folders = items.filter(isFolder);
+    const files   = items.filter(isAudio);
+
+    // folders
+    for(const f of folders){
+      const card = document.createElement('div');
+      card.className = 'card';
+      const th = document.createElement('div');
+      th.className='thumb';
+      th.setAttribute('data-src', folderJpg(f.name)); // lazy
+      card.appendChild(th);
+      const lb = document.createElement('div'); lb.className='label'; card.appendChild(lb); // hidden label (kept for layout)
+      card.addEventListener('click', (e)=>{
+        e.preventDefault(); e.stopPropagation();
+        pathStack.push(f.name);
+        render();
+      });
+      strip.appendChild(card);
+      io.observe(th);
+    }
+
+    // files
+    for(const file of files){
+      const card = document.createElement('div');
+      card.className='card';
+      const th = document.createElement('div');
+      th.className='thumb';
+      th.setAttribute('data-src', trackThumbJpg(path || '', file.name)); // lazy
+      card.appendChild(th);
+      const lb = document.createElement('div'); lb.className='label'; card.appendChild(lb);
+      card.addEventListener('click', (e)=>{
+        e.preventDefault(); e.stopPropagation();
+        const url = trackAudioUrl(path || '', file.name);
+        // 로드만 하고 자동재생 금지
+        player.src = url;
+        player.load?.();
+        // 로딩 썸네일 갱신
+        statusThumb.classList.add('loaded');
+        statusThumb.style.backgroundImage = `url("${trackThumbJpg(path || '', file.name)}")`;
+        statusText.textContent = (lang==='en' ? 'Ready to play' : '재생 준비됨');
+      });
+      strip.appendChild(card);
+      io.observe(th);
+    }
+  }
+
+  // ===== Menu =====
+  (function initMenu(){
+    const btn = $('#menuBtn');
+    const pane= $('#sideMenu');
+    const bd  = $('#menuBackdrop');
+    const open = ()=>{ pane.classList.add('open'); bd.classList.add('show'); };
+    const close= ()=>{ pane.classList.remove('open'); bd.classList.remove('show'); };
+    btn.addEventListener('click', (e)=>{ e.stopPropagation(); pane.classList.contains('open')?close():open(); });
+    bd.addEventListener('click', close);
+    document.addEventListener('keydown', e=>{ if(e.key==='Escape') close(); });
+
+    // /texts modal
+    $$('.menu-text').forEach(a=>{
+      const file = a.getAttribute('data-file');
+      a.addEventListener('click', async (e)=>{
+        e.preventDefault();
+        try{
+          const res = await fetch(`/texts/${file}.txt?ts=${Date.now()}`);
+          const txt = await res.text();
+          $('#txtBody').textContent = txt;
+          $('#txtModal').style.display='flex';
+          close();
+        }catch(err){ alert('문서를 불러올 수 없습니다. (/texts/*.txt 확인)'); }
+      });
+    });
+    $('#txtClose').addEventListener('click', ()=> $('#txtModal').style.display='none');
+    $('#txtModal').addEventListener('click', (e)=>{ if(e.target.id==='txtModal') $('#txtModal').style.display='none';});
+  })();
+
+  // ===== Nav buttons =====
+  $('#btnBack').addEventListener('click', ()=>{ if(pathStack.length) pathStack.pop(); render(); });
+  $('#btnRoot').addEventListener('click', ()=>{ pathStack.length=0; render(); });
+  $('#btnRefresh').addEventListener('click', ()=> render());
+
+  // ===== Lang toggle =====
+  langBtn.addEventListener('click', ()=>{
+    lang = (lang==='en'?'ko':'en');
+    localStorage.setItem('lang', lang);
+    setLangLabel();
+    // 상태 초기화 후 다시 렌더
+    statusThumb.classList.remove('loaded');
+    statusThumb.style.backgroundImage='';
+    statusText.textContent = (lang==='en' ? 'No track loaded' : '선곡되지 않음');
+    render();
   });
-  bd.addEventListener('click', close);
-})();
 
-/* -------------------- SUPABASE -------------------- */
-const SB_URL = "https://xdjgumqdwedgzwqturcx.supabase.co";
-const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
-const BUCKET = "media";
-const sb = supabase.createClient(SB_URL, SB_KEY);
+  // ===== Spectrum Visualizer (5DO 네온 바) =====
+  let audioCtx, analyser, sourceNode, vizRAF = 0;
+  const vizCanvas = document.getElementById('vizCanvas');
+  const vctx = vizCanvas.getContext('2d', {alpha:false});
+  function resizeViz(){
+    // 픽셀 밀도 대응
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    const cssW = vizCanvas.clientWidth || vizCanvas.parentElement.clientWidth;
+    const cssH = vizCanvas.clientHeight || 140;
+    vizCanvas.width  = Math.floor(cssW * dpr);
+    vizCanvas.height = Math.floor(cssH * dpr);
+    vctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener('resize', resizeViz); resizeViz();
 
-// image (imgproxy) & file URLs
-const imgx = (path, params="width=360&quality=70&format=webp") =>
-  `${SB_URL}/storage/v1/render/image/public/${BUCKET}/${encodeURI(path)}?${params}`;
+  function ensureAudioGraph(){
+    if(!audioCtx){
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 1024;
+      analyser.smoothingTimeConstant = 0.78;
+      sourceNode = audioCtx.createMediaElementSource(player);
+      sourceNode.connect(analyser);
+      analyser.connect(audioCtx.destination);
+    }
+  }
 
-const fileUrl = (path) =>
-  `${SB_URL}/storage/v1/object/public/${BUCKET}/${encodeURI(path)}`;
+  function drawViz(){
+    const w = vizCanvas.width, h = vizCanvas.height;
+    vctx.clearRect(0,0,w,h);
+    // 배경
+    const gradBg = vctx.createLinearGradient(0,0,0,h);
+    gradBg.addColorStop(0,'#0e1524'); gradBg.addColorStop(1,'#0b0f17');
+    vctx.fillStyle = gradBg; vctx.fillRect(0,0,w,h);
 
-/* -------------------- STATE -------------------- */
-const thumbsEl   = document.getElementById('thumbs');
-const player     = document.getElementById('player');
-const volEl      = document.getElementById('vol');
-const loopBtn    = document.getElementById('loopBtn');
-const timerSel   = document.getElementById('timerSel');
-const statusBox  = document.getElementById('statusThumb');
-const statusImg  = document.getElementById('statusImg');
-const navBack    = document.getElementById('navBack');
-const navRefresh = document.getElementById('navRefresh');
+    const bufLen = analyser.frequencyBinCount;
+    const data = new Uint8Array(bufLen);
+    analyser.getByteFrequencyData(data);
 
-let cwd = "";         // current path inside 'media'
-let stack = [];       // path stack for Back
-let timerId = null;   // stop timer
+    const bars = Math.min(96, Math.floor(w/7));
+    const step = Math.floor(bufLen / bars);
+    const barW = Math.max(3, (w / bars) * 0.6);
 
-/* -------------------- AUDIO + VIS -------------------- */
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-const analyser = audioCtx.createAnalyser();
-analyser.fftSize = 1024;
-const srcNode  = audioCtx.createMediaElementSource(player);
-srcNode.connect(analyser);
-analyser.connect(audioCtx.destination);
+    for(let i=0;i<bars;i++){
+      const idx = i*step;
+      const v = data[idx] / 255; // 0~1
+      const barH = Math.max(4, v * (h*0.9));
+      const x = i * (w / bars) + (w / bars - barW)/2;
+      const y = h - barH;
 
-let rafId = null;
-const viz = document.getElementById('viz');
-const vctx= viz.getContext('2d');
+      const g = vctx.createLinearGradient(0,y,0,y+barH);
+      g.addColorStop(0,'#7ef1c0'); g.addColorStop(0.5,'#55d0ff'); g.addColorStop(1,'#a38cff');
+      vctx.fillStyle = g;
+      vctx.fillRect(x,y,barW,barH);
 
-function fitCanvas(){
-  const dpr = Math.max(1, window.devicePixelRatio || 1);
-  const w = viz.clientWidth, h = viz.clientHeight;
-  viz.width = Math.floor(w*dpr); viz.height = Math.floor(h*dpr);
-  vctx.setTransform(dpr,0,0,dpr,0,0);
-}
-window.addEventListener('resize', fitCanvas); fitCanvas();
-
-function clearViz(){
-  vctx.clearRect(0,0,viz.width, viz.height);
-}
-
-function drawBars(){
-  const W = viz.clientWidth, H = viz.clientHeight;
-  const bins = new Uint8Array(analyser.frequencyBinCount);
-  function loop(){
-    rafId = requestAnimationFrame(loop);
-    analyser.getByteFrequencyData(bins);
-    vctx.clearRect(0,0,W,H);
-    const n = 64;                // bars to draw
-    const step = Math.floor(bins.length/n);
-    const barW = (W - 20) / n;
-    for(let i=0;i<n;i++){
-      const v = bins[i*step]/255;                      // 0..1
-      const h = Math.max(2, v * (H-10));
-      const x = 10 + i*barW;
-      const y = H - h;
-      // gradient color (5DO 느낌)
-      const grd = vctx.createLinearGradient(x, y, x, y+h);
-      grd.addColorStop(0, "#73e6c3");
-      grd.addColorStop(.6, "#55d0ff");
-      grd.addColorStop(1, "#a38cff");
-      vctx.fillStyle = grd;
-      vctx.fillRect(x, y, barW*0.8, h);
-      // slight glow
-      vctx.globalAlpha = 0.12;
-      vctx.fillRect(x, y-6, barW*0.8, 6);
+      // 외곽선 살짝
+      vctx.globalAlpha = 0.18;
+      vctx.strokeStyle = '#bfe';
+      vctx.strokeRect(x+0.5,y+0.5,barW-1,barH-1);
       vctx.globalAlpha = 1;
     }
   }
-  loop();
-}
 
-function startViz(){
-  if(rafId) cancelAnimationFrame(rafId);
-  drawBars();
-}
-function stopViz(){
-  if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
-  clearViz(); // freeze 금지 → 즉시 꺼짐
-}
-
-/* -------------------- HELPERS -------------------- */
-function setStatusThumb(src){ // show image & stop glow
-  if(src){
-    statusImg.src = src;
-    statusBox.classList.add('ready');
-  }else{
-    statusImg.removeAttribute('src');
-    statusBox.classList.remove('ready'); // dreamy glow shows
+  function startViz(){
+    cancelAnimationFrame(vizRAF);
+    const loop = ()=>{
+      vizRAF = requestAnimationFrame(loop);
+      if(!analyser) return;
+      drawViz();
+    };
+    vizRAF = requestAnimationFrame(loop);
   }
-}
+  function stopViz(){ cancelAnimationFrame(vizRAF); vizRAF = 0; }
 
-function cancelTimer(){
-  if(timerId){ clearTimeout(timerId); timerId=null; }
-  timerSel.value="";
-}
+  // 사용자 제스처 후만 오디오 그래프 허용
+  player.addEventListener('play', async ()=>{
+    ensureAudioGraph();
+    if(audioCtx.state === 'suspended'){ try{ await audioCtx.resume(); }catch{} }
+    startViz();
+  });
+  player.addEventListener('pause', ()=> stopViz());
+  player.addEventListener('ended', ()=> stopViz());
 
-/* -------------------- LIBRARY -------------------- */
-async function list(path){
-  const { data, error } = await sb.storage.from(BUCKET).list(path||"", {limit:1000, sortBy:{column:'name', order:'asc'}});
-  if(error){ console.warn(error); return []; }
-  return data || [];
-}
+  // ===== Init =====
+  statusThumb.classList.remove('loaded');
+  statusText.textContent = (lang==='en' ? 'No track loaded' : '선곡되지 않음');
+  render();
 
-function isAudio(name){
-  return /\.mp3$/i.test(name);
-}
-function isImage(name){
-  return /\.(png|jpg|jpeg|webp)$/i.test(name);
-}
 
-async function loadRoot(){
-  cwd="";
-  stack.length=0;
-  await renderFolder("");
-}
-
-async function renderFolder(path){
-  thumbsEl.innerHTML = "";
-  const rows = await list(path);
-  // Folders first
-  const folders = rows.filter(r=>r.metadata && r.metadata.name===undefined && r.id===undefined && r.name && r.name.indexOf('.')===-1 || r.type==="folder");
-  const files   = rows.filter(r=>r.name && r.name.indexOf('.')>0);
-
-  // Category folders
-  for(const f of rows.filter(r=>r.id===undefined && r.name && !r.name.includes('.'))){
-    const card = document.createElement('div'); card.className='card';
-    const t = document.createElement('div'); t.className='thumb';
-    const cap = document.createElement('div'); cap.className='caption'; cap.textContent = f.name;
-    // folder thumb: prefer jpg then png
-    const thumbUrlJpg = imgx(`${path?path+'/':''}${f.name}/folder.jpg`);
-    const thumbUrlPng = imgx(`${path?path+'/':''}${f.name}/folder.png`);
-    // try jpg then fallback to png
-    try{
-      const ok = await fetch(thumbUrlJpg, {method:'HEAD'});
-      t.style.backgroundImage = `url('${ok.ok?thumbUrlJpg:thumbUrlPng}')`;
-    }catch{
-      t.style.backgroundImage = `url('${thumbUrlPng}')`;
-    }
-    card.appendChild(t); card.appendChild(cap);
-    card.addEventListener('click', ()=>{
-      stack.push(cwd);
-      cwd = (path?path+'/':'') + f.name;
-      renderFolder(cwd);
-    });
-    thumbsEl.appendChild(card);
-  }
-
-  // Audio files inside folder
-  for(const f of files.filter(r=>isAudio(r.name))){
-    const base = f.name.replace(/\.(mp3)$/i,'');
-    const imgJ = imgx(`${path?path+'/':''}${base}.jpg`, "width=360&quality=78&format=webp");
-    const imgP = imgx(`${path?path+'/':''}${base}.png`, "width=360&quality=78&format=webp");
-    const src  = fileUrl(`${path?path+'/':''}${f.name}`);
-
-    const card = document.createElement('div'); card.className='card';
-    const t = document.createElement('div'); t.className='thumb';
-    const cap = document.createElement('div'); cap.className='caption'; cap.textContent = base;
-    // image try jpg→png
-    (async()=>{
-      try{
-        const ok = await fetch(imgJ,{method:'HEAD'}); 
-        t.style.backgroundImage = `url('${ok.ok?imgJ:imgP}')`;
-      }catch{
-        t.style.backgroundImage = `url('${imgP}')`;
-      }
-    })();
-
-    card.appendChild(t); card.appendChild(cap);
-    card.addEventListener('click', ()=>{
-      // load only (no autoplay)
-      player.src = src;
-      // set status preview
-      (async()=>{
-        try{
-          const ok = await fetch(imgJ,{method:'HEAD'});
-          setStatusThumb(ok.ok?imgJ:imgP);
-        }catch{
-          setStatusThumb(imgP);
-        }
-      })();
-      // ensure context resume happens on user play
-    });
-    thumbsEl.appendChild(card);
-  }
-}
-
-/* -------------------- NAV -------------------- */
-navBack.addEventListener('click', ()=>{
-  if(stack.length){
-    cwd = stack.pop();
-    renderFolder(cwd);
-  }
-});
-navRefresh.addEventListener('click', ()=>{
-  renderFolder(cwd);
-});
-
-/* -------------------- PLAYER WIRES -------------------- */
-volEl.addEventListener('input', ()=>{
-  player.volume = parseFloat(volEl.value);
-});
-
-loopBtn.addEventListener('click', ()=>{
-  const on = loopBtn.getAttribute('aria-pressed') === 'true';
-  const next = !on;
-  loopBtn.setAttribute('aria-pressed', String(next));
-  loopBtn.textContent = `Loop: ${next? 'On':'Off'}`;
-  // L1: single-track repeat
-  player.loop = next;
-});
-
-timerSel.addEventListener('change', ()=>{
-  if(timerId){ clearTimeout(timerId); timerId=null; }
-  const mins = parseInt(timerSel.value||"",10);
-  if(!mins) return; // off
-  timerId = setTimeout(()=>{
-    player.pause();
-    stopViz();
-    cancelTimer();
-  }, mins*60*1000);
-});
-
-/* Audio unlock + visualize */
-function ensureUnlocked(){
-  if(audioCtx.state !== 'running'){
-    audioCtx.resume?.();
-  }
-}
-player.addEventListener('play', ()=>{
-  ensureUnlocked();
-  startViz();                 // start bars
-});
-player.addEventListener('pause', stopViz);
-player.addEventListener('ended', ()=>{
-  stopViz();                  // ended → off
-  if(!player.loop){ /* do nothing */ }
-});
-
-/* -------------------- INIT -------------------- */
-(async function init(){
-  // defaults
-  player.volume = parseFloat(volEl.value);
-  setStatusThumb(null); // dreamy glow (default)
-
-  await loadRoot();
+  console.log('[5DO Lite] ready with spectrum + lazy JPG thumbnails');
 })();
 </script>
 </body>
