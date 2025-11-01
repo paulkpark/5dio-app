@@ -167,8 +167,39 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+document.addEventListener('visibilitychange', async () => {
+  if (!audioCtx) return;
+  if (document.hidden) {
+    stopViz();
+    disconnectGraph();
+    try { await audioCtx.suspend(); } catch(e){}
+  } else {
+    try { await audioCtx.resume(); } catch(e){}
+    if (!player.paused) {
+      ensureAudioGraph();
+      connectGraph();
+      startViz();
+    }
+  }
+});
+
+
+function handlePauseStop(){
+  stopViz();
+  disconnectGraph();
+  try { audioCtx && audioCtx.suspend && audioCtx.suspend(); } catch(e){}
+}
+
+player.addEventListener('abort', handlePauseStop);
+player.addEventListener('emptied', handlePauseStop);
+player.addEventListener('stalled', handlePauseStop);
+</script>
 <script>
+const isIOS = /iP(hone|ad|od)/i.test(navigator.userAgent) ||
+              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+let graphConnected = false; // WebAudio graph connection state
+
 (() => {
   // ===== Supabase =====
   const SUPA_URL = "https://xdjgumqdwedgzwqturcx.supabase.co";
@@ -347,16 +378,44 @@
   }
   window.addEventListener('resize', resizeViz); resizeViz();
 
-  function ensureAudioGraph(){
-    if(!audioCtx){
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 1024;
-      analyser.smoothingTimeConstant = 0.78;
-      sourceNode = audioCtx.createMediaElementSource(player);
-      sourceNode.connect(analyser);
-      analyser.connect(audioCtx.destination);
+  
+function connectGraph() {
+  if (!audioCtx || !analyser || !sourceNode || graphConnected) return;
+  try { sourceNode.connect(analyser); } catch(e){}
+  try { analyser.connect(audioCtx.destination); } catch(e){}
+  graphConnected = true;
+}
+
+function disconnectGraph() {
+  try { sourceNode && sourceNode.disconnect && sourceNode.disconnect(); } catch(e){}
+  try { analyser && analyser.disconnect && analyser.disconnect(); } catch(e){}
+  graphConnected = false;
+}
+function ensureAudioGraph(){
+  // Avoid building/connecting graph while hidden on iOS
+  if (isIOS && (document.hidden || document.visibilityState !== 'visible')) return;
+
+  if (!audioCtx){
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 1024;
+    analyser.smoothingTimeConstant = 0.78;
+    sourceNode = audioCtx.createMediaElementSource(player);
+
+    if (typeof audioCtx.addEventListener === 'function') {
+      audioCtx.addEventListener('statechange', () => {
+        if (audioCtx.state !== 'running') {
+          stopViz();
+          disconnectGraph();
+        } else if (!player.paused) {
+          connectGraph();
+          startViz();
+        }
+      });
     }
+  }
+  connectGraph();
+}
   }
 
   function drawViz(){
@@ -404,7 +463,15 @@
     };
     vizRAF = requestAnimationFrame(loop);
   }
-  function stopViz(){ cancelAnimationFrame(vizRAF); vizRAF = 0; }
+  function stopViz(){
+  cancelAnimationFrame(vizRAF);
+  vizRAF = 0;
+  try {
+    if (typeof vctx !== 'undefined' && typeof vizCanvas !== 'undefined' && vctx && vizCanvas) {
+      vctx.clearRect(0, 0, vizCanvas.width, vizCanvas.height);
+    }
+  } catch(e){}
+}
 
   // 사용자 제스처 후만 오디오 그래프 허용
   player.addEventListener('play', async ()=>{
