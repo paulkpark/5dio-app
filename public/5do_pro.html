@@ -1,143 +1,161 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="ko">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-<title>5DO Pro v15 STABLE</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>5DO Pro v16 (Lite paths & rules)</title>
 <style>
-:root{
-  --bg:#0a0f1a;
-  --card:#0f1524;
-  --line:#2a3044;
-  --text:#e7efff;
-  --muted:#a7b3d6;
-  --accent1:#8E6BFF; /* violet */
-  --accent2:#52FFE0; /* aqua */
-  --glow: 0 0 12px rgba(142,107,255,.35), 0 0 18px rgba(82,255,224,.25);
-}
-*{box-sizing:border-box}
-html,body{height:100%}
-body{
-  margin:0;background:radial-gradient(1200px 700px at 10% -10%, rgba(142,107,255,.06), transparent),
-                    radial-gradient(800px 600px at 110% 20%, rgba(82,255,224,.06), transparent),
-                    var(--bg);
-  color:var(--text); font: 14px/1.4 system-ui, -apple-system, "Helvetica Neue", Segoe UI, Roboto, Arial, "Apple SD Gothic Neo", "Noto Sans CJK KR", sans-serif;
-}
+  :root{
+    --bg:#0b0f17; --panel:#101826; --panel2:#0f1524; --border:#334;
+    --text:#cfead1; --muted:#8fb1a0; --accent:#7ef1c0; --accent2:#55d0ff; --accent3:#a38cff;
+  }
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,Noto Sans KR,sans-serif}
+  a{color:inherit;text-decoration:none}
 
-/* header */
-header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:10px 14px;gap:10px;border-bottom:1px solid var(--line);background:rgba(8,12,20,.5);backdrop-filter:blur(8px);position:sticky;top:0;z-index:20}
-.left-pack{display:flex;align-items:center;gap:12px}
-.app-title{font-weight:700;letter-spacing:.4px;font-size:18px;
-  background:linear-gradient(90deg,var(--accent1),var(--accent2));
-  -webkit-background-clip:text;background-clip:text;color:transparent;
-  text-shadow:0 0 24px rgba(142,107,255,.25);
-}
-.tabs{justify-self:center;display:flex;gap:10px;transform:translateX(30px);} /* +30px total */
-.tab{border:1px solid var(--line);background:var(--card);color:var(--text);padding:8px 12px;border-radius:999px;cursor:pointer}
-.tab.active{border-color:rgba(142,107,255,.6);box-shadow:var(--glow)}
-.right-pack{justify-self:end;display:flex;align-items:center;gap:8px}
-.pill{border:1px solid var(--line);background:var(--card);color:var(--text);padding:8px 12px;border-radius:999px;cursor:pointer}
+  /* Header (tabs centered, lang on far-right) */
+  header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;
+    padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
+  .left-pack{display:flex;align-items:center;gap:10px}
+  .logo{font-weight:700;color:var(--accent);font-size:1.05rem}
+  .tabs{justify-self:center;display:flex;gap:10px;transform:translateX(30px)} /* +30px shift */
+  .tab{border:1px solid var(--border);background:#131c2b;color:var(--text);padding:8px 12px;border-radius:999px;cursor:pointer}
+  .tab.active{border-color:#406;box-shadow:0 0 12px rgba(126,241,192,.16), 0 0 18px rgba(85,208,255,.14)}
+  .right-pack{justify-self:end;display:flex;align-items:center;gap:10px}
+  #langToggle{min-width:44px;height:28px;padding:0 10px;border:1px solid var(--border);border-radius:10px;background:#131c2b;color:var(--text);cursor:pointer}
 
-/* layout sections */
-main{max-width:1100px;margin:0 auto;padding:16px}
-section{display:none}
-section.active{display:block}
+  /* Hamburger (exact Lite frame) */
+  .menu-container{position:relative}
+  .hamburger{width:34px;height:26px;border:1px solid var(--border);border-radius:8px;display:grid;place-items:center;cursor:pointer;background:#131c2b}
+  .hamburger span,.hamburger span::before,.hamburger span::after{display:block;content:"";width:16px;height:2px;background:#cfead1;border-radius:2px;position:relative}
+  .hamburger span::before{position:absolute;top:-6px}
+  .hamburger span::after {position:absolute;top: 6px}
 
-/* cards & fields */
-.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.field{display:flex;flex-direction:column;gap:6px}
-label{color:var(--muted);font-size:13px}
+  .side-menu{display:none;position:absolute;top:34px;left:0;background:#0f1524;border:1px solid #324;
+    border-radius:12px;padding:10px;width:min(260px,80vw);box-shadow:0 20px 50px rgba(0,0,0,.45)}
+  .side-menu.open{display:block}
+  .menu-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.25);backdrop-filter:saturate(120%) blur(2px);display:none}
+  .menu-backdrop.show{display:block}
+  .side-menu a{display:block;padding:10px;border-bottom:1px dashed #2f3a55}
+  .side-menu a:last-child{border-bottom:none}
+  .menu-text{text-decoration:underline;cursor:pointer}
 
-/* audio/visual */
-audio{width:100%}
-.visual-wrap{margin-top:12px;border:1px dashed var(--line);border-radius:12px;height:120px;display:flex;align-items:center;justify-content:center;color:#7f8ab2}
-canvas{width:100%;height:100%}
+  /* Sections */
+  main{max-width:1200px;margin:0 auto;padding:12px}
+  section{display:none} section.active{display:block}
 
-/* generator controls */
-.ctrlbar{display:grid;grid-template-columns:52px 52px 52px 1fr;gap:10px;align-items:center;margin-top:8px}
-.icon-btn{display:flex;align-items:center;justify-content:center;height:52px;width:52px;border-radius:14px;border:1px solid rgba(120,180,200,.22);background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(0,0,0,.08));
-           box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 0 0 0 rgba(142,107,255,0); cursor:pointer; transition:.2s transform, .2s box-shadow}
-.icon{width:26px;height:26px;stroke:#d9f7f0;fill:none;stroke-width:2;opacity:.95}
-.icon-btn:hover{transform:scale(1.03); box-shadow: var(--glow)}
-.icon-btn.active{animation:breath 3s ease-in-out infinite}
-@keyframes breath{
-  0%{box-shadow:0 0 0 rgba(0,0,0,0)}
-  50%{box-shadow:0 0 14px rgba(142,107,255,.18), 0 0 22px rgba(82,255,224,.16)}
-  100%{box-shadow:0 0 0 rgba(0,0,0,0)}
-}
-.preset-select{height:52px;border-radius:14px;border:1px solid rgba(120,180,200,.22);background:var(--card);color:var(--text);padding:0 12px}
+  /* Library (Lite UI) */
+  .toolbar{display:flex;align-items:center;gap:10px;padding:10px 0 6px}
+  .icon-btn{width:38px;height:38px;border:1px solid rgba(120,180,200,.22);border-radius:12px;background:#0f1524;
+    display:grid;place-items:center;cursor:pointer;box-shadow:inset 0 0 12px rgba(126,241,192,.08)}
+  .icon{width:20px;height:20px;display:block}
+  .icon path{stroke:url(#grad);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 2px rgba(126,241,192,.35))}
 
-/* sliders */
-input[type="range"]{accent-color:#7fe9da}
+  .strip{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding:10px 0}
+  .strip::-webkit-scrollbar{height:8px}.strip::-webkit-scrollbar-thumb{background:#1a2438;border-radius:8px}
+  .card{min-width:120px;scroll-snap-align:start;background:#0f1524;border:1px solid #283044;border-radius:14px;padding:8px;display:flex;flex-direction:column;gap:6px;cursor:pointer}
+  .thumb{width:100%;aspect-ratio:1/1;border-radius:10px;background:#09101c;overflow:hidden;background-size:cover;background-position:center}
+  .thumb[data-src]{background-image:none}
+  .label{display:none}
 
-/* Mobile quick actions under Library player */
-.quick-actions{display:flex;gap:10px;margin:10px 0 0;flex-wrap:wrap}
-.mobile-only{display:none}
-@media (max-width: 768px){
-  .mobile-only{display:flex}
-  .toolbar .pill{display:none}
-  .row{grid-template-columns:1fr}
-}
+  .player-wrap{}
+  .status-wrap{display:flex;align-items:center;gap:12px;margin:6px 0 10px}
+  .status-thumb{width:124px;height:124px;border-radius:14px;position:relative;overflow:hidden;
+    background: radial-gradient(120px 80px at 40% 35%, #1a2335 0%, #0b0f17 70%),
+                linear-gradient(135deg, rgba(126,241,192,.15), rgba(85,208,255,.12), rgba(163,140,255,.15));
+    box-shadow: 0 0 18px rgba(126,241,192,.25), inset 0 0 24px rgba(163,140,255,.15);
+    border:1px solid rgba(120,180,200,.12);
+    background-size: cover; background-position: center; background-repeat:no-repeat;}
+  .status-thumb.loaded::before{display:none}
+  audio{width:100%;margin-top:6px;background:#0f1524;border:1px solid #273246;border-radius:12px}
+  .muted{color:#7ea296}
 
-/* Modal for Playlist */
-#plModal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.45);z-index:9999}
-#plSheet{width:min(680px,94vw);max-height:80vh;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 24px 64px rgba(0,0,0,.5);padding:16px}
-#plHeader{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-#plHeader h3{margin:0;font-size:1.05rem;color:var(--text)}
-#plClose{background:transparent;border:0;color:#9fb7ff;font-size:20px;cursor:pointer}
-#plGrid{display:grid;grid-template-columns: 1fr 1fr; gap:14px}
-#plLeft, #plRight{border:1px solid var(--line);border-radius:12px;padding:12px;min-height:220px;background:#0f172a}
-#plLeft h4, #plRight h4{margin:0 0 8px;color:#dfe7f6;font-size:.95rem}
-.pl-row{display:flex;align-items:center;gap:8px;margin:6px 0}
-.pl-row input[type="text"]{flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--card);color:#dfe7f6}
-.pl-btn{height:34px;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:#dfe7f6;cursor:pointer}
-.pl-btn:hover{filter:brightness(1.06)}
-.pl-list{display:flex;flex-direction:column;gap:6px;max-height:240px;overflow:auto}
-.pl-item{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--card);color:#cfead1}
-.pl-item .act{display:flex;gap:6px}
-.small{font-size:.82rem;opacity:.75}
-.truncate{max-width:360px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .visual-wrap{padding:6px 0 0}
+  #vizCanvas{width:100%;height:140px;display:block;background:linear-gradient(180deg,#0e1524 0%, #0b0f17 100%);
+    border-top:1px solid #243145;border-bottom:1px solid #243145;border-radius:12px}
+
+  /* Generator */
+  .gen-card{background:#0f1524;border:1px solid #283044;border-radius:14px;padding:12px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .field{display:flex;flex-direction:column;gap:6px}
+  label{color:#8fb1a0;font-size:13px}
+  .ctrlbar{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
+  .gbtn{height:40px;padding:0 14px;border-radius:10px;border:1px solid #2a354a;background:#10192b;color:#cfead1;cursor:pointer}
+  .gbtn:active{transform:translateY(1px)}
+  .osc{margin-top:12px;border:1px dashed #2a354a;border-radius:12px;height:160px;overflow:hidden}
+  canvas{width:100%;height:100%}
+  @media (max-width:768px){ .row{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
+
 <header>
   <div class="left-pack">
-    <div class="app-title">5DO Pro</div>
+    <!-- Hamburger identical to Lite -->
+    <div class="menu-container">
+      <div id="menuBtn" class="hamburger"><span></span></div>
+      <nav id="sideMenu" class="side-menu">
+        <a class="mbtn" href="https://5dshop.co.kr" target="_blank" rel="noopener">Shop</a>
+        <a class="mbtn menu-text" data-file="faq">FAQ</a>
+        <a class="mbtn menu-text" data-file="manual">Manual</a>
+        <a class="mbtn menu-text" data-file="contact">Contact</a>
+        <a class="mbtn menu-text" data-file="about">About</a>
+      </nav>
+    </div>
+    <div class="logo">5DO Pro</div>
   </div>
 
-  <div class="tabs">
-    <button class="tab active" data-target="lib">5DO</button>
-    <button class="tab" data-target="gen">Freq. Gen.</button>
+  <div class="tabs" role="tablist" aria-label="Mode">
+    <button class="tab active" data-target="lib" role="tab" aria-selected="true">5DO</button>
+    <button class="tab" data-target="gen" role="tab" aria-selected="false">Freq. Gen.</button>
   </div>
 
   <div class="right-pack">
-    <button id="langToggle" class="pill" title="EN/KO">KO</button>
+    <button id="langToggle" title="EN/KO">KO</button>
   </div>
 </header>
+<div class="menu-backdrop" id="menuBackdrop"></div>
 
 <main>
-  <!-- Library -->
+  <!-- SVG gradient (for icons) -->
+  <svg width="0" height="0" style="position:absolute;left:-9999px;top:-9999px"><defs>
+    <linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"  stop-color="#7ef1c0"/><stop offset="50%" stop-color="#55d0ff"/><stop offset="100%" stop-color="#a38cff"/>
+    </linearGradient>
+  </defs></svg>
+
+  <!-- Library (Lite code) -->
   <section id="lib" class="active">
-    <div class="card">
-      <div class="toolbar" style="display:flex;gap:10px;margin-bottom:10px">
-        <button id="loopBtn" class="pill">Loop</button>
-        <button id="timerBtn" class="pill">Timer</button>
-        <button id="playlistBtn" class="pill">Playlist</button>
+    <div class="toolbar">
+      <button id="btnBack" class="icon-btn" title="Back" aria-label="Back">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M14 6l-6 6 6 6M19 12H8"></path></svg>
+      </button>
+      <button id="btnRoot" class="icon-btn" title="Root" aria-label="Root">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 4a4 4 0 0 1 4 4v1h2a2 2 0 0 1 2 2v7h-6v-4H10v4H4v-7a2 2 0 0 1 2-2h2V8a4 4 0 0 1 4-4z"></path></svg>
+      </button>
+      <button id="btnRefresh" class="icon-btn" title="Refresh" aria-label="Refresh">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v6h-6"></path></svg>
+      </button>
+    </div>
+
+    <div id="strip" class="strip" aria-label="Media Library"></div>
+
+    <div class="player-wrap">
+      <div class="status-wrap">
+        <div id="loadingThumb" class="status-thumb" aria-label="loading thumbnail"></div>
+        <div class="muted" id="statusText"></div>
       </div>
       <audio id="player" controls crossorigin="anonymous"></audio>
-      <div id="qaBar" class="quick-actions mobile-only">
-        <button id="loopBtnM" class="pill">Loop</button>
-        <button id="timerBtnM" class="pill">Timer</button>
-        <button id="playlistBtnM" class="pill">Playlist</button>
-      </div>
-      <div class="visual-wrap"><span>Visualizer (Library)</span><canvas id="viz"></canvas></div>
+    </div>
+
+    <div class="visual-wrap">
+      <canvas id="vizCanvas" height="140"></canvas>
     </div>
   </section>
 
-  <!-- Generator -->
+  <!-- Generator (Pro module) -->
   <section id="gen">
-    <div class="card">
+    <div class="gen-card">
       <div class="row">
         <div class="field">
           <label id="lblFreq" for="genFreq">Frequency (Hz)</label>
@@ -154,11 +172,18 @@ input[type="range"]{accent-color:#7fe9da}
         </div>
       </div>
 
-      <div class="row" style="margin-top:10px">
+      <div class="row" style="margin-top:8px">
         <div class="field">
-          <label id="lblBB">Binaural <input id="genBinaural" type="checkbox" style="margin-left:8px;vertical-align:middle"></label>
-          <label id="lblBBdiff" for="genBeat">Difference (Hz)</label>
-          <input id="genBeat" type="number" value="7" step="0.1" min="0" max="100">
+          <label id="lblBBWrap">Binaural</label>
+          <div style="display:flex;align-items:center;gap:10px">
+            <label class="switch" title="Binaural ON/OFF">
+              <input id="genBinaural" type="checkbox"><span class="knob"></span>
+            </label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <label id="lblBBdiff" for="genBeat">Difference (Hz)</label>
+              <input id="genBeat" type="number" value="7" step="0.1" min="0" max="100" style="width:120px">
+            </div>
+          </div>
         </div>
         <div class="field">
           <label id="lblHarmonics" for="genHarmonics">Harmonics</label>
@@ -166,416 +191,375 @@ input[type="range"]{accent-color:#7fe9da}
         </div>
       </div>
 
-      <div class="row" style="margin-top:10px">
+      <div class="row" style="margin-top:8px">
         <div class="field">
           <label id="lblLevel" for="genLevel">Level</label>
           <input id="genLevel" type="range" value="50" min="0" max="100">
         </div>
         <div class="field">
           <label>&nbsp;</label>
-          <div class="gen-actions ctrlbar">
-            <button id="genToggle" class="icon-btn" title="Play/Pause" aria-label="Play/Pause">
-              <svg class="icon" viewBox="0 0 24 24"><polygon points="8,5 8,19 19,12" stroke-linejoin="round"/></svg>
-            </button>
-            <button id="btnSavePreset" class="icon-btn" title="Save Preset" aria-label="Save">
-              <svg class="icon" viewBox="0 0 24 24">
-                <path d="M12 3v10m0 0l-4-4m4 4l4-4"/>
-                <rect x="5" y="15" width="14" height="6" rx="1"/>
-              </svg>
-            </button>
-            <button id="btnDeletePreset" class="icon-btn" title="Delete Preset" aria-label="Delete">
-              <svg class="icon" viewBox="0 0 24 24">
-                <path d="M6 7h12M9 7v11m6-11v11M5 7l1 14h12l1-14M9 4h6l1 3H8z"/>
-              </svg>
-            </button>
-            <select id="presetSelect" class="preset-select"><option value="">Select Preset</option></select>
+          <div class="ctrlbar">
+            <button id="genToggle" class="gbtn" title="Play/Pause">Play/Pause</button>
+            <button id="btnSavePreset" class="gbtn" title="Save Preset">Save</button>
+            <select id="presetSelect" class="gbtn" style="min-width:180px">
+              <option value="">Select Preset</option>
+            </select>
+            <button id="btnDeletePreset" class="gbtn" title="Delete Preset">Delete</button>
           </div>
         </div>
       </div>
+
+      <div class="osc"><canvas id="osc" height="160"></canvas></div>
     </div>
   </section>
 </main>
 
-<!-- Playlist Modal -->
-<div id="plModal">
-  <div id="plSheet">
-    <div id="plHeader">
-      <h3>Playlists</h3>
-      <button id="plClose" aria-label="Close">✕</button>
+<!-- Modal for /texts/*.txt -->
+<div id="txtModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);align-items:center;justify-content:center;z-index:9999">
+  <div style="background:#0f1524;color:#cfead1;border:1px solid #334;max-width:720px;width:90%;max-height:75vh;overflow:auto;border-radius:14px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+    <div style="text-align:right;margin-bottom:8px">
+      <button id="txtClose" style="padding:6px 10px;border:1px solid #334;background:#192033;color:#cfead1;border-radius:8px;cursor:pointer">Close</button>
     </div>
-    <div id="plGrid">
-      <div id="plLeft">
-        <h4>Manage</h4>
-        <div class="pl-row">
-          <input id="plNewName" type="text" placeholder="New playlist name">
-          <button id="plNewBtn" class="pl-btn">New</button>
-        </div>
-        <div class="pl-row">
-          <select id="plSelect" class="preset-select" style="flex:1"></select>
-          <button id="plRenameBtn" class="pl-btn">Rename</button>
-          <button id="plDeleteBtn" class="pl-btn">Delete</button>
-        </div>
-        <div class="pl-list" id="plList"></div>
-      </div>
-      <div id="plRight">
-        <h4>Add / Load</h4>
-        <div class="pl-row">
-          <button id="plAddCurrent" class="pl-btn">Add Playing</button>
-          <button id="plAddAll" class="pl-btn">Add All Visible</button>
-        </div>
-        <div class="pl-row">
-          <button id="plLoad" class="pl-btn" style="flex:1">Load Playlist to Player Queue</button>
-        </div>
-        <div class="small">Tip: “Add All Visible”는 현재 보이는 카드들을 순서대로 플레이리스트에 추가합니다.</div>
-      </div>
-    </div>
+    <pre id="txtBody" style="white-space:pre-wrap;line-height:1.55;font-family:system-ui, Apple SD Gothic Neo, Noto Sans KR, sans-serif;"></pre>
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-/* ===== Global State & i18n ===== */
-window.lang = 'ko'; // default KO per your app
-const I18N = {
-  en: {
-    tabs:{lib:'5DO', gen:'Freq. Gen.'},
-    loopOff:'Loop: Off', loopOn:'Loop: On', loop:'Loop', timer:'Timer', playlist:'Playlist',
-    frequency:'Frequency (Hz)', waveform:'Waveform', binaural:'Binaural', difference:'Difference (Hz)', harmonics:'Harmonics', level:'Level',
-    ppTooltip:'Play/Pause', saveTip:'Save Preset', delTip:'Delete Preset', selectPreset:'Select Preset',
-    playlists:'Playlists', manage:'Manage', newName:'New playlist name', new:'New', rename:'Rename', delete:'Delete',
-    addLoad:'Add / Load', addPlaying:'Add Playing', addAll:'Add All Visible', loadToQueue:'Load Playlist to Player Queue',
-    tip:'Tip: “Add All Visible” adds visible cards in order.',
-    sleepAsk:'Sleep timer (minutes)?', timerSet:'Timer set'
-  },
-  ko: {
-    tabs:{lib:'5DO', gen:'주파수 생성기'},
-    loopOff:'루프: 꺼짐', loopOn:'루프: 켜짐', loop:'루프', timer:'타이머', playlist:'플레이리스트',
-    frequency:'주파수 (Hz)', waveform:'파형', binaural:'바이노럴', difference:'차이 (Hz)', harmonics:'배음', level:'레벨',
-    ppTooltip:'재생/일시정지', saveTip:'프리셋 저장', delTip:'프리셋 삭제', selectPreset:'프리셋 선택',
-    playlists:'플레이리스트', manage:'관리', newName:'새 플레이리스트 이름', new:'새로 만들기', rename:'이름 변경', delete:'삭제',
-    addLoad:'추가 / 로드', addPlaying:'현재 재생 추가', addAll:'보이는 항목 모두 추가', loadToQueue:'플레이리스트를 큐로 로드',
-    tip:'팁: “보이는 항목 모두 추가”는 그리드에 보이는 카드들을 순서대로 추가합니다.',
-    sleepAsk:'수면 타이머 (분)?', timerSet:'타이머 설정됨'
-  }
-};
+(() => {
+  // ===== Supabase (from Lite) =====
+  const SUPA_URL = "https://xdjgumqdwedgzwqturcx.supabase.co";
+  const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
+  const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+  const BUCKET = 'media';
+  const PUBLIC_BASE = `${SUPA_URL}/storage/v1/object/public/${BUCKET}`;
 
-function t(key){
-  const L = I18N[window.lang]||I18N.en;
-  return key.split('.').reduce((o,k)=>o&&o[k], L) || key;
-}
-
-function applyLang(){
-  // Tabs text
-  document.querySelector('[data-target="lib"]').textContent = t('tabs.lib');
-  document.querySelector('[data-target="gen"]').textContent = t('tabs.gen');
-  // Library buttons (desktop + mobile)
-  const setLoopText = (btn, looping)=>{ if(!btn) return; btn.textContent = looping? t('loopOn') : t('loopOff'); };
-  const player = document.getElementById('player');
-  setLoopText(document.getElementById('loopBtn'), player?.loop);
-  setLoopText(document.getElementById('loopBtnM'), player?.loop);
-  const setText=(id,key)=>{ const el=document.getElementById(id); if(el) el.textContent=t(key); };
-  setText('timerBtn','timer'); setText('playlistBtn','playlist');
-  setText('timerBtnM','timer'); setText('playlistBtnM','playlist');
-
-  // Generator labels
-  const set = (id,key)=>{ const el=document.getElementById(id); if(el) el.textContent=t(key); };
-  set('lblFreq','frequency'); set('lblWave','waveform'); set('lblBB','binaural'); set('lblBBdiff','difference');
-  set('lblHarmonics','harmonics'); set('lblLevel','level');
-  // Tooltips
-  const pp=document.getElementById('genToggle'); if(pp){ pp.title=t('ppTooltip'); pp.setAttribute('aria-label',t('ppTooltip')); }
-  const sv=document.getElementById('btnSavePreset'); if(sv){ sv.title=t('saveTip'); sv.setAttribute('aria-label',t('saveTip')); }
-  const dl=document.getElementById('btnDeletePreset'); if(dl){ dl.title=t('delTip'); dl.setAttribute('aria-label',t('delTip')); }
-  // Preset placeholder
-  const sel=document.getElementById('presetSelect'); if(sel && sel.options[0]) sel.options[0].textContent = t('selectPreset');
-
-  // Playlist modal texts
-  const qs=(s)=>document.querySelector(s);
-  qs('#plHeader h3').textContent = t('playlists');
-  qs('#plLeft h4').textContent = t('manage');
-  document.getElementById('plNewName').placeholder = t('newName');
-  document.getElementById('plNewBtn').textContent = t('new');
-  document.getElementById('plRenameBtn').textContent = t('rename');
-  document.getElementById('plDeleteBtn').textContent = t('delete');
-  qs('#plRight h4').textContent = t('addLoad');
-  document.getElementById('plAddCurrent').textContent = t('addPlaying');
-  document.getElementById('plAddAll').textContent = t('addAll');
-  document.getElementById('plLoad').textContent = t('loadToQueue');
-  qs('#plRight .small').textContent = t('tip');
-}
-
-/* ===== Header interactions ===== */
-document.getElementById('langToggle').addEventListener('click', ()=>{
-  window.lang = (window.lang==='en') ? 'ko' : 'en';
-  applyLang();
-});
-
-document.querySelectorAll('.tab').forEach(btn=>{
-  btn.addEventListener('click', (e)=>{
-    document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
-    e.currentTarget.classList.add('active');
-    const target = e.currentTarget.dataset.target;
-    document.querySelectorAll('main section').forEach(s=>s.classList.remove('active'));
-    document.getElementById(target).classList.add('active');
-    // visualizer: hide on gen
-    const vw = document.querySelector('.visual-wrap');
-    if(vw){ vw.style.display = (target==='gen') ? 'none' : ''; }
-  });
-});
-
-/* ===== Library basic queue & visualizer ===== */
-const audio = document.getElementById('player');
-let ctx, analyser, vsrc;
-function ensureLibCtx(){
-  if(ctx) return;
-  ctx = new (window.AudioContext||window.webkitAudioContext)();
-  analyser = ctx.createAnalyser(); analyser.fftSize = 1024;
-  vsrc = ctx.createMediaElementSource(audio);
-  vsrc.connect(analyser); analyser.connect(ctx.destination);
-}
-audio.addEventListener('play', ()=>{ ensureLibCtx(); ctx.resume(); });
-audio.addEventListener('ended', ()=>{
-  if(window._libPlaylist && window._libPlaylist.length){
-    const next = (window._libIndex||0) + 1;
-    if(next < window._libPlaylist.length) window.playAt(next);
-  }
-});
-
-const loopBtn = document.getElementById('loopBtn');
-const loopBtnM = document.getElementById('loopBtnM');
-function syncLoopText(){ 
-  const looping = !!audio.loop;
-  if(loopBtn) loopBtn.textContent = looping? t('loopOn') : t('loopOff');
-  if(loopBtnM) loopBtnM.textContent = looping? t('loopOn') : t('loopOff');
-}
-[loopBtn, loopBtnM].forEach(btn=> btn && btn.addEventListener('click', ()=>{ audio.loop = !audio.loop; syncLoopText(); }));
-
-const timerBtn = document.getElementById('timerBtn');
-const timerBtnM = document.getElementById('timerBtnM');
-[timerBtn, timerBtnM].forEach(btn=> btn && btn.addEventListener('click', ()=>{
-  const mins = parseFloat(prompt(t('sleepAsk'),'20')||'0');
-  if(mins>0){ setTimeout(()=>{ try{ audio.pause(); }catch(e){} }, mins*60000); alert(t('timerSet')); }
-}));
-
-// Playlist modal wiring
-const plModal = document.getElementById('plModal');
-const plOpen = document.getElementById('playlistBtn');
-const plOpenM = document.getElementById('playlistBtnM');
-const plClose = document.getElementById('plClose');
-[plOpen, plOpenM].forEach(b=> b && b.addEventListener('click', ()=>{ plModal.style.display='flex'; }));
-plClose.addEventListener('click', ()=> plModal.style.display='none');
-plModal.addEventListener('click', (e)=>{ if(e.target===plModal) plModal.style.display='none'; });
-
-/* ===== Unlimited Playlists (localStorage) ===== */
-const PKEY='userPlaylists_v15';
-const $=s=>document.querySelector(s);
-const $$=s=>Array.from(document.querySelectorAll(s));
-function pdb(){ try{return JSON.parse(localStorage.getItem(PKEY)||'{}');}catch(e){return{}} }
-function pset(db){ localStorage.setItem(PKEY, JSON.stringify(db)); }
-function pnames(){ return Object.keys(pdb()); }
-function ptracks(name){ return (pdb()[name]||[]) }
-function psetTracks(name, arr){ const db=pdb(); db[name]=arr; pset(db); }
-function padd(name, url, title){ const db=pdb(); if(!db[name]) db[name]=[]; db[name].push({url,title}); pset(db); }
-function pren(oldn, newn){ const db=pdb(); if(!db[oldn]||db[newn]) return; db[newn]=db[oldn]; delete db[oldn]; pset(db); }
-function pdel(name){ const db=pdb(); delete db[name]; pset(db); }
-
-const plNewName=$('#plNewName'), plNewBtn=$('#plNewBtn'), plSelect=$('#plSelect'), plRenameBtn=$('#plRenameBtn'), plDeleteBtn=$('#plDeleteBtn'),
-      plList=$('#plList'), plAddCurrent=$('#plAddCurrent'), plAddAll=$('#plAddAll'), plLoad=$('#plLoad');
-
-function plRefresh(){
-  if(!plSelect) return;
-  const names=pnames().sort(); plSelect.innerHTML='';
-  names.forEach(n=>{ const o=document.createElement('option'); o.value=n; o.textContent=n; plSelect.appendChild(o); });
-  if(names[0]) plSelect.value = plSelect.value || names[0];
-  plRenderList();
-}
-function plRenderList(){
-  if(!plList) return; plList.innerHTML='';
-  const name = plSelect.value; if(!name){ plList.innerHTML='<div class="small">No playlist</div>'; return; }
-  const rows = ptracks(name);
-  rows.forEach((t,i)=>{
-    const row=document.createElement('div'); row.className='pl-item';
-    const left=document.createElement('div'); left.textContent = (t.title||'') + ' '; left.className='truncate';
-    const right=document.createElement('div'); right.className='act';
-    const up=document.createElement('button'); up.className='pl-btn'; up.textContent='↑';
-    const down=document.createElement('button'); down.className='pl-btn'; down.textContent='↓';
-    const del=document.createElement('button'); del.className='pl-btn'; del.textContent='✕';
-    up.addEventListener('click', ()=>{ const arr=ptracks(name); if(i<=0) return; [arr[i-1],arr[i]]=[arr[i],arr[i-1]]; psetTracks(name,arr); plRenderList(); });
-    down.addEventListener('click', ()=>{ const arr=ptracks(name); if(i>=arr.length-1) return; [arr[i+1],arr[i],]=[arr[i],arr[i+1]]; psetTracks(name,arr); plRenderList(); });
-    del.addEventListener('click', ()=>{ const arr=ptracks(name); arr.splice(i,1); psetTracks(name,arr); plRenderList(); });
-    right.append(up,down,del); row.append(left,right); plList.appendChild(row);
-  });
-}
-plNewBtn.addEventListener('click', ()=>{
-  const name=(plNewName.value||'').trim(); if(!name) return;
-  const db=pdb(); if(db[name]){ alert('이미 존재하는 이름입니다'); return; }
-  db[name]=[]; pset(db); plNewName.value=''; plRefresh(); plSelect.value=name; plRenderList();
-});
-plRenameBtn.addEventListener('click', ()=>{
-  const name=plSelect.value; if(!name) return;
-  const next = prompt('새 이름', name); if(!next||next===name) return;
-  const db=pdb(); if(db[next]){ alert('이미 존재하는 이름입니다'); return; }
-  pren(name,next); plRefresh(); plSelect.value=next; plRenderList();
-});
-plDeleteBtn.addEventListener('click', ()=>{
-  const name=plSelect.value; if(!name) return;
-  if(!confirm(`'${name}' 삭제할까요?`)) return;
-  pdel(name); plRefresh();
-});
-plSelect.addEventListener('change', plRenderList);
-plAddCurrent.addEventListener('click', ()=>{
-  const name=plSelect.value; if(!name) return;
-  const curUrl = audio.currentSrc || audio.src; if(!curUrl){ alert('재생중인 항목이 없습니다'); return; }
-  const title = document.querySelector('.now-title')?.textContent || curUrl.split('/').pop();
-  padd(name, curUrl, title); plRenderList();
-});
-plAddAll.addEventListener('click', ()=>{
-  const name=plSelect.value; if(!name) return;
-  const cards = $$('.files .card'); // if present
-  const tracks = cards.map(c=>({ url: c.getAttribute('data-url')||c.dataset.url||'', title: c.querySelector('.t')?.textContent||''})).filter(t=>t.url);
-  const arr = ptracks(name).concat(tracks); psetTracks(name,arr); plRenderList();
-});
-plLoad.addEventListener('click', ()=>{
-  const name=plSelect.value; if(!name) return;
-  const rows=ptracks(name); if(!rows.length){ alert('플레이리스트가 비어 있습니다'); return; }
-  window._libPlaylist = rows.map(r=>r.url);
-  window._libIndex = -1;
-  window.playAt = function(i){
-    if(!_libPlaylist||!_libPlaylist.length) return;
-    if(i<0||i>=_libPlaylist.length) return;
-    _libIndex = i; audio.src = _libPlaylist[i];
-    audio.play().catch(()=>{});
+  // ===== Global lang/i18n (EN/KO toggle) =====
+  const i18n = {
+    en: { tabs:{lib:'5DO', gen:'Freq. Gen.'}, ready:'Ready to play', none:'No track loaded',
+          freq:'Frequency (Hz)', wave:'Waveform', bb:'Binaural', diff:'Difference (Hz)',
+          harm:'Harmonics', lvl:'Level', play:'Play/Pause', save:'Save', del:'Delete',
+          sel:'Select Preset', close:'Close' },
+    ko: { tabs:{lib:'5DO', gen:'주파수 생성기'}, ready:'재생 준비됨', none:'선곡되지 않음',
+          freq:'주파수 (Hz)', wave:'파형', bb:'바이노럴', diff:'차이 (Hz)',
+          harm:'배음', lvl:'레벨', play:'재생/일시정지', save:'저장', del:'삭제',
+          sel:'프리셋 선택', close:'닫기' }
   };
-  playAt(0); plModal.style.display='none';
-});
+  const $ = s => document.querySelector(s);
+  const $$= s => Array.from(document.querySelectorAll(s));
+  let lang = localStorage.getItem('lang') || 'ko';
+  const t = (k)=> (i18n[lang]&&k.split('.').reduce((o,kk)=>o&&o[kk],i18n[lang])) || k;
 
-/* ===== Generator Audio Engine ===== */
-let gctx, masterGain, genNodes = {oscL:null, oscR:null, merger:null, analyser:null};
-function ensureGenCtx(){
-  if(!gctx) gctx = new (window.AudioContext||window.webkitAudioContext)();
-  if(!masterGain){ masterGain = gctx.createGain(); masterGain.gain.value = (parseFloat(document.getElementById('genLevel').value||'50')/100); masterGain.connect(gctx.destination); }
-  return gctx;
-}
+  function applyLang(){
+    // tabs + toggle label
+    $('[data-target="lib"]').textContent = t('tabs.lib');
+    $('[data-target="gen"]').textContent = t('tabs.gen');
+    $('#langToggle').textContent = (lang==='en'?'EN':'KO');
 
-function stopGen(){
-  try{ genNodes.oscL && genNodes.oscL.stop(); }catch(e){}
-  try{ genNodes.oscR && genNodes.oscR.stop(); }catch(e){}
-  genNodes.oscL = genNodes.oscR = null;
-  if(genNodes.merger){ try{ genNodes.merger.disconnect(); }catch(e){} genNodes.merger=null; }
-}
+    // generator labels
+    $('#lblFreq').textContent = t('freq');
+    $('#lblWave').textContent = t('wave');
+    $('#lblBBWrap').textContent = t('bb');
+    $('#lblBBdiff').textContent = t('diff');
+    $('#lblHarmonics').textContent = t('harm');
+    $('#lblLevel').textContent = t('lvl');
+    $('#genToggle').textContent = t('play');
+    $('#btnSavePreset').textContent = t('save');
+    $('#btnDeletePreset').textContent = t('del');
+    const sel = $('#presetSelect'); if(sel && sel.options[0]) sel.options[0].textContent = t('sel');
 
-async function startGen(){
-  const ctx = ensureGenCtx();
-  if(ctx.state==='suspended') await ctx.resume();
-  stopGen();
+    // modal close
+    $('#txtClose').textContent = t('close');
 
-  const freq = parseFloat(document.getElementById('genFreq').value||'432');
-  const wave = (document.getElementById('genWave').value||'sine').toLowerCase();
-  const useBin = !!document.getElementById('genBinaural').checked;
-  const beat = Math.max(0, parseFloat(document.getElementById('genBeat').value||'7'));
-  const harm = (document.getElementById('genHarmonics').value||'1')
-                 .split(',').map(s=>parseFloat(s.trim())).filter(n=>!isNaN(n)&&isFinite(n));
-
-  const merger = ctx.createChannelMerger(2);
-  merger.connect(masterGain);
-  genNodes.merger = merger;
-
-  function makeOsc(f, pan){ // pan: 0 = L, 1 = R to channel in merger
-    const o = ctx.createOscillator();
-    o.type = wave; o.frequency.value = f;
-    const g = ctx.createGain(); g.gain.value = 0.9 / Math.max(1, harm.length);
-    o.connect(g); g.connect(merger, 0, pan); o.start();
-    return {o,g};
+    // library status text (if none)
+    const statusText = $('#statusText');
+    if(statusText && !statusText.dataset.hasContent){
+      statusText.textContent = t('none');
+    }
   }
 
-  // base or binaural pair
-  const baseL = useBin ? (freq - beat/2) : freq;
-  const baseR = useBin ? (freq + beat/2) : freq;
-  const bundleL = makeOsc(baseL, 0);
-  genNodes.oscL = bundleL.o;
-
-  if(useBin){
-    const bundleR = makeOsc(baseR, 1);
-    genNodes.oscR = bundleR.o;
-  }else{
-    // mono to both channels for richness
-    const mono = ctx.createGain();
-    bundleL.o.disconnect(); bundleL.o.connect(mono);
-    mono.connect(genNodes.merger,0,0); mono.connect(genNodes.merger,0,1);
-    genNodes.oscL = bundleL.o;
-  }
-
-  // simple harmonic add (ratio list multiplies base frequency)
-  if(harm && harm.length>0){
-    harm.forEach(r=>{
-      if(!isFinite(r) || r===1) return;
-      const hhL = makeOsc(baseL*r, 0);
-      if(useBin){ const hhR = makeOsc(baseR*r, 1); }
+  // ===== Tabs =====
+  $$('.tab').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      $$('.tab').forEach(b=>b.classList.remove('active'));
+      e.currentTarget.classList.add('active');
+      const tgt = e.currentTarget.dataset.target;
+      $$('main section').forEach(s=>s.classList.remove('active'));
+      $('#' + tgt).classList.add('active');
+      // toggle canvases visibility
+      $('#vizCanvas').parentElement.style.display = (tgt==='lib') ? '' : 'none';
+      $('#osc').parentElement.style.display     = (tgt==='gen') ? '' : 'none';
     });
+  });
+
+  // ===== Lang toggle =====
+  $('#langToggle').addEventListener('click', ()=>{
+    lang = (lang==='en') ? 'ko' : 'en';
+    localStorage.setItem('lang', lang);
+    // clear status thumb/text and re-render strip with new language thumbnails
+    $('#loadingThumb').classList.remove('loaded');
+    $('#loadingThumb').style.backgroundImage='';
+    const s = $('#statusText');
+    s.textContent = t('none'); s.dataset.hasContent = '';
+    applyLang(); render();
+  });
+
+  // ===== Hamburger identical to Lite (modal + /texts/*.txt) =====
+  (function initMenu(){
+    const btn = $('#menuBtn');
+    const pane= $('#sideMenu');
+    const bd  = $('#menuBackdrop');
+    const open = ()=>{ pane.classList.add('open'); bd.classList.add('show'); };
+    const close= ()=>{ pane.classList.remove('open'); bd.classList.remove('show'); };
+    btn.addEventListener('click', (e)=>{ e.stopPropagation(); pane.classList.contains('open')?close():open(); });
+    bd.addEventListener('click', close);
+    document.addEventListener('keydown', e=>{ if(e.key==='Escape') close(); });
+
+    // /texts modal (same as Lite)
+    $$('.menu-text').forEach(a=>{
+      const file = a.getAttribute('data-file');
+      a.addEventListener('click', async (e)=>{
+        e.preventDefault();
+        try{
+          const res = await fetch(`/texts/${file}.txt?ts=${Date.now()}`);
+          const txt = await res.text();
+          $('#txtBody').textContent = txt;
+          $('#txtModal').style.display='flex';
+          close();
+        }catch(err){ alert('문서를 불러올 수 없습니다. (/texts/*.txt 확인)'); }
+      });
+    });
+    $('#txtClose').addEventListener('click', ()=> $('#txtModal').style.display='none');
+    $('#txtModal').addEventListener('click', (e)=>{ if(e.target.id==='txtModal') $('#txtModal').style.display='none';});
+  })();
+
+  // ===== Library (Lite Supabase list, exact JPG & lang rules) =====
+  const strip = $('#strip');
+  const player= $('#player');
+  const statusThumb = $('#loadingThumb');
+  const statusText  = $('#statusText');
+
+  const pathStack = [];
+  const currentPath = ()=> pathStack.join('/');
+
+  // IntersectionObserver lazy loader (same behavior)
+  const io = new IntersectionObserver((entries)=>{
+    for(const e of entries){
+      if(e.isIntersecting){
+        const el = e.target;
+        const url = el.getAttribute('data-src');
+        if(url){
+          el.style.backgroundImage = `url("${url}")`;
+          el.removeAttribute('data-src');
+        }
+        io.unobserve(el);
+      }
+    }
+  }, {root:null,rootMargin:'200px',threshold:0.01});
+
+  function folderJpg(folder){
+    const name = (lang==='en') ? 'folder_e.jpg' : 'folder.jpg';
+    return `${PUBLIC_BASE}/${encodeURIComponent(folder)}/${name}`;
   }
-}
+  function trackThumbJpg(folder, trackFile){
+    const base = trackFile.replace(/\.(mp3|wav|m4a)$/i,'');
+    const suffix = (lang==='en') ? '_E' : '';
+    return `${PUBLIC_BASE}/${encodeURIComponent(folder)}/${encodeURIComponent(base+suffix)}.jpg`;
+  }
+  function trackAudioUrl(folder, trackFile){
+    return `${PUBLIC_BASE}/${encodeURIComponent(folder)}/${encodeURIComponent(trackFile)}`;
+  }
+  async function listPath(path){
+    const p = path ? path + '/' : '';
+    const { data, error } = await supa.storage.from(BUCKET).list(p, {
+      limit: 1000, sortBy: { column:'name', order:'asc' }
+    });
+    if(error){ console.warn(error); return []; }
+    return data || [];
+  }
+  const isFolder = item => !item?.metadata || !item?.metadata.mimetype;
+  const isAudio  = item => !!item?.metadata?.mimetype && /^audio\//.test(item.metadata.mimetype);
 
-/* Play/Pause Toggle */
-const genToggle = document.getElementById('genToggle');
-const svgPlay  = '<svg class="icon" viewBox="0 0 24 24"><polygon points="8,5 8,19 19,12" stroke-linejoin="round"/></svg>';
-const svgPause = '<svg class="icon" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
-let genPlaying = false;
-function setGenIcon(){ genToggle.innerHTML = genPlaying ? svgPause : svgPlay; genToggle.classList.toggle('active', genPlaying); }
-genToggle.addEventListener('click', async ()=>{
-  if(!genPlaying){ await startGen(); genPlaying=true; setGenIcon(); }
-  else{ stopGen(); genPlaying=false; setGenIcon(); }
-});
+  async function render(){
+    strip.innerHTML='';
+    const path = currentPath();
+    const items = await listPath(path);
+    const folders = items.filter(isFolder);
+    const files   = items.filter(isAudio);
 
-/* Level slider -> masterGain */
-document.getElementById('genLevel').addEventListener('input', (e)=>{
-  ensureGenCtx(); masterGain.gain.value = (parseFloat(e.target.value||'50')/100);
-});
+    // folders
+    for(const f of folders){
+      const card = document.createElement('div');
+      card.className='card';
+      const th = document.createElement('div');
+      th.className='thumb';
+      th.setAttribute('data-src', folderJpg(f.name));
+      card.appendChild(th);
+      const lb = document.createElement('div'); lb.className='label'; card.appendChild(lb);
+      card.addEventListener('click', (e)=>{
+        e.preventDefault(); e.stopPropagation();
+        pathStack.push(f.name);
+        render();
+      });
+      strip.appendChild(card);
+      io.observe(th);
+    }
 
-/* Presets (names keep original language) */
-const PKEY_GEN='genPresets_v15';
-function gdb(){ try{return JSON.parse(localStorage.getItem(PKEY_GEN)||'[]')}catch(e){return[]} }
-function gsave(arr){ localStorage.setItem(PKEY_GEN, JSON.stringify(arr.slice(0,10))); }
-function gcurrent(){
-  return {
-    freq:document.getElementById('genFreq').value,
-    wave:document.getElementById('genWave').value,
-    bin:document.getElementById('genBinaural').checked,
-    beat:document.getElementById('genBeat').value,
-    harm:document.getElementById('genHarmonics').value,
-    level:document.getElementById('genLevel').value
-  };
-}
-function renderPresetList(){
-  const sel=document.getElementById('presetSelect');
-  sel.innerHTML='<option value="">'+t('selectPreset')+'</option>';
-  gdb().forEach(p=>{ const o=document.createElement('option'); o.value=p.name; o.textContent=p.name; sel.appendChild(o); });
-}
-document.getElementById('btnSavePreset').addEventListener('click', ()=>{
-  const name = prompt(window.lang==='en'?'Preset name':'프리셋 이름'); if(!name) return;
-  const arr = gdb().filter(p=>p.name!==name); arr.unshift({name, data:gcurrent()}); gsave(arr); renderPresetList();
-  alert(window.lang==='en'?'Preset saved':'프리셋 저장됨');
-});
-document.getElementById('btnDeletePreset').addEventListener('click', ()=>{
-  const sel=document.getElementById('presetSelect'); if(!sel.value) return;
-  gsave(gdb().filter(p=>p.name!==sel.value)); renderPresetList();
-});
-document.getElementById('presetSelect').addEventListener('change', ()=>{
-  const name = document.getElementById('presetSelect').value; if(!name) return;
-  const f = gdb().find(p=>p.name===name); if(!f) return;
-  const d=f.data||{};
-  document.getElementById('genFreq').value=d.freq||'432';
-  document.getElementById('genWave').value=d.wave||'sine';
-  document.getElementById('genBinaural').checked=!!d.bin;
-  document.getElementById('genBeat').value=d.beat||'7';
-  document.getElementById('genHarmonics').value=d.harm||'1';
-  document.getElementById('genLevel').value=d.level||'50';
-});
+    // files
+    for(const file of files){
+      const card = document.createElement('div');
+      card.className='card';
+      const th = document.createElement('div');
+      th.className='thumb';
+      th.setAttribute('data-src', trackThumbJpg(path || '', file.name));
+      card.appendChild(th);
+      const lb = document.createElement('div'); lb.className='label'; card.appendChild(lb);
+      card.addEventListener('click', (e)=>{
+        e.preventDefault(); e.stopPropagation();
+        const url = trackAudioUrl(path || '', file.name);
+        // load (no auto-play, match Lite)
+        player.src = url;
+        player.load?.();
+        // update status thumb/text
+        statusThumb.classList.add('loaded');
+        statusThumb.style.backgroundImage = `url("${trackThumbJpg(path || '', file.name)}")`;
+        statusText.textContent = t('ready');
+        statusText.dataset.hasContent = '1';
+      });
+      strip.appendChild(card);
+      io.observe(th);
+    }
+  }
 
-/* init */
-document.addEventListener('DOMContentLoaded', ()=>{
-  applyLang();
-  plRefresh();
-  renderPresetList();
-  syncLoopText();
-});
+  // Back/Root/Refresh
+  $('#btnBack').addEventListener('click', ()=>{ if(pathStack.length) pathStack.pop(); render(); });
+  $('#btnRoot').addEventListener('click', ()=>{ pathStack.length=0; render(); });
+  $('#btnRefresh').addEventListener('click', ()=> render());
+
+  // Visualizer (Lite spectrum bars)
+  let audioCtx, analyser, sourceNode, vizRAF = 0;
+  const vizCanvas = $('#vizCanvas');
+  const vctx = vizCanvas.getContext('2d', {alpha:false});
+  function resizeViz(){
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    const cssW = vizCanvas.clientWidth || vizCanvas.parentElement.clientWidth;
+    const cssH = vizCanvas.clientHeight || 140;
+    vizCanvas.width  = Math.floor(cssW * dpr);
+    vizCanvas.height = Math.floor(cssH * dpr);
+    vctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener('resize', resizeViz); resizeViz();
+
+  function ensureAudioGraph(){
+    if(!audioCtx){
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 1024;
+      analyser.smoothingTimeConstant = 0.78;
+      sourceNode = audioCtx.createMediaElementSource(player);
+      sourceNode.connect(analyser);
+      analyser.connect(audioCtx.destination);
+    }
+  }
+
+  function drawViz(){
+    const w = vizCanvas.width, h = vizCanvas.height;
+    vctx.clearRect(0,0,w,h);
+    const gradBg = vctx.createLinearGradient(0,0,0,h);
+    gradBg.addColorStop(0,'#0e1524'); gradBg.addColorStop(1,'#0b0f17');
+    vctx.fillStyle = gradBg; vctx.fillRect(0,0,w,h);
+
+    const bufLen = analyser.frequencyBinCount;
+    const data = new Uint8Array(bufLen);
+    analyser.getByteFrequencyData(data);
+
+    const bars = Math.min(96, Math.floor(w/7));
+    const step = Math.floor(bufLen / bars);
+    const barW = Math.max(3, (w / bars) * 0.6);
+
+    for(let i=0;i<bars;i++){
+      const idx = i*step;
+      const v = data[idx] / 255;
+      const barH = Math.max(4, v * (h*0.9));
+      const x = i * (w / bars) + (w / bars - barW)/2;
+      const y = h - barH;
+
+      const g = vctx.createLinearGradient(0,y,0,y+barH);
+      g.addColorStop(0,'#7ef1c0'); g.addColorStop(0.5,'#55d0ff'); g.addColorStop(1,'#a38cff');
+      vctx.fillStyle = g; vctx.fillRect(x,y,barW,barH);
+
+      vctx.globalAlpha = 0.18; vctx.strokeStyle = '#bfe'; vctx.strokeRect(x+0.5,y+0.5,barW-1,barH-1); vctx.globalAlpha = 1;
+    }
+  }
+  function startViz(){
+    cancelAnimationFrame(vizRAF);
+    const loop = ()=>{ vizRAF = requestAnimationFrame(loop); if(!analyser) return; drawViz(); };
+    vizRAF = requestAnimationFrame(loop);
+  }
+  function stopViz(){ cancelAnimationFrame(vizRAF); vizRAF = 0; }
+  player.addEventListener('play', async ()=>{ ensureAudioGraph(); if(audioCtx.state==='suspended'){ try{ await audioCtx.resume(); }catch{} } startViz(); });
+  player.addEventListener('pause', ()=> stopViz());
+  player.addEventListener('ended', ()=> stopViz());
+
+  // ===== Generator audio + oscilloscope =====
+  let gctx, gGain, gMerge, gOscL, gOscR, gAnalyser, rafOsc;
+  function ensureGenCtx(){
+    if(!gctx) gctx=new (window.AudioContext||window.webkitAudioContext)();
+    if(!gGain){ gGain=gctx.createGain(); gGain.gain.value=parseFloat(genLevel.value||'50')/100; gGain.connect(gctx.destination); }
+    if(!gAnalyser){ gAnalyser=gctx.createAnalyser(); gAnalyser.fftSize=2048; }
+  }
+  function stopGen(){ try{gOscL&&gOscL.stop();}catch(e){} try{gOscR&&gOscR.stop();}catch(e){} gOscL=gOscR=null; if(gMerge){ try{gMerge.disconnect();}catch(e){} gMerge=null; cancelAnimationFrame(rafOsc); }
+  async function startGen(){
+    ensureGenCtx(); if(gctx.state==='suspended') await gctx.resume(); stopGen();
+    const freq=parseFloat(genFreq.value||'432'), wave=genWave.value||'sine', useBB=genBinaural.checked, beat=Math.max(0,parseFloat(genBeat.value||'7'));
+    const harms=(genHarmonics.value||'1').split(',').map(s=>parseFloat(s.trim())).filter(n=>!isNaN(n)&&isFinite(n));
+    gMerge=gctx.createChannelMerger(2); const tap=gctx.createGain(); tap.connect(gAnalyser); gMerge.connect(tap); gMerge.connect(gGain);
+    function mk(f,ch){ const o=gctx.createOscillator(); o.type=wave; o.frequency.value=f; const g=gctx.createGain(); g.gain.value=0.9/Math.max(1,harms.length); o.connect(g); g.connect(gMerge,0,ch); o.start(); return o; }
+    const L=useBB?(freq-beat/2):freq, R=useBB?(freq+beat/2):freq; gOscL=mk(L,0); gOscR=mk(R,1);
+    harms.forEach(r=>{ if(!isFinite(r)||r===1) return; mk(L*r,0); mk(R*r,1); });
+    drawOsc();
+  }
+  function drawOsc(){
+    const cvs = document.getElementById('osc'); const cx=cvs.getContext('2d');
+    const W=cvs.width = cvs.clientWidth, H=cvs.height = cvs.clientHeight;
+    const buf=new Uint8Array(gAnalyser.fftSize);
+    (function loop(){ rafOsc=requestAnimationFrame(loop);
+      gAnalyser.getByteTimeDomainData(buf);
+      cx.fillStyle='#0c1322'; cx.fillRect(0,0,W,H);
+      cx.strokeStyle='#9fd6ff'; cx.lineWidth=1.4; cx.beginPath();
+      for(let i=0;i<buf.length;i++){ const x=i/buf.length*W; const y=(buf[i]/255)*H; (i?cx.lineTo(x,y):cx.moveTo(x,y)); }
+      cx.stroke();
+    })();
+  }
+  let genOn=false;
+  document.getElementById('genToggle').addEventListener('click', async ()=>{ if(!genOn){ await startGen(); genOn=true; } else { stopGen(); genOn=false; } });
+  document.getElementById('genLevel').addEventListener('input',()=>{ ensureGenCtx(); gGain.gain.value=parseFloat(genLevel.value||'50')/100; });
+  document.getElementById('genBinaural').addEventListener('change',()=>{ genBeat.disabled = !genBinaural.checked; });
+  genBeat.disabled = !genBinaural.checked;
+
+  // ===== Presets (max 10) =====
+  const PKEY='genPresets_v16';
+  function db(){ try{return JSON.parse(localStorage.getItem(PKEY)||'[]')}catch(e){return[]} }
+  function saveAll(arr){ localStorage.setItem(PKEY, JSON.stringify(arr.slice(0,10))); }
+  function current(){ return {freq:genFreq.value,wave:genWave.value,bin:genBinaural.checked,beat:genBeat.value,harm:genHarmonics.value,level:genLevel.value}; }
+  function renderPresets(){ const sel=$('#presetSelect'); sel.innerHTML = `<option value="">${t('sel')}</option>`; db().forEach(p=>{ const o=document.createElement('option'); o.value=p.name; o.textContent=p.name; sel.appendChild(o); }); }
+  $('#btnSavePreset').addEventListener('click',()=>{ const name=prompt(lang==='en'?'Preset name':'프리셋 이름'); if(!name) return; const arr=db().filter(p=>p.name!==name); arr.unshift({name,data:current()}); saveAll(arr); renderPresets(); });
+  $('#btnDeletePreset').addEventListener('click',()=>{ const name=$('#presetSelect').value; if(!name) return; saveAll(db().filter(p=>p.name!==name)); renderPresets(); });
+  $('#presetSelect').addEventListener('change',()=>{ const name=$('#presetSelect').value; if(!name) return; const f=db().find(p=>p.name===name); if(!f) return; const d=f.data||{}; genFreq.value=d.freq||'432'; genWave.value=d.wave||'sine'; genBinaural.checked=!!d.bin; genBeat.value=d.beat||'7'; genHarmonics.value=d.harm||'1'; genLevel.value=d.level||'50'; genBeat.disabled=!genBinaural.checked; });
+
+  // ===== Init =====
+  function init(){
+    applyLang();
+    // default canvases visibility
+    $('#vizCanvas').parentElement.style.display = '';
+    $('#osc').parentElement.style.display = 'none';
+    // status
+    $('#statusText').textContent = t('none'); $('#statusText').dataset.hasContent = '';
+    renderPresets();
+    render();
+  }
+  init();
+})();
 </script>
 </body>
 </html>
