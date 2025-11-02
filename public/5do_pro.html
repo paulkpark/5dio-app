@@ -140,6 +140,15 @@ header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10
 .preset-select{height:34px;border-radius:10px;border:1px solid rgba(120,180,200,.22);background:#0f1524;color:#cfead1;padding:0 10px}
 
 </style>
+
+<style>
+/* Title alignment tweak */
+header{grid-template-columns:1fr auto 1fr}
+.tabs{justify-self:center;display:flex;gap:12px;transform:translateX(72px)}
+.right{justify-self:end}
+@media (max-width:420px){ .tabs{transform:translateX(64px)} }
+</style>
+
 </head>
 <body>
 
@@ -236,12 +245,14 @@ header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10
         </select>
       </div>
 
-      <div class="field">
-        <h4 id="lblBB">Binaural</h4>
-        <label></label>
-        <label id="lblBBdiff" for="genBeat">차이 (Hz)</label>
-        <input id="genBeat" type="number" min="0" max="1000" step="0.1" value="7">
-      </div>
+<div class="field">
+  <h4 id="lblBB">Binaural</h4>
+  <div style="display:flex;align-items:center;gap:8px">
+    <input id="genBinaural" type="checkbox" aria-label="Binaural">
+    <label id="lblBBdiff" for="genBeat">차이 (Hz)</label>
+  </div>
+  <input id="genBeat" type="number" min="0" max="1000" step="0.1" value="7">
+</div>
       <div class="field">
         <h4 id="lblHarmonics">Harmonics</h4>
         <label id="lblHarmHelp" for="genHarmonics">배음</label>
@@ -306,7 +317,8 @@ header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10
 
   const langBtn = $('#langToggle');
   let lang = localStorage.getItem('lang') || 'ko';
-  const setLangLabel = ()=> langBtn.textContent = (lang==='en'?'EN':'KO'); setLangLabel();
+  window.lang = lang;                  // ← 전역 반영
+  const setLangLabel = ()=> langBtn.textContent = (lang==='en'?'EN':'KO');
 
   const strip = $('#strip');
   const player= $('#player');
@@ -396,7 +408,9 @@ header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10
       card.addEventListener('click', (e)=>{
         e.preventDefault(); e.stopPropagation();
         const url = trackAudioUrl(path || '', file.name);
-        // 로드만 하고 자동재생 금지
+        card.dataset.url = audioUrl;          // ← 플레이리스트/큐 추가에서 사용
+        card.dataset.filename = file.name;    // (옵션) 표시용
+        card.dataset.path = (path || '');        // 로드만 하고 자동재생 금지
         player.src = url;
         player.load?.();
         // 로딩 썸네일 갱신
@@ -426,7 +440,7 @@ header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10
       a.addEventListener('click', async (e)=>{
         e.preventDefault();
         try{
-          const res = await fetch(`/texts/${file}.txt?ts=${Date.now()}`);
+          const res = await fetch(`texts/${file}.txt?ts=${Date.now()}`, {cache:'no-store'});
           const txt = await res.text();
           $('#txtBody').textContent = txt;
           $('#txtModal').style.display='flex';
@@ -446,6 +460,7 @@ header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10
   // ===== Lang toggle =====
   langBtn.addEventListener('click', ()=>{
     lang = (lang==='en'?'ko':'en');
+    window.lang = lang;                  // ← 전역 갱신
     localStorage.setItem('lang', lang);
     setLangLabel();
     // 상태 초기화 후 다시 렌더
@@ -584,52 +599,58 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
 <script>
 (function(){
-  const KEY='genPresets';
-  function list(){ try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){return[]} }
-  function saveList(a){ localStorage.setItem(KEY, JSON.stringify(a.slice(0,10))); }
+  const PKEY='genPresets';
+  const $ = s => document.querySelector(s);
+
+  function getPresets(){ try{return JSON.parse(localStorage.getItem(PKEY)||'[]')}catch(e){return[]} }
+  function setPresets(a){ localStorage.setItem(PKEY, JSON.stringify(a.slice(0,10))); }
+
+  // 렌더러 (단일 정의)
   window.renderPresetList = function(){
-    const sel=document.getElementById('presetSelect'); if(!sel) return;
-    const L=(window.lang==='en')?{sel:'Select Preset'}:{sel:'프리셋 선택'};
-    sel.innerHTML = '<option value="">'+L.sel+'</option>';
-    list().forEach(p=>{ const o=document.createElement('option'); o.value=p.name; o.textContent=p.name; sel.appendChild(o); });
+    const sel = document.getElementById('presetSelect'); if(!sel) return;
+    const list = getPresets();
+    sel.innerHTML = '<option value="">' + ((window.lang==='en')?'Select Preset':'프리셋 선택') + '</option>';
+    list.forEach(p=>{
+      const o=document.createElement('option'); o.value=p.name; o.textContent=p.name; sel.appendChild(o);
+    });
   };
-  function currentData(){
-    const F=s=>document.querySelector(s);
-    return {freq:F('#genFreq').value,wave:F('#genWave').value,binaural:!!F('#genBinaural')?.checked,beat:F('#genBeat').value,harm:F('#genHarmonics').value};
-  }
-  function saveNamed(){
+
+  function savePreset(){
+    const data = {
+      freq: document.getElementById('genFreq').value,
+      wave: document.getElementById('genWave').value,
+      binaural: !!document.getElementById('genBinaural')?.checked,
+      beat: document.getElementById('genBeat').value,
+      harm: document.getElementById('genHarmonics').value
+    };
     const name = prompt((window.lang==='en')?'Preset name':'프리셋 이름'); if(!name) return;
-    const arr=list().filter(p=>p.name!==name); arr.unshift({name, data: currentData()}); saveList(arr); renderPresetList();
+    const list = getPresets().filter(p=>p.name!==name);
+    list.unshift({name,data}); setPresets(list); renderPresetList();
     alert((window.lang==='en')?'Preset saved':'프리셋 저장됨');
   }
-  function deleteNamed(){
-    const sel=document.getElementById('presetSelect'); if(!sel||!sel.value) return;
-    const arr=list().filter(p=>p.name!==sel.value); saveList(arr); renderPresetList();
+
+  function loadPreset(){
+    const sel = document.getElementById('presetSelect'); if(!sel||!sel.value) return;
+    const f = getPresets().find(p=>p.name===sel.value); if(!f) return;
+    const d=f.data||{};
+    document.getElementById('genFreq').value = d.freq||'432';
+    document.getElementById('genWave').value = d.wave||'sine';
+    const bb=document.getElementById('genBinaural'); if(bb) bb.checked=!!d.binaural;
+    document.getElementById('genBeat').value = d.beat||'7';
+    document.getElementById('genHarmonics').value = d.harm||'1';
   }
-  function loadNamed(){
-    const sel=document.getElementById('presetSelect'); if(!sel||!sel.value) return;
-    const f=list().find(p=>p.name===sel.value); if(!f) return;
-    const d=f.data||{}; const F=s=>document.querySelector(s);
-    F('#genFreq').value=d.freq||'432'; F('#genWave').value=d.wave||'sine';
-    const bb=F('#genBinaural'); if(bb) bb.checked=!!d.binaural;
-    F('#genBeat').value=d.beat||'7'; F('#genHarmonics').value=d.harm||'1';
-  }
+
   document.addEventListener('DOMContentLoaded', ()=>{
     renderPresetList();
     const saveBtn=document.getElementById('btnSavePreset');
-    const delBtn=document.getElementById('btnDeletePreset');
     const loadSel=document.getElementById('presetSelect');
-    saveBtn && saveBtn.addEventListener('click', saveNamed);
-    delBtn && delBtn.addEventListener('click', deleteNamed);
-    loadSel && loadSel.addEventListener('change', loadNamed);
-  });
-  document.addEventListener('DOMContentLoaded', ()=>{
+    saveBtn && saveBtn.addEventListener('click', savePreset);
+    loadSel && loadSel.addEventListener('change', loadPreset);
     const lg=document.getElementById('langToggle');
-    lg && lg.addEventListener('click', ()=>{ setTimeout(renderPresetList, 0); });
+    lg && lg.addEventListener('click', ()=> setTimeout(renderPresetList,0));
   });
 })();
 </script>
-
 
 <script>
 document.addEventListener('DOMContentLoaded', ()=>{
@@ -692,11 +713,12 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const L = window.GEN_I18N[lang];
     function T(id, text){ const el = document.getElementById(id); if(el) el.textContent = text; }
     // Labels (assumes label containers have these ids or data-i18n attributes)
-    const elFreq = document.querySelector('[data-i18n="frequency"], #lblFrequency h4, #lblFrequency label, label[for="genFreq"]');
-    const elWave = document.querySelector('[data-i18n="waveform"], #lblWaveform h4, #lblWaveform label, label[for="genWave"]');
-    const elBin  = document.querySelector('[data-i18n="binaural"], #lblBinaural h4, #lblBinaural label');
-    const elDiff = document.querySelector('[data-i18n="difference"], label[for="genBeat"]');
-    const elHar  = document.querySelector('[data-i18n="harmonics"], #lblHarmonics h4, #lblHarmonics label, label[for="genHarmonics"]');
+    // 교체 부분만 예시
+const elFreq = document.getElementById('lblFreq');
+const elWave = document.getElementById('lblWave');
+const elBin  = document.getElementById('lblBB');
+const elDiff = document.getElementById('lblBBdiff');
+const elHar  = document.getElementById('lblHarmonics');
 
     if(elFreq) elFreq.textContent = L.frequency;
     if(elWave) elWave.textContent = L.waveform;
@@ -932,7 +954,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   });
   plAddAll && plAddAll.addEventListener('click', ()=>{
     const name = plSelect.value; if(!name) return;
-    const cards = $$('.files .card');
+    const cards = $$('#strip .card');
     if(!cards.length){ alert('추가할 카드가 없습니다'); return; }
     const tracks = cards.map(c=>({ url: c.getAttribute('data-url')||c.dataset.url||'', title: c.querySelector('.t')?.textContent||''})).filter(t=>t.url);
     const arr = getTracks(name).concat(tracks);
@@ -1010,11 +1032,11 @@ document.addEventListener('DOMContentLoaded', ()=>{
       const setup = ()=>{
         try{
           if(!window.audioCtx) window.audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-          if(!masterGain){ masterGain = audioCtx.createGain(); masterGain.gain.value = (parseFloat(level.value||'50')/100); masterGain.connect(audioCtx.destination); }
+          if(!masterGain){ masterGain = audioCtx.createGain(); masterGain.gain.value = (parseFloat(level.value||'0.5'); masterGain.connect(audioCtx.destination); }
         }catch(e){}
       };
       setup();
-      level.addEventListener('input', ()=>{ if(masterGain) masterGain.gain.value = (parseFloat(level.value||'50')/100); });
+      level.addEventListener('input', ()=>{ if(masterGain) masterGain.gain.value = (parseFloat(level.value||'0.5'); });
     }
 
     // Binaural checkbox wiring to enable/disable Difference
@@ -1172,4 +1194,80 @@ document.addEventListener('DOMContentLoaded', ()=>{
   document.addEventListener('click', (e)=>{ const card=e.target.closest('.files .card'); if(!card) return; rebuild(); const cards=Array.from(document.querySelectorAll('.files .card')); const i=cards.indexOf(card); if(i>=0) playAt(i); });
 })();
 </script>
+
+<audio id="bgAudio" playsinline style="display:none"></audio>
+
+<script>
+(function(){
+  const bgEl = document.getElementById('bgAudio');
+  let gOutAttached = false;
+
+  function attachBgRoute(){
+    try{
+      const gctx = window.gctx, gGain = window.gGain;
+      if (!bgEl || !gctx || !gGain || gOutAttached) return;
+      if (!window._genOut){
+        window._genOut = gctx.createMediaStreamDestination();
+      }
+      gGain.disconnect?.();
+      gGain.connect(window._genOut);
+      gGain.connect(gctx.destination);
+      bgEl.srcObject = window._genOut.stream;
+      bgEl.loop = true;
+      gOutAttached = true;
+    }catch(e){}
+  }
+
+  // Poll genOn flag to sync bgAudio play/pause if present
+  let lastGenOn = null;
+  setInterval(()=>{
+    try{
+      if (typeof window.genOn === 'boolean' && lastGenOn !== window.genOn){
+        lastGenOn = window.genOn;
+        if (lastGenOn){ attachBgRoute(); bgEl?.play().catch(()=>{}); }
+        else { bgEl?.pause(); }
+      }
+    }catch(e){}
+  }, 500);
+
+  // Realtime updates for freq/wave/binaural
+  function updateGenRealtime(){
+    try{
+      const gctx = window.gctx, L = window.gOscL, R = window.gOscR, waveEl = document.getElementById('genWave') || document.getElementById('gWave');
+      const freqEl = document.getElementById('genFreq') || document.getElementById('gFreq');
+      const bbEl   = document.getElementById('genBinaural') || document.getElementById('gBB');
+      const beatEl = document.getElementById('genBeat') || document.getElementById('gBeat');
+      if (!gctx || !L || !R) return;
+      const wave = waveEl ? waveEl.value : 'sine';
+      const f0   = parseFloat(freqEl?.value || '432');
+      const useB = !!bbEl?.checked;
+      const beat = Math.max(0, parseFloat(beatEl?.value || '7'));
+      if (L){ L.type = wave; L.frequency.setTargetAtTime(useB ? (f0 - beat/2) : f0, gctx.currentTime, 0.01); }
+      if (R){ R.type = wave; R.frequency.setTargetAtTime(useB ? (f0 + beat/2) : f0, gctx.currentTime, 0.01); }
+    }catch(e){}
+  }
+  ['genWave','gWave','genFreq','gFreq','genBinaural','gBB','genBeat','gBeat'].forEach(id=>{
+    const el = document.getElementById(id); if (el) el.addEventListener('input', updateGenRealtime);
+  });
+
+  // Volume sliders
+  const libVol = document.getElementById('libLevel');
+  const audioEl = window.audioEl || document.getElementById('player');
+  libVol?.addEventListener('input', ()=>{ if(audioEl) audioEl.volume = parseFloat(libVol.value||'1'); });
+  const gLevel = document.getElementById('genLevel') || document.getElementById('gLevel');
+  gLevel?.addEventListener('input', ()=>{
+    try{
+      const gctx = window.gctx, gGain = window.gGain;
+      if (!gctx || !gGain) return;
+      const v = parseFloat(gLevel.value||'0.5');
+      gGain.gain.setTargetAtTime(v, gctx.currentTime, 0.01);
+    }catch(e){}
+  });
+
+  // Make sure language toggle refresh also updates playlist modal labels
+  const langBtn = document.getElementById('langToggle');
+  langBtn?.addEventListener('click', ()=> setTimeout(()=>window.refreshPlaylistI18N?.(), 0), {capture:false});
+})();
+</script>
+
 </body></html>
