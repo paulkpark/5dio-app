@@ -1,505 +1,256 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="ko">
 <head>
-<meta charset="UTF-8" />
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <title>5DO Pro</title>
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<link rel="preconnect" href="https://xdjgumqdwedgzwqturcx.supabase.co">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<link rel="icon" href="data:,">
 <style>
 :root{
-  --bg:#0b0f17; --panel:#101522; --card:#171d2b; --ink:#e6edf5;
-  --muted:#9aa3b7; --border:#222738; --accent:#9cff8b;
+  --bg:#060a12; --panel:#0a1222; --panel2:#0c162c; --line:#23324f;
+  --text:#e9f2ff; --muted:#a8b5d6; --glow:#74f0c8; --glow2:#8aa8ff; --accent:#9fe7ff;
+  --btn:#101b34; --btnBorder:#79b4ff3a; --good:#71f0c5; --warn:#ffd27e;
 }
-*{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',Roboto,Arial}
-a{color:var(--accent)}
-
-/* ==== Header (햄버거+타이틀 / 탭 / 언어토글) ==== */
-header{
-  display:grid;
-  grid-template-columns: 1fr auto 1fr; /* 좌측 묶음, 중앙 탭, 우측 토글 */
-  align-items:center;
-  gap:12px;
-  padding:12px 14px;
-  background:var(--panel);
-  border-bottom:1px solid var(--border);
-}
-.left-pack{ display:flex; align-items:center; gap:10px; justify-self:start; }
-
-/* ✅ Lite와 동일한 햄버거 스타일 + 7px 상향 */
-.nav-toggle{display:none}
-.hamburger{
-  width:36px;height:32px;border-radius:8px;border:1px solid var(--border);
-  background:#1c2130;display:flex;align-items:center;justify-content:center;cursor:pointer;
-  margin-right:8px; position:relative; top:-1px; /* ← 위로 1px */
-}
-.hamburger span,.hamburger span:before,.hamburger span:after{
-  display:block;background:#cfd6e6;height:2px;width:18px;position:relative;border-radius:2px}
-.hamburger span:before,.hamburger span:after{content:"";position:absolute;left:0}
-.hamburger span:before{top:-6px}.hamburger span:after{top:6px}
-
-.menu-container{ position:relative; display:flex; align-items:center; z-index:1000 }
-.app-title{ position:static; transform:none; font-weight:800; font-size:1.1rem; color:var(--accent); letter-spacing:.2px; white-space:nowrap; }
-
-header .tabs{ justify-self:center; display:flex; gap:8px; }
-.tab{ padding:6px 10px; border:1px solid var(--border); border-radius:8px; background:#171d2b; color:#dfe7f6; cursor:pointer; font-size:.85rem }
-.tab.active{ background:#1f2739; border-color:#334 }
-
-.lang-toggle{ justify-self:end; position:relative; right:auto; top:auto; background:#151b24; border:1px solid #2b3249;
-  color:#e7effa; padding:4px 8px; border-radius:8px; cursor:pointer }
-
-/* 드롭다운 */
-.dropdown{ position:absolute; top:34px; left:0; display:none; flex-direction:column; width:200px;
-  background:#121826; border:1px solid #2b3249; border-radius:10px; padding:6px; z-index:1100; }
-.dropdown.show{ display:flex }
-.dropdown a{ text-decoration:underline; padding:8px 10px; border-radius:8px }
-.dropdown a:hover{ background:#1a2236 }
-.backdrop{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:900 }
-
-.section{ display:none } .section.active{ display:block }
-
-/* ==== Library ==== */
-#navRow{ display:flex; justify-content:center; gap:10px; padding:10px }
-.btn{ background:#1b2133; border:1px solid #2b3249; color:#e6edf5; border-radius:10px; padding:8px 10px; cursor:pointer }
-.btn:hover{ background:#202945 }
-
-.library-strip{ display:flex; overflow-x:auto; gap:10px; padding:12px; scroll-snap-type:x mandatory }
-.card{ flex:0 0 auto; width:160px; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:8px; scroll-snap-align:start }
-.card img{ width:100%; aspect-ratio:1/1; object-fit:contain; background:#0f1320; border-radius:8px }
-
-/* Status + controls */
-.controls{ display:flex; flex-direction:column; gap:12px; padding:12px; background:#0f1320; border-top:1px solid var(--border); border-bottom:1px solid var(--border) }
-.statusRow{ display:flex; gap:16px; align-items:center; justify-content:center }
-#statusThumb{
-  width:124px; height:124px; border-radius:16px; background:#0d0f18; border:1px solid #2d334a;
-  position:relative; overflow:hidden; background-size:cover; background-position:center;
-}
-#statusThumb.loading::before{
-  content:""; position:absolute; inset:-30%;
-  background:conic-gradient(from 0deg at 50% 50%, #10283e, #1b3a5b, #234a72, #1b3a5b, #10283e);
-  filter:blur(28px); opacity:.9; animation:aurora 6.5s linear infinite;
-}
-#statusThumb.loaded::before{ content:none }
-@keyframes aurora{ 0%{transform:rotate(0) scale(1.05)} 50%{transform:rotate(180deg) scale(1.1)} 100%{transform:rotate(360deg) scale(1.05)} }
-.ctrlCol{ display:flex; flex-direction:column; gap:10px }
-.ctrlLine{ display:flex; align-items:center; gap:8px }
-audio{ width:92%; display:block; margin:6px auto 0 }
-
-/* ==== Bar Spectrum (상시 표시 전용 창) ==== */
-#barVizWrap{ display:block; padding:8px 0; background:#0b0f17; border-top:1px solid #20263a }
-#barViz{ display:block; width:100%; height:100px }
-
-/* ==== Generator ==== */
-.gen-wrap{ padding:12px }
-.grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px }
-.field{ background:#141a27; border:1px solid #2a3044; border-radius:12px; padding:10px; display:flex; flex-direction:column; justify-content:center }
-.field h4{ margin:0 0 8px; font-size:.95rem; color:#dfe7f6 }
-.field.full{ grid-column:1/-1 }
-.gen-actions{ display:flex; gap:12px; align-items:center; justify-content:center }
-.pill{ padding:8px 12px; border-radius:999px; border:1px solid #2c3147; background:#1b2333; color:#e9eefc; cursor:pointer }
-.pill.primary{ background:#21324e; border-color:#355; color:#cfead1 }
-input[disabled]{ opacity:.6; filter:grayscale(.2) }
-
-/* 모바일 대응 */
-@media (max-width:640px){
-  .card{ width:140px }
-}
+*{box-sizing:border-box} html,body{height:100%}
+body{margin:0;background:radial-gradient(1200px 700px at 20% -10%, #131e36, transparent),
+linear-gradient(#061021,#090f18);color:var(--text);font:14px/1.45 ui-sans-serif,system-ui,-apple-system,"Noto Sans KR","Segoe UI",Roboto,"Helvetica Neue",Arial}
+/* Header */
+header{position:sticky;top:0;z-index:1000;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;padding:12px 16px;background:rgba(6,14,25,.75);backdrop-filter: blur(10px);border-bottom:1px solid #ffffff14}
+.title{font-weight:900;font-size:20px;letter-spacing:.2px;background:linear-gradient(90deg,#c6b3ff,#86e6ff,#84ffc9);-webkit-background-clip:text;color:transparent;text-shadow:0 0 18px #5ae0ff3a}
+.left{display:flex;align-items:center;gap:12px}
+.menu-wrap{position:relative}
+.hamburger{width:36px;height:28px;border-radius:12px;border:1px solid var(--line);display:grid;place-items:center;background:linear-gradient(#0b172e,#0a1426);cursor:pointer;box-shadow:inset 0 0 0 1px #ffffff08}
+.hamburger span,.hamburger span:before,.hamburger span:after{content:"";display:block;width:18px;height:2px;background:#cfe3ff;border-radius:2px;position:relative;box-shadow:0 0 10px #cfe3ff40}
+.hamburger span:before{position:absolute;transform:translateY(-6px)} .hamburger span:after{position:absolute;transform:translateY(6px)}
+.dropdown{display:none;position:absolute;top:36px;left:0;background:linear-gradient(180deg,#0d1528,#0a1222);border:1px solid var(--line);border-radius:14px;min-width:260px;overflow:hidden;box-shadow:0 10px 30px #0008}
+.dropdown a{display:block;padding:12px 14px;color:var(--text);text-decoration:none;border-bottom:1px solid #ffffff10}
+.dropdown a:last-child{border-bottom:0}
+.backdrop{position:fixed;inset:0;background:#0008;display:none;pointer-events:none;z-index:900}
+.backdrop.show{display:block;pointer-events:auto}
+/* Tabs (shifted right for small title on one line) */
+.tabs{justify-self:center;display:flex;gap:12px;transform:translateX(56px)}
+.tab{padding:8px 14px;border:1px solid var(--line);border-radius:999px;background:linear-gradient(#0c1831,#0a1222);color:var(--text);cursor:pointer;box-shadow:0 0 0 1px #ffffff08,inset 0 0 20px #3bd1ff0e}
+.tab.active{border-color:#7ef1c099;box-shadow:0 0 20px #86e6ff33, inset 0 0 30px #78ffcb1a}
+/* Right controls */
+.right{justify-self:end}
+.pill{border:1px solid var(--line);background:linear-gradient(#0c1831,#0a1222);color:var(--text);padding:8px 12px;border-radius:999px;cursor:pointer;min-width:46px}
+/* Layout */
+main{max-width:1200px;margin:0 auto;padding:16px}
+section{display:none} section.active{display:block}
+.card{background:linear-gradient(180deg,#0a1326,#0a1222);border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 10px 40px #0006}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.pbtn{height:36px;padding:0 12px;border-radius:999px;border:1px solid var(--btnBorder);background:linear-gradient(#0e1a33,#0a152a);color:#eaf2ff;cursor:pointer}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;max-height:54vh;overflow:auto;padding-right:4px}
+.thumb{position:relative;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#0b1222;cursor:pointer;transition:transform .12s}
+.thumb:hover{transform:translateY(-2px)}
+.thumb .skeleton{position:absolute;inset:0;background:linear-gradient(90deg,#0c152e 0%,#132342 50%,#0c152e 100%);background-size:200% 100%;animation:shimmer 1.3s infinite}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.thumb img{display:block;width:100%;height:112px;object-fit:cover}
+.thumb .t{display:block;padding:8px 10px;font-size:12px;color:#cfe0ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.visual, .osc{margin-top:12px;border:1px solid var(--line);border-radius:14px;height:160px;position:relative;overflow:hidden;background:linear-gradient(180deg,#0a1428,#081021)}
+/* Generator form */
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field{display:flex;flex-direction:column;gap:6px}
+label{color:var(--muted);font-size:13px}
+input[type="number"], input[type="text"], select{height:40px;border-radius:10px;border:1px solid var(--line);background:#0f1931;color:var(--text);padding:0 10px}
+input[type="range"]{accent-color:#82ffd6}
+.gbar{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.gbtn{height:44px;min-width:44px;padding:0 14px;border-radius:12px;border:1px solid #86e6ff44;background:linear-gradient(180deg,#0f1b36,#0a1222);color:#eaf2ff;cursor:pointer;box-shadow:0 2px 16px #85e6ff1f, inset 0 0 20px #6fffd41b}
+.gbtn:active{transform:translateY(1px)}
+.preset{height:44px;border-radius:12px;border:1px solid #86e6ff44;background:#0f1b36;color:#eaf2ff;padding:0 10px;min-width:200px}
+.switch{--w:48px;--h:26px;position:relative;width:var(--w);height:var(--h);background:#152346;border:1px solid var(--line);border-radius:999px}
+.switch input{appearance:none;width:100%;height:100%;margin:0}
+.knob{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:999px;background:#d8e6ff;transition:left .18s cubic-bezier(.2,.8,.2,1);box-shadow:0 2px 8px #0006}
+.switch input:checked + .knob{left:24px;background:#89ffd9}
+@media (max-width:820px){ .tabs{transform:translateX(48px)} .row{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
-
-<!-- 좌측: 햄버거 + 타이틀 -->
 <header>
-  <div class="left-pack">
-    <div class="menu-container">
-      <!-- ✅ Lite 동일 형태의 프레임 햄버거, 클릭시 드롭다운 토글 -->
+  <div class="left">
+    <div class="menu-wrap">
       <div id="menuBtn" class="hamburger"><span></span></div>
       <div id="menuDrop" class="dropdown">
         <a href="https://5dshop.co.kr" target="_blank" rel="noopener">Shop</a>
-        <a href="texts/faq.txt"     class="menu-text">FAQ</a>
-        <a href="texts/manual.txt"  class="menu-text">Manual</a>
-        <a href="texts/contact.txt" class="menu-text">Contact</a>
-        <a href="texts/about.txt"   class="menu-text">About</a>
+        <a class="menu-text" data-file="faq">FAQ</a>
+        <a class="menu-text" data-file="manual">Manual</a>
+        <a class="menu-text" data-file="contact">Contact</a>
+        <a class="menu-text" data-file="about">About</a>
       </div>
-      <div id="backdrop" class="backdrop"></div>
     </div>
-    <div class="app-title">5DO Pro</div>
+    <div class="title">5DO Pro</div>
   </div>
-
-  <!-- 가운데: 탭 -->
   <div class="tabs">
-    <div class="tab active" data-target="lib">5DO</div>
-    <div class="tab" data-target="gen">Freq. Gen.</div>
+    <button class="tab active" data-target="lib">5DO</button>
+    <button class="tab" data-target="gen">Freq. Gen.</button>
   </div>
-
-  <!-- 우측: 언어 토글 -->
-  <button id="langToggle" class="lang-toggle">EN</button>
+  <div class="right">
+    <button id="langToggle" class="pill">KO</button>
+  </div>
 </header>
+<div id="backdrop" class="backdrop"></div>
 
-<!-- ============ Library ============ -->
-<section id="lib" class="section active" aria-label="Library">
-  <div id="navRow">
-    <button id="btnBack" class="btn" title="Back">⬅️</button>
-    <button id="btnRefresh" class="btn" title="Refresh">🔄</button>
-    <button id="btnSaveList" class="btn" title="Save Playlist">💾</button>
-    <button id="btnLoadList" class="btn" title="Load Playlist">📜</button>
-  </div>
+<main>
+  <!-- Library -->
+  <section id="lib" class="active">
+    <div class="card">
+      <div class="toolbar">
+        <button id="loopBtn" class="pbtn">Loop</button>
+        <button id="timerBtn" class="pbtn">Timer</button>
+        <button id="playlistBtn" class="pbtn">Playlist</button>
+      </div>
+      <div id="thumbs" class="grid"></div>
+      <audio id="player" controls style="margin-top:12px;width:100%"></audio>
+      <div class="visual"><canvas id="viz"></canvas></div>
+    </div>
+  </section>
 
-  <div id="library" class="library-strip"></div>
-
-  <div class="controls">
-    <div class="statusRow">
-      <div id="statusThumb" class="loading"></div>
-      <div class="ctrlCol">
-        <div class="ctrlLine">
-          <label id="lblVol" for="vol">Volume</label>
-          <input id="vol" type="range" min="0" max="1" step="0.01" value="1">
+  <!-- Generator -->
+  <section id="gen">
+    <div class="card">
+      <div class="row">
+        <div class="field">
+          <label id="lblFreq">Frequency (Hz)</label>
+          <input id="gFreq" type="number" value="432" min="1" max="20000" step="0.1">
         </div>
-        <div class="ctrlLine">
-          <label><input type="checkbox" id="loop"> <span id="lblLoop">Loop</span></label>
-        </div>
-        <div class="ctrlLine">
-          <label id="lblTimer" for="timer">Timer</label>
-          <select id="timer">
-            <option value="0">Off</option>
-            <option value="5">5 min</option><option value="10">10 min</option>
-            <option value="15">15 min</option><option value="20">20 min</option>
-            <option value="30">30 min</option><option value="45">45 min</option>
-            <option value="60">60 min</option>
+        <div class="field">
+          <label id="lblWave">Waveform</label>
+          <select id="gWave">
+            <option value="sine">Sine</option>
+            <option value="square">Square</option>
+            <option value="triangle">Triangle</option>
+            <option value="sawtooth">Sawtooth</option>
           </select>
         </div>
       </div>
-    </div>
-    <audio id="player" controls preload="none" playsinline controlslist="nodownload noplaybackrate"></audio>
-  </div>
 
-  <!-- 오디오 플레이어 아래: 바 스펙트럼 모니터 전용창(항상 표시) -->
-  <div id="barVizWrap"><canvas id="barViz"></canvas></div>
-</section>
-
-<!-- ============ Generator ============ -->
-<section id="gen" class="section" aria-label="Generator">
-  <div class="gen-wrap">
-    <div class="field full">
-      <canvas id="oscGen" height="100"></canvas>
-    </div>
-
-    <div class="grid">
-      <div class="field">
-        <h4 id="lblFreq">Frequency (Hz)</h4>
-        <input id="genFreq" type="number" min="1" max="24000" step="0.1" value="432">
-      </div>
-      <div class="field">
-        <h4 id="lblWave">Waveform</h4>
-        <select id="genWave">
-          <option value="sine">Sine</option>
-          <option value="square">Square</option>
-          <option value="sawtooth">Saw</option>
-          <option value="triangle">Triangle</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <h4 id="lblBB">Binaural</h4>
-        <label><input id="genBinaural" type="checkbox"> <span id="lblBBEnable">Enable</span></label>
-        <label id="lblBBdiff" for="genBeat">Difference (Hz)</label>
-        <input id="genBeat" type="number" min="0" max="1000" step="0.1" value="7">
-      </div>
-      <div class="field">
-        <h4 id="lblHarmonics">Harmonics</h4>
-        <label id="lblHarmHelp" for="genHarmonics">Multiplier</label>
-        <input id="genHarmonics" type="number" min="1" max="8" step="1" value="1">
-      </div>
-
-      <div class="field">
-        <h4 id="lblLevel">Level</h4>
-        <input id="genLevel" type="range" min="0" max="1" step="0.01" value="0.5">
-      </div>
-      <div class="field">
-        <h4 id="lblDuty">Duty Cycle</h4>
-        <input id="genDuty" type="range" min="0.05" max="0.95" step="0.01" value="0.50" disabled>
-      </div>
-
-      <div class="field full">
-        <div class="gen-actions">
-          <input id="sweepStart" type="number" value="100"  aria-label="Sweep Start (Hz)" style="width:90px">
-          <input id="sweepEnd"   type="number" value="1000" aria-label="Sweep End (Hz)"   style="width:90px">
-          <input id="sweepTime"  type="number" value="10"   aria-label="Sweep Time (s)"   style="width:90px">
-          <button id="sweepGo" class="pill" title="Sweep">Sweep</button>
+      <div class="row" style="margin-top:8px">
+        <div class="field">
+          <div style="display:flex;align-items:center;gap:10px">
+            <label id="lblBB">Binaural</label>
+            <label class="switch"><input id="gBB" type="checkbox"><span class="knob"></span></label>
+          </div>
+          <label id="lblDiff" for="gBeat">Difference (Hz)</label>
+          <input id="gBeat" type="number" value="7" step="0.1" min="0" max="100">
+        </div>
+        <div class="field">
+          <label id="lblHar">Harmonics</label>
+          <input id="gHar" type="text" value="1" placeholder="0.5,2,3">
         </div>
       </div>
 
-      <div class="field full">
-        <div class="gen-actions">
-          <button id="genStart" class="pill primary" title="Play">▶️</button>
-          <button id="genStop"  class="pill"          title="Stop">⏹️</button>
-          <button id="btnSavePreset" class="pill" title="Save Preset">💾</button>
-          <button id="btnLoadPreset" class="pill" title="Load Preset">📜</button>
+      <div class="row" style="margin-top:8px">
+        <div class="field">
+          <label id="lblLevel" for="gLevel">Level</label>
+          <input id="gLevel" type="range" value="50" min="0" max="100">
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <div class="gbar">
+            <button id="gToggle" class="gbtn" title="Play/Pause">Play</button>
+            <button id="gSave" class="gbtn" title="Save Preset">Save</button>
+            <select id="gPreset" class="preset"><option value="">Select Preset</option></select>
+            <button id="gDelete" class="gbtn" title="Delete Preset">Delete</button>
+          </div>
         </div>
       </div>
-    </div>
-  </div>
-</section>
 
+      <div class="osc"><canvas id="osc"></canvas></div>
+    </div>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-/* ========= Supabase ========= */
-const SUPABASE_URL="https://xdjgumqdwedgzwqturcx.supabase.co";
-const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
-const BUCKET="media";
-const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-const PUBLIC_BASE=SUPABASE_URL.replace(/\/+$/,'') + "/storage/v1/object/public/" + BUCKET + "/";
-const enc=s=>s.split('/').filter(Boolean).map(encodeURIComponent).join('/');
-const abs=p=>PUBLIC_BASE + enc(p);
+window.addEventListener('DOMContentLoaded', function(){
+  const SUPA_URL="https://xdjgumqdwedgzwqturcx.supabase.co";
+  const SUPA_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
+  const BUCKET="media"; const PUBLIC_BASE=`${SUPA_URL}/storage/v1/object/public/${BUCKET}`;
+  const supa = window.supabase?.createClient(SUPA_URL,SUPA_KEY) || null;
 
-/* ========= Header: 메뉴/탭/언어 ========= */
-const menuBtn=document.getElementById('menuBtn'), drop=document.getElementById('menuDrop'), backdrop=document.getElementById('backdrop');
-menuBtn.onclick=()=>{ const on=drop.style.display==='flex'; drop.style.display=on?'none':'flex'; backdrop.style.display=on?'none':'block'; };
-backdrop.onclick=()=>{ drop.style.display='none'; backdrop.style.display='none'; };
-document.querySelectorAll('.menu-text').forEach(a=>{
-  a.addEventListener('click',e=>{e.preventDefault(); fetch(a.href,{cache:'no-store'}).then(r=>r.text()).then(t=>alert(t)).catch(()=>alert('⚠️ 불러올 수 없습니다.')); drop.style.display='none'; backdrop.style.display='none';});
-});
+  const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+  const thumbs=$('#thumbs'), audioEl=$('#player');
+  const langKey='lang5do_pro'; let lang=localStorage.getItem(langKey)||'ko';
 
-const tabs=document.querySelectorAll('.tab'), sections=document.querySelectorAll('.section');
-tabs.forEach(t=>t.onclick=()=>{ tabs.forEach(x=>x.classList.remove('active')); sections.forEach(s=>s.classList.remove('active')); t.classList.add('active'); document.getElementById(t.dataset.target).classList.add('active'); if(t.dataset.target==='gen') player.pause(); });
+  const I18N={en:{tabs:{lib:'5DO',gen:'Freq. Gen.'},loop:'Loop',timer:'Timer',playlist:'Playlist',freq:'Frequency (Hz)',wave:'Waveform',binaural:'Binaural',diff:'Difference (Hz)',har:'Harmonics',level:'Level',play:'Play',pause:'Pause',save:'Save',del:'Delete',sel:'Select Preset'},
+              ko:{tabs:{lib:'5DO',gen:'주파수 생성기'},loop:'루프',timer:'타이머',playlist:'플레이리스트',freq:'주파수 (Hz)',wave:'파형',binaural:'Binaural',diff:'차이 (Hz)',har:'배음',level:'레벨',play:'재생',pause:'일시정지',save:'저장',del:'삭제',sel:'프리셋 선택'}};
+  function t(k){ return k.split('.').reduce((o,kk)=>o&&o[kk],I18N[lang])||k; }
+  function applyLang(){ $('[data-target="lib"]').textContent=t('tabs.lib'); $('[data-target="gen"]').textContent=t('tabs.gen'); $('#langToggle').textContent=(lang==='en'?'EN':'KO'); $('#lblFreq').textContent=t('freq'); $('#lblWave').textContent=t('wave'); $('#lblBB').textContent=t('binaural'); $('#lblDiff').textContent=t('diff'); $('#lblHar').textContent=t('har'); $('#lblLevel').textContent=t('level'); $('#loopBtn').textContent=t('loop'); $('#timerBtn').textContent=t('timer'); $('#playlistBtn').textContent=t('playlist'); const fo=$('#gPreset').querySelector('option'); if(fo) fo.textContent=t('sel'); $('#gToggle').textContent=genOn?t('pause'):t('play'); }
+  applyLang();
 
-const langBtn=document.getElementById('langToggle'); let isKo=false;
-function applyLang(){
-  const L = {
-    en:{ vol:'Volume', loop:'Loop', timer:'Timer', tabLib:'5DO', tabGen:'Freq. Gen.', freq:'Frequency (Hz)', wave:'Waveform', bb:'Binaural', bbEn:'Enable', bbDiff:'Difference (Hz)', harm:'Harmonics', harmHelp:'Multiplier', level:'Level', duty:'Duty Cycle', sweep:'Sweep' },
-    ko:{ vol:'볼륨',  loop:'반복', timer:'타이머', tabLib:'5DO', tabGen:'주파수 생성기', freq:'주파수 (Hz)', wave:'파형', bb:'바이노럴', bbEn:'활성화', bbDiff:'차이 (Hz)', harm:'하모닉스', harmHelp:'배수', level:'레벨', duty:'듀티 사이클', sweep:'스윕' }
-  }[isKo?'ko':'en'];
-  document.getElementById("lblVol").textContent=L.vol;
-  document.getElementById("lblLoop").textContent=L.loop;
-  document.getElementById("lblTimer").textContent=L.timer;
-  document.querySelector('.tab[data-target="lib"]').textContent=L.tabLib;
-  document.querySelector('.tab[data-target="gen"]').textContent=L.tabGen;
-  document.getElementById("lblFreq").textContent=L.freq;
-  document.getElementById("lblWave").textContent=L.wave;
-  document.getElementById("lblBB").textContent=L.bb;
-  document.getElementById("lblBBEnable").textContent=L.bbEn;
-  document.getElementById("lblBBdiff").textContent=L.bbDiff;
-  document.getElementById("lblHarmonics").textContent=L.harm;
-  document.getElementById("lblHarmHelp").textContent=L.harmHelp;
-  document.getElementById("lblLevel").textContent=L.level;
-  document.getElementById("lblDuty").textContent=L.duty;
-  document.getElementById("sweepGo").textContent=L.sweep;
-}
-langBtn.onclick=()=>{ isKo=!isKo; langBtn.textContent=isKo?'KO':'EN'; applyLang(); };
-applyLang();
+  // Hamburger
+  const menuBtn=$('#menuBtn'), menuDrop=$('#menuDrop'), backdrop=$('#backdrop');
+  menuBtn.addEventListener('click',(e)=>{ e.stopPropagation(); const open=menuDrop.style.display==='block'; menuDrop.style.display=open?'none':'block'; backdrop.classList.toggle('show',!open); });
+  backdrop.addEventListener('click',()=>{ menuDrop.style.display='none'; backdrop.classList.remove('show'); });
+  document.body.addEventListener('click',(e)=>{ if(!menuDrop.contains(e.target) && e.target!==menuBtn){ menuDrop.style.display='none'; backdrop.classList.remove('show'); }});
+  $$('.menu-text').forEach(a=>a.addEventListener('click', async (e)=>{ e.preventDefault(); const name=a.dataset.file; try{ const res=await fetch(`/texts/${name}.txt?ts=${Date.now()}`); const txt=await res.text(); alert(txt); }catch(_){ alert(`[${name}.txt] 불러올 수 없습니다.`); } menuDrop.style.display='none'; backdrop.classList.remove('show'); }));
 
-/* ========= 공용 오디오 파이프라인 (iOS 대응) ========= */
-let audioCtx = window.audioCtx || new (window.AudioContext||window.webkitAudioContext)();
-window.audioCtx = audioCtx;
-const player=document.getElementById('player'); player.crossOrigin='anonymous'; player.playsInline=true;
-let srcNode=null, gainNode=null, analyserNode=null;
+  // Tabs
+  $$('.tab').forEach(btn=>btn.addEventListener('click',(e)=>{ $$('.tab').forEach(b=>b.classList.remove('active')); e.currentTarget.classList.add('active'); const id=e.currentTarget.dataset.target; $$('main section').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); if(id==='gen'){ audioEl.pause(); } $('#viz').parentElement.style.display=(id==='lib')?'':'none'; $('#osc').parentElement.style.display=(id==='gen')?'':'none'; }));
 
-function ensureAudioUnlocked(){ if(audioCtx.state!=='running') audioCtx.resume().catchdocument.addEventListener('DOMContentLoaded', function(){}); }
-['pointerdown','touchstart','keydown','click'].forEach(ev=>{ document.addEventListener(ev, ensureAudioUnlocked, { once:true, passive:true }); });
+  // Language toggle
+  $('#langToggle').addEventListener('click',()=>{ lang=(lang==='en')?'ko':'en'; localStorage.setItem(langKey,lang); applyLang(); buildThumbs(); });
 
-function ensurePipeline(){
-  if(!gainNode){ gainNode=audioCtx.createGain(); gainNode.gain.value=parseFloat(vol.value||'1')||1; }
-  if(!analyserNode){ analyserNode=audioCtx.createAnalyser(); analyserNode.fftSize=1024; analyserNode.smoothingTimeConstant=0.85; }
-  if(!srcNode){
-    try{
-      srcNode=audioCtx.createMediaElementSource(player);
-      srcNode.connect(gainNode);
-      gainNode.connect(analyserNode);
-      analyserNode.connect(audioCtx.destination);
-    }catch(e){ /* 이미 연결된 경우 무시 */ }
+  // Supabase listing
+  const AUDIO_RE=/\.(mp3|wav|m4a|aac|flac)$/i; const pathStack=[]; const currentPath=()=>pathStack.join('/');
+  function isFolder(item){ return !item?.metadata; } function isAudioName(name){ return AUDIO_RE.test(name); }
+  function folderThumb(path){ const img=(lang==='en')?'folder_e.jpg':'folder.jpg'; return `${PUBLIC_BASE}/${path?path+'/':''}${img}`; }
+  function trackThumb(path, filename){ const base=filename.replace(AUDIO_RE,''); const suf=(lang==='en')?'_E':''; return `${PUBLIC_BASE}/${path?path+'/':''}${encodeURIComponent(base+suf)}.jpg`; }
+  function trackUrl(path, filename){ return `${PUBLIC_BASE}/${path?path+'/':''}${encodeURIComponent(filename)}`; }
+  async function listPath(path){ if(!supa) return []; const p=path?path+'/':''; const {data,error}=await supa.storage.from('media').list(p,{limit:1000,sortBy:{column:'name',order:'asc'}}); if(error){ console.warn('[listPath]',error); return []; } return data||[]; }
+  async function buildThumbs(){ thumbs.innerHTML=''; const path=currentPath(); const list=await listPath(path);
+    for(const f of list.filter(isFolder)){ const card=document.createElement('div'); card.className='thumb'; const sk=document.createElement('div'); sk.className='skeleton'; card.appendChild(sk); const img=new Image(); img.loading='lazy'; img.onload=()=>sk.remove(); img.onerror=()=>{ sk.remove(); img.remove(); }; const folderPath=path?`${path}/${f.name}`:f.name; img.src=folderThumb(folderPath); card.appendChild(img); const t=document.createElement('span'); t.className='t'; t.textContent=f.name; card.appendChild(t); card.addEventListener('click',()=>{ pathStack.push(f.name); buildThumbs(); }); thumbs.appendChild(card); }
+    for(const file of list.filter(it=>!isFolder(it)&&isAudioName(it.name))){ const card=document.createElement('div'); card.className='thumb'; const sk=document.createElement('div'); sk.className='skeleton'; card.appendChild(sk); const img=new Image(); img.loading='lazy'; img.onload=()=>sk.remove(); img.onerror=()=>{ sk.remove(); img.remove(); }; img.src=trackThumb(path,file.name); card.appendChild(img); const t=document.createElement('span'); t.className='t'; t.textContent=file.name; card.appendChild(t); const url=trackUrl(path,file.name); card.addEventListener('click',()=>{ audioEl.src=url; audioEl.load(); audioEl.play().catch(()=>{}); }); thumbs.appendChild(card); } }
+
+  // Visualizer
+  let aCtx, analyser, msrc, rafViz;
+  function ensureLibAudio(){ if(aCtx) return; aCtx=new (window.AudioContext||window.webkitAudioContext)(); analyser=aCtx.createAnalyser(); analyser.fftSize=1024; analyser.smoothingTimeConstant=.78; msrc=aCtx.createMediaElementSource(audioEl); msrc.connect(analyser); analyser.connect(aCtx.destination); }
+  function drawViz(){ const cvs=$('#viz'), cx=cvs.getContext('2d'); const W=cvs.width=cvs.clientWidth, H=cvs.height=cvs.clientHeight; const data=new Uint8Array(analyser.frequencyBinCount);
+    (function loop(){ rafViz=requestAnimationFrame(loop); analyser.getByteFrequencyData(data); cx.fillStyle='#0a1428'; cx.fillRect(0,0,W,H); const bars=Math.min(96, Math.floor(W/7)); const step=Math.floor(data.length/bars); const bw=Math.max(3,(W/bars)*.6);
+      for(let i=0;i<bars;i++){ const v=data[i*step]/255; const bh=Math.max(4, v*(H*.9)); const x=i*(W/bars)+(W/bars-bw)/2; const y=H-bh; const g=cx.createLinearGradient(0,y,0,y+bh); g.addColorStop(0,'#84ffc9'); g.addColorStop(1,'#8aa8ff'); cx.fillStyle=g; cx.fillRect(x,y,bw,bh); } })();
   }
-}
-const vol=document.getElementById('vol');
-function applyPlayerVolumeFromSlider(){ const v=parseFloat(vol.value||'1'); ensurePipeline(); if(gainNode) gainNode.gain.value=isNaN(v)?1:v; }
-vol.addEventListener('input',applyPlayerVolumeFromSlider);
-vol.addEventListener('change',applyPlayerVolumeFromSlider);
-player.addEventListener('loadedmetadata',applyPlayerVolumeFromSlider);
-player.addEventListener('play', ()=>{ ensureAudioUnlocked(); ensurePipeline(); });
+  audioEl.addEventListener('play',async()=>{ ensureLibAudio(); if(aCtx.state==='suspended') await aCtx.resume(); drawViz(); });
+  audioEl.addEventListener('pause',()=>cancelAnimationFrame(rafViz)); audioEl.addEventListener('ended',()=>cancelAnimationFrame(rafViz));
 
-/* ========= Loop / Timer ========= */
-document.getElementById('loop').addEventListener('change',e=>player.loop=e.target.checked);
-let timerHandle=null;
-document.getElementById('timer').addEventListener('change',e=>{
-  if(timerHandle){ clearTimeout(timerHandle); timerHandle=null; }
-  const m=parseInt(e.target.value||'0',10); if(m>0) timerHandle=setTimeoutdocument.addEventListener('DOMContentLoaded', function(){ try{ player.pause(); }catch{} }, m*60*1000);
-});
-
-/* ========= Status Thumb ========= */
-const statusThumb=document.getElementById('statusThumb');
-function setStatus(img){
-  if(!img){ statusThumb.classList.remove('loaded'); statusThumb.classList.add('loading'); statusThumb.style.backgroundImage=''; return; }
-  statusThumb.classList.add('loaded'); statusThumb.classList.remove('loading'); statusThumb.style.backgroundImage=`url('${img}')`;
-}
-
-/* ========= Library (Supabase) ========= */
-const lib=document.getElementById('library');
-const sbClient = sb; 
-async function list(path=""){
-  const {data,error}=await sbClient.storage.from(BUCKET).list(path,{limit:1000,sortBy:{column:"name",order:"asc"}});
-  if(error){ console.warn('[list]',error); return []; } return data||[];
-}
-let cwd="";
-async function load(path=""){
-  cwd=path; lib.innerHTML=""; setStatus(""); // loading anim
-  const rows=await list(path);
-  for(const e of rows){
-    const name=e.name; const full=(path?path+'/':'')+name;
-
-    // 폴더
-    if(!name.includes('.')){
-      const card=document.createElement('div'); card.className='card'; card.dataset.kind='folder'; card.dataset.path=full;
-      const img=document.createElement('img'); img.loading='lazy';
-      img.src=abs(full+'/folder.png'); img.onerror=()=>img.src='https://placehold.co/300x300/111/aaa?text=Folder';
-      card.onclick=()=>{ ensureAudioUnlocked(); load(full); };
-      card.append(img); lib.append(card);
-      continue;
-    }
-    // 오디오
-    if(/\.(mp3|wav|ogg|m4a|flac|aac)$/i.test(name)){
-      const card=document.createElement('div'); card.className='card'; card.dataset.kind='audio'; card.dataset.path=full;
-      const img=document.createElement('img'); img.loading='lazy';
-      const thumb=full.replace(/\.[^.]+$/,'.png');
-      img.src=abs(thumb); img.onerror=()=>img.src='https://placehold.co/300x300/222/888?text=Audio';
-card.onclick=()=>{
-  ensureAudioUnlocked(); ensurePipeline();
-  player.pause(); player.currentTime=0; player.src=abs(full);
-  const art=abs(thumb); setStatus(art);
-  // ❌ 자동재생 제거 → 사용자가 직접 Play 버튼 눌러야 함
-  applyPlayerVolumeFromSlider();
-};
-      card.append(img); lib.append(card);
-    }
-  }
-}
-/* nav */
-const btnBack=document.getElementById('btnBack'), btnRefresh=document.getElementById('btnRefresh');
-btnBack.onclick=()=>{ if(!cwd) return; const a=cwd.split('/'); a.pop(); load(a.join('/')); };
-btnRefresh.onclick=()=>load(cwd);
-/* Drag scroll */
-let isDown=false,sx=0,sl=0;
-lib.addEventListener('mousedown',e=>{isDown=true;sx=e.pageX;sl=lib.scrollLeft;});
-['mouseleave','mouseup'].forEach(ev=>lib.addEventListener(ev,()=>{isDown=false;}));
-lib.addEventListener('mousemove',e=>{ if(!isDown) return; lib.scrollLeft = sl - (e.pageX - sx)*1.5; });
-
-/* 초기 루트 */
-load("");
-
-/* ========= Playlist (localStorage) ========= */
-document.getElementById('btnSaveList').onclick=()=>{
-  const name=prompt(isKo?'플레이리스트 이름?':'Playlist name?'); if(!name) return;
-  const items=[...lib.querySelectorAll('.card')].filter(c=>c.dataset.kind==='audio')
-    .map(c=>({path:c.dataset.path, thumb:c.dataset.path.replace(/\.[^.]+$/,'.png')}));
-  const all=JSON.parse(localStorage.getItem('playlists')||'{}'); all[name]=items;
-  localStorage.setItem('playlists', JSON.stringify(all));
-  alert((isKo?'저장됨: ':'Saved: ')+name);
-};
-document.getElementById('btnLoadList').onclick=()=>{
-  const all=JSON.parse(localStorage.getItem('playlists')||'{}'), names=Object.keys(all);
-  if(!names.length){ alert(isKo?'플레이리스트가 없습니다.':'No playlists.'); return; }
-  const sel=prompt((isKo?'선택: ':'Select: ')+"\n"+names.join('\n')); if(!sel||!all[sel]) return;
-  lib.innerHTML=""; setStatus("");
-  all[sel].forEach(({path,thumb})=>{
-    const c=document.createElement('div'); c.className='card'; c.dataset.kind='audio'; c.dataset.path=path;
-    const img=document.createElement('img'); img.loading='lazy'; const t=abs(thumb);
-    img.src=t; img.onerror=()=>img.src='https://placehold.co/300x300/222/888?text=Audio';
-    c.onclick=()=>{ ensureAudioUnlocked(); ensurePipeline(); player.pause(); player.currentTime=0; player.src=abs(path); setStatus(t);
-      setTimeoutdocument.addEventListener('DOMContentLoaded', function(){ applyPlayerVolumeFromSlider(); player.play().catchdocument.addEventListener('DOMContentLoaded', function(){}); },60); };
-    c.append(img); lib.append(c);
+  // Loop / Timer / Playlist
+  $('#loopBtn').addEventListener('click',()=>{ audioEl.loop=!audioEl.loop; alert((audioEl.loop?(lang==='en'?'Loop: On':'루프: 켜짐'):(lang==='en'?'Loop: Off':'루프: 꺼짐'))); });
+  $('#timerBtn').addEventListener('click',()=>{ const mins=parseFloat(prompt(lang==='en'?'Minutes':'분 입력','20')||'0'); if(mins>0){ setTimeout(()=>audioEl.pause(), mins*60000); alert('OK'); } });
+  const PLS_KEY='pls_v1'; const plsDB=()=>{ try{return JSON.parse(localStorage.getItem(PLS_KEY)||'[]')}catch(_){return[]} }; const plsSave=(db)=>localStorage.setItem(PLS_KEY,JSON.stringify(db));
+  $('#playlistBtn').addEventListener('click',()=>{ const act=prompt(lang==='en'?'Playlist action: new / add / list / del':'플레이리스트 작업: new / add / list / del'); if(!act) return; const db=plsDB();
+    if(act==='new'){ const name=prompt(lang==='en'?'Playlist name':'플레이리스트 이름'); if(!name) return; db.push({name,tracks:[]}); plsSave(db); alert('OK'); }
+    if(act==='add'){ const name=prompt('target name'); if(!name) return; const url=audioEl.src; const entry=db.find(p=>p.name===name); if(entry){ entry.tracks.push({path:url}); plsSave(db); alert('added'); } }
+    if(act==='list'){ alert(JSON.stringify(db.map(p=>({name:p.name,count:p.tracks.length})),null,2)); }
+    if(act==='del'){ const name=prompt('name to delete'); if(!name) return; const out=db.filter(p=>p.name!==name); plsSave(out); alert('deleted'); }
   });
-};
 
-/* ========= Bar Spectrum Visualizer (항상 보이는 전용창, 재생 중에만 draw) ========= */
-(function(){
-  const canvas=document.getElementById('barViz'); const ctx=canvas.getContext('2d',{alpha:true});
-  function resize(){ const dpr=Math.min(window.devicePixelRatio||1,2); canvas.width=Math.floor(canvas.clientWidth*dpr); canvas.height=Math.floor(canvas.clientHeight*dpr); ctx.setTransform(dpr,0,0,dpr,0,0); }
-  new ResizeObserver(resize).observe(canvas); resize();
-  const data=new Uint8Array(512); let raf=0;
-  function draw(){
-    raf=requestAnimationFrame(draw);
-    if(!analyserNode) return;
-    analyserNode.getByteFrequencyData(data);
-    const W=canvas.clientWidth,H=canvas.clientHeight,n=data.length,barW=W/n;
-    ctx.clearRect(0,0,W,H);
-    for(let i=0;i<n;i++){
-      const v=data[i]/255, h=v*H, x=i*barW, y=H-h;
-      const g=ctx.createLinearGradient(x,y,x,y+h);
-      g.addColorStop(0,'#7ef1c0'); g.addColorStop(0.5,'#55d0ff'); g.addColorStop(1,'#a38cff');
-      ctx.fillStyle=g; const wScale=1.0+(1-i/n)*0.4;
-      ctx.fillRect(x,y,barW*wScale,h);
-    }
+  // Generator
+  let gctx,gGain,gMerge,gOscL,gOscR,gAnalyser,rafOsc,genOn=false;
+  function ensureGenCtx(){ if(!gctx) gctx=new (window.AudioContext||window.webkitAudioContext)(); if(!gGain){ gGain=gctx.createGain(); gGain.gain.value=parseFloat(gLevel.value||'50')/100; gGain.connect(gctx.destination);} if(!gAnalyser){ gAnalyser=gctx.createAnalyser(); gAnalyser.fftSize=2048; } }
+  function stopGen(){ try{gOscL&&gOscL.stop()}catch(e){} try{gOscR&&gOscR.stop()}catch(e){} gOscL=gOscR=null; if(gMerge){ try{gMerge.disconnect()}catch(e){} gMerge=null; cancelAnimationFrame(rafOsc); }
+  async function startGen(){ ensureGenCtx(); if(gctx.state==='suspended') await gctx.resume(); stopGen(); const freq=parseFloat(gFreq.value||'432'), wave=gWave.value||'sine', useBB=gBB.checked, beat=Math.max(0,parseFloat(gBeat.value||'7')); const harms=(gHar.value||'1').split(',').map(s=>parseFloat(s.trim())).filter(n=>!isNaN(n)&&isFinite(n));
+    gMerge=gctx.createChannelMerger(2); const tap=gctx.createGain(); tap.connect(gAnalyser); gMerge.connect(tap); gMerge.connect(gGain);
+    function mk(f,ch){ const o=gctx.createOscillator(); o.type=wave; o.frequency.value=f; const g=gctx.createGain(); g.gain.value=0.9/Math.max(1,harms.length); o.connect(g); g.connect(gMerge,0,ch); o.start(); return o; }
+    const L=useBB?(freq-beat/2):freq, R=useBB?(freq+beat/2):freq; gOscL=mk(L,0); gOscR=mk(R,1); harms.forEach(r=>{ if(!isFinite(r)||r===1) return; mk(L*r,0); mk(R*r,1); }); drawOsc();
   }
-  function startViz(){ if(!raf) draw(); }
-  function stopViz(){ if(raf) cancelAnimationFrame(raf); raf=0; ctx.clearRect(0,0,canvas.width,canvas.height); }
-  player.addEventListener('play', ()=>{ ensureAudioUnlocked(); ensurePipeline(); startViz(); });
-  player.addEventListener('pause', stopViz);
-  player.addEventListener('ended', stopViz);
-  player.addEventListener('emptied', stopViz);
-})();
+  function drawOsc(){ const cvs=$('#osc'), cx=cvs.getContext('2d'); const W=cvs.width=cvs.clientWidth, H=cvs.height=cvs.clientHeight; const buf=new Uint8Array(gAnalyser.fftSize);
+    (function loop(){ rafOsc=requestAnimationFrame(loop); gAnalyser.getByteTimeDomainData(buf); cx.fillStyle='#081021'; cx.fillRect(0,0,W,H); cx.strokeStyle='#9fd6ff'; cx.lineWidth=1.4; cx.beginPath(); for(let i=0;i<buf.length;i++){ const x=i/buf.length*W; const y=(buf[i]/255)*H; (i?cx.lineTo(x,y):cx.moveTo(x,y)); } cx.stroke(); })();
+  }
+  $('#gToggle').addEventListener('click', async ()=>{ if(!genOn){ await startGen(); genOn=true; $('#gToggle').textContent=t('pause'); } else { stopGen(); genOn=false; $('#gToggle').textContent=t('play'); } });
+  $('#gLevel').addEventListener('input',()=>{ ensureGenCtx(); gGain.gain.value=parseFloat(gLevel.value||'50')/100; });
+  $('#gBB').addEventListener('change',()=>{ gBeat.disabled=!gBB.checked; }); gBeat.disabled=!gBB.checked;
+  const PKEY='genPresets_pro_clean_v1'; const gdb=()=>{ try{return JSON.parse(localStorage.getItem(PKEY)||'[]')}catch(e){return[]} }; const gsave=(arr)=>localStorage.setItem(PKEY,JSON.stringify(arr.slice(0,10))); const gcurrent=()=>({freq:gFreq.value,wave:gWave.value,bin:gBB.checked,beat:gBeat.value,harm:gHar.value,level:gLevel.value});
+  function renderPresetList(){ const sel=$('#gPreset'); sel.innerHTML='<option value="">'+t('sel')+'</option>'; gdb().forEach(p=>{ const o=document.createElement('option'); o.value=p.name; o.textContent=p.name; sel.appendChild(o); }); }
+  $('#gSave').addEventListener('click',()=>{ const name=prompt(lang==='en'?'Preset name':'프리셋 이름'); if(!name) return; const arr=gdb().filter(p=>p.name!==name); arr.unshift({name,data:gcurrent()}); gsave(arr); renderPresetList(); });
+  $('#gDelete').addEventListener('click',()=>{ const name=$('#gPreset').value; if(!name) return; gsave(gdb().filter(p=>p.name!==name)); renderPresetList(); });
+  $('#gPreset').addEventListener('change',()=>{ const name=$('#gPreset').value; if(!name) return; const f=gdb().find(p=>p.name===name); if(!f) return; const d=f.data||{}; gFreq.value=d.freq||'432'; gWave.value=d.wave||'sine'; gBB.checked=!!d.bin; gBeat.value=d.beat||'7'; gHar.value=d.harm||'1'; gLevel.value=d.level||'50'; gBeat.disabled=!gBB.checked; });
 
-/* ========= Generator (Osc, Harmonics, Binaural, Sweep, Presets) ========= */
-const waveSel=document.getElementById('genWave');
-const freqInp=document.getElementById('genFreq');
-const lvlInp=document.getElementById('genLevel');
-const bbChk=document.getElementById('genBinaural');
-const beatInp=document.getElementById('genBeat');
-const harmInp=document.getElementById('genHarmonics');
-const dutyInp=document.getElementById('genDuty');
+  // Unlock
+  const unlock=()=>{ try{ if(aCtx && aCtx.state==='suspended') aCtx.resume(); if(gctx && gctx.state==='suspended') gctx.resume(); }catch(_){} window.removeEventListener('touchend',unlock); window.removeEventListener('click',unlock); };
+  window.addEventListener('touchend',unlock,{once:true}); window.addEventListener('click',unlock,{once:true});
 
-const genGain=document.addEventListener('DOMContentLoaded', function(){ const g=audioCtx.createGain(); g.connect(audioCtx.destination); return g; })();
-let genRunning=false; let genMeta=[];
-
-function clearGen(){ genMeta.forEach(o=>{try{o.node.stop()}catch{} try{o.node.disconnect()}catch{}}); genMeta=[]; }
-function buildGenNodes(base,useBB,beat,harm,wave){
-  clearGen();
-  const mk=(f,m=1,b=0)=>{ const o=audioCtx.createOscillator(); o.type=wave; o.frequency.value=f*m+b; o.connect(genGain); o.start(); genMeta.push({node:o,mult:m,beatAdd:b}); };
-  if(useBB){ mk(base,1,0); mk(base,1,beat);} else { mk(base,1,0); }
-  for(let m=2;m<=harm;m++){ if(useBB){ mk(base,m,0); mk(base,m,beat);} else { mk(base,m,0);} }
-}
-function startGenerator(){
-  ensureAudioUnlocked(); if(!player.paused) player.pause();
-  if(genRunning) clearGen();
-  const wave=waveSel.value, base=+freqInp.value||432, lvl=+lvlInp.value||0.5, useBB=!!bbChk.checked, beat=+beatInp.value||7, harm=Math.max(1,Math.min(8,parseInt(harmInp.value)||1));
-  genGain.gain.value=lvl; buildGenNodes(base,useBB,beat,harm,wave); dutyInp.disabled=(wave!=='square'); genRunning=true;
-}
-function stopGenerator(){ if(!genRunning) return; clearGen(); genRunning=false; genGain.gain.setTargetAtTime(0,audioCtx.currentTime,0.02); }
-function updateGenerator(){ if(!genRunning) return; const wave=waveSel.value, base=+freqInp.value||432, useBB=!!bbChk.checked, beat=+beatInp.value||7, harm=Math.max(1,Math.min(8,parseInt(harmInp.value)||1)); buildGenNodes(base,useBB,beat,harm,wave); }
-freqInp.oninput=updateGenerator; waveSel.oninput=()=>{ dutyInp.disabled=(waveSel.value!=='square'); updateGenerator(); };
-bbChk.oninput=updateGenerator; beatInp.oninput=updateGenerator; lvlInp.oninput=e=>{ genGain.gain.value=+e.target.value; };
-
-document.getElementById('sweepGo').onclick=()=>{
-  if(!genRunning||genMeta.length===0) return;
-  const s=+document.getElementById('sweepStart').value||100, e=+document.getElementById('sweepEnd').value||1000, t=+document.getElementById('sweepTime').value||10;
-  const now=audioCtx.currentTime; genMeta.forEach(o=>{ const sf=s*o.mult+(o.beatAdd||0), ef=e*o.mult+(o.beatAdd||0);
-    try{ o.node.frequency.cancelScheduledValues(now); o.node.frequency.setValueAtTime(sf,now); o.node.frequency.linearRampToValueAtTime(ef,now+t);}catch{} });
-};
-document.getElementById('genStart').onclick=()=>{ audioCtx.resume(); startGenerator(); };
-document.getElementById('genStop').onclick = stopGenerator;
-
-/* Presets */
-document.getElementById('btnSavePreset').onclick=()=>{
-  const name=prompt(isKo?'프리셋 이름?':'Preset name?'); if(!name) return;
-  const p={ wave:waveSel.value, freq:+freqInp.value, binaural:bbChk.checked, beat:+beatInp.value, harm:+harmInp.value, level:+lvlInp.value };
-  const all=JSON.parse(localStorage.getItem('presets')||'{}'); all[name]=p; localStorage.setItem('presets',JSON.stringify(all)); alert((isKo?'저장됨: ':'Saved: ')+name);
-};
-document.getElementById('btnLoadPreset').onclick=()=>{
-  const all=JSON.parse(localStorage.getItem('presets')||'{}'), names=Object.keys(all);
-  if(!names.length){ alert(isKo?'프리셋이 없습니다.':'No presets.'); return; }
-  const sel=prompt((isKo?'선택: ':'Select: ')+"\n"+names.join('\n')); if(!sel||!all[sel]) return;
-  const p=all[sel]; waveSel.value=p.wave; freqInp.value=p.freq; bbChk.checked=p.binaural; beatInp.value=p.beat; harmInp.value=p.harm; lvlInp.value=p.level;
-  updateGenerator();
-};
-
-/* Mini scope (Generator) */
-(function genScope(){
-  const cvs=document.getElementById("oscGen"); const ctx=cvs.getContext("2d");
-  const an=audioCtx.createAnalyser(); an.fftSize=2048; genGain.connect(an);
-  const buf=new Uint8Array(an.fftSize);
-  function resize(){ cvs.width=cvs.clientWidth||window.innerWidth; } resize(); window.addEventListener("resize",resize);
-  (function loop(){ requestAnimationFrame(loop); an.getByteTimeDomainData(buf);
-    ctx.fillStyle="#090b11"; ctx.fillRect(0,0,cvs.width,cvs.height);
-    ctx.lineWidth=2; ctx.strokeStyle="#9cff8b"; ctx.beginPath();
-    const dx=cvs.width/buf.length; for(let i=0,x=0;i<buf.length;i++,x+=dx){ const y=(buf[i]/128)*(cvs.height/2); i?ctx.lineTo(x,y):ctx.moveTo(x,y); }
-    ctx.lineTo(cvs.width,cvs.height/2); ctx.stroke(); })();
+  // Build
+  applyLang(); buildThumbs(); renderPresetList();
+  $('#viz').parentElement.style.display=''; $('#osc').parentElement.style.display='none';
 });
 </script>
 </body>
