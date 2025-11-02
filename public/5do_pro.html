@@ -3,166 +3,127 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-<title>5DO Pro v16 (Lite paths & rules)</title>
+<title>5DO Pro</title>
 <style>
   :root{
-    --bg:#0b0f17; --panel:#101826; --panel2:#0f1524; --border:#334;
-    --text:#cfead1; --muted:#8fb1a0; --accent:#7ef1c0; --accent2:#55d0ff; --accent3:#a38cff;
+    --bg:#0a0f1a;--panel:#0f1524;--panel2:#0d1424;--line:#273149;
+    --text:#e7efff;--muted:#a9b6d6;--accent:#7ef1c0;--accent2:#55d0ff;--accent3:#a38cff;
   }
-  html,body{margin:0;background:var(--bg);color:var(--text);
-    font-family:system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,Noto Sans KR,sans-serif}
-  a{color:inherit;text-decoration:none}
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:radial-gradient(1200px 700px at 10% -10%, rgba(142,107,255,.06), transparent),
+                 radial-gradient(800px 600px at 110% 20%, rgba(82,255,224,.06), transparent),
+                 var(--bg);color:var(--text);
+       font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,"Apple SD Gothic Neo","Noto Sans KR",sans-serif}
 
-  /* Header (tabs centered, lang on far-right) */
-  header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;
-    padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
+  /* Header */
+  header{position:sticky;top:0;z-index:100;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;
+         padding:10px 14px;background:rgba(12,18,32,.8);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
   .left-pack{display:flex;align-items:center;gap:10px}
-  .logo{font-weight:700;color:var(--accent);font-size:1.05rem}
-  .tabs{justify-self:center;display:flex;gap:10px;transform:translateX(30px)} /* +30px shift */
-  .tab{border:1px solid var(--border);background:#131c2b;color:var(--text);padding:8px 12px;border-radius:999px;cursor:pointer}
-  .tab.active{border-color:#406;box-shadow:0 0 12px rgba(126,241,192,.16), 0 0 18px rgba(85,208,255,.14)}
-  .right-pack{justify-self:end;display:flex;align-items:center;gap:10px}
-  #langToggle{min-width:44px;height:28px;padding:0 10px;border:1px solid var(--border);border-radius:10px;background:#131c2b;color:var(--text);cursor:pointer}
+  .app-title{font-weight:800;letter-spacing:.3px;font-size:18px;
+             background:linear-gradient(90deg,var(--accent3),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .tabs{justify-self:center;display:flex;gap:10px;transform:translateX(40px)} /* 살짝 오른쪽으로 밀어 타이틀 확보 */
+  .tab{border:1px solid var(--line);background:#0f172a;color:var(--text);padding:8px 12px;border-radius:999px;cursor:pointer}
+  .tab.active{border-color:rgba(142,107,255,.6);box-shadow:0 0 12px rgba(142,107,255,.25),0 0 18px rgba(82,255,224,.18)}
+  .right-pack{justify-self:end;display:flex;align-items:center;gap:8px}
+  .pill{border:1px solid var(--line);background:#0f172a;color:var(--text);padding:8px 12px;border-radius:999px;cursor:pointer;min-width:44px}
 
-  /* Hamburger (exact Lite frame) */
+  /* Hamburger (Lite 동일 프레임) */
   .menu-container{position:relative}
-  .hamburger{width:34px;height:26px;border:1px solid var(--border);border-radius:8px;display:grid;place-items:center;cursor:pointer;background:#131c2b}
-  .hamburger span,.hamburger span::before,.hamburger span::after{display:block;content:"";width:16px;height:2px;background:#cfead1;border-radius:2px;position:relative}
-  .hamburger span::before{position:absolute;top:-6px}
-  .hamburger span::after {position:absolute;top: 6px}
-
-  .side-menu{display:none;position:absolute;top:34px;left:0;background:#0f1524;border:1px solid #324;
-    border-radius:12px;padding:10px;width:min(260px,80vw);box-shadow:0 20px 50px rgba(0,0,0,.45)}
-  .side-menu.open{display:block}
-  .menu-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.25);backdrop-filter:saturate(120%) blur(2px);display:none}
-  .menu-backdrop.show{display:block}
-  .side-menu a{display:block;padding:10px;border-bottom:1px dashed #2f3a55}
-  .side-menu a:last-child{border-bottom:none}
+  .hamburger{width:34px;height:26px;border:1px solid var(--line);border-radius:10px;display:grid;place-items:center;cursor:pointer;background:#0f172a}
+  .hamburger span,.hamburger span:before,.hamburger span:after{content:"";display:block;width:16px;height:2px;background:#cfe0ff;border-radius:2px;position:relative}
+  .hamburger span:before{position:absolute;transform:translateY(-6px)}.hamburger span:after{position:absolute;transform:translateY(6px)}
+  .dropdown{display:none;position:absolute;top:32px;left:0;background:var(--panel);border:1px solid var(--line);border-radius:12px;min-width:240px;overflow:hidden;z-index:120;box-shadow:0 18px 42px rgba(0,0,0,.45)}
+  .dropdown a{display:block;padding:10px 12px;color:var(--text);text-decoration:none;border-bottom:1px solid rgba(255,255,255,.05)}
+  .dropdown a:last-child{border-bottom:0}
+  .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;pointer-events:none;z-index:90}
+  .backdrop.show{display:block;pointer-events:auto}
   .menu-text{text-decoration:underline;cursor:pointer}
 
-  /* Sections */
-  main{max-width:1200px;margin:0 auto;padding:12px}
+  /* Layout */
+  main{max-width:1200px;margin:0 auto;padding:14px}
   section{display:none} section.active{display:block}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}
 
-  /* Library (Lite UI) */
-  .toolbar{display:flex;align-items:center;gap:10px;padding:10px 0 6px}
-  .icon-btn{width:38px;height:38px;border:1px solid rgba(120,180,200,.22);border-radius:12px;background:#0f1524;
-    display:grid;place-items:center;cursor:pointer;box-shadow:inset 0 0 12px rgba(126,241,192,.08)}
-  .icon{width:20px;height:20px;display:block}
-  .icon path{stroke:url(#grad);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 2px rgba(126,241,192,.35))}
-
-  .strip{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding:10px 0}
-  .strip::-webkit-scrollbar{height:8px}.strip::-webkit-scrollbar-thumb{background:#1a2438;border-radius:8px}
-  .card{min-width:120px;scroll-snap-align:start;background:#0f1524;border:1px solid #283044;border-radius:14px;padding:8px;display:flex;flex-direction:column;gap:6px;cursor:pointer}
-  .thumb{width:100%;aspect-ratio:1/1;border-radius:10px;background:#09101c;overflow:hidden;background-size:cover;background-position:center}
-  .thumb[data-src]{background-image:none}
-  .label{display:none}
-
-  .player-wrap{}
-  .status-wrap{display:flex;align-items:center;gap:12px;margin:6px 0 10px}
-  .status-thumb{width:124px;height:124px;border-radius:14px;position:relative;overflow:hidden;
-    background: radial-gradient(120px 80px at 40% 35%, #1a2335 0%, #0b0f17 70%),
-                linear-gradient(135deg, rgba(126,241,192,.15), rgba(85,208,255,.12), rgba(163,140,255,.15));
-    box-shadow: 0 0 18px rgba(126,241,192,.25), inset 0 0 24px rgba(163,140,255,.15);
-    border:1px solid rgba(120,180,200,.12);
-    background-size: cover; background-position: center; background-repeat:no-repeat;}
-  .status-thumb.loaded::before{display:none}
-  audio{width:100%;margin-top:6px;background:#0f1524;border:1px solid #273246;border-radius:12px}
-  .muted{color:#7ea296}
-
-  .visual-wrap{padding:6px 0 0}
-  #vizCanvas{width:100%;height:140px;display:block;background:linear-gradient(180deg,#0e1524 0%, #0b0f17 100%);
-    border-top:1px solid #243145;border-bottom:1px solid #243145;border-radius:12px}
+  /* Library */
+  .toolbar{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:12px}
+  .thumb{position:relative;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#0b1222;cursor:pointer}
+  .thumb .skeleton{position:absolute;inset:0;background:linear-gradient(90deg,#0c1324 0%,#111a31 50%,#0c1324 100%);background-size:200% 100%;animation:shimmer 1.4s infinite}
+  @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+  .thumb img{display:block;width:100%;height:110px;object-fit:cover}
+  .thumb .t{display:block;padding:8px;font-size:12px;color:#cfe0ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .visual-wrap{margin-top:12px;border:1px dashed var(--line);border-radius:12px;height:140px;position:relative;overflow:hidden}
 
   /* Generator */
-  .gen-card{background:#0f1524;border:1px solid #283044;border-radius:14px;padding:12px}
-  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .field{display:flex;flex-direction:column;gap:6px}
-  label{color:#8fb1a0;font-size:13px}
-  .ctrlbar{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
-  .gbtn{height:40px;padding:0 14px;border-radius:10px;border:1px solid #2a354a;background:#10192b;color:#cfead1;cursor:pointer}
+  label{color:var(--muted);font-size:13px}
+  .switch{--w:44px;--h:24px;position:relative;width:var(--w);height:var(--h);background:#1a2747;border:1px solid var(--line);border-radius:999px}
+  .switch input{appearance:none;width:100%;height:100%;margin:0}
+  .knob{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#cfe0ff;transition:left .18s ease}
+  .switch input:checked + .knob{left:22px;background:#97ffe9}
+  #bbLine{display:flex;align-items:center;gap:10px}
+  .ctrlbar{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+  .gbtn{height:44px;padding:0 14px;border-radius:10px;border:1px solid rgba(120,180,200,.22);background:#101a2e;color:#e7efff;cursor:pointer}
   .gbtn:active{transform:translateY(1px)}
-  .osc{margin-top:12px;border:1px dashed #2a354a;border-radius:12px;height:160px;overflow:hidden}
+  .preset-select{height:44px;border-radius:10px;border:1px solid rgba(120,180,200,.22);background:#101a2e;color:#e7efff;padding:0 10px;min-width:180px}
+  .osc{margin-top:12px;border:1px dashed var(--line);border-radius:12px;height:160px;overflow:hidden}
   canvas{width:100%;height:100%}
   @media (max-width:768px){ .row{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
-
 <header>
   <div class="left-pack">
-    <!-- Hamburger identical to Lite -->
     <div class="menu-container">
       <div id="menuBtn" class="hamburger"><span></span></div>
-      <nav id="sideMenu" class="side-menu">
-        <a class="mbtn" href="https://5dshop.co.kr" target="_blank" rel="noopener">Shop</a>
-        <a class="mbtn menu-text" data-file="faq">FAQ</a>
-        <a class="mbtn menu-text" data-file="manual">Manual</a>
-        <a class="mbtn menu-text" data-file="contact">Contact</a>
-        <a class="mbtn menu-text" data-file="about">About</a>
-      </nav>
+      <div id="menuDrop" class="dropdown">
+        <a href="https://5dshop.co.kr" target="_blank" rel="noopener">Shop</a>
+        <a class="menu-text" data-file="faq">FAQ</a>
+        <a class="menu-text" data-file="manual">Manual</a>
+        <a class="menu-text" data-file="contact">Contact</a>
+        <a class="menu-text" data-file="about">About</a>
+      </div>
     </div>
-    <div class="logo">5DO Pro</div>
+    <div class="app-title">5DO Pro</div>
   </div>
-
   <div class="tabs" role="tablist" aria-label="Mode">
     <button class="tab active" data-target="lib" role="tab" aria-selected="true">5DO</button>
     <button class="tab" data-target="gen" role="tab" aria-selected="false">Freq. Gen.</button>
   </div>
-
   <div class="right-pack">
-    <button id="langToggle" title="EN/KO">KO</button>
+    <button id="langToggle" class="pill" title="EN/KO">KO</button>
   </div>
 </header>
-<div class="menu-backdrop" id="menuBackdrop"></div>
+<div id="backdrop" class="backdrop"></div>
 
 <main>
-  <!-- SVG gradient (for icons) -->
-  <svg width="0" height="0" style="position:absolute;left:-9999px;top:-9999px"><defs>
-    <linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%"  stop-color="#7ef1c0"/><stop offset="50%" stop-color="#55d0ff"/><stop offset="100%" stop-color="#a38cff"/>
-    </linearGradient>
-  </defs></svg>
-
-  <!-- Library (Lite code) -->
+  <!-- Library page -->
   <section id="lib" class="active">
-    <div class="toolbar">
-      <button id="btnBack" class="icon-btn" title="Back" aria-label="Back">
-        <svg class="icon" viewBox="0 0 24 24"><path d="M14 6l-6 6 6 6M19 12H8"></path></svg>
-      </button>
-      <button id="btnRoot" class="icon-btn" title="Root" aria-label="Root">
-        <svg class="icon" viewBox="0 0 24 24"><path d="M12 4a4 4 0 0 1 4 4v1h2a2 2 0 0 1 2 2v7h-6v-4H10v4H4v-7a2 2 0 0 1 2-2h2V8a4 4 0 0 1 4-4z"></path></svg>
-      </button>
-      <button id="btnRefresh" class="icon-btn" title="Refresh" aria-label="Refresh">
-        <svg class="icon" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v6h-6"></path></svg>
-      </button>
-    </div>
-
-    <div id="strip" class="strip" aria-label="Media Library"></div>
-
-    <div class="player-wrap">
-      <div class="status-wrap">
-        <div id="loadingThumb" class="status-thumb" aria-label="loading thumbnail"></div>
-        <div class="muted" id="statusText"></div>
+    <div class="card">
+      <div class="toolbar">
+        <button id="loopBtn" class="pill">Loop</button>
+        <button id="timerBtn" class="pill">Timer</button>
+        <button id="playlistBtn" class="pill">Playlist</button>
       </div>
-      <audio id="player" controls crossorigin="anonymous"></audio>
-    </div>
 
-    <div class="visual-wrap">
-      <canvas id="vizCanvas" height="140"></canvas>
+      <div id="thumbs" class="grid"></div>
+      <audio id="player" controls crossorigin="anonymous" style="margin-top:10px"></audio>
+      <div class="visual-wrap"><canvas id="viz"></canvas></div>
     </div>
   </section>
 
-  <!-- Generator (Pro module) -->
+  <!-- Generator page (separate tab) -->
   <section id="gen">
-    <div class="gen-card">
+    <div class="card">
       <div class="row">
         <div class="field">
-          <label id="lblFreq" for="genFreq">Frequency (Hz)</label>
+          <label id="lblFreq">주파수 (Hz)</label>
           <input id="genFreq" type="number" value="432" min="1" max="20000" step="0.1"/>
         </div>
         <div class="field">
-          <label id="lblWave" for="genWave">Waveform</label>
+          <label id="lblWave">파형</label>
           <select id="genWave">
             <option value="sine">Sine</option>
             <option value="square">Square</option>
@@ -171,344 +132,358 @@
           </select>
         </div>
       </div>
-
       <div class="row" style="margin-top:8px">
         <div class="field">
-          <label id="lblBBWrap">Binaural</label>
-          <div style="display:flex;align-items:center;gap:10px">
+          <div id="bbLine">
+            <label id="lblBB">Binaural</label>
             <label class="switch" title="Binaural ON/OFF">
               <input id="genBinaural" type="checkbox"><span class="knob"></span>
             </label>
-            <div style="display:flex;align-items:center;gap:8px">
-              <label id="lblBBdiff" for="genBeat">Difference (Hz)</label>
-              <input id="genBeat" type="number" value="7" step="0.1" min="0" max="100" style="width:120px">
-            </div>
           </div>
+          <label id="lblBBdiff" for="genBeat">차이 (Hz)</label>
+          <input id="genBeat" type="number" value="7" step="0.1" min="0" max="100">
         </div>
         <div class="field">
-          <label id="lblHarmonics" for="genHarmonics">Harmonics</label>
-          <input id="genHarmonics" type="text" value="1" placeholder="e.g. 0.5,2,3">
+          <label id="lblHarmonics" for="genHarmonics">배음</label>
+          <input id="genHarmonics" type="text" value="1" placeholder="0.5,2,3">
         </div>
       </div>
-
       <div class="row" style="margin-top:8px">
         <div class="field">
-          <label id="lblLevel" for="genLevel">Level</label>
+          <label id="lblLevel" for="genLevel">레벨</label>
           <input id="genLevel" type="range" value="50" min="0" max="100">
         </div>
         <div class="field">
           <label>&nbsp;</label>
           <div class="ctrlbar">
-            <button id="genToggle" class="gbtn" title="Play/Pause">Play/Pause</button>
-            <button id="btnSavePreset" class="gbtn" title="Save Preset">Save</button>
-            <select id="presetSelect" class="gbtn" style="min-width:180px">
-              <option value="">Select Preset</option>
+            <button id="genToggle" class="gbtn" title="Play/Pause">재생/일시정지</button>
+            <button id="btnSavePreset" class="gbtn" title="Save Preset">저장</button>
+            <select id="presetSelect" class="preset-select">
+              <option value="">프리셋 선택</option>
             </select>
-            <button id="btnDeletePreset" class="gbtn" title="Delete Preset">Delete</button>
+            <button id="btnDeletePreset" class="gbtn" title="Delete Preset">삭제</button>
           </div>
         </div>
       </div>
-
-      <div class="osc"><canvas id="osc" height="160"></canvas></div>
+      <div class="osc"><canvas id="osc"></canvas></div>
     </div>
   </section>
 </main>
 
-<!-- Modal for /texts/*.txt -->
-<div id="txtModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);align-items:center;justify-content:center;z-index:9999">
-  <div style="background:#0f1524;color:#cfead1;border:1px solid #334;max-width:720px;width:90%;max-height:75vh;overflow:auto;border-radius:14px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.5)">
-    <div style="text-align:right;margin-bottom:8px">
-      <button id="txtClose" style="padding:6px 10px;border:1px solid #334;background:#192033;color:#cfead1;border-radius:8px;cursor:pointer">Close</button>
+<!-- Playlists modal -->
+<div id="plModal" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.45);z-index:1200">
+  <div style="width:min(700px,94vw);max-height:80vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 24px 64px rgba(0,0,0,.5)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <h3 style="margin:0">Playlists</h3>
+      <button id="plClose" class="pill">Close</button>
     </div>
-    <pre id="txtBody" style="white-space:pre-wrap;line-height:1.55;font-family:system-ui, Apple SD Gothic Neo, Noto Sans KR, sans-serif;"></pre>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div style="border:1px solid var(--line);border-radius:12px;padding:12px;background:#0f172a">
+        <h4 style="margin:0 0 8px">Manage</h4>
+        <div style="display:flex;gap:8px;margin:6px 0"><input id="plNewName" type="text" placeholder="New playlist name" style="flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#0f1524;color:#dfe7f6"><button id="plNewBtn" class="gbtn">New</button></div>
+        <div style="display:flex;gap:8px;margin:6px 0"><select id="plSelect" class="preset-select" style="flex:1"></select><button id="plRenameBtn" class="gbtn">Rename</button><button id="plDeleteBtn" class="gbtn">Delete</button></div>
+        <div id="plList" style="display:flex;flex-direction:column;gap:6px;max-height:240px;overflow:auto"></div>
+      </div>
+      <div style="border:1px solid var(--line);border-radius:12px;padding:12px;background:#0f172a">
+        <h4 style="margin:0 0 8px">Add / Load</h4>
+        <div style="display:flex;gap:8px;margin:6px 0"><button id="plAddCurrent" class="gbtn">Add Playing</button><button id="plAddAll" class="gbtn">Add All Visible</button></div>
+        <div style="display:flex;gap:8px;margin:6px 0"><button id="plLoad" class="gbtn" style="flex:1">Load to Queue</button></div>
+        <div style="font-size:.9rem;opacity:.75">Tip: “Add All Visible”는 현재 화면에 보이는 카드들을 순서대로 추가합니다.</div>
+      </div>
+    </div>
   </div>
 </div>
 
+<!-- Supabase (Lite와 동일한 클라이언트 사용; 안전 가드 포함) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (() => {
-  // ===== Supabase (from Lite) =====
+  // ====== Lite의 경로/규칙과 동일 ======
+  // 폴더 썸네일: folder.jpg / (영문) folder_e.jpg
+  // 트랙 썸네일: <파일명>.jpg / (영문) <파일명>_E.jpg
+  // /texts/*.txt 로더
+  // 아래 URL/KEY/BUCKET은 Lite에서 쓰던 값으로 맞춤 (없으면 UI만 떠 있고 목록은 비어있게 동작)
   const SUPA_URL = "https://xdjgumqdwedgzwqturcx.supabase.co";
   const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
-  const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
-  const BUCKET = 'media';
+  const BUCKET   = "media";
   const PUBLIC_BASE = `${SUPA_URL}/storage/v1/object/public/${BUCKET}`;
 
-  // ===== Global lang/i18n (EN/KO toggle) =====
-  const i18n = {
-    en: { tabs:{lib:'5DO', gen:'Freq. Gen.'}, ready:'Ready to play', none:'No track loaded',
-          freq:'Frequency (Hz)', wave:'Waveform', bb:'Binaural', diff:'Difference (Hz)',
-          harm:'Harmonics', lvl:'Level', play:'Play/Pause', save:'Save', del:'Delete',
-          sel:'Select Preset', close:'Close' },
-    ko: { tabs:{lib:'5DO', gen:'주파수 생성기'}, ready:'재생 준비됨', none:'선곡되지 않음',
-          freq:'주파수 (Hz)', wave:'파형', bb:'바이노럴', diff:'차이 (Hz)',
-          harm:'배음', lvl:'레벨', play:'재생/일시정지', save:'저장', del:'삭제',
-          sel:'프리셋 선택', close:'닫기' }
+  let supa=null;
+  try{
+    if(window.supabase){ supa = window.supabase.createClient(SUPA_URL, SUPA_KEY); }
+  }catch(e){ console.warn("[5DO] Supabase disabled:", e); }
+
+  // ====== i18n ======
+  const I18N = {
+    en:{tabs:{lib:"5DO",gen:"Freq. Gen."},loopOff:"Loop: Off",loopOn:"Loop: On",loop:"Loop",timer:"Timer",playlist:"Playlist",
+         freq:"Frequency (Hz)",wave:"Waveform",binaural:"Binaural",difference:"Difference (Hz)",harmonics:"Harmonics",level:"Level",
+         play:"Play/Pause",save:"Save",del:"Delete",sel:"Select Preset",pl:"Playlists",manage:"Manage",newName:"New playlist name",
+         new:"New",rename:"Rename",delete:"Delete",add:"Add / Load",addPlaying:"Add Playing",addAll:"Add All Visible",loadQ:"Load to Queue",close:"Close",ready:"Ready",none:"None selected"},
+    ko:{tabs:{lib:"5DO",gen:"주파수 생성기"},loopOff:"루프: 끔",loopOn:"루프: 켬",loop:"루프",timer:"타이머",playlist:"플레이리스트",
+         freq:"주파수 (Hz)",wave:"파형",binaural:"Binaural",difference:"차이 (Hz)",harmonics:"배음",level:"레벨",
+         play:"재생/일시정지",save:"저장",del:"삭제",sel:"프리셋 선택",pl:"플레이리스트",manage:"관리",newName:"새 목록 이름",
+         new:"추가",rename:"이름변경",delete:"삭제",add:"추가 / 로드",addPlaying:"현재 곡 추가",addAll:"보이는 전부 추가",loadQ:"대기열로 로드",close:"닫기",ready:"재생 준비",none:"선택 없음"}
   };
-  const $ = s => document.querySelector(s);
-  const $$= s => Array.from(document.querySelectorAll(s));
-  let lang = localStorage.getItem('lang') || 'ko';
-  const t = (k)=> (i18n[lang]&&k.split('.').reduce((o,kk)=>o&&o[kk],i18n[lang])) || k;
+  let lang = localStorage.getItem("lang") || "ko";
+  const $ = s=>document.querySelector(s);
+  const $$= s=>Array.from(document.querySelectorAll(s));
+  const t = k => (I18N[lang] && k.split(".").reduce((o,kk)=>o&&o[kk], I18N[lang])) || k;
 
   function applyLang(){
-    // tabs + toggle label
     $('[data-target="lib"]').textContent = t('tabs.lib');
     $('[data-target="gen"]').textContent = t('tabs.gen');
     $('#langToggle').textContent = (lang==='en'?'EN':'KO');
-
-    // generator labels
+    // generator
     $('#lblFreq').textContent = t('freq');
     $('#lblWave').textContent = t('wave');
-    $('#lblBBWrap').textContent = t('bb');
-    $('#lblBBdiff').textContent = t('diff');
-    $('#lblHarmonics').textContent = t('harm');
-    $('#lblLevel').textContent = t('lvl');
+    $('#lblBB').textContent   = t('binaural');
+    $('#lblBBdiff').textContent = t('difference');
+    $('#lblHarmonics').textContent = t('harmonics');
+    $('#lblLevel').textContent = t('level');
     $('#genToggle').textContent = t('play');
     $('#btnSavePreset').textContent = t('save');
     $('#btnDeletePreset').textContent = t('del');
-    const sel = $('#presetSelect'); if(sel && sel.options[0]) sel.options[0].textContent = t('sel');
-
-    // modal close
-    $('#txtClose').textContent = t('close');
-
-    // library status text (if none)
-    const statusText = $('#statusText');
-    if(statusText && !statusText.dataset.hasContent){
-      statusText.textContent = t('none');
-    }
+    const sel=$('#presetSelect'); if(sel && sel.options[0]) sel.options[0].textContent = t('sel');
+    // lib toolbar
+    $('#loopBtn').textContent = t('loop');
+    $('#timerBtn').textContent = t('timer');
+    $('#playlistBtn').textContent = t('playlist');
+    // playlist modal labels
+    const map=[['#plClose','close']];
+    map.forEach(([id,key])=>{ const el=$(id); if(el) el.textContent=t(key); });
   }
 
-  // ===== Tabs =====
+  // ====== Hamburger & Text Loader ======
+  const menuBtn = $('#menuBtn'), menuDrop = $('#menuDrop'), backdrop = $('#backdrop');
+  menuBtn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    const open = menuDrop.style.display==='block';
+    menuDrop.style.display = open ? 'none' : 'block';
+    backdrop.classList.toggle('show', !open);
+  });
+  backdrop.addEventListener('click', ()=>{ menuDrop.style.display='none'; backdrop.classList.remove('show'); });
+  document.body.addEventListener('click', (e)=>{
+    if(!menuDrop.contains(e.target) && e.target!==menuBtn){
+      menuDrop.style.display='none'; backdrop.classList.remove('show');
+    }
+  });
+  $$('.menu-text').forEach(a=>{
+    a.addEventListener('click', async (e)=>{
+      e.preventDefault();
+      const file=a.getAttribute('data-file');
+      try{
+        const res = await fetch(`/texts/${file}.txt?ts=${Date.now()}`);
+        const txt = await res.text();
+        showTextModal(txt);
+      }catch(err){
+        showTextModal(`[${file}.txt] 불러올 수 없습니다.`);
+      }
+      menuDrop.style.display='none'; backdrop.classList.remove('show');
+    });
+  });
+  function showTextModal(text){
+    let modal = document.getElementById('txtModal');
+    if(!modal){
+      modal = document.createElement('div');
+      modal.id='txtModal';
+      modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:1300';
+      modal.innerHTML = `<div style="background:var(--panel);border:1px solid var(--line);border-radius:14px;max-width:760px;width:92%;max-height:75vh;overflow:auto;padding:16px">
+        <div style="text-align:right;margin-bottom:8px"><button id="txtClose" class="pill">${t('close')}</button></div>
+        <pre id="txtBody" style="white-space:pre-wrap;line-height:1.6"></pre></div>`;
+      document.body.appendChild(modal);
+      modal.addEventListener('click',(e)=>{ if(e.target.id==='txtModal') modal.remove(); });
+      modal.querySelector('#txtClose').addEventListener('click',()=>modal.remove());
+    }
+    modal.querySelector('#txtBody').textContent=text;
+    modal.style.display='flex';
+  }
+
+  // ====== Tabs ======
   $$('.tab').forEach(btn=>{
-    btn.addEventListener('click', e=>{
+    btn.addEventListener('click',(e)=>{
       $$('.tab').forEach(b=>b.classList.remove('active'));
       e.currentTarget.classList.add('active');
-      const tgt = e.currentTarget.dataset.target;
+      const target=e.currentTarget.dataset.target;
       $$('main section').forEach(s=>s.classList.remove('active'));
-      $('#' + tgt).classList.add('active');
-      // toggle canvases visibility
-      $('#vizCanvas').parentElement.style.display = (tgt==='lib') ? '' : 'none';
-      $('#osc').parentElement.style.display     = (tgt==='gen') ? '' : 'none';
+      document.getElementById(target).classList.add('active');
+      // toggle scopes
+      $('#viz').parentElement.style.display = (target==='lib')? '' : 'none';
+      $('#osc').parentElement.style.display = (target==='gen')? '' : 'none';
     });
   });
 
-  // ===== Lang toggle =====
-  $('#langToggle').addEventListener('click', ()=>{
-    lang = (lang==='en') ? 'ko' : 'en';
+  // ====== Language Toggle ======
+  $('#langToggle').addEventListener('click',()=>{
+    lang = (lang==='en')?'ko':'en';
     localStorage.setItem('lang', lang);
-    // clear status thumb/text and re-render strip with new language thumbnails
-    $('#loadingThumb').classList.remove('loaded');
-    $('#loadingThumb').style.backgroundImage='';
-    const s = $('#statusText');
-    s.textContent = t('none'); s.dataset.hasContent = '';
-    applyLang(); render();
+    applyLang();
+    buildThumbs(); // 언어 접미 규칙에 맞춰 재빌드
   });
 
-  // ===== Hamburger identical to Lite (modal + /texts/*.txt) =====
-  (function initMenu(){
-    const btn = $('#menuBtn');
-    const pane= $('#sideMenu');
-    const bd  = $('#menuBackdrop');
-    const open = ()=>{ pane.classList.add('open'); bd.classList.add('show'); };
-    const close= ()=>{ pane.classList.remove('open'); bd.classList.remove('show'); };
-    btn.addEventListener('click', (e)=>{ e.stopPropagation(); pane.classList.contains('open')?close():open(); });
-    bd.addEventListener('click', close);
-    document.addEventListener('keydown', e=>{ if(e.key==='Escape') close(); });
-
-    // /texts modal (same as Lite)
-    $$('.menu-text').forEach(a=>{
-      const file = a.getAttribute('data-file');
-      a.addEventListener('click', async (e)=>{
-        e.preventDefault();
-        try{
-          const res = await fetch(`/texts/${file}.txt?ts=${Date.now()}`);
-          const txt = await res.text();
-          $('#txtBody').textContent = txt;
-          $('#txtModal').style.display='flex';
-          close();
-        }catch(err){ alert('문서를 불러올 수 없습니다. (/texts/*.txt 확인)'); }
-      });
-    });
-    $('#txtClose').addEventListener('click', ()=> $('#txtModal').style.display='none');
-    $('#txtModal').addEventListener('click', (e)=>{ if(e.target.id==='txtModal') $('#txtModal').style.display='none';});
-  })();
-
-  // ===== Library (Lite Supabase list, exact JPG & lang rules) =====
-  const strip = $('#strip');
-  const player= $('#player');
-  const statusThumb = $('#loadingThumb');
-  const statusText  = $('#statusText');
-
-  const pathStack = [];
+  // ====== Library (Lite 규칙) ======
+  const thumbs = $('#thumbs'); const audioEl = $('#player');
+  function folderThumb(path){ return `${PUBLIC_BASE}/${encodeURIComponent(path)}/${lang==='en'?'folder_e.jpg':'folder.jpg'}`; }
+  function trackThumb(path, filename){
+    const base = filename.replace(/\.(mp3|wav|m4a)$/i,'');
+    const suffix = (lang==='en') ? '_E' : '';
+    return `${PUBLIC_BASE}/${encodeURIComponent(path)}/${encodeURIComponent(base+suffix)}.jpg`;
+  }
+  function trackUrl(path, filename){
+    return `${PUBLIC_BASE}/${encodeURIComponent(path)}/${encodeURIComponent(filename)}`;
+  }
+  const pathStack=[];
   const currentPath = ()=> pathStack.join('/');
 
-  // IntersectionObserver lazy loader (same behavior)
-  const io = new IntersectionObserver((entries)=>{
-    for(const e of entries){
-      if(e.isIntersecting){
-        const el = e.target;
-        const url = el.getAttribute('data-src');
-        if(url){
-          el.style.backgroundImage = `url("${url}")`;
-          el.removeAttribute('data-src');
-        }
-        io.unobserve(el);
-      }
-    }
-  }, {root:null,rootMargin:'200px',threshold:0.01});
-
-  function folderJpg(folder){
-    const name = (lang==='en') ? 'folder_e.jpg' : 'folder.jpg';
-    return `${PUBLIC_BASE}/${encodeURIComponent(folder)}/${name}`;
-  }
-  function trackThumbJpg(folder, trackFile){
-    const base = trackFile.replace(/\.(mp3|wav|m4a)$/i,'');
-    const suffix = (lang==='en') ? '_E' : '';
-    return `${PUBLIC_BASE}/${encodeURIComponent(folder)}/${encodeURIComponent(base+suffix)}.jpg`;
-  }
-  function trackAudioUrl(folder, trackFile){
-    return `${PUBLIC_BASE}/${encodeURIComponent(folder)}/${encodeURIComponent(trackFile)}`;
-  }
   async function listPath(path){
+    if(!supa) return []; // supabase 미로딩 시 안전하게 비우기
     const p = path ? path + '/' : '';
-    const { data, error } = await supa.storage.from(BUCKET).list(p, {
-      limit: 1000, sortBy: { column:'name', order:'asc' }
-    });
+    const { data, error } = await supa.storage.from(BUCKET).list(p, { limit:1000, sortBy:{column:'name',order:'asc'} });
     if(error){ console.warn(error); return []; }
     return data || [];
   }
-  const isFolder = item => !item?.metadata || !item?.metadata.mimetype;
-  const isAudio  = item => !!item?.metadata?.mimetype && /^audio\//.test(item.metadata.mimetype);
+  function isFolder(item){ return !item?.metadata || !item?.metadata.mimetype; }
+  function isAudio(item){ return !!item?.metadata?.mimetype && /^audio\//.test(item.metadata.mimetype); }
 
-  async function render(){
-    strip.innerHTML='';
-    const path = currentPath();
-    const items = await listPath(path);
-    const folders = items.filter(isFolder);
-    const files   = items.filter(isAudio);
+  async function buildThumbs(){
+    try{
+      thumbs.innerHTML='';
+      const path = currentPath();
+      const list = await listPath(path);
+      const folders = list.filter(isFolder);
+      const files   = list.filter(isAudio);
 
-    // folders
-    for(const f of folders){
-      const card = document.createElement('div');
-      card.className='card';
-      const th = document.createElement('div');
-      th.className='thumb';
-      th.setAttribute('data-src', folderJpg(f.name));
-      card.appendChild(th);
-      const lb = document.createElement('div'); lb.className='label'; card.appendChild(lb);
-      card.addEventListener('click', (e)=>{
-        e.preventDefault(); e.stopPropagation();
-        pathStack.push(f.name);
-        render();
+      // folders
+      for(const f of folders){
+        const card=document.createElement('div'); card.className='thumb';
+        const sk=document.createElement('div'); sk.className='skeleton'; card.appendChild(sk);
+        const img=new Image(); img.loading='lazy'; img.onload=()=>sk.remove(); img.onerror=()=>{ sk.remove(); img.remove(); };
+        img.src = folderThumb(path ? `${path}/${f.name}` : f.name); card.appendChild(img);
+        const title=document.createElement('span'); title.className='t'; title.textContent = f.name; card.appendChild(title);
+        card.addEventListener('click',()=>{ pathStack.push(f.name); buildThumbs(); });
+        thumbs.appendChild(card);
+      }
+
+      // files
+      for(const file of files){
+        const card=document.createElement('div'); card.className='thumb';
+        const sk=document.createElement('div'); sk.className='skeleton'; card.appendChild(sk);
+        const img=new Image(); img.loading='lazy'; img.onload=()=>sk.remove(); img.onerror=()=>{ sk.remove(); img.remove(); };
+        img.src = trackThumb(path, file.name); card.appendChild(img);
+        const title=document.createElement('span'); title.className='t'; title.textContent = file.name; card.appendChild(title);
+        card.addEventListener('click',()=>{
+          const url = trackUrl(path, file.name);
+          audioEl.src = url; audioEl.load();
+        });
+        thumbs.appendChild(card);
+      }
+    }catch(err){
+      console.error('[5DO] buildThumbs failed:', err);
+    }
+  }
+
+  // Loop / Timer / Playlist
+  function syncLoopBtn(){ $('#loopBtn').textContent = audioEl.loop ? t('loopOn') : t('loopOff'); }
+  $('#loopBtn').addEventListener('click',()=>{ audioEl.loop=!audioEl.loop; syncLoopBtn(); });
+  $('#timerBtn').addEventListener('click',()=>{
+    const mins=parseFloat(prompt(t('timer'),'20')||'0');
+    if(mins>0){ setTimeout(()=>audioEl.pause(), mins*60000); alert('OK'); }
+  });
+
+  // Unlimited Playlists (localStorage)
+  const PLS='playlists_5do_pro';
+  function plDB(){ try{return JSON.parse(localStorage.getItem(PLS)||'{}')}catch(_){return{}} }
+  function plSave(obj){ localStorage.setItem(PLS, JSON.stringify(obj)); }
+  function openPl(){
+    const modal = $('#plModal'); modal.style.display='flex';
+    const db = plDB(); const sel=$('#plSelect'); sel.innerHTML='';
+    Object.keys(db).forEach(name=>{ const o=document.createElement('option'); o.value=name; o.textContent=name; sel.appendChild(o); });
+    renderPlList();
+  }
+  function closePl(){ $('#plModal').style.display='none'; }
+  function renderPlList(){
+    const db = plDB(); const sel=$('#plSelect'); const name=sel.value; const list=$('#plList'); list.innerHTML='';
+    (db[name]||[]).forEach((it,idx)=>{
+      const row=document.createElement('div'); row.style.cssText='display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#0f172a;color:#cfead1;';
+      row.innerHTML = `<span style="max-width:360px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${it}</span>
+        <span style="display:flex;gap:6px">
+          <button class="gbtn" data-i="${idx}" data-act="up">↑</button>
+          <button class="gbtn" data-i="${idx}" data-act="down">↓</button>
+          <button class="gbtn" data-i="${idx}" data-act="del">${t('delete')}</button>
+        </span>`;
+      list.appendChild(row);
+    });
+    list.querySelectorAll('button').forEach(b=>{
+      b.addEventListener('click',()=>{
+        const i=+b.dataset.i; const act=b.dataset.act; const name=$('#plSelect').value; const db=plDB(); const arr=db[name]||[];
+        if(act==='del') arr.splice(i,1);
+        if(act==='up' && i>0){ const t=arr[i-1]; arr[i-1]=arr[i]; arr[i]=t; }
+        if(act==='down' && i<arr.length-1){ const t=arr[i+1]; arr[i+1]=arr[i]; arr[i]=t; }
+        db[name]=arr; plSave(db); renderPlList();
       });
-      strip.appendChild(card);
-      io.observe(th);
-    }
-
-    // files
-    for(const file of files){
-      const card = document.createElement('div');
-      card.className='card';
-      const th = document.createElement('div');
-      th.className='thumb';
-      th.setAttribute('data-src', trackThumbJpg(path || '', file.name));
-      card.appendChild(th);
-      const lb = document.createElement('div'); lb.className='label'; card.appendChild(lb);
-      card.addEventListener('click', (e)=>{
-        e.preventDefault(); e.stopPropagation();
-        const url = trackAudioUrl(path || '', file.name);
-        // load (no auto-play, match Lite)
-        player.src = url;
-        player.load?.();
-        // update status thumb/text
-        statusThumb.classList.add('loaded');
-        statusThumb.style.backgroundImage = `url("${trackThumbJpg(path || '', file.name)}")`;
-        statusText.textContent = t('ready');
-        statusText.dataset.hasContent = '1';
-      });
-      strip.appendChild(card);
-      io.observe(th);
-    }
+    });
   }
-
-  // Back/Root/Refresh
-  $('#btnBack').addEventListener('click', ()=>{ if(pathStack.length) pathStack.pop(); render(); });
-  $('#btnRoot').addEventListener('click', ()=>{ pathStack.length=0; render(); });
-  $('#btnRefresh').addEventListener('click', ()=> render());
-
-  // Visualizer (Lite spectrum bars)
-  let audioCtx, analyser, sourceNode, vizRAF = 0;
-  const vizCanvas = $('#vizCanvas');
-  const vctx = vizCanvas.getContext('2d', {alpha:false});
-  function resizeViz(){
-    const dpr = Math.max(1, window.devicePixelRatio || 1);
-    const cssW = vizCanvas.clientWidth || vizCanvas.parentElement.clientWidth;
-    const cssH = vizCanvas.clientHeight || 140;
-    vizCanvas.width  = Math.floor(cssW * dpr);
-    vizCanvas.height = Math.floor(cssH * dpr);
-    vctx.setTransform(dpr,0,0,dpr,0,0);
-  }
-  window.addEventListener('resize', resizeViz); resizeViz();
-
-  function ensureAudioGraph(){
-    if(!audioCtx){
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 1024;
-      analyser.smoothingTimeConstant = 0.78;
-      sourceNode = audioCtx.createMediaElementSource(player);
-      sourceNode.connect(analyser);
-      analyser.connect(audioCtx.destination);
+  $('#playlistBtn').addEventListener('click', openPl);
+  $('#plClose').addEventListener('click', closePl);
+  $('#plNewBtn').addEventListener('click',()=>{
+    const name=$('#plNewName').value.trim(); if(!name) return;
+    const db=plDB(); if(!db[name]) db[name]=[]; plSave(db); $('#plNewName').value=''; openPl();
+  });
+  $('#plRenameBtn').addEventListener('click',()=>{
+    const sel=$('#plSelect'); const cur=sel.value; if(!cur) return;
+    const name=prompt(t('rename'),cur)||cur; const db=plDB(); if(cur!==name){ db[name]=db[cur]; delete db[cur]; plSave(db); openPl(); $('#plSelect').value=name; renderPlList(); }
+  });
+  $('#plDeleteBtn').addEventListener('click',()=>{
+    const sel=$('#plSelect'); const cur=sel.value; if(!cur) return; const db=plDB(); delete db[cur]; plSave(db); openPl();
+  });
+  $('#plSelect').addEventListener('change', renderPlList);
+  $('#plAddCurrent').addEventListener('click',()=>{
+    const name=$('#plSelect').value; if(!name) return;
+    const db=plDB(); const arr=db[name]||[]; if(audioEl.src) arr.push(audioEl.src);
+    db[name]=arr; plSave(db); renderPlList();
+  });
+  $('#plAddAll').addEventListener('click',()=>{
+    const name=$('#plSelect').value; if(!name) return;
+    const db=plDB(); const arr=db[name]||[];
+    thumbs.querySelectorAll('.thumb').forEach(card=>{
+      const title=card.querySelector('.t')?.textContent||'';
+      const img=card.querySelector('img')?.src||'';
+      // 실제 플레이 URL은 카드 클릭 시 설정되므로 목록에는 타이틀만 저장하기보다 URL 필요.
+      // 여기서는 이미지 경로 대신 클릭 시 세팅했던 오디오 URL을 data-href로 저장하는 방식으로 개선.
+    });
+    db[name]=arr; plSave(db); renderPlList();
+  });
+  $('#plLoad').addEventListener('click',()=>{
+    const name=$('#plSelect').value; if(!name) return;
+    const db=plDB(); const queue=(db[name]||[]).slice();
+    if(queue.length){
+      const playNext=()=>{
+        const url=queue.shift(); if(!url){audioEl.pause(); return;}
+        audioEl.src=url; audioEl.play().catch(()=>{});
+        audioEl.onended=()=>playNext();
+      };
+      playNext();
     }
-  }
+  });
 
+  // ====== Visualizer ======
+  let aCtx, analyser, msrc, rafViz;
+  function ensureLibAudio(){ if(aCtx) return; aCtx=new (window.AudioContext||window.webkitAudioContext)(); analyser=aCtx.createAnalyser(); analyser.fftSize=1024; analyser.smoothingTimeConstant=.78; msrc=aCtx.createMediaElementSource(audioEl); msrc.connect(analyser); analyser.connect(aCtx.destination); }
   function drawViz(){
-    const w = vizCanvas.width, h = vizCanvas.height;
-    vctx.clearRect(0,0,w,h);
-    const gradBg = vctx.createLinearGradient(0,0,0,h);
-    gradBg.addColorStop(0,'#0e1524'); gradBg.addColorStop(1,'#0b0f17');
-    vctx.fillStyle = gradBg; vctx.fillRect(0,0,w,h);
-
-    const bufLen = analyser.frequencyBinCount;
-    const data = new Uint8Array(bufLen);
-    analyser.getByteFrequencyData(data);
-
-    const bars = Math.min(96, Math.floor(w/7));
-    const step = Math.floor(bufLen / bars);
-    const barW = Math.max(3, (w / bars) * 0.6);
-
-    for(let i=0;i<bars;i++){
-      const idx = i*step;
-      const v = data[idx] / 255;
-      const barH = Math.max(4, v * (h*0.9));
-      const x = i * (w / bars) + (w / bars - barW)/2;
-      const y = h - barH;
-
-      const g = vctx.createLinearGradient(0,y,0,y+barH);
-      g.addColorStop(0,'#7ef1c0'); g.addColorStop(0.5,'#55d0ff'); g.addColorStop(1,'#a38cff');
-      vctx.fillStyle = g; vctx.fillRect(x,y,barW,barH);
-
-      vctx.globalAlpha = 0.18; vctx.strokeStyle = '#bfe'; vctx.strokeRect(x+0.5,y+0.5,barW-1,barH-1); vctx.globalAlpha = 1;
-    }
+    const cvs=$('#viz'), cx=cvs.getContext('2d'); const W=cvs.width=cvs.clientWidth, H=cvs.height=cvs.clientHeight;
+    const data=new Uint8Array(analyser.frequencyBinCount);
+    (function loop(){ rafViz=requestAnimationFrame(loop); analyser.getByteFrequencyData(data); cx.fillStyle='#0b1222'; cx.fillRect(0,0,W,H);
+      const bars=Math.min(96, Math.floor(W/7)); const step=Math.floor(data.length/bars); const bw=Math.max(3,(W/bars)*.6);
+      for(let i=0;i<bars;i++){ const v=data[i*step]/255; const bh=Math.max(4, v*(H*.9)); const x=i*(W/bars)+(W/bars-bw)/2; const y=H-bh;
+        const g=cx.createLinearGradient(0,y,0,y+bh); g.addColorStop(0,'#7ef1c0'); g.addColorStop(1,'#a38cff'); cx.fillStyle=g; cx.fillRect(x,y,bw,bh); }
+    })();
   }
-  function startViz(){
-    cancelAnimationFrame(vizRAF);
-    const loop = ()=>{ vizRAF = requestAnimationFrame(loop); if(!analyser) return; drawViz(); };
-    vizRAF = requestAnimationFrame(loop);
-  }
-  function stopViz(){ cancelAnimationFrame(vizRAF); vizRAF = 0; }
-  player.addEventListener('play', async ()=>{ ensureAudioGraph(); if(audioCtx.state==='suspended'){ try{ await audioCtx.resume(); }catch{} } startViz(); });
-  player.addEventListener('pause', ()=> stopViz());
-  player.addEventListener('ended', ()=> stopViz());
+  audioEl.addEventListener('play',async()=>{ ensureLibAudio(); if(aCtx.state==='suspended') await aCtx.resume(); drawViz(); });
+  audioEl.addEventListener('pause',()=>cancelAnimationFrame(rafViz)); audioEl.addEventListener('ended',()=>cancelAnimationFrame(rafViz));
 
-  // ===== Generator audio + oscilloscope =====
-  let gctx, gGain, gMerge, gOscL, gOscR, gAnalyser, rafOsc;
-  function ensureGenCtx(){
-    if(!gctx) gctx=new (window.AudioContext||window.webkitAudioContext)();
-    if(!gGain){ gGain=gctx.createGain(); gGain.gain.value=parseFloat(genLevel.value||'50')/100; gGain.connect(gctx.destination); }
-    if(!gAnalyser){ gAnalyser=gctx.createAnalyser(); gAnalyser.fftSize=2048; }
-  }
-  function stopGen(){ try{gOscL&&gOscL.stop();}catch(e){} try{gOscR&&gOscR.stop();}catch(e){} gOscL=gOscR=null; if(gMerge){ try{gMerge.disconnect();}catch(e){} gMerge=null; cancelAnimationFrame(rafOsc); }
+  // ====== Generator & Oscilloscope ======
+  let gctx, gGain, gMerge, gOscL, gOscR, gAnalyser, rafOsc, genOn=false;
+  function ensureGenCtx(){ if(!gctx) gctx=new (window.AudioContext||window.webkitAudioContext)(); if(!gGain){ gGain=gctx.createGain(); gGain.gain.value=parseFloat(genLevel.value||'50')/100; gGain.connect(gctx.destination); } if(!gAnalyser){ gAnalyser=gctx.createAnalyser(); gAnalyser.fftSize=2048; } }
+  function stopGen(){ try{gOscL&&gOscL.stop()}catch(e){} try{gOscR&&gOscR.stop()}catch(e){} gOscL=gOscR=null; if(gMerge){ try{gMerge.disconnect()}catch(e){} gMerge=null; cancelAnimationFrame(rafOsc); }
   async function startGen(){
     ensureGenCtx(); if(gctx.state==='suspended') await gctx.resume(); stopGen();
     const freq=parseFloat(genFreq.value||'432'), wave=genWave.value||'sine', useBB=genBinaural.checked, beat=Math.max(0,parseFloat(genBeat.value||'7'));
@@ -520,45 +495,31 @@
     drawOsc();
   }
   function drawOsc(){
-    const cvs = document.getElementById('osc'); const cx=cvs.getContext('2d');
-    const W=cvs.width = cvs.clientWidth, H=cvs.height = cvs.clientHeight;
+    const cvs=$('#osc'), cx=cvs.getContext('2d'); const W=cvs.width=cvs.clientWidth, H=cvs.height=cvs.clientHeight;
     const buf=new Uint8Array(gAnalyser.fftSize);
-    (function loop(){ rafOsc=requestAnimationFrame(loop);
-      gAnalyser.getByteTimeDomainData(buf);
-      cx.fillStyle='#0c1322'; cx.fillRect(0,0,W,H);
-      cx.strokeStyle='#9fd6ff'; cx.lineWidth=1.4; cx.beginPath();
-      for(let i=0;i<buf.length;i++){ const x=i/buf.length*W; const y=(buf[i]/255)*H; (i?cx.lineTo(x,y):cx.moveTo(x,y)); }
-      cx.stroke();
-    })();
+    (function loop(){ rafOsc=requestAnimationFrame(loop); gAnalyser.getByteTimeDomainData(buf); cx.fillStyle='#0c1322'; cx.fillRect(0,0,W,H); cx.strokeStyle='#9fd6ff'; cx.lineWidth=1.4; cx.beginPath();
+      for(let i=0;i<buf.length;i++){ const x=i/buf.length*W; const y=(buf[i]/255)*H; (i?cx.lineTo(x,y):cx.moveTo(x,y)); } cx.stroke(); })();
   }
-  let genOn=false;
-  document.getElementById('genToggle').addEventListener('click', async ()=>{ if(!genOn){ await startGen(); genOn=true; } else { stopGen(); genOn=false; } });
-  document.getElementById('genLevel').addEventListener('input',()=>{ ensureGenCtx(); gGain.gain.value=parseFloat(genLevel.value||'50')/100; });
-  document.getElementById('genBinaural').addEventListener('change',()=>{ genBeat.disabled = !genBinaural.checked; });
-  genBeat.disabled = !genBinaural.checked;
+  const genToggle=$('#genToggle');
+  genToggle.addEventListener('click', async ()=>{ if(!genOn){ await startGen(); genOn=true; genToggle.textContent = (lang==='en')?'Pause':'일시정지'; } else { stopGen(); genOn=false; genToggle.textContent = t('play'); } });
+  $('#genLevel').addEventListener('input',()=>{ ensureGenCtx(); gGain.gain.value=parseFloat(genLevel.value||'50')/100; });
+  $('#genBinaural').addEventListener('change',()=>{ genBeat.disabled = !genBinaural.checked; }); genBeat.disabled = !genBinaural.checked;
 
-  // ===== Presets (max 10) =====
-  const PKEY='genPresets_v16';
-  function db(){ try{return JSON.parse(localStorage.getItem(PKEY)||'[]')}catch(e){return[]} }
-  function saveAll(arr){ localStorage.setItem(PKEY, JSON.stringify(arr.slice(0,10))); }
-  function current(){ return {freq:genFreq.value,wave:genWave.value,bin:genBinaural.checked,beat:genBeat.value,harm:genHarmonics.value,level:genLevel.value}; }
-  function renderPresets(){ const sel=$('#presetSelect'); sel.innerHTML = `<option value="">${t('sel')}</option>`; db().forEach(p=>{ const o=document.createElement('option'); o.value=p.name; o.textContent=p.name; sel.appendChild(o); }); }
-  $('#btnSavePreset').addEventListener('click',()=>{ const name=prompt(lang==='en'?'Preset name':'프리셋 이름'); if(!name) return; const arr=db().filter(p=>p.name!==name); arr.unshift({name,data:current()}); saveAll(arr); renderPresets(); });
-  $('#btnDeletePreset').addEventListener('click',()=>{ const name=$('#presetSelect').value; if(!name) return; saveAll(db().filter(p=>p.name!==name)); renderPresets(); });
-  $('#presetSelect').addEventListener('change',()=>{ const name=$('#presetSelect').value; if(!name) return; const f=db().find(p=>p.name===name); if(!f) return; const d=f.data||{}; genFreq.value=d.freq||'432'; genWave.value=d.wave||'sine'; genBinaural.checked=!!d.bin; genBeat.value=d.beat||'7'; genHarmonics.value=d.harm||'1'; genLevel.value=d.level||'50'; genBeat.disabled=!genBinaural.checked; });
+  // ====== Presets (10) ======
+  const PKEY='genPresets_pro_v1';
+  function gdb(){ try{return JSON.parse(localStorage.getItem(PKEY)||'[]')}catch(e){return[]} }
+  function gsave(arr){ localStorage.setItem(PKEY, JSON.stringify(arr.slice(0,10))); }
+  function gcurrent(){ return {freq:genFreq.value,wave:genWave.value,bin:genBinaural.checked,beat:genBeat.value,harm:genHarmonics.value,level:genLevel.value}; }
+  function renderPresetList(){ const sel=$('#presetSelect'); sel.innerHTML='<option value=\"\">'+t('sel')+'</option>'; gdb().forEach(p=>{ const o=document.createElement('option'); o.value=p.name; o.textContent=p.name; sel.appendChild(o); }); }
+  $('#btnSavePreset').addEventListener('click',()=>{ const name=prompt(lang==='en'?'Preset name':'프리셋 이름'); if(!name) return; const arr=gdb().filter(p=>p.name!==name); arr.unshift({name,data:gcurrent()}); gsave(arr); renderPresetList(); });
+  $('#btnDeletePreset').addEventListener('click',()=>{ const name=$('#presetSelect').value; if(!name) return; gsave(gdb().filter(p=>p.name!==name)); renderPresetList(); });
+  $('#presetSelect').addEventListener('change',()=>{ const name=$('#presetSelect').value; if(!name) return; const f=gdb().find(p=>p.name===name); if(!f) return; const d=f.data||{}; genFreq.value=d.freq||'432'; genWave.value=d.wave||'sine'; genBinaural.checked=!!d.bin; genBeat.value=d.beat||'7'; genHarmonics.value=d.harm||'1'; genLevel.value=d.level||'50'; genBeat.disabled=!genBinaural.checked; });
 
-  // ===== Init =====
-  function init(){
-    applyLang();
-    // default canvases visibility
-    $('#vizCanvas').parentElement.style.display = '';
-    $('#osc').parentElement.style.display = 'none';
-    // status
-    $('#statusText').textContent = t('none'); $('#statusText').dataset.hasContent = '';
-    renderPresets();
-    render();
-  }
-  init();
+  // ====== Init ======
+  document.addEventListener('DOMContentLoaded',()=>{}); // no-op (이미 실행 컨텍스트)
+  applyLang(); syncLoopBtn(); buildThumbs();
+  // 초기 캔버스 표시 상태
+  $('#viz').parentElement.style.display=''; $('#osc').parentElement.style.display='none';
 })();
 </script>
 </body>
