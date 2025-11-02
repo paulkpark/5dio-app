@@ -17,12 +17,12 @@
        font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,"Apple SD Gothic Neo","Noto Sans KR",sans-serif}
 
   /* Header */
-  header{position:sticky;top:0;z-index:100;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;
-         padding:10px 14px;background:rgba(12,18,32,.8);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  header{position:sticky;top:0;z-index:1000;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;
+         padding:10px 14px;background:rgba(12,18,32,.85);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
   .left-pack{display:flex;align-items:center;gap:10px}
   .app-title{font-weight:800;letter-spacing:.3px;font-size:18px;
-             background:linear-gradient(90deg,var(--accent3),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
-  .tabs{justify-self:center;display:flex;gap:10px;transform:translateX(40px)} /* 살짝 오른쪽으로 밀어 타이틀 확보 */
+             background:linear-gradient(90deg,var(--accent3),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent;white-space:nowrap}
+  .tabs{justify-self:center;display:flex;gap:10px;transform:translateX(40px)} /* 타이틀 확보 위해 살짝 우측 */
   .tab{border:1px solid var(--line);background:#0f172a;color:var(--text);padding:8px 12px;border-radius:999px;cursor:pointer}
   .tab.active{border-color:rgba(142,107,255,.6);box-shadow:0 0 12px rgba(142,107,255,.25),0 0 18px rgba(82,255,224,.18)}
   .right-pack{justify-self:end;display:flex;align-items:center;gap:8px}
@@ -33,10 +33,10 @@
   .hamburger{width:34px;height:26px;border:1px solid var(--line);border-radius:10px;display:grid;place-items:center;cursor:pointer;background:#0f172a}
   .hamburger span,.hamburger span:before,.hamburger span:after{content:"";display:block;width:16px;height:2px;background:#cfe0ff;border-radius:2px;position:relative}
   .hamburger span:before{position:absolute;transform:translateY(-6px)}.hamburger span:after{position:absolute;transform:translateY(6px)}
-  .dropdown{display:none;position:absolute;top:32px;left:0;background:var(--panel);border:1px solid var(--line);border-radius:12px;min-width:240px;overflow:hidden;z-index:120;box-shadow:0 18px 42px rgba(0,0,0,.45)}
+  .dropdown{display:none;position:absolute;top:32px;left:0;background:var(--panel);border:1px solid var(--line);border-radius:12px;min-width:240px;overflow:hidden;z-index:1200;box-shadow:0 18px 42px rgba(0,0,0,.45)}
   .dropdown a{display:block;padding:10px 12px;color:var(--text);text-decoration:none;border-bottom:1px solid rgba(255,255,255,.05)}
   .dropdown a:last-child{border-bottom:0}
-  .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;pointer-events:none;z-index:90}
+  .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;pointer-events:none;z-index:900}
   .backdrop.show{display:block;pointer-events:auto}
   .menu-text{text-decoration:underline;cursor:pointer}
 
@@ -47,7 +47,8 @@
 
   /* Library */
   .toolbar{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:12px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:12px;max-height:52vh;overflow:auto;padding-right:4px}
+  .grid::-webkit-scrollbar{width:8px}.grid::-webkit-scrollbar-thumb{background:#1c2946;border-radius:8px}
   .thumb{position:relative;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#0b1222;cursor:pointer}
   .thumb .skeleton{position:absolute;inset:0;background:linear-gradient(90deg,#0c1324 0%,#111a31 50%,#0c1324 100%);background-size:200% 100%;animation:shimmer 1.4s infinite}
   @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
@@ -171,7 +172,7 @@
 </main>
 
 <!-- Playlists modal -->
-<div id="plModal" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.45);z-index:1200">
+<div id="plModal" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.45);z-index:1500">
   <div style="width:min(700px,94vw);max-height:80vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 24px 64px rgba(0,0,0,.5)">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
       <h3 style="margin:0">Playlists</h3>
@@ -194,7 +195,7 @@
   </div>
 </div>
 
-<!-- Supabase (Lite와 동일한 클라이언트 사용; 안전 가드 포함) -->
+<!-- Supabase (Lite와 동일한 클라이언트; 가드 포함) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (() => {
@@ -202,7 +203,7 @@
   // 폴더 썸네일: folder.jpg / (영문) folder_e.jpg
   // 트랙 썸네일: <파일명>.jpg / (영문) <파일명>_E.jpg
   // /texts/*.txt 로더
-  // 아래 URL/KEY/BUCKET은 Lite에서 쓰던 값으로 맞춤 (없으면 UI만 떠 있고 목록은 비어있게 동작)
+  // 버킷명: media (확정)
   const SUPA_URL = "https://xdjgumqdwedgzwqturcx.supabase.co";
   const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
   const BUCKET   = "media";
@@ -249,8 +250,17 @@
     $('#timerBtn').textContent = t('timer');
     $('#playlistBtn').textContent = t('playlist');
     // playlist modal labels
-    const map=[['#plClose','close']];
-    map.forEach(([id,key])=>{ const el=$(id); if(el) el.textContent=t(key); });
+    $('#plClose').textContent = t('close');
+    document.querySelector('#plModal h3').textContent = t('pl');
+    document.querySelector('#plModal h4').textContent = t('manage');
+    $('#plNewName').placeholder = t('newName');
+    $('#plNewBtn').textContent = t('new');
+    $('#plRenameBtn').textContent = t('rename');
+    $('#plDeleteBtn').textContent = t('delete');
+    document.querySelectorAll('#plModal h4')[1].textContent = t('add');
+    $('#plAddCurrent').textContent = t('addPlaying');
+    $('#plAddAll').textContent = t('addAll');
+    $('#plLoad').textContent = t('loadQ');
   }
 
   // ====== Hamburger & Text Loader ======
@@ -286,7 +296,7 @@
     if(!modal){
       modal = document.createElement('div');
       modal.id='txtModal';
-      modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:1300';
+      modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:2000';
       modal.innerHTML = `<div style="background:var(--panel);border:1px solid var(--line);border-radius:14px;max-width:760px;width:92%;max-height:75vh;overflow:auto;padding:16px">
         <div style="text-align:right;margin-bottom:8px"><button id="txtClose" class="pill">${t('close')}</button></div>
         <pre id="txtBody" style="white-space:pre-wrap;line-height:1.6"></pre></div>`;
@@ -354,10 +364,11 @@
 
       // folders
       for(const f of folders){
-        const card=document.createElement('div'); card.className='thumb';
+        const card=document.createElement('div'); card.className='thumb'; card.dataset.type='folder'; card.dataset.name=f.name;
         const sk=document.createElement('div'); sk.className='skeleton'; card.appendChild(sk);
         const img=new Image(); img.loading='lazy'; img.onload=()=>sk.remove(); img.onerror=()=>{ sk.remove(); img.remove(); };
-        img.src = folderThumb(path ? `${path}/${f.name}` : f.name); card.appendChild(img);
+        const folderPath = path ? `${path}/${f.name}` : f.name;
+        img.src = folderThumb(folderPath); card.appendChild(img);
         const title=document.createElement('span'); title.className='t'; title.textContent = f.name; card.appendChild(title);
         card.addEventListener('click',()=>{ pathStack.push(f.name); buildThumbs(); });
         thumbs.appendChild(card);
@@ -365,15 +376,14 @@
 
       // files
       for(const file of files){
-        const card=document.createElement('div'); card.className='thumb';
+        const card=document.createElement('div'); card.className='thumb'; card.dataset.type='file'; card.dataset.name=file.name;
         const sk=document.createElement('div'); sk.className='skeleton'; card.appendChild(sk);
         const img=new Image(); img.loading='lazy'; img.onload=()=>sk.remove(); img.onerror=()=>{ sk.remove(); img.remove(); };
         img.src = trackThumb(path, file.name); card.appendChild(img);
         const title=document.createElement('span'); title.className='t'; title.textContent = file.name; card.appendChild(title);
-        card.addEventListener('click',()=>{
-          const url = trackUrl(path, file.name);
-          audioEl.src = url; audioEl.load();
-        });
+        const url = trackUrl(path, file.name);
+        card.dataset.href = url;  // 플레이리스트 'Add All Visible' 대비
+        card.addEventListener('click',()=>{ audioEl.src = url; audioEl.load(); });
         thumbs.appendChild(card);
       }
     }catch(err){
@@ -444,11 +454,9 @@
   $('#plAddAll').addEventListener('click',()=>{
     const name=$('#plSelect').value; if(!name) return;
     const db=plDB(); const arr=db[name]||[];
-    thumbs.querySelectorAll('.thumb').forEach(card=>{
-      const title=card.querySelector('.t')?.textContent||'';
-      const img=card.querySelector('img')?.src||'';
-      // 실제 플레이 URL은 카드 클릭 시 설정되므로 목록에는 타이틀만 저장하기보다 URL 필요.
-      // 여기서는 이미지 경로 대신 클릭 시 세팅했던 오디오 URL을 data-href로 저장하는 방식으로 개선.
+    document.querySelectorAll('#thumbs .thumb[data-type="file"]').forEach(card=>{
+      const url = card.dataset.href;
+      if(url) arr.push(url);
     });
     db[name]=arr; plSave(db); renderPlList();
   });
@@ -516,8 +524,7 @@
   $('#presetSelect').addEventListener('change',()=>{ const name=$('#presetSelect').value; if(!name) return; const f=gdb().find(p=>p.name===name); if(!f) return; const d=f.data||{}; genFreq.value=d.freq||'432'; genWave.value=d.wave||'sine'; genBinaural.checked=!!d.bin; genBeat.value=d.beat||'7'; genHarmonics.value=d.harm||'1'; genLevel.value=d.level||'50'; genBeat.disabled=!genBinaural.checked; });
 
   // ====== Init ======
-  document.addEventListener('DOMContentLoaded',()=>{}); // no-op (이미 실행 컨텍스트)
-  applyLang(); syncLoopBtn(); buildThumbs();
+  applyLang(); buildThumbs(); syncLoopBtn();
   // 초기 캔버스 표시 상태
   $('#viz').parentElement.style.display=''; $('#osc').parentElement.style.display='none';
 })();
