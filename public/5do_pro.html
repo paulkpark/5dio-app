@@ -140,22 +140,6 @@ header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10
 .preset-select{height:34px;border-radius:10px;border:1px solid rgba(120,180,200,.22);background:#0f1524;color:#cfead1;padding:0 10px}
 
 </style>
-<style>
-/* === 5DO Pro header single-line tuning === */
-header{ grid-template-columns:auto 1fr auto; }
-.brand{ white-space:nowrap; max-width:60vw; overflow:hidden; text-overflow:ellipsis; }
-.tabs{ justify-self:center; display:flex; gap:10px; transform:translateX(88px); }
-.right{ justify-self:end; display:flex; gap:8px; }
-@media (max-width:430px){
-  .tabs{ transform:translateX(78px); gap:8px; }
-  .brand{ max-width:66vw; }
-}
-@media (max-width:380px){
-  .tabs{ transform:translateX(70px); gap:6px; }
-  .brand{ max-width:70vw; }
-}
-</style>
-<script>window.START_AT_ROOT=true; try{localStorage.removeItem('libPath');}catch(_){}</script>
 </head>
 <body>
 
@@ -308,13 +292,13 @@ header{ grid-template-columns:auto 1fr auto; }
   </div>
 </div>
 
-<script src="./5DO Pro_files/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" crossorigin="anonymous"></script>
 <script>
 (() => {
   // ===== Supabase =====
   const SUPA_URL = "https://xdjgumqdwedgzwqturcx.supabase.co";
   const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
-  const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+  const supa = (window.supabase && window.supabase.createClient) ? window.supabase.createClient(SUPA_URL, SUPA_KEY) : null;
   const BUCKET = 'media';
   const PUBLIC_BASE = `${SUPA_URL}/storage/v1/object/public/${BUCKET}`;
 
@@ -326,6 +310,7 @@ header{ grid-template-columns:auto 1fr auto; }
   let lang = localStorage.getItem('lang') || 'ko';
   window.lang = lang;                  // ← 전역 반영
   const setLangLabel = ()=> langBtn.textContent = (lang==='en'?'EN':'KO');
+  setLangLabel();
 
   const strip = $('#strip');
   const player= $('#player');
@@ -412,9 +397,13 @@ header{ grid-template-columns:auto 1fr auto; }
       th.setAttribute('data-src', trackThumbJpg(path || '', file.name)); // lazy
       card.appendChild(th);
       const lb = document.createElement('div'); lb.className='label'; card.appendChild(lb);
+      const audioUrl = trackAudioUrl(path || '', file.name);
+      card.dataset.url = audioUrl;
+      card.dataset.filename = file.name;
+      card.dataset.path = (path || '');
       card.addEventListener('click', (e)=>{
         e.preventDefault(); e.stopPropagation();
-        const url = trackAudioUrl(path || '', file.name);
+        const url = audioUrl;
         card.dataset.url = audioUrl;          // ← 플레이리스트/큐 추가에서 사용
         card.dataset.filename = file.name;    // (옵션) 표시용
         card.dataset.path = (path || '');        // 로드만 하고 자동재생 금지
@@ -1039,11 +1028,11 @@ document.addEventListener('DOMContentLoaded', ()=>{
       const setup = ()=>{
         try{
           if(!window.audioCtx) window.audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-          if(!masterGain){ masterGain = audioCtx.createGain(); masterGain.gain.value = (parseFloat(level.value||'0.5'); masterGain.connect(audioCtx.destination); }
+          if(!masterGain){ masterGain = audioCtx.createGain(); masterGain.gain.value = (parseFloat(level.value||'0.5')); masterGain.connect(audioCtx.destination); }
         }catch(e){}
       };
       setup();
-      level.addEventListener('input', ()=>{ if(masterGain) masterGain.gain.value = (parseFloat(level.value||'0.5'); });
+      level.addEventListener('input', ()=>{ if(masterGain) masterGain.gain.value = (parseFloat(level.value||'0.5')); });
     }
 
     // Binaural checkbox wiring to enable/disable Difference
@@ -1196,71 +1185,78 @@ document.addEventListener('DOMContentLoaded', ()=>{
   loopBtn && loopBtn.addEventListener('click', ()=> setLoop(!loop));
   player.addEventListener('ended', ()=>{ if(loop){ try{ player.currentTime=0; player.play(); }catch(e){} } else { playAt(idx+1); } });
   timerBtn && timerBtn.addEventListener('click', ()=>{ const mins=prompt((window.lang==='en')?'Sleep timer (minutes)':'수면 타이머 (분)'); if(mins===null) return; const m=parseInt(mins,10); if(isNaN(m)||m<=0) return alert((window.lang==='en')?'Invalid minutes':'분 값을 확인하세요'); if(timerId) clearTimeout(timerId); timerId=setTimeout(()=>{ try{ player.pause(); }catch(e){} }, m*60000); alert((window.lang==='en')?`Timer set: ${m} min`:`타이머 설정: ${m}분`); });
-  function rebuild(){ playlist=[]; document.querySelectorAll('.files .card').forEach(c=>{ const url=c.getAttribute('data-url')||c.dataset.url||''; if(url) playlist.push(url); }); }
+  function rebuild(){ playlist=[]; document.querySelectorAll('#strip .card').forEach(c=>{ const url=c.getAttribute('data-url')||c.dataset.url||''; if(url) playlist.push(url); }); }
   function playAt(i){ if(!playlist.length) rebuild(); if(i<0||i>=playlist.length) return; idx=i; player.src=playlist[idx]; player.play().catch(()=>{}); }
-  document.addEventListener('click', (e)=>{ const card=e.target.closest('.files .card'); if(!card) return; rebuild(); const cards=Array.from(document.querySelectorAll('.files .card')); const i=cards.indexOf(card); if(i>=0) playAt(i); });
+  document.addEventListener('click', (e)=>{ const card=e.target.closest('#strip .card'); if(!card) return; rebuild(); const cards=Array.from(document.querySelectorAll('#strip .card')); const i=cards.indexOf(card); if(i>=0) playAt(i); });
 })();
 </script>
 
 <script>
+// === Safe bindings for Hamburger & Language Toggle ===
 (function(){
-  const $=s=>document.querySelector(s);
-  const strip=$('#strip'); const player=(window.audioEl||$('#player'));
-  if (!strip || !player) return;
-  function deriveUrlFromCard(card){
-    try{
-      if (card.dataset && card.dataset.url) return card.dataset.url;
-      const th=card.querySelector('.thumb');
-      let src=th?.getAttribute('data-src')||(th?.style?.backgroundImage||"");
-      src=src.replace(/^url\(["']?/, '').replace(/["']?\)$/, '');
-      const m=src.match(/^(.*\/)([^\/]+?)(?:_E)?\.jpg/i);
-      if (m) return m[1] + encodeURIComponent(m[2] + '.mp3');
-      const lb=card.querySelector('.label'); if(lb&&lb.textContent.trim()){
-        const stem=lb.textContent.trim(); const cur=window.currentMediaPath||'';
-        const base=cur?('media/'+cur.replace(/\/?$/, '/')):'media/';
-        return base + encodeURIComponent(stem + '.mp3');
-      }
-    }catch(e){}
-    return null;
-  }
-  strip.addEventListener('click', (e)=>{
-    const card=e.target.closest('.card'); if(!card) return;
-    e.preventDefault(); e.stopPropagation();
-    const url=deriveUrlFromCard(card); if(!url) return;
-    Array.from(strip.querySelectorAll('.card.selected')).forEach(c=>c.classList.remove('selected'));
-    card.classList.add('selected');
-    player.src=url; player.load?.(); player.play?.().catch(()=>{});
-    const th=card.querySelector('.thumb'); const statusThumb=document.getElementById('statusThumb');
-    if(statusThumb && th){
-      let src=th.getAttribute('data-src')||(th.style&&th.style.backgroundImage);
-      if(src){ src=src.replace(/^url\(["']?/, '').replace(/["']?\)$/, ''); statusThumb.classList.add('loaded'); statusThumb.style.backgroundImage=`url("${src}")`; }
-    }
-    const statusText=document.getElementById('statusText');
-    if(statusText) statusText.textContent=(window.lang==='en'?'Now playing':'재생 중');
-  }, {passive:false});
-})();
-</script>
+  const $  = (s)=>document.querySelector(s);
+  const $$ = (s)=>Array.from(document.querySelectorAll(s));
 
+  const menuBtn  = $('#menuBtn');
+  const menuDrop = $('#menuDrop');
+  const backdrop = $('#backdrop');
+  const langBtn  = $('#langToggle');
 
-<script>
-(function(){
-  if (window.__guardsDone) return; window.__guardsDone = true;
-  const $=s=>document.querySelector(s);
-  const menuBtn=$('#menuBtn'), menuDrop=$('#menuDrop'), backdrop=$('#backdrop'), langBtn=$('#langToggle');
+  // Language state
+  try {
+    if (!window.lang) window.lang = localStorage.getItem('lang') || 'ko';
+  } catch(_) { window.lang = 'ko'; }
+
   function applyLangSafe(){
-    if (typeof window.applyLang==='function') window.applyLang();
-    window.refreshPlaylistI18N?.();
+    // if project has applyLang use it, else update a few basics
+    if (typeof window.applyLang === 'function') {
+      window.applyLang();
+    } else {
+      // Update common labels if present
+      $('#tabLib') && ($('#tabLib').textContent = (window.lang==='en'?'5DO':'5DO'));
+      $('#tabGen') && ($('#tabGen').textContent = (window.lang==='en'?'Freq. Gen.':'주파수 생성기'));
+    }
+    if (langBtn) langBtn.textContent = (window.lang==='en'?'EN':'KO');
   }
-  if (menuBtn && menuDrop && backdrop){
-    const close=()=>{menuDrop.style.display='none'; backdrop.classList.remove('show');};
-    menuBtn.addEventListener('click',e=>{e.stopPropagation();const open=menuDrop.style.display==='block';menuDrop.style.display=open?'none':'block';backdrop.classList.toggle('show',!open);});
-    backdrop.addEventListener('click',close);
-    document.addEventListener('click',e=>{if(!menuDrop.contains(e.target)&&e.target!==menuBtn)close();});
+
+  // Hamburger
+  if (menuBtn && menuDrop && backdrop) {
+    const closeMenu = ()=>{ menuDrop.style.display='none'; backdrop.classList.remove('show'); };
+    menuBtn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const open = menuDrop.style.display==='block';
+      menuDrop.style.display = open ? 'none' : 'block';
+      backdrop.classList.toggle('show', !open);
+    });
+    backdrop.addEventListener('click', closeMenu);
+    document.addEventListener('click', (e)=>{
+      if (!menuDrop.contains(e.target) && e.target !== menuBtn) closeMenu();
+    });
+    // text links
+    $$('.menu-text').forEach(a=>a.addEventListener('click', async (e)=>{
+      e.preventDefault();
+      const name = a.dataset.file;
+      try {
+        const res = await fetch(`texts/${name}.txt?ts=${Date.now()}`, {cache:'no-store'});
+        const txt = await res.text();
+        alert(txt);
+      } catch(_){ alert(`[${name}.txt] 불러오기 실패`); }
+      closeMenu();
+    }));
   }
-  if (langBtn){
-    langBtn.addEventListener('click',()=>{ window.lang=(window.lang==='en')?'ko':'en'; try{localStorage.setItem('lang',window.lang);}catch(_){}
+
+  // Language toggle
+  if (langBtn) {
+    langBtn.addEventListener('click', ()=>{
+      window.lang = (window.lang==='en') ? 'ko' : 'en';
+      try { localStorage.setItem('lang', window.lang); } catch(_){}
+      // call project fn if exists
+      if (typeof window.buildThumbs === 'function') window.buildThumbs();
+      if (typeof window.renderPresetList === 'function') window.renderPresetList();
       applyLangSafe();
     });
+    // initial label
+    applyLangSafe();
   }
 })();
 </script>
