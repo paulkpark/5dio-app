@@ -140,6 +140,10 @@ header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10
 .preset-select{height:34px;border-radius:10px;border:1px solid rgba(120,180,200,.22);background:#0f1524;color:#cfead1;padding:0 10px}
 
 </style>
+<style>
+/* --- scope sizing patch --- */
+#osc{height:180px; min-height:160px; display:block;}
+</style>
 </head>
 <body>
 
@@ -1406,9 +1410,14 @@ document.addEventListener('DOMContentLoaded', ()=>{
 </script>
 
 
+
+
+
+<canvas id="osc" style="width:100%;height:180px;display:block;"></canvas>
+
 <script>
 (function(){
-  // ===== Stereo Oscilloscope (2x zoom, clipping guard, neon-green) =====
+  // ===== Stereo Oscilloscope v2 (2x zoom, clipping guard, robust stereo detect, neon-green) =====
   let scope = null, rafId = null, retryId = null;
 
   function haveGenNodes(){
@@ -1417,17 +1426,52 @@ document.addEventListener('DOMContentLoaded', ()=>{
     return { AC, gain };
   }
 
+  function getBinauralState(){
+    // Prefer explicit UI checkbox if present
+    const candidates = [
+      '#genBinaural', '#gBB', '#binaural', 'input[name="binaural"]',
+      '[data-binaural="1"]', '[data-role="binaural"]'
+    ];
+    for (const sel of candidates){
+      const el = document.querySelector(sel);
+      if (el && 'checked' in el) return !!el.checked;
+    }
+    // Fallback: infer by oscillator frequencies if exposed
+    try{
+      const L = window.gOscL, R = window.gOscR;
+      if (L && R && L.frequency && R.frequency){
+        const dl = Math.abs((L.frequency.value || 0) - (R.frequency.value || 0));
+        return dl > 0.01;
+      }
+    }catch(_){}
+    return false;
+  }
+
+  function ensureCanvasSize(c, ctx2d){
+    const dpr = window.devicePixelRatio || 1;
+    // If no explicit css height, enforce 180px
+    const cssH = (c.clientHeight || 0);
+    const hCss = cssH > 0 ? cssH : 180;
+    const cssW = c.clientWidth || c.offsetWidth || 600;
+    const w = Math.max(240, cssW);
+    const h = Math.max(120, hCss);
+    c.width  = Math.floor(w * dpr);
+    c.height = Math.floor(h * dpr);
+    ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return {w, h};
+  }
+
   function initOscScope(){
     const canvas = document.getElementById('osc');
     if (!canvas) return false;
-    const ctx2d = canvas.getContext('2d');
+    const ctx2d  = canvas.getContext('2d');
 
     const { AC, gain } = haveGenNodes();
     if (!AC || !gain) return false;
 
     // Avoid duplicate wiring
-    if (window.__scopeConnected) {
-      scope = window.__scopeConnected;
+    if (window.__scopeConnectedV2) {
+      scope = window.__scopeConnectedV2;
       return true;
     }
 
@@ -1442,43 +1486,30 @@ document.addEventListener('DOMContentLoaded', ()=>{
     splitter.connect(anaL, 0);
     splitter.connect(anaR, 1);
 
-    scope = window.__scopeConnected = {
-      canvas, ctx2d, anaL, anaR, zoom: 2, running: true
-    };
+    const zoom = 2; // 2x
+    scope = window.__scopeConnectedV2 = { canvas, ctx2d, anaL, anaR, zoom, running:true };
 
-    const resize = ()=>{
-      const dpr = window.devicePixelRatio || 1;
-      const w = Math.max(240, canvas.clientWidth || canvas.offsetWidth || 600);
-      const h = Math.max(120, canvas.clientHeight || canvas.offsetHeight || 220);
-      canvas.width  = Math.floor(w * dpr);
-      canvas.height = Math.floor(h * dpr);
-      ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
-    };
-    resize(); window.addEventListener('resize', resize);
+    const resize = ()=> { ensureCanvasSize(canvas, ctx2d); };
+    resize(); window.addEventListener('resize', resize, {passive:true});
 
-    // Start draw loop
     if (rafId) cancelAnimationFrame(rafId);
     const draw = ()=>{
       if (!scope || !scope.running){ rafId = requestAnimationFrame(draw); return; }
       const { ctx2d, anaL, anaR, zoom } = scope;
-      const dpr = window.devicePixelRatio || 1;
-      const w = scope.canvas.width  / dpr;
-      const h = scope.canvas.height / dpr;
+      const size = ensureCanvasSize(scope.canvas, ctx2d);
+      const w = size.w, h = size.h;
+      const isBinaural = getBinauralState();
 
-      // Binaural check (auto-detect common ids)
-      const bbEl = document.getElementById('genBinaural') || document.getElementById('gBB');
-      const isBinaural = !!(bbEl && bbEl.checked);
-
-      // Background clear
+      // Clear
       ctx2d.clearRect(0,0,w,h);
 
       // Neon green style
-      ctx2d.lineWidth = 1.5;
+      ctx2d.lineWidth = 1.6;
       ctx2d.strokeStyle = '#39ff14';
       ctx2d.shadowColor = '#39ff14';
-      ctx2d.shadowBlur = 6;
+      ctx2d.shadowBlur = 8;
 
-      // Guide lines
+      // Guides
       ctx2d.save();
       ctx2d.globalAlpha = 0.22;
       ctx2d.beginPath();
@@ -1497,13 +1528,13 @@ document.addEventListener('DOMContentLoaded', ()=>{
         const data = new Uint8Array(N);
         analyser.getByteTimeDomainData(data);
 
-        const amp = 0.5 * zoom; // 2x -> 1.0
+        const amp = 0.5 * zoom; // 1x:0.5 → 2x:1.0
         ctx2d.beginPath();
         for (let i=0;i<N;i++){
           const v = (data[i]-128)/128; // -1..+1
           let y = (v * amp + 0.5) * segH + yTop;
-          if (y < yTop) y = yTop;
-          if (y > yTop + segH - 1) y = yTop + segH - 1;
+          if (y < yTop) y = yTop;               // top clip
+          if (y > yTop + segH - 1) y = yTop + segH - 1; // bottom clip
           const x = (i/(N-1))*w;
           if (i===0) ctx2d.moveTo(x,y); else ctx2d.lineTo(x,y);
         }
@@ -1524,14 +1555,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
   }
 
   function ensureScope(){
-    // Try once now
     if (initOscScope()) return;
-    // Retry until gen nodes appear
     if (retryId) clearInterval(retryId);
     retryId = setInterval(()=>{
-      if (initOscScope()){
-        clearInterval(retryId); retryId = null;
-      }
+      if (initOscScope()){ clearInterval(retryId); retryId=null; }
     }, 400);
   }
 
@@ -1543,6 +1570,66 @@ document.addEventListener('DOMContentLoaded', ()=>{
   } else {
     ensureScope();
   }
+})();
+</script>
+
+
+<script>
+(function(){
+  // Stronger keep-alive: a near-silent oscillator routed to a hidden <audio> via MediaStreamDestination.
+  // This tends to keep iOS audio session alive better than data-URI MP3.
+  const genBg = document.getElementById('genBg') || (function(){
+    const a = document.createElement('audio');
+    a.id = 'genBg'; a.style.display='none'; a.setAttribute('playsinline',''); a.setAttribute('webkit-playsinline','');
+    document.body.appendChild(a);
+    return a;
+  })();
+
+  let attached = false;
+  async function tryAttach(){
+    try{
+      const ctx = (window.gctx || window.audioCtx || new (window.AudioContext||window.webkitAudioContext)());
+      window._keepAliveCtx = ctx;
+      if (!window._genMsDest) window._genMsDest = ctx.createMediaStreamDestination();
+      // build a near-silent oscillator if not present
+      if (!window._keepAliveOsc){
+        const osc = ctx.createOscillator();
+        const g   = ctx.createGain();
+        osc.type='sine'; osc.frequency.value = 30; // low freq, minimal power
+        g.gain.value = 0.0001; // near-silent but non-zero
+        osc.connect(g); g.connect(window._genMsDest);
+        osc.start();
+        window._keepAliveOsc = osc;
+      }
+      genBg.srcObject = window._genMsDest.stream;
+      genBg.loop = true;
+      await genBg.play().catch(()=>{});
+      attached = true;
+    }catch(_){}
+  }
+
+  // Engage on first user gesture and whenever main playback is active and page hidden
+  function engageIfHidden(){
+    if (document.visibilityState === 'hidden') tryAttach();
+  }
+  document.addEventListener('visibilitychange', engageIfHidden);
+  document.addEventListener('click', ()=> tryAttach(), {once:true});
+  document.addEventListener('touchend', ()=> tryAttach(), {once:true});
+  // Also small heartbeat
+  setInterval(()=>{ if (document.visibilityState==='hidden') tryAttach(); }, 5000);
+})();
+</script>
+
+
+<script>
+(function(){
+  const st = document.getElementById('statusThumb') || document.getElementById('loadingThumb');
+  if (st){
+    st.classList.remove('loaded');
+    st.style.backgroundImage = 'none'; // default blank
+  }
+  const t = document.getElementById('statusText');
+  if (t) t.textContent = (window.lang==='en'?'Ready':'대기');
 })();
 </script>
 
