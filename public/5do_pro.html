@@ -86,7 +86,7 @@
 
 /* Header grid: left | center(tabs) | right(lang) */
 /* overridden below */
-.tabs{justify-self:center;display:flex;gap:8px}
+.tabs{justify-self:center;display:flex;gap:8px;transform:translateX(clamp(8px,2vw,22px))}
 .tab{padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:#171d2b;color:#dfe7f6;cursor:pointer;font-size:.85rem}
 .tab.active{background:#1f2739;border-color:#334}
 .right-pack{display:flex;align-items:center;gap:10px;justify-self:end}
@@ -115,13 +115,13 @@
 #gen .row-bb-harm{ display:grid; grid-template-columns:1fr 1fr; gap:12px }
 #gen .row-bb-harm .field{ min-height:68px }
 
-/* header overridden below */.tabs{justify-self:center;display:flex;gap:8px}.tab{padding:6px 10px;border:1px solid var(--border);border-radius:10px;background:#101826;color:#cfead1;cursor:pointer;font-size:.86rem}.tab.active{background:#182131}.right-pack{display:flex;align-items:center;gap:10px;justify-self:end}
+/* header overridden below */.tabs{justify-self:center;display:flex;gap:8px;transform:translateX(clamp(8px,2vw,22px))}.tab{padding:6px 10px;border:1px solid var(--border);border-radius:10px;background:#101826;color:#cfead1;cursor:pointer;font-size:.86rem}.tab.active{background:#182131}.right-pack{display:flex;align-items:center;gap:10px;justify-self:end}
 .section{display:none}.section.active{display:block}
 .mini-select{height:38px;border-radius:10px;border:1px solid rgba(120,180,200,.22);background:#0f1524;color:#cfead1;padding:0 8px}
 
 /* === header override === */
 header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
-.tabs{justify-self:center;display:flex;gap:10px}
+.tabs{justify-self:center;display:flex;gap:10px;transform:translateX(clamp(8px,2vw,22px))}
 .tab{padding:6px 12px;border:1px solid var(--border);border-radius:12px;background:#101826;color:#cfead1;cursor:pointer;font-size:.86rem}
 .tab.active{background:#182131}
 .right-pack{display:flex;align-items:center;gap:10px;justify-self:end}
@@ -624,6 +624,351 @@ document.addEventListener('DOMContentLoaded', ()=>{
   document.addEventListener('DOMContentLoaded', ()=>{
     const lg=document.getElementById('langToggle');
     lg && lg.addEventListener('click', ()=>{ setTimeout(renderPresetList, 0); });
+  });
+})();
+</script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', ()=>{
+  const tabs=document.querySelectorAll('.tab');
+  const viz=document.querySelector('.visual-wrap');
+  function apply(target){
+    if(viz){ viz.style.display = (target==='gen') ? 'none' : ''; }
+  }
+  tabs.forEach(t=>t.addEventListener('click', ()=>apply(t.dataset.target)));
+  // initialize
+  const active=document.querySelector('.tab.active'); if(active) apply(active.dataset.target);
+});
+</script>
+
+
+<script>
+(function(){
+  // Full i18n for Generator (EN/KR)
+  window.GEN_I18N = {
+    en: {
+      frequency: "Frequency",
+      waveform: "Waveform",
+      binaural: "Binaural",
+      difference: "Difference (Hz)",
+      harmonics: "Harmonics",
+      play: "Play",
+      pause: "Pause",
+      save: "Save Preset",
+      del: "Delete Preset",
+      selectPreset: "Select Preset",
+      saved: "Preset saved",
+      deleted: "Preset deleted",
+      noPreset: "No preset",
+      tooltipPlayPause: "Play/Pause",
+      tooltipSave: "Save Preset",
+      tooltipDelete: "Delete Preset"
+    },
+    ko: {
+      frequency: "주파수",
+      waveform: "파형",
+      binaural: "바이노럴",
+      difference: "차이 (Hz)",
+      harmonics: "배음",
+      play: "재생",
+      pause: "일시정지",
+      save: "프리셋 저장",
+      del: "프리셋 삭제",
+      selectPreset: "프리셋 선택",
+      saved: "프리셋 저장됨",
+      deleted: "프리셋 삭제됨",
+      noPreset: "프리셋 없음",
+      tooltipPlayPause: "재생/일시정지",
+      tooltipSave: "프리셋 저장",
+      tooltipDelete: "프리셋 삭제"
+    }
+  };
+
+  window.updateGeneratorLang = function(){
+    const lang = (window.lang==='en') ? 'en' : 'ko';
+    const L = window.GEN_I18N[lang];
+    function T(id, text){ const el = document.getElementById(id); if(el) el.textContent = text; }
+    // Labels (assumes label containers have these ids or data-i18n attributes)
+    const elFreq = document.querySelector('[data-i18n="frequency"], #lblFrequency h4, #lblFrequency label, label[for="genFreq"]');
+    const elWave = document.querySelector('[data-i18n="waveform"], #lblWaveform h4, #lblWaveform label, label[for="genWave"]');
+    const elBin  = document.querySelector('[data-i18n="binaural"], #lblBinaural h4, #lblBinaural label');
+    const elDiff = document.querySelector('[data-i18n="difference"], label[for="genBeat"]');
+    const elHar  = document.querySelector('[data-i18n="harmonics"], #lblHarmonics h4, #lblHarmonics label, label[for="genHarmonics"]');
+
+    if(elFreq) elFreq.textContent = L.frequency;
+    if(elWave) elWave.textContent = L.waveform;
+    if(elBin)  elBin.textContent  = L.binaural;
+    if(elDiff) elDiff.textContent = L.difference;
+    if(elHar)  elHar.textContent  = L.harmonics;
+
+    // Buttons (tooltips/titles)
+    const btnToggle = document.getElementById('genToggle');
+    const btnSave   = document.getElementById('btnSavePreset');
+    const btnDel    = document.getElementById('btnDeletePreset');
+    const presetSel = document.getElementById('presetSelect');
+
+    if(btnToggle){ btnToggle.title = L.tooltipPlayPause; btnToggle.setAttribute('aria-label', L.tooltipPlayPause); }
+    if(btnSave){ btnSave.title = L.tooltipSave; btnSave.setAttribute('aria-label', L.tooltipSave); }
+    if(btnDel){ btnDel.title = L.tooltipDelete; btnDel.setAttribute('aria-label', L.tooltipDelete); }
+    if(presetSel){
+      // localize first placeholder option ONLY if no selection
+      if(presetSel.selectedIndex === 0){
+        presetSel.options[0].textContent = L.selectPreset;
+      }
+    }
+
+    // Save normalized messages for alerts elsewhere
+    window.GEN_MSG = {
+      saved: L.saved,
+      deleted: L.deleted,
+      noPreset: L.noPreset
+    };
+  };
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    // initial
+    window.updateGeneratorLang && window.updateGeneratorLang();
+    // reapply on lang toggle
+    const lg = document.getElementById('langToggle');
+    if(lg){ lg.addEventListener('click', ()=> setTimeout(()=> window.updateGeneratorLang && window.updateGeneratorLang(), 0)); }
+  });
+})();
+</script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', ()=>{
+  const diffInput = document.getElementById('genBeat');
+  const binChk    = document.getElementById('genBinaural');
+  // If either not found, do nothing
+  if(!diffInput || !binChk) return;
+
+  // 1) Ensure Difference label exists and move checkbox directly before it
+  let diffLabel = document.querySelector('label[for="genBeat"]');
+  if(!diffLabel){
+    // Create a label if missing
+    diffLabel = document.createElement('label');
+    diffLabel.setAttribute('for','genBeat');
+    diffLabel.dataset.i18n = 'difference';
+    diffLabel.textContent = (window.lang==='en')?'Difference (Hz)':'차이 (Hz)';
+    diffInput.parentElement && diffInput.parentElement.insertBefore(diffLabel, diffInput);
+  }
+
+  // 2) Remove any "Enable" text next to the checkbox
+  // If checkbox is within a label like <label><input id="genBinaural"> Enable</label>, strip the text node
+  if(binChk.parentElement && binChk.parentElement.tagName.toLowerCase()==='label'){
+    // Keep only the checkbox in that label
+    binChk.parentElement.textContent = '';
+    binChk.parentElement.appendChild(binChk);
+  }
+
+  // 3) Place checkbox before the Difference label
+  diffLabel.parentElement && diffLabel.parentElement.insertBefore(binChk, diffLabel);
+
+  // 4) Toggle enabling of Difference input based on checkbox
+  function applyState(){
+    const on = binChk.checked;
+    diffInput.disabled = !on;
+    diffInput.style.opacity = on ? '' : '0.5';
+  }
+  binChk.addEventListener('change', applyState);
+  applyState();
+});
+</script>
+
+<style>
+/* === Playlist Manager === */
+#plModal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.45);z-index:9999}
+#plSheet{width:min(680px,94vw);max-height:80vh;overflow:auto;background:#0f1524;border:1px solid #2a3044;border-radius:16px;box-shadow:0 24px 64px rgba(0,0,0,.5);padding:16px}
+#plHeader{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+#plHeader h3{margin:0;font-size:1.05rem;color:#e7efff}
+#plClose{background:transparent;border:0;color:#9fb7ff;font-size:20px;cursor:pointer}
+#plGrid{display:grid;grid-template-columns: 1fr 1fr; gap:14px}
+#plLeft, #plRight{border:1px solid #2a3044;border-radius:12px;padding:12px;min-height:220px;background:#101728}
+#plLeft h4, #plRight h4{margin:0 0 8px;color:#dfe7f6;font-size:.95rem}
+.pl-row{display:flex;align-items:center;gap:8px;margin:6px 0}
+.pl-row input[type="text"]{flex:1;min-width:0;border:1px solid #2a3044;border-radius:10px;padding:8px 10px;background:#0f1524;color:#dfe7f6}
+.pl-btn{height:34px;padding:0 10px;border-radius:10px;border:1px solid #2a3044;background:#0f1524;color:#dfe7f6;cursor:pointer}
+.pl-btn:hover{filter:brightness(1.06)}
+.pl-list{display:flex;flex-direction:column;gap:6px;max-height:240px;overflow:auto}
+.pl-item{display:flex;align-items:center;justify-content:space-between;border:1px solid #2a3044;border-radius:10px;padding:8px 10px;background:#0f1524;color:#cfead1}
+.pl-item .act{display:flex;gap:6px}
+.small{font-size:.82rem;opacity:.75}
+</style>
+
+<div id="plModal">
+  <div id="plSheet">
+    <div id="plHeader">
+      <h3>Playlists</h3>
+      <button id="plClose" aria-label="Close">✕</button>
+    </div>
+    <div id="plGrid">
+      <div id="plLeft">
+        <h4>Manage</h4>
+        <div class="pl-row">
+          <input id="plNewName" type="text" placeholder="New playlist name">
+          <button id="plNewBtn" class="pl-btn">New</button>
+        </div>
+        <div class="pl-row">
+          <select id="plSelect" class="preset-select" style="flex:1"></select>
+          <button id="plRenameBtn" class="pl-btn">Rename</button>
+          <button id="plDeleteBtn" class="pl-btn">Delete</button>
+        </div>
+        <div class="pl-list" id="plList"></div>
+      </div>
+      <div id="plRight">
+        <h4>Add / Load</h4>
+        <div class="pl-row">
+          <button id="plAddCurrent" class="pl-btn">Add Playing</button>
+          <button id="plAddAll" class="pl-btn">Add All Visible</button>
+        </div>
+        <div class="pl-row">
+          <button id="plLoad" class="pl-btn" style="flex:1">Load Playlist to Player Queue</button>
+        </div>
+        <div class="small">Tip: “Add All Visible”는 현재 보이는 카드들을 순서대로 플레이리스트에 추가합니다.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+(function(){
+  // Storage structure: { name: [{url, title}], ... }
+  const KEY='userPlaylists';
+  const $=s=>document.querySelector(s);
+  const $$=s=>Array.from(document.querySelectorAll(s));
+  function getDB(){ try{ return JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(e){ return {}; } }
+  function setDB(db){ localStorage.setItem(KEY, JSON.stringify(db)); }
+  function listNames(){ return Object.keys(getDB()); }
+  function ensure(name){ const db=getDB(); if(!db[name]){ db[name]=[]; setDB(db);} }
+  function addTrack(name, url, title){ ensure(name); const db=getDB(); db[name].push({url,title}); setDB(db); }
+  function setTracks(name, arr){ ensure(name); const db=getDB(); db[name]=arr; setDB(db); }
+  function getTracks(name){ const db=getDB(); return db[name]||[]; }
+  function renameList(oldName, newName){ const db=getDB(); if(!db[oldName]) return; if(db[newName]) return; db[newName]=db[oldName]; delete db[oldName]; setDB(db); }
+  function deleteList(name){ const db=getDB(); delete db[name]; setDB(db); }
+
+  // UI refs
+  const modal = $('#plModal');
+  const openBtn = $('#playlistBtn');
+  const closeBtn = $('#plClose');
+  const plNewName = $('#plNewName');
+  const plNewBtn = $('#plNewBtn');
+  const plSelect = $('#plSelect');
+  const plRenameBtn = $('#plRenameBtn');
+  const plDeleteBtn = $('#plDeleteBtn');
+  const plList = $('#plList');
+  const plAddCurrent = $('#plAddCurrent');
+  const plAddAll = $('#plAddAll');
+  const plLoad = $('#plLoad');
+
+  function open(){ if(modal) modal.style.display='flex'; refresh(); }
+  function close(){ if(modal) modal.style.display='none'; }
+  openBtn && openBtn.addEventListener('click', open);
+  closeBtn && closeBtn.addEventListener('click', close);
+  modal && modal.addEventListener('click', (e)=>{ if(e.target===modal) close(); });
+
+  function refresh(){
+    // select
+    if(!plSelect) return;
+    const names = listNames().sort();
+    plSelect.innerHTML='';
+    names.forEach(n=>{ const o=document.createElement('option'); o.value=n; o.textContent=n; plSelect.appendChild(o); });
+    renderList();
+  }
+  function renderList(){
+    if(!plList) return; plList.innerHTML='';
+    const name = plSelect && plSelect.value;
+    if(!name){ plList.innerHTML='<div class="small">No playlist selected</div>'; return; }
+    const rows = getTracks(name);
+    rows.forEach((t,i)=>{
+      const row=document.createElement('div'); row.className='pl-item';
+      const left=document.createElement('div'); left.textContent = (t.title||'') + ' '; left.className='truncate';
+      const right=document.createElement('div'); right.className='act';
+      const up=document.createElement('button'); up.className='pl-btn'; up.textContent='↑';
+      const down=document.createElement('button'); down.className='pl-btn'; down.textContent='↓';
+      const del=document.createElement('button'); del.className='pl-btn'; del.textContent='✕';
+      up.addEventListener('click', ()=>{ const arr=getTracks(name); if(i<=0) return; const a=arr[i-1]; arr[i-1]=arr[i]; arr[i]=a; setTracks(name, arr); renderList(); });
+      down.addEventListener('click', ()=>{ const arr=getTracks(name); if(i>=arr.length-1) return; const a=arr[i+1]; arr[i+1]=arr[i]; arr[i]=a; setTracks(name, arr); renderList(); });
+      del.addEventListener('click', ()=>{ const arr=getTracks(name); arr.splice(i,1); setTracks(name, arr); renderList(); });
+      right.append(up,down,del); row.append(left,right); plList.appendChild(row);
+    });
+  }
+
+  // Manage
+  plNewBtn && plNewBtn.addEventListener('click', ()=>{
+    const name = (plNewName.value||'').trim();
+    if(!name) return;
+    const db=getDB(); if(db[name]){ alert('이미 존재하는 이름입니다'); return; }
+    db[name]=[]; setDB(db); plNewName.value=''; refresh(); plSelect.value=name; renderList();
+  });
+  plRenameBtn && plRenameBtn.addEventListener('click', ()=>{
+    const name = plSelect.value; if(!name) return;
+    const next = prompt('새 이름', name); if(!next || next===name) return;
+    const db=getDB(); if(db[next]){ alert('이미 존재하는 이름입니다'); return; }
+    renameList(name, next); refresh(); plSelect.value=next; renderList();
+  });
+  plDeleteBtn && plDeleteBtn.addEventListener('click', ()=>{
+    const name = plSelect.value; if(!name) return;
+    if(!confirm(`'${name}' 삭제할까요?`)) return;
+    deleteList(name); refresh();
+  });
+  plSelect && plSelect.addEventListener('change', renderList);
+
+  // Add tracks
+  function currentPlaying(){
+    const audio = document.getElementById('player');
+    if(!audio) return null;
+    return {url: audio.currentSrc || audio.src, title: document.querySelector('.now-title')?.textContent || ''};
+  }
+  plAddCurrent && plAddCurrent.addEventListener('click', ()=>{
+    const name = plSelect.value; if(!name) return;
+    const cur = currentPlaying(); if(!cur || !cur.url){ alert('재생중인 항목이 없습니다'); return; }
+    addTrack(name, cur.url, cur.title||cur.url.split('/').pop());
+    renderList();
+  });
+  plAddAll && plAddAll.addEventListener('click', ()=>{
+    const name = plSelect.value; if(!name) return;
+    const cards = $$('.files .card');
+    if(!cards.length){ alert('추가할 카드가 없습니다'); return; }
+    const tracks = cards.map(c=>({ url: c.getAttribute('data-url')||c.dataset.url||'', title: c.querySelector('.t')?.textContent||''})).filter(t=>t.url);
+    const arr = getTracks(name).concat(tracks);
+    setTracks(name, arr); renderList();
+  });
+
+  // Load playlist into player queue
+  plLoad && plLoad.addEventListener('click', ()=>{
+    const name = plSelect.value; if(!name) return;
+    const rows = getTracks(name); if(!rows.length){ alert('플레이리스트가 비어 있습니다'); return; }
+    // Wire into existing simple queue used by library player
+    const player = $('#player'); if(!player) return;
+    window._libPlaylist = rows.map(r=>r.url);
+    window._libIndex = -1;
+    function playAt(i){
+      if(!window._libPlaylist || !window._libPlaylist.length) return;
+      if(i<0 || i>=window._libPlaylist.length) return;
+      window._libIndex = i;
+      player.src = window._libPlaylist[i];
+      player.play().catch(()=>{});
+    }
+    // expose playAt globally if not already
+    window.playAt = playAt;
+    playAt(0);
+    close();
+  });
+
+  // If a basic library queue exists in page, enhance 'ended' behavior
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const player = $('#player');
+    if(player){
+      player.addEventListener('ended', ()=>{
+        if(window._libPlaylist && window._libPlaylist.length){
+          const next = (window._libIndex||0)+1;
+          if(next < window._libPlaylist.length) window.playAt(next);
+        }
+      });
+    }
   });
 })();
 </script>
