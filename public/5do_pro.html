@@ -1344,4 +1344,65 @@ document.addEventListener('DOMContentLoaded', ()=>{
 })();
 </script>
 
+
+<audio id="keeperAudio" src="data:audio/mp3;base64,/+MYxAAAAANIAAAAAExBTUUzLjk4LjIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" style="display:none" loop playsinline webkit-playsinline></audio>
+
+<script>
+(function(){
+  const player = document.getElementById('player');
+  const keeper = document.getElementById('keeperAudio');
+  if (!player || !keeper) return;
+
+  keeper.volume = 0.0; // inaudible
+
+  async function keepAliveOnHide(){
+    try{
+      // If user intended to play, keep both alive
+      if (!player.paused){
+        // re-assert play on main player (some iOS versions pause on lock)
+        await player.play().catch(()=>{});
+        // run tiny silent loop to keep audio session active
+        await keeper.play().catch(()=>{});
+      }
+    }catch(_){}
+  }
+  function stopKeeperOnShow(){
+    try{ keeper.pause(); keeper.currentTime = 0; }catch(_){}
+  }
+
+  document.addEventListener('visibilitychange', ()=>{
+    if (document.visibilityState === 'hidden'){ keepAliveOnHide(); }
+    else { stopKeeperOnShow(); }
+  });
+
+  // When user hits play, ensure keeper is also ready for the next hide
+  player.addEventListener('play', ()=>{ try{ keeper.load(); }catch(_){} });
+
+  // Safety: on page show, try to resume both
+  window.addEventListener('pageshow', ()=>{
+    if (!player.paused){ player.play().catch(()=>{}); }
+    stopKeeperOnShow();
+  });
+})();
+</script>
+
+
+<script>
+(function(){
+  const player = document.getElementById('player');
+  if (!player) return;
+  let timer = null;
+  document.addEventListener('visibilitychange', ()=>{
+    if (document.visibilityState === 'hidden'){
+      if (timer) return;
+      timer = setInterval(()=>{
+        if (!player.paused){ player.play().catch(()=>{}); }
+      }, 4000); // every 4s gently re-assert play
+    }else{
+      if (timer){ clearInterval(timer); timer = null; }
+    }
+  });
+})();
+</script>
+
 </body></html>
