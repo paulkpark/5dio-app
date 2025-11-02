@@ -523,12 +523,11 @@
   $('#btnDeletePreset').addEventListener('click',()=>{ const name=$('#presetSelect').value; if(!name) return; gsave(gdb().filter(p=>p.name!==name)); renderPresetList(); });
   $('#presetSelect').addEventListener('change',()=>{ const name=$('#presetSelect').value; if(!name) return; const f=gdb().find(p=>p.name===name); if(!f) return; const d=f.data||{}; genFreq.value=d.freq||'432'; genWave.value=d.wave||'sine'; genBinaural.checked=!!d.bin; genBeat.value=d.beat||'7'; genHarmonics.value=d.harm||'1'; genLevel.value=d.level||'50'; genBeat.disabled=!genBinaural.checked; });
 
-    // ====== Init ======
+     // ====== Init ======
   applyLang(); buildThumbs(); syncLoopBtn();
-  // 초기 캔버스 표시 상태
   document.querySelector('#viz').parentElement.style.display='';
   document.querySelector('#osc').parentElement.style.display='none';
-});
+})();
 </script>
 </body>
 </html>
