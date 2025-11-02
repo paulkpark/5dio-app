@@ -42,7 +42,7 @@
   .toolbar{display:flex;align-items:center;gap:10px;padding:10px 14px 6px}
    .icon-btn{display:flex;align-items:center;justify-content:center;height:30px;border-radius:10px;border:1px solid rgba(120,180,200,.22);background:#0f1524;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)} 
   .icon-btn:hover{box-shadow:inset 0 0 16px rgba(126,241,192,.12)}
-  .icon{width:18px;height:18px;stroke:#cfead1;fill:none;stroke-width:2;opacity:.95}
+  .icon{width: 26px;height: 26px;stroke:#cfead1;fill:none;stroke-width:2;opacity:.95}
   .icon path{stroke:url(#grad);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 2px rgba(126,241,192,.35))}
   svg defs linearGradient stop:nth-child(1){stop-color:var(--accent)}
   svg defs linearGradient stop:nth-child(2){stop-color:var(--accent2)}
@@ -133,11 +133,20 @@ header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10
 
 
 /* minimal square control buttons */
-.ctrlbar{display:grid;grid-template-columns:34px 34px 34px 1fr;gap:8px;align-items:center}
+.ctrlbar{display:grid;grid-template-columns: 52px 52px 52px 1fr;gap:8px;align-items:center}
  .icon-btn{display:flex;align-items:center;justify-content:center;height:30px;border-radius:10px;border:1px solid rgba(120,180,200,.22);background:#0f1524;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)} 
 .icon-btn:hover{filter:brightness(1.06)}
-.icon{width:18px;height:18px;stroke:#cfead1;fill:none;stroke-width:2;opacity:.95}
-.preset-select{height:34px;border-radius:10px;border:1px solid rgba(120,180,200,.22);background:#0f1524;color:#cfead1;padding:0 10px}
+.icon{width: 26px;height: 26px;stroke:#cfead1;fill:none;stroke-width:2;opacity:.95}
+.preset-select{height: 52px;border-radius:10px;border:1px solid rgba(120,180,200,.22);background:#0f1524;color:#cfead1;padding:0 10px}
+
+
+/* === Mobile quick actions for Library player === */
+.quick-actions{display:flex; gap:10px; margin:10px 0 0; flex-wrap:wrap}
+.mobile-only{display:none}
+@media (max-width: 768px){
+  .mobile-only{display:flex}
+  .toolbar .pill{display:none} /* hide desktop buttons on mobile */
+}
 
 </style>
 </head>
@@ -195,6 +204,10 @@ header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10
       <path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v6h-6"></path>
     </svg>
   </button>
+
+  <button id="loopBtn" class="pill">Loop</button>
+  <button id="timerBtn" class="pill">Timer</button>
+  <button id="playlistBtn" class="pill">Playlist</button>
 </div>
 
 <!-- Horizontal thumbnails -->
@@ -207,6 +220,13 @@ header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10
     <div class="muted" id="statusText"></div>
   </div>
   <audio id="player" controls crossorigin="anonymous"></audio>
+
+<div id="qaBar" class="quick-actions mobile-only">
+  <button id="loopBtnM" class="pill">Loop</button>
+  <button id="timerBtnM" class="pill">Timer</button>
+  <button id="playlistBtnM" class="pill">Playlist</button>
+</div>
+
 </div>
 
 <!-- Spectrum Visualizer -->
@@ -234,8 +254,8 @@ header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10
 
       <div class="field">
         <h4 id="lblBB">Binaural</h4>
-        <label><input id="genBinaural" type="checkbox"> <span id="lblBBEnable">Enable</span></label>
-        <label id="lblBBdiff" for="genBeat">Difference (Hz)</label>
+        <label><input id="genBinaural" type="checkbox"> </label>
+        <input id="genBinaural" type="checkbox" style="margin-right:8px;"> <label id="lblBBdiff" for="genBeat"><span data-i18n="difference">Difference (Hz)</span></label>
         <input id="genBeat" type="number" min="0" max="1000" step="0.1" value="7">
       </div>
       <div class="field">
@@ -973,15 +993,154 @@ document.addEventListener('DOMContentLoaded', ()=>{
 })();
 </script>
 
+
+<script>
+(function(){
+  const $=s=>document.querySelector(s);
+  // ===== LIB CONTROLS =====
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const player=$('#player');
+    const loopBtn=$('#loopBtn');
+    const timerBtn=$('#timerBtn');
+    const plBtn=$('#playlistBtn');
+
+    if(loopBtn && player){
+      function syncLoopUI(){ loopBtn.classList.toggle('active', !!player.loop); loopBtn.textContent = player.loop ? (window.lang==='en'?'Loop: On':'루프: 켜짐') : (window.lang==='en'?'Loop: Off':'루프: 꺼짐'); }
+      syncLoopUI();
+      loopBtn.addEventListener('click', ()=>{ player.loop = !player.loop; syncLoopUI(); });
+    }
+    if(timerBtn && player){
+      timerBtn.addEventListener('click', ()=>{
+        const minStr = prompt( (window.lang==='en') ? 'Sleep timer (minutes)?' : '수면 타이머 (분)?', '20' );
+        const mins = parseFloat(minStr||'0');
+        if(mins>0){ setTimeout(()=>{ try{ player.pause(); }catch(e){} }, mins*60000); alert( (window.lang==='en') ? 'Timer set' : '타이머 설정됨' ); }
+      });
+    }
+    // plBtn wired in playlist JS; ensure exists
+  });
+
+  // ===== GENERATOR WIRING =====
+  let masterGain;
+  document.addEventListener('DOMContentLoaded', ()=>{
+    // Level slider control to master gain (generator)
+    const level = document.getElementById('genLevel');
+    if(level){
+      const setup = ()=>{
+        try{
+          if(!window.audioCtx) window.audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+          if(!masterGain){ masterGain = audioCtx.createGain(); masterGain.gain.value = (parseFloat(level.value||'50')/100); masterGain.connect(audioCtx.destination); }
+        }catch(e){}
+      };
+      setup();
+      level.addEventListener('input', ()=>{ if(masterGain) masterGain.gain.value = (parseFloat(level.value||'50')/100); });
+    }
+
+    // Binaural checkbox wiring to enable/disable Difference
+    const bin = document.getElementById('genBinaural');
+    const diff = document.getElementById('genBeat');
+    function applyDiffState(){ if(diff){ diff.disabled = !(bin && bin.checked); diff.style.opacity = (diff.disabled? '0.5' : ''); } }
+    if(bin){ bin.addEventListener('change', applyDiffState); applyDiffState(); }
+
+    // Replace existing startGen to honor masterGain + binaural
+    if(typeof window.startGen === 'function'){
+      const originalStart = window.startGen;
+      window.startGen = async function(){
+        if(!window.audioCtx) window.audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+        if(audioCtx.state==='suspended') await audioCtx.resume();
+        if(!masterGain){ masterGain = audioCtx.createGain(); masterGain.connect(audioCtx.destination); }
+        // call original to build nodes if it uses globals; otherwise create simple tones
+        try{ return originalStart(); }catch(e){ /* fallback simple oscillator */ 
+          const freq = parseFloat(document.getElementById('genFreq')?.value||'432');
+          const wave = (document.getElementById('genWave')?.value||'sine').toLowerCase();
+          const useBin = bin && bin.checked;
+          const beat = parseFloat(diff?.value||'7');
+          const oscL = audioCtx.createOscillator();
+          const gainL = audioCtx.createGain();
+          oscL.type = wave; oscL.frequency.value = freq - (useBin? beat/2 : 0);
+          gainL.gain.value = (parseFloat(document.getElementById('genLevel')?.value||'50')/100);
+          oscL.connect(gainL).connect(masterGain);
+          if(useBin){
+            const oscR = audioCtx.createOscillator();
+            const gainR = audioCtx.createGain();
+            oscR.type = wave; oscR.frequency.value = freq + beat/2;
+            gainR.gain.value = (parseFloat(document.getElementById('genLevel')?.value||'50')/100);
+            const splitter = audioCtx.createChannelMerger(2);
+            gainL.connect(splitter, 0, 0);
+            gainR.connect(splitter, 0, 1);
+            splitter.connect(masterGain);
+            oscR.start();
+            window._oscR = oscR; window._gainR = gainR;
+          }
+          oscL.start();
+          window._oscL = oscL; window._gainL = gainL;
+        }
+      };
+    }
+
+    // Toggle button play/pause (if exists)
+    const toggle = document.getElementById('genToggle');
+    if(toggle){
+      const svgPlay  = '<svg class="icon" viewBox="0 0 24 24"><polygon points="8,5 8,19 19,12" stroke-linejoin="round"/></svg>';
+      const svgPause = '<svg class="icon" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
+      let playing = false;
+      function setIcon(){ toggle.innerHTML = playing ? svgPause : svgPlay; }
+      setIcon();
+      toggle.addEventListener('click', async ()=>{
+        if(!playing){ try{ await (window.startGen && window.startGen()); playing=true; setIcon(); }catch(e){} }
+        else{ try{ (window._oscL&&_oscL.stop()); (window._oscR&&_oscR.stop()); playing=false; setIcon(); }catch(e){} }
+      });
+    }
+  });
+
+  // ===== I18N hook: refresh generator labels when lang toggled =====
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const lg = document.getElementById('langToggle');
+    if(lg){ lg.addEventListener('click', ()=>{ try{ window.updateGeneratorLang && window.updateGeneratorLang(); }catch(e){} }); }
+  });
+})();
+</script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', ()=>{
+  const level=document.getElementById('genLevel');
+  if(level){
+    const apply=()=>{ try{ if(window.masterGain) masterGain.gain.value = (parseFloat(level.value||'50')/100);}catch(e){} };
+    level.addEventListener('input', apply); apply();
+  }
+});
+</script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', ()=>{
+  function upd(){
+    const ko = window.lang!=='en';
+    const t = ko ? {
+      freq:'주파수 (Hz)', wave:'파형', bb:'바이노럴', diff:'차이 (Hz)', harm:'배음',
+      sel:'프리셋 선택'
+    } : {
+      freq:'Frequency (Hz)', wave:'Waveform', bb:'Binaural', diff:'Difference (Hz)', harm:'Harmonics',
+      sel:'Select Preset'
+    };
+    const s=(id,txt)=>{ const el=document.getElementById(id); if(el) el.textContent = txt; };
+    s('lblFreq', t.freq); s('lblWave', t.wave); s('lblBB', t.bb);
+    const d=document.querySelector('label[for="genBeat"]'); if(d) d.textContent = t.diff;
+    s('lblHarmonics', t.harm);
+    const sel=document.getElementById('presetSelect'); if(sel && sel.options && sel.options[0]) sel.options[0].textContent=t.sel;
+  }
+  upd();
+  const lg=document.getElementById('langToggle'); if(lg) lg.addEventListener('click', ()=>setTimeout(upd,0));
+});
+</script>
+
 </body>
 </html>
 
 <script>
 (function(){
   const $=s=>document.querySelector(s);
-  function ensureCtx(){
-    let ctx = window.audioCtx;
-    if(!ctx){ ctx = new (window.AudioContext||window.webkitAudioContext)(); window.audioCtx = ctx; }
+  function ensureCtx(){ if(!window.audioCtx) window.audioCtx=new (window.AudioContext||window.webkitAudioContext)(); if(!window.masterGain){ window.masterGain=audioCtx.createGain(); masterGain.gain.value=0.5; masterGain.connect(audioCtx.destination);} return window.audioCtx; }
     return ctx;
   }
   const genFreq=$('#genFreq'), genWave=$('#genWave');
@@ -1007,7 +1166,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const fL=base*harm, fR=BB?(base*harm+diff):fL;
     const L=makeOsc(ctx,fL,type), R=makeOsc(ctx,fR,type);
     const mix=ctx.createChannelMerger(2); L.g.connect(mix,0,0); R.g.connect(mix,0,1);
-    analyserGen=ctx.createAnalyser(); analyserGen.fftSize=2048; mix.connect(analyserGen); analyserGen.connect(ctx.destination);
+    analyserGen=ctx.createAnalyser(); analyserGen.fftSize=2048; mix.connect(analyserGen); analyserGen.connect(masterGain);
     L.o.start(); R.o.start(); oscL=L.o; oscR=R.o; gainL=L.g; gainR=R.g; merger=mix; drawScope();
   }
   function drawScope(){
