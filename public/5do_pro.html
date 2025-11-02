@@ -1405,4 +1405,145 @@ document.addEventListener('DOMContentLoaded', ()=>{
 })();
 </script>
 
+
+<script>
+(function(){
+  // ===== Stereo Oscilloscope (2x zoom, clipping guard, neon-green) =====
+  let scope = null, rafId = null, retryId = null;
+
+  function haveGenNodes(){
+    const AC   = window.gctx || window.audioCtx || null;
+    const gain = window.gGain || window.masterGain || null;
+    return { AC, gain };
+  }
+
+  function initOscScope(){
+    const canvas = document.getElementById('osc');
+    if (!canvas) return false;
+    const ctx2d = canvas.getContext('2d');
+
+    const { AC, gain } = haveGenNodes();
+    if (!AC || !gain) return false;
+
+    // Avoid duplicate wiring
+    if (window.__scopeConnected) {
+      scope = window.__scopeConnected;
+      return true;
+    }
+
+    // Tap gGain to a splitter (non-invasive)
+    const splitter = AC.createChannelSplitter(2);
+    try { gain.connect(splitter); } catch(_){ /* already connected */ }
+
+    const anaL = AC.createAnalyser();
+    const anaR = AC.createAnalyser();
+    anaL.fftSize = 2048;
+    anaR.fftSize = 2048;
+    splitter.connect(anaL, 0);
+    splitter.connect(anaR, 1);
+
+    scope = window.__scopeConnected = {
+      canvas, ctx2d, anaL, anaR, zoom: 2, running: true
+    };
+
+    const resize = ()=>{
+      const dpr = window.devicePixelRatio || 1;
+      const w = Math.max(240, canvas.clientWidth || canvas.offsetWidth || 600);
+      const h = Math.max(120, canvas.clientHeight || canvas.offsetHeight || 220);
+      canvas.width  = Math.floor(w * dpr);
+      canvas.height = Math.floor(h * dpr);
+      ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+    resize(); window.addEventListener('resize', resize);
+
+    // Start draw loop
+    if (rafId) cancelAnimationFrame(rafId);
+    const draw = ()=>{
+      if (!scope || !scope.running){ rafId = requestAnimationFrame(draw); return; }
+      const { ctx2d, anaL, anaR, zoom } = scope;
+      const dpr = window.devicePixelRatio || 1;
+      const w = scope.canvas.width  / dpr;
+      const h = scope.canvas.height / dpr;
+
+      // Binaural check (auto-detect common ids)
+      const bbEl = document.getElementById('genBinaural') || document.getElementById('gBB');
+      const isBinaural = !!(bbEl && bbEl.checked);
+
+      // Background clear
+      ctx2d.clearRect(0,0,w,h);
+
+      // Neon green style
+      ctx2d.lineWidth = 1.5;
+      ctx2d.strokeStyle = '#39ff14';
+      ctx2d.shadowColor = '#39ff14';
+      ctx2d.shadowBlur = 6;
+
+      // Guide lines
+      ctx2d.save();
+      ctx2d.globalAlpha = 0.22;
+      ctx2d.beginPath();
+      if (isBinaural){
+        ctx2d.moveTo(0, h*0.25); ctx2d.lineTo(w, h*0.25);
+        ctx2d.moveTo(0, h*0.75); ctx2d.lineTo(w, h*0.75);
+      } else {
+        ctx2d.moveTo(0, h*0.5); ctx2d.lineTo(w, h*0.5);
+      }
+      ctx2d.stroke();
+      ctx2d.restore();
+
+      function drawTrace(analyser, yTop, segH){
+        if (!analyser) return;
+        const N = analyser.fftSize;
+        const data = new Uint8Array(N);
+        analyser.getByteTimeDomainData(data);
+
+        const amp = 0.5 * zoom; // 2x -> 1.0
+        ctx2d.beginPath();
+        for (let i=0;i<N;i++){
+          const v = (data[i]-128)/128; // -1..+1
+          let y = (v * amp + 0.5) * segH + yTop;
+          if (y < yTop) y = yTop;
+          if (y > yTop + segH - 1) y = yTop + segH - 1;
+          const x = (i/(N-1))*w;
+          if (i===0) ctx2d.moveTo(x,y); else ctx2d.lineTo(x,y);
+        }
+        ctx2d.stroke();
+      }
+
+      if (isBinaural){
+        drawTrace(anaL, 0,   h/2);
+        drawTrace(anaR, h/2, h/2);
+      } else {
+        drawTrace(anaL, 0, h);
+      }
+
+      rafId = requestAnimationFrame(draw);
+    };
+    rafId = requestAnimationFrame(draw);
+    return true;
+  }
+
+  function ensureScope(){
+    // Try once now
+    if (initOscScope()) return;
+    // Retry until gen nodes appear
+    if (retryId) clearInterval(retryId);
+    retryId = setInterval(()=>{
+      if (initOscScope()){
+        clearInterval(retryId); retryId = null;
+      }
+    }, 400);
+  }
+
+  window.startOscScope = function(){ ensureScope(); if (scope) scope.running = true; };
+  window.stopOscScope  = function(){ if (scope) scope.running = false; };
+
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', ensureScope);
+  } else {
+    ensureScope();
+  }
+})();
+</script>
+
 </body></html>
