@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="ko">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
@@ -224,8 +225,9 @@ body.mode-library #oscWrap{display:none!important}
 
 <script>
 /* ===== Supabase public media base ===== */
-const MEDIA_BASE = "https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media";
-const LIBRARY_SRC = `${MEDIA_BASE}/library.json`;
+const SUPABASE_URL = "https://xdjgumqdwedgzwqturcx.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
+const BUCKET = "media";
 
 /* ====== Globals / i18n ====== */
 const $=(s,r=document)=>r.querySelector(s); const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
