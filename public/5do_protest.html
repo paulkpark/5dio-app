@@ -354,218 +354,189 @@ async function setStatusThumbAsync(path, stem){
   }
 }
 
-/* ====== Library data ====== */
-let LIB=null;
-async function loadLibrary(){
-  // 1) Supabase
-  try{
-    const r=await fetch(LIBRARY_SRC,{cache:'no-store'});
-    if(r.ok){ LIB=await r.json(); return; }
-  }catch(_){}
-  // 2) Local fallback
-  try{
-    const r2=await fetch('media/library.json',{cache:'no-store'});
-    if(r2.ok){ LIB=await r2.json(); return; }
-  }catch(_){}
-  // 3) No data
-  LIB={categories:[]};
+<script>
+// ========= Supabase client =========
+const SUPABASE_URL = "https://xdjgumqdwedgzwqturcx.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";   // ← 퍼블릭 anon 키
+const BUCKET = "media";
+
+const SB = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const MEDIA_BASE = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}`;
+
+// ========= 상태 =========
+const STATE = { path: '', stack: [], currentTrack: null, playlistName: (LANG==='en'?'Default':'기본'), playlists:{} };
+const strip = document.getElementById('strip');
+const PLAYER = document.getElementById('player');
+
+// ========= 유틸 =========
+const isAudio = (name)=> /\.mp3$/i.test(name);
+const stemOf  = (fname)=> fname.replace(/\.[^.]+$/,'');
+const joinPublic = (...parts)=> parts.map(s => encodeURIComponent(s)).join('/');
+const trackPublicUrl = (folder, file)=> `${MEDIA_BASE}/${joinPublic(folder, file)}`;
+
+// 썸네일 규칙
+async function resolveFolderThumb(folder){
+  const base = `${MEDIA_BASE}/${encodeURIComponent(folder)}/`;
+  const names = (LANG==='en')
+    ? ['folder_e.jpg','folder_e.JPG','folder_e.jpeg']
+    : ['folder.jpg','folder.JPG','folder.jpeg'];
+  for(const n of names){
+    const u = base + n;
+    if (await pingImage(u)) return u;
+  }
+  return null;
+}
+async function resolveTrackThumb(folder, file){
+  const base = `${MEDIA_BASE}/${encodeURIComponent(folder)}/`;
+  const stem = stemOf(file);
+  const cand = (LANG==='en')
+    ? [`${stem}_E.jpg`,`${stem}_E.JPG`,`${stem}_E.jpeg`]
+    : [`${stem}.jpg`,`${stem}.JPG`,`${stem}.jpeg`];
+  for(const n of cand){
+    const u = base + n;
+    if (await pingImage(u)) return u;
+  }
+  return null;
+}
+function pingImage(url){
+  return new Promise(res=>{
+    const img=new Image(); img.onload=()=>res(true); img.onerror=()=>res(false);
+    img.src = url+(url.includes('?')?'&':'?')+'v='+Date.now();
+  });
 }
 
-const STATE={path:'',stack:[],currentTrack:null,playlistName:(LANG==='en'?'Default':'기본'),playlists:{}};
-const strip=$('#strip');
-
-function statusBlank(){
-  const st=$('#statusThumb'); st.classList.add('status-blank'); st.style.backgroundImage='none';
-  let s=st.parentElement.querySelector('#statusText'); if(!s){ s=document.createElement('div'); s.id='statusText'; st.parentElement.appendChild(s); }
-  s.textContent=t('noTrack');
+// ========= Storage Scan 핵심 =========
+// 1) 루트 카테고리 폴더 나열
+async function listRootFolders(){
+  const out = [];
+  // Supabase Storage list (루트)
+  let page=0, more=true;
+  while(more){
+    const { data, error } = await SB.storage.from(BUCKET).list('', { limit: 100, offset: page*100 });
+    if (error) throw error;
+    // 폴더만 추출: Storage는 폴더를 "id/metadata가 빈 객체 & name만 있는 엔트리"로 돌려줌
+    const folders = (data||[]).filter(it => !it.id && !it.metadata && !/\./.test(it.name));
+    out.push(...folders.map(f => f.name));
+    more = (data||[]).length === 100;
+    page++;
+  }
+  // 알파벳/한글 순 정렬(원하면 커스텀 정렬)
+  out.sort((a,b)=> a.localeCompare(b));
+  return out;
 }
-function getNodeByPath(path){
-  if(!path) return LIB?.categories||[];
-  const cat=(LIB?.categories||[]).find(c=>c.name===path);
-  return cat?{tracks:cat.tracks}:null;
+
+// 2) 특정 폴더 내 파일 나열 (오디오만)
+async function listTracks(folder){
+  const tracks=[];
+  let page=0, more=true;
+  while(more){
+    const { data, error } = await SB.storage.from(BUCKET).list(folder, { limit:100, offset:page*100 });
+    if (error) throw error;
+    (data||[]).forEach(it=>{
+      if (isAudio(it.name)) tracks.push({ file: it.name, name: stemOf(it.name) });
+    });
+    more = (data||[]).length === 100;
+    page++;
+  }
+  // 파일명 정렬
+  tracks.sort((a,b)=> a.name.localeCompare(b.name));
+  return tracks;
 }
 
-function renderStrip(){
-  strip.innerHTML='';
+// ========= 렌더링 =========
+async function renderStrip(){
+  strip.innerHTML = '';
   if(!STATE.path){
-    // root: show category folders (from library.json)
-    (LIB?.categories||[]).forEach(cat=>{
-      const card = makeCard(cat.name, true, cat.name);
+    // 루트: 카테고리 폴더들
+    const folders = await listRootFolders();
+    if (!folders.length){
+      // 루트 비어있을 때(혹은 권한/경로 문제)
+      const empty = document.createElement('div');
+      empty.style.color='#9ab6d1'; empty.textContent = (LANG==='en'?'No folders':'폴더가 없습니다');
+      strip.appendChild(empty);
+      return;
+    }
+    for(const name of folders){
+      const card = await makeFolderCard(name);
       strip.appendChild(card);
-    });
-  }else{
-    // folder: only tracks (no up/blank card)
-    const node=getNodeByPath(STATE.path); const tracks=node?.tracks||[];
-    tracks.forEach(tr=>{
-      const stem=(tr.file || tr.name).replace(/\.[^.]+$/,''); // file 우선
-      const card=makeCard(stem, false, tr.file);              // file을 클릭 소스로
+    }
+  } else {
+    // 폴더 내부: 트랙 썸네일만 (맨앞 Blank/Back 제거)
+    const list = await listTracks(STATE.path);
+    for(const tr of list){
+      const card = await makeTrackCard(STATE.path, tr.file);
       strip.appendChild(card);
-    });
+    }
   }
 }
 
-function makeCard(label, isFolder, fileOrFolder){
-  const card=document.createElement('div'); card.className='card'; if(isFolder) card.classList.add('folder');
-  const th=document.createElement('div'); th.className='thumb'; th.style.backgroundImage='none'; card.appendChild(th);
-  const lb=document.createElement('div'); lb.className='label'; lb.textContent=label; card.appendChild(lb);
+async function makeFolderCard(folderName){
+  const card=document.createElement('div'); card.className='card folder';
+  const th=document.createElement('div'); th.className='thumb'; card.appendChild(th);
+  const lb=document.createElement('div'); lb.className='label'; lb.textContent=folderName; card.appendChild(lb);
 
-  // 썸네일 비동기 로드
-  (async ()=>{
-    try{
-      let url=null;
-      if (isFolder){
-        url = await resolveFolderThumb(label); // 폴더명
-      } else {
-        const stem = (fileOrFolder||'').replace(/\.[^.]+$/,'');
-        url = await resolveTrackThumb(STATE.path, stem);
-      }
-      if (url){
-        th.style.backgroundImage = `url("${url}")`;
-      } else {
-        console.warn('[thumb-miss]', { LANG, isFolder, path: STATE.path, label, fileOrFolder });
-      }
-    }catch(err){
-      console.error('[thumb-error]', err);
-    }
-  })();
+  // 썸네일
+  const u = await resolveFolderThumb(folderName);
+  if (u) th.style.backgroundImage=`url("${u}")`;
 
-  // 클릭
+  // 클릭 → 진입
   card.addEventListener('click', ()=>{
-    if(isFolder){
-      STATE.stack.push(STATE.path); STATE.path=fileOrFolder; renderStrip(); statusBlank();
-    }else{
-      const url=trackUrl(STATE.path, fileOrFolder); PLAYER.src=url; PLAYER.load();
-      const stem=fileOrFolder.replace(/\.[^.]+$/,''); setStatusThumbAsync(STATE.path, stem);
-      STATE.currentTrack={name:stem,url};
-    }
+    STATE.stack.push(STATE.path);
+    STATE.path = folderName;
+    renderStrip().catch(console.error);
+    statusBlank();
   });
   return card;
 }
 
-/* ====== Library nav controls ====== */
-$('#btnBack').addEventListener('click',()=>{ STATE.path=STATE.stack.pop()||''; renderStrip(); });
-$('#btnHome').addEventListener('click',()=>{ STATE.stack.length=0; STATE.path=''; renderStrip(); });
-$('#btnRefresh').addEventListener('click',()=>{ renderStrip(); });
+async function makeTrackCard(folder, file){
+  const stem = stemOf(file);
+  const card=document.createElement('div'); card.className='card';
+  const th=document.createElement('div'); th.className='thumb'; card.appendChild(th);
+  const lb=document.createElement('div'); lb.className='label'; lb.textContent=stem; card.appendChild(lb);
 
-/* ====== Player & playlist ====== */
-const PLAYER=$('#player'); let loop=false; let timerId=null;
-$('#btnPlay').addEventListener('click',()=>{ if(PLAYER.paused) PLAYER.play(); else PLAYER.pause(); });
-$('#btnLoop').addEventListener('click',()=>{ loop=!loop; PLAYER.loop=loop; $('#btnLoop').textContent=loop?t('loopOn'):t('loopOff'); });
-$('#btnTimer').addEventListener('click',()=>{ const m=prompt(LANG==='en'?'Sleep timer minutes (0=off)':'타이머(분, 0=해제)','20'); const mins=Math.max(0,parseInt(m||'0',10)); if(timerId){clearTimeout(timerId);timerId=null;} if(mins>0){ timerId=setTimeout(()=>{PLAYER.pause();}, mins*60*1000);} });
+  // 썸네일
+  const u = await resolveTrackThumb(folder, file);
+  if (u) th.style.backgroundImage=`url("${u}")`;
 
-const PL=$('#playlist');
-function loadPLStore(){ try{ const raw=localStorage.getItem('pl_store_v1'); if(raw) STATE.playlists=JSON.parse(raw);}catch(_){}
-  if(!STATE.playlists[STATE.playlistName]) STATE.playlists[STATE.playlistName]=[]; }
-function savePLStore(){ try{ localStorage.setItem('pl_store_v1', JSON.stringify(STATE.playlists)); }catch(_){} }
-function renderPL(){ PL.innerHTML=''; Object.keys(STATE.playlists).forEach(n=>{ const pill=document.createElement('div'); pill.className='card'; pill.style.flex='0 0 auto'; pill.style.width='auto'; pill.style.minWidth='92px'; pill.style.textAlign='center'; pill.innerHTML=`<div class="label">${n}</div>`; if(n===STATE.playlistName) pill.style.borderColor='#1f4e79'; pill.addEventListener('click',()=>{STATE.playlistName=n; renderPL();}); PL.appendChild(pill);}); }
-
-$('#btnAddPL').addEventListener('click',()=>{ const def=LANG==='en'?'My List':'내 리스트'; const name=prompt(LANG==='en'?'New playlist name':'새 플레이리스트 이름', def); if(!name) return; if(!STATE.playlists[name]) STATE.playlists[name]=[]; STATE.playlistName=name; savePLStore(); renderPL(); });
-$('#btnSavePL').addEventListener('click',()=>{ if(!STATE.currentTrack){ alert(LANG==='en'?'Select a track first':'먼저 트랙을 선택하세요'); return; } const list=STATE.playlists[STATE.playlistName]||(STATE.playlists[STATE.playlistName]=[]); list.push(STATE.currentTrack); savePLStore(); alert(LANG==='en'?'Saved to playlist':'플레이리스트에 저장됨'); });
-$('#btnLoadPL').addEventListener('click',()=>{ const list=STATE.playlists[STATE.playlistName]||[]; if(!list.length){ alert(LANG==='en'?'Playlist is empty':'플레이리스트가 비어 있습니다'); return; } const t=list[0]; PLAYER.src=t.url; PLAYER.load(); PLAYER.play().catch(()=>{}); setStatusThumbAsync(STATE.path, t.name); });
-
-/* ====== Generator (WebAudio + dual-scope) ====== */
-const aCtx=new (window.AudioContext||window.webkitAudioContext)(); let genGain, oscL, oscR, anaL, anaR;
-function ensureNodes(){
-  if(!genGain){ genGain=aCtx.createGain(); genGain.gain.value=0.25; genGain.connect(aCtx.destination); }
-  if(!oscL){ oscL=aCtx.createOscillator(); oscL.type='sine'; oscL.frequency.value=440; const g=aCtx.createGain(); g.gain.value=0.5; oscL.connect(g).connect(genGain); oscL.start(); }
-  if(!oscR){ oscR=aCtx.createOscillator(); oscR.type='sine'; oscR.frequency.value=440; const g=aCtx.createGain(); g.gain.value=0.5; oscR.connect(g).connect(genGain); oscR.start(); }
-  if(!anaL){ anaL=aCtx.createAnalyser(); anaL.fftSize=2048; }
-  if(!anaR){ anaR=aCtx.createAnalyser(); anaR.fftSize=2048; }
-  try{ oscL.connect(anaL); }catch(_){}
-  try{ oscR.connect(anaR); }catch(_){}
+  // 클릭 → 로딩 & 상태썸네일 갱신
+  card.addEventListener('click', ()=>{
+    const url = trackPublicUrl(folder, file);
+    PLAYER.src = url; PLAYER.load();
+    setStatusThumbAsync(folder, stem);
+    STATE.currentTrack = { name: stem, url };
+  });
+  return card;
 }
-function makePulse(duty){ duty=Math.max(1,Math.min(99,duty||50)); const D=duty/100,N=32,real=new Float32Array(N+1),imag=new Float32Array(N+1); for(let n=1;n<=N;n++){ imag[n]=(2/(n*Math.PI))*Math.sin(n*Math.PI*D);} try{ return new PeriodicWave(aCtx,{real,imag,disableNormalization:true}); }catch(_){ return aCtx.createPeriodicWave(real,imag,{disableNormalization:true}); } }
 
-const waveSel=$('#waveSel'), freqNum=$('#freqNum'), freqSlider=$('#freqSlider'), duty=$('#duty');
-const bnEnable=$('#bnEnable'), bnDiff=$('#bnDiff');
-
-function applyGen(){
-  ensureNodes();
-  const f=Math.max(1,Math.min(20000,parseFloat(freqNum.value)||440));
-  const w=(waveSel.value||'sine').toLowerCase();
-  const d=parseFloat(duty.value)||50;
-  const diff=Math.max(1,Math.min(100,parseFloat(bnDiff.value)||4));
-  const L=f, R=bnEnable.checked?(f+diff):f;
-
-  try{ oscL.frequency.setTargetAtTime(L,aCtx.currentTime,0.01);}catch(_){oscL.frequency.value=L;}
-  try{ oscR.frequency.setTargetAtTime(R,aCtx.currentTime,0.01);}catch(_){oscR.frequency.value=R;}
-
-  if(w==='square'||w==='pulse'){
-    const pw=makePulse(d);
-    oscL.setPeriodicWave(pw);
-    oscR.setPeriodicWave(pw);
-  }else{
-    oscL.type=w; oscR.type=w;
-  }
+// ========= 상태 썸네일 & 안내 =========
+function statusBlank(){
+  const st=document.getElementById('statusThumb');
+  st.classList.add('status-blank');
+  st.style.backgroundImage='none';
+  let txt = st.parentElement.querySelector('#statusText');
+  if(!txt){ txt=document.createElement('div'); txt.id='statusText'; st.parentElement.appendChild(txt); }
+  txt.textContent = (LANG==='en'?'No track loaded':'선곡되지 않음');
 }
-[freqNum,freqSlider,waveSel,duty,bnEnable,bnDiff].forEach(el=>{
-  el.addEventListener('input',()=>{ if(el===freqSlider) freqNum.value=freqSlider.value; if(el===freqNum) freqSlider.value=freqNum.value; applyGen(); });
-  el.addEventListener('change',applyGen);
+
+// ========= 네비 버튼 =========
+document.getElementById('btnBack').addEventListener('click',()=>{
+  STATE.path = STATE.stack.pop() || '';
+  renderStrip().catch(console.error);
+});
+document.getElementById('btnHome').addEventListener('click',()=>{
+  STATE.stack.length=0; STATE.path='';
+  renderStrip().catch(console.error);
+});
+document.getElementById('btnRefresh').addEventListener('click',()=>{
+  renderStrip().catch(console.error);
 });
 
-const genPlay=$('#genPlay'), genStop=$('#genStop'); let genRunning=false;
-genPlay.addEventListener('click', async ()=>{ await aCtx.resume(); ensureNodes(); genRunning=!genRunning; genGain.gain.setTargetAtTime(genRunning?0.25:0.0, aCtx.currentTime, 0.02); });
-genStop.addEventListener('click',()=>{ ensureNodes(); genRunning=false; genGain.gain.setTargetAtTime(0.0, aCtx.currentTime, 0.02); });
-
-$('#genSave').addEventListener('click',()=>{
-  const p={wave:waveSel.value,freq:parseFloat(freqNum.value)||440,duty:parseFloat(duty.value)||50,bn:!!bnEnable.checked,diff:parseFloat(bnDiff.value)||4};
-  const name=prompt(LANG==='en'?'Preset name':'프리셋 이름','Preset 1'); if(!name) return;
-  try{ const raw=localStorage.getItem('gen_presets_v1'); const store=raw?JSON.parse(raw):{}; store[name]=p; localStorage.setItem('gen_presets_v1', JSON.stringify(store)); alert(LANG==='en'?'Saved':'저장됨'); }catch(_){}
-});
-$('#genLoad').addEventListener('click',()=>{
-  let store={}; try{ const raw=localStorage.getItem('gen_presets_v1'); if(raw) store=JSON.parse(raw);}catch(_){}
-  const names=Object.keys(store); if(!names.length){ alert(LANG==='en'?'No presets':'프리셋 없음'); return; }
-  const name=prompt((LANG==='en'?'Type preset name:\n':'불러올 프리셋 이름:\n')+names.join(', '), names[0]); const p=store[name]; if(!p) return;
-  waveSel.value=p.wave; freqNum.value=p.freq; freqSlider.value=p.freq; duty.value=p.duty; bnEnable.checked=!!p.bn; bnDiff.value=p.diff; applyGen();
-});
-
-/* ====== Oscilloscope (dual lines; draw only when playing) ====== */
-const osc=$('#osc'), octx=osc.getContext('2d'); const oscZoom=$('#oscZoom'), oscColor=$('#oscColor'); let zoom=2;
-function sizeOsc(){ const dpr=window.devicePixelRatio||1; const w=osc.clientWidth||600, h=osc.clientHeight||160; osc.width=Math.floor(w*dpr); osc.height=Math.floor(h*dpr); octx.setTransform(dpr,0,0,dpr,0,0); }
-sizeOsc(); addEventListener('resize',sizeOsc,{passive:true}); oscZoom.addEventListener('change',()=>{ zoom=parseInt(oscZoom.value)||2; });
-
-function drawOsc(){
-  requestAnimationFrame(drawOsc);
-  const w=osc.clientWidth||600, h=osc.clientHeight||160;
-  octx.clearRect(0,0,w,h);
-
-  // 재생 중이 아니면 파형 그리지 않음 (정지/일시정지 시 멈춤)
-  if(!genRunning || !anaL || !anaR) return;
-
-  // grid (연한 보조선)
-  octx.strokeStyle='rgba(100,180,220,.08)'; octx.lineWidth=1;
-  for(let gx=0;gx<w;gx+=Math.max(40,w/10)){ octx.beginPath(); octx.moveTo(gx,0); octx.lineTo(gx,h); octx.stroke(); }
-  for(let gy=0;gy<h;gy+=Math.max(28,h/6)){ octx.beginPath(); octx.moveTo(0,gy); octx.lineTo(w,gy); octx.stroke(); }
-
-  const col=oscColor.value||'#39e3ff';
-
-  // left (upper)
-  const bufL=new Uint8Array(anaL.fftSize); anaL.getByteTimeDomainData(bufL);
-  octx.beginPath(); octx.lineWidth=2; octx.strokeStyle=col; octx.shadowColor=col; octx.shadowBlur=8;
-  const stepL=(bufL.length/(w*Math.max(1,zoom))); for(let x=0;x<=w-1;x++){ const idx=Math.min(bufL.length-1, Math.floor(x*stepL)); const v=(bufL[idx]-128)/128; const y=h*0.25 + v*(h*0.22); if(x===0) octx.moveTo(0,y); else octx.lineTo(x,y); } octx.stroke(); octx.shadowBlur=0;
-
-  // right (lower)
-  const bufR=new Uint8Array(anaR.fftSize); anaR.getByteTimeDomainData(bufR);
-  const colR='rgba(57,227,255,0.6)';
-  octx.beginPath(); octx.lineWidth=2; octx.strokeStyle=colR; octx.shadowColor=colR; octx.shadowBlur=6;
-  const stepR=(bufR.length/(w*Math.max(1,zoom))); for(let x=0;x<=w-1;x++){ const idx=Math.min(bufR.length-1, Math.floor(x*stepR)); const v=(bufR[idx]-128)/128; const y=h*0.75 + v*(h*0.22); if(x===0) octx.moveTo(0,y); else octx.lineTo(x,y); } octx.stroke(); octx.shadowBlur=0;
-}
-drawOsc();
-
-/* ====== Boot ====== */
-const langBtn=$('#langBtn');
-langBtn.addEventListener('click',()=>{ LANG=(LANG==='en'?'ko':'en'); document.documentElement.lang=LANG; applyLang(); renderStrip(); renderPL(); if(STATE.currentTrack){ setStatusThumbAsync(STATE.path, STATE.currentTrack.name); } else { statusBlank(); } });
-
-(async function init(){
-  applyLang();
-  await loadLibrary();
+// ========= 부팅 =========
+(async function bootScan(){
+  statusBlank();
   STATE.path=''; STATE.stack.length=0;
-  renderStrip(); statusBlank();
-  loadPLStore(); renderPL();
-
-  // iOS unlock gesture
-  const unlock=async()=>{ try{ const ctx=aCtx; if(ctx && ctx.state==='suspended') await ctx.resume(); }catch(_){ } window.removeEventListener('touchend',unlock); window.removeEventListener('click',unlock); };
-  window.addEventListener('touchend',unlock,{once:true}); window.addEventListener('click',unlock,{once:true});
+  await renderStrip();
 })();
 </script>
 </body>
