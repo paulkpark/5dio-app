@@ -6,36 +6,20 @@
 <title>5DO Pro</title>
 <style>
 :root{
-  --bg:#0a0f14;
-  --panel:#0e1520;
-  --line:#122033;
-  --muted:#7e9ab5;
-  --txt:#e8f2ff;
-  --accent:#8fe8ff;
-  --accent2:#39e3ff;
+  --bg:#0a0f14; --panel:#0e1520; --line:#122033; --muted:#7e9ab5; --txt:#e8f2ff;
+  --accent:#8fe8ff; --accent2:#39e3ff; --ok:#5fd19a; --warn:#f5b04c;
 }
 *{box-sizing:border-box}
 html,body{height:100%}
-body{
-  margin:0;background:var(--bg);color:var(--txt);font:14px/1.6 system-ui, -apple-system, Segoe UI, Roboto, Noto Sans KR, Apple SD Gothic Neo, Arial, sans-serif;
-}
-header{
-  position:sticky;top:0;z-index:50;background:linear-gradient(180deg,#0a1018,#0a0f14 60%);
-  border-bottom:1px solid #0f1b2a;padding:8px 10px;
-}
-.header-row{
-  display:flex;align-items:center;gap:10px;justify-content:space-between;max-width:1100px;margin:0 auto;
-}
-.left{
-  display:flex;align-items:center;gap:10px;
-}
-.center-tabs{
-  position:absolute;left:50%;transform:translateX(-50%);
-  display:flex;align-items:center;gap:8px;
-}
-.right{
-  margin-left:auto;display:flex;align-items:center;gap:10px;
-}
+body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Noto Sans KR,Apple SD Gothic Neo,Arial,sans-serif}
+
+/* Header */
+header{position:sticky;top:0;z-index:50;background:linear-gradient(180deg,#0a1018,#0a0f14 60%);
+  border-bottom:1px solid #0f1b2a;padding:8px 10px}
+.header-row{display:flex;align-items:center;gap:10px;justify-content:space-between;max-width:1120px;margin:0 auto;position:relative}
+.left{display:flex;align-items:center;gap:10px}
+.center-tabs{position:absolute;left:calc(50% + 10px);transform:translateX(-50%);display:flex;align-items:center;gap:8px}
+.right{margin-left:auto;display:flex;align-items:center;gap:10px}
 .app-title{
   font-weight:700;font-size:18px;letter-spacing:.3px;color:#9fe5ff;
   text-shadow:0 0 3px rgba(180,240,255,1),0 0 8px rgba(110,220,255,.95),0 0 18px rgba(50,180,255,.85),0 0 36px rgba(0,120,255,.7);
@@ -43,79 +27,72 @@ header{
 }
 @media (max-width:420px){ .center-tabs{ gap:6px } .app-title{ font-size:16px } }
 
-button, .btn{
-  background:#0f1a28;border:1px solid #13263c;color:var(--txt);padding:8px 10px;border-radius:8px;cursor:pointer;
-}
+/* Buttons */
+button,.btn{background:#0f1a28;border:1px solid #13263c;color:var(--txt);padding:8px 10px;border-radius:8px;cursor:pointer}
 button:hover,.btn:hover{border-color:#1a3f64}
-button.small{padding:5px 8px;border-radius:7px;font-size:12px}
+button.small{padding:6px 8px;border-radius:7px;font-size:12px}
 button.ghost{background:transparent;border-color:#17314f}
 button.accent{background:#0d1e2f;border-color:#1d415f;box-shadow:0 0 8px rgba(57,227,255,.15) inset}
 
+/* Hamburger */
 .hamburger{width:36px;height:28px;position:relative;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
 .hamburger span,.hamburger span:before,.hamburger span:after{
   content:"";display:block;width:20px;height:2px;background:#8fe8ff;box-shadow:0 0 6px rgba(110,220,255,.95),0 0 14px rgba(50,180,255,.85);
-  position:absolute;border-radius:2px;transition:.2s;
+  position:absolute;border-radius:2px;transition:.2s
 }
 .hamburger span:before{transform:translateY(-6px)}
 .hamburger span:after{transform:translateY(6px)}
-.dropdown{
-  position:absolute;top:42px;left:6px;background:var(--panel);border:1px solid var(--line);border-radius:10px;display:none;min-width:200px;overflow:hidden;
-  box-shadow:0 10px 30px rgba(0,0,0,.35);
-}
+.dropdown{position:absolute;top:42px;left:6px;background:var(--panel);border:1px solid var(--line);border-radius:10px;display:none;min-width:220px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.35)}
 .dropdown a{display:block;padding:10px 12px;color:var(--txt);text-decoration:none;border-bottom:1px solid #0f1b2a}
 .dropdown a:last-child{border-bottom:0}
 .dropdown a:hover{background:#0f1825}
 
+/* Tabs */
 .tab{padding:7px 10px;border-radius:8px;border:1px solid #17314f;background:#0b1724;color:#cfe9ff}
 .tab.active{background:#0d1e2f;border-color:#1d415f;box-shadow:0 0 8px rgba(57,227,255,.15) inset}
 
-main{max-width:1100px;margin:10px auto 40px;padding:0 10px}
+main{max-width:1120px;margin:10px auto 40px;padding:0 10px}
 .section{display:none}
 .section.active{display:block}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
 
-.panel{
-  background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px;
-}
+/* Library strip (horizontal scroll) */
+.strip{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;scroll-snap-type:x mandatory}
+.card{flex:0 0 128px;display:flex;flex-direction:column;background:#0b131e;border:1px solid #102035;border-radius:14px;overflow:hidden;cursor:pointer;scroll-snap-align:start}
+.thumb{width:100%;height:128px;background:#0a1018;background-size:cover;background-position:center;border-bottom:1px solid #0f1b2a}
+.label{padding:8px 9px;color:#cae4ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
-.card{
-  background:#0b131e;border:1px solid #102035;border-radius:14px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;min-height:168px
-}
-.thumb{height:110px;background:#0a1018; background-size:cover;background-position:center;border-bottom:1px solid #0f1b2a}
-.label{padding:8px 10px;color:#cae4ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-
-.status{
-  display:flex;align-items:center;gap:12px
-}
-#statusThumb{width:120px;height:120px;border:1px solid #14253b;border-radius:12px;background:#0b1018;background-size:cover;background-position:center}
+/* Status / Player */
+.status{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+#statusThumb{width:84px;height:84px;border:1px solid #14253b;border-radius:12px;background:#0b1018;background-size:cover;background-position:center}
 .status-blank{
   background:#0b1019;
   background-image:
     radial-gradient(60% 40% at 50% 0%, rgba(90,210,255,.08), rgba(0,0,0,0)),
     radial-gradient(70% 60% at 50% 100%, rgba(0,120,255,.06), rgba(0,0,0,0));
 }
-.controls{display:flex;flex-wrap:wrap;gap:8px}
-.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.row label{color:#b8d1ea;min-width:80px}
+.playerbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.playerbar .controls{display:flex;align-items:center;gap:8px}
 
-.playlist{display:flex;gap:10px;flex-wrap:wrap}
-.playlist .pill{padding:6px 10px;border:1px solid #16314e;border-radius:999px;background:#0c1623;color:#cfe9ff;cursor:pointer}
-.playlist .pill.active{background:#11314d;border-color:#1f4e79}
+/* Breadcrumb + nav */
+.nav-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+#breadcrumb{color:#95b3cf;margin-left:auto}
 
-#breadcrumb{color:#95b3cf;margin:6px 0 12px}
-
+/* Oscilloscope */
 .osc-hdr{display:flex;align-items:center;gap:12px;margin:8px 0}
-#osc{width:100%;height:140px;border:1px solid rgba(255,255,255,.1);border-radius:8px;background:#02070d}
+#osc{width:100%;height:160px;border:1px solid rgba(255,255,255,.1);border-radius:8px;background:#02070d}
 
-.backdrop{position:fixed;inset:0;background:rgba(0,0,0,.3);display:none}
-.backdrop.show{display:block}
-.dropdown.show{display:block}
+/* Modal */
+.modal-back{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;z-index:100}
+.modal{position:fixed;inset:auto 0 0 0;margin:auto;top:8%;max-width:720px;background:#0e1520;border:1px solid #18304c;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.4);display:none;z-index:101;padding:16px}
+.modal .mhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.modal .mbody{max-height:60vh;overflow:auto;white-space:pre-wrap;color:#cfe6ff}
 
-/* library에서는 오실로스코프 숨김 */
+/* Visibility by mode */
 body.mode-library #oscWrap{display:none!important}
 
-/* 작은 화면: 타이틀 한 줄 유지 위해 탭 약간 우측으로 */
-@media (max-width:390px){ .center-tabs{ left:58% } }
+/* Title keep one line on small screens */
+@media (max-width:390px){ .center-tabs{ left:calc(58%) } }
 </style>
 </head>
 <body class="mode-library">
@@ -125,11 +102,11 @@ body.mode-library #oscWrap{display:none!important}
       <div class="menu">
         <div id="menuBtn" class="hamburger"><span></span></div>
         <div id="menuDrop" class="dropdown">
-          <a href="https://5dshop.co.kr" target="_blank" rel="noopener">Shop</a>
           <a href="texts/faq.txt"     class="menu-text" data-key="faq">FAQ</a>
           <a href="texts/manual.txt"  class="menu-text" data-key="manual">Manual</a>
           <a href="texts/contact.txt" class="menu-text" data-key="contact">Contact</a>
           <a href="texts/about.txt"   class="menu-text" data-key="about">About</a>
+          <a href="https://5dshop.co.kr" target="_blank" rel="noopener">Shop ↗</a>
         </div>
       </div>
       <div class="app-title">5DO Pro</div>
@@ -150,29 +127,32 @@ body.mode-library #oscWrap{display:none!important}
   <!-- Library -->
   <section id="library" class="section active">
     <div class="panel">
-      <div id="breadcrumb">/</div>
-      <div class="grid" id="grid"></div>
+      <div class="nav-row">
+        <button id="btnBack" class="btn small">←</button>
+        <button id="btnHome" class="btn small">Home</button>
+        <button id="btnRefresh" class="btn small">⟳</button>
+        <div id="breadcrumb">/</div>
+      </div>
+      <div class="strip" id="strip"></div>
     </div>
 
     <div class="panel">
       <div class="status">
         <div id="statusThumb" class="status-blank"></div>
-        <div>
-          <div id="statusText">선곡되지 않음</div>
-          <div class="row" style="margin-top:8px">
-            <audio id="player" playsinline webkit-playsinline preload="metadata" controlslist="nodownload noplaybackrate" style="width:280px;max-width:80%"></audio>
-            <div class="controls">
-              <button id="btnPlay" class="btn small accent">▶︎ / ⏸</button>
-              <button id="btnLoop" class="btn small">Loop: Off</button>
-              <button id="btnTimer" class="btn small">Timer</button>
-            </div>
+        <div class="playerbar">
+          <!-- 시스템 플레이어 바 노출 -->
+          <audio id="player" controls playsinline webkit-playsinline preload="metadata" style="min-width:260px;max-width:80%"></audio>
+          <div class="controls">
+            <button id="btnPlay"  class="btn small accent" data-i18n="playpause">Play/Pause</button>
+            <button id="btnLoop"  class="btn small" data-i18n="loopOff">Loop: Off</button>
+            <button id="btnTimer" class="btn small" data-i18n="timer">Timer</button>
           </div>
-          <div class="row">
-            <label>Playlist</label>
-            <div class="playlist" id="playlist"></div>
-            <button id="btnAddPL" class="btn small">+ New</button>
-            <button id="btnSavePL" class="btn small">Save</button>
-            <button id="btnLoadPL" class="btn small">Load</button>
+          <div class="controls">
+            <label style="color:#b8d1ea">Playlist</label>
+            <div id="playlist" class="strip" style="gap:6px;overflow-y:hidden"></div>
+            <button id="btnAddPL"  class="btn small" data-i18n="new">+ New</button>
+            <button id="btnSavePL" class="btn small" data-i18n="save">Save</button>
+            <button id="btnLoadPL" class="btn small" data-i18n="load">Load</button>
           </div>
         </div>
       </div>
@@ -208,408 +188,313 @@ body.mode-library #oscWrap{display:none!important}
         <label data-i18n="difference">Difference (Hz)</label>
         <input id="bnDiff" type="number" value="4" min="1" max="100" step="1" style="width:80px">
       </div>
+
       <div id="oscWrap" class="panel" style="margin-top:12px">
         <div class="osc-hdr">
-          <label style="min-width:88px">Oscilloscope</label>
+          <label data-i18n="osc">Oscilloscope</label>
           <input id="oscColor" type="color" value="#39e3ff" title="Wave Color">
-          <label>Zoom x</label>
+          <label data-i18n="zoom">Zoom x</label>
           <select id="oscZoom"><option>1</option><option selected>2</option><option>3</option></select>
         </div>
         <canvas id="osc"></canvas>
       </div>
+
       <div class="row">
-        <button id="genPlay" class="btn accent">▶︎ / ⏸</button>
-        <button id="genStop" class="btn">■</button>
-        <button id="genSave" class="btn">Save Preset</button>
-        <button id="genLoad" class="btn">Load Preset</button>
+        <button id="genPlay" class="btn accent" data-i18n="playpause">Play/Pause</button>
+        <button id="genStop" class="btn" data-i18n="stop">Stop</button>
+        <button id="genSave" class="btn" data-i18n="savePreset">Save Preset</button>
+        <button id="genLoad" class="btn" data-i18n="loadPreset">Load Preset</button>
       </div>
     </div>
   </section>
 </main>
 
-<!-- Backdrop -->
+<!-- Backdrop & Dropdown -->
 <div class="backdrop" id="backdrop"></div>
 
-<script>
-/*** ====== GLOBAL & LANG ====== ***/
-const $ = (s,r=document)=>r.querySelector(s);
-const $$ = (s,r=document)=>Array.from(r.querySelectorAll(s));
-let LANG = (document.documentElement.lang||'ko').toLowerCase().startsWith('en')?'en':'ko';
+<!-- Modal -->
+<div class="modal-back" id="modalBack"></div>
+<div class="modal" id="modal">
+  <div class="mhead">
+    <div id="modalTitle">Info</div>
+    <button id="modalClose" class="btn small">✕</button>
+  </div>
+  <div id="modalBody" class="mbody">…</div>
+</div>
 
-const I18N = {
-  'ko': {
-    'library':'라이브러리','generator':'주파수 생성기','waveform':'파형','frequency':'주파수 (Hz)',
-    'duty':'듀티','difference':'차이 (Hz)','noTrack':'선곡되지 않음','ready':'재생 준비됨',
-    'loopOn':'루프: 켬','loopOff':'루프: 끔','timer':'타이머'
-  },
-  'en': {
-    'library':'Library','generator':'Generator','waveform':'Waveform','frequency':'Frequency (Hz)',
-    'duty':'Duty','difference':'Difference (Hz)','noTrack':'No track loaded','ready':'Ready to play',
-    'loopOn':'Loop: On','loopOff':'Loop: Off','timer':'Timer'
-  }
+<script>
+/* ==== CONFIG: Supabase public media base (수정 필수) ==== */
+/* 예: https://<PROJECT>.supabase.co/storage/v1/object/public/<BUCKET> */
+const MEDIA_BASE = "https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media";
+
+/* ====== Globals / i18n ====== */
+const $=(s,r=document)=>r.querySelector(s); const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+let LANG=(document.documentElement.lang||'ko').toLowerCase().startsWith('en')?'en':'ko';
+
+const I18N={
+  ko:{library:'라이브러리',generator:'주파수 생성기',waveform:'파형',frequency:'주파수 (Hz)',duty:'듀티',difference:'차이 (Hz)',osc:'오실로스코프',zoom:'줌',
+      noTrack:'선곡되지 않음',ready:'재생 준비됨',loopOn:'루프: 켬',loopOff:'루프: 끔',timer:'타이머',playpause:'재생/일시정지',stop:'정지',
+      new:'+ 새로 만들기',save:'저장',load:'불러오기',savePreset:'프리셋 저장',loadPreset:'프리셋 불러오기',home:'홈',back:'뒤로',refresh:'새로고침'},
+  en:{library:'Library',generator:'Generator',waveform:'Waveform',frequency:'Frequency (Hz)',duty:'Duty',difference:'Difference (Hz)',osc:'Oscilloscope',zoom:'Zoom',
+      noTrack:'No track loaded',ready:'Ready to play',loopOn:'Loop: On',loopOff:'Loop: Off',timer:'Timer',playpause:'Play/Pause',stop:'Stop',
+      new:'+ New',save:'Save',load:'Load',savePreset:'Save Preset',loadPreset:'Load Preset',home:'Home',back:'Back',refresh:'Refresh'}
 };
-function t(k){ return I18N[LANG][k]||k; }
+function t(k){return I18N[LANG][k]||k;}
 function applyLang(){
-  $('#tabLibrary').textContent = t('library');
-  $('#tabGenerator').textContent = t('generator');
+  $('#tabLibrary').textContent=t('library'); $('#tabGenerator').textContent=t('generator');
   $$('[data-i18n="waveform"]').forEach(n=>n.textContent=t('waveform'));
   $$('[data-i18n="frequency"]').forEach(n=>n.textContent=t('frequency'));
   $$('[data-i18n="duty"]').forEach(n=>n.textContent=t('duty'));
   $$('[data-i18n="difference"]').forEach(n=>n.textContent=t('difference'));
-  $('#statusText').textContent = t('noTrack');
-  $('#btnLoop').textContent = loop? t('loopOn') : t('loopOff');
-  $('#btnTimer').textContent = t('timer');
-  $('#langBtn').textContent = LANG==='en' ? 'English' : '한국어';
+  $$('[data-i18n="osc"]').forEach(n=>n.textContent=t('osc'));
+  $$('[data-i18n="zoom"]').forEach(n=>n.textContent=t('zoom'));
+  $$('[data-i18n="playpause"]').forEach(n=>n.textContent=t('playpause'));
+  $$('[data-i18n="stop"]').forEach(n=>n.textContent=t('stop'));
+  $$('[data-i18n="new"]').forEach(n=>n.textContent=t('new'));
+  $$('[data-i18n="save"]').forEach(n=>n.textContent=t('save'));
+  $$('[data-i18n="load"]').forEach(n=>n.textContent=t('load'));
+  $$('[data-i18n="savePreset"]').forEach(n=>n.textContent=t('savePreset'));
+  $$('[data-i18n="loadPreset"]').forEach(n=>n.textContent=t('loadPreset'));
+  $('#btnHome').textContent=t('home'); $('#btnBack').textContent='←'; $('#btnRefresh').textContent='⟳';
+  $('#btnLoop').textContent=loop? t('loopOn'):t('loopOff'); $('#btnTimer').textContent=t('timer');
+  $('#langBtn').textContent=(LANG==='en'?'English':'한국어');
+  if(!STATE.currentTrack){ $('#statusText').textContent=t('noTrack'); }
 }
 
-/*** ====== MENU (Hamburger) ====== ***/
-const menuBtn = $('#menuBtn'), menuDrop=$('#menuDrop'), backdrop=$('#backdrop');
-function closeMenu(){ menuDrop.classList.remove('show'); backdrop.classList.remove('show'); }
-menuBtn.addEventListener('click', ()=>{ menuDrop.classList.toggle('show'); backdrop.classList.toggle('show'); });
-backdrop.addEventListener('click', closeMenu);
-// 텍스트 링크는 새 탭 열지 않고 패널로 표시하고 싶으면 필요 시 모달 구현 가능 (지금은 a href 그대로)
+/* ====== Hamburger & Modal ====== */
+const menuBtn=$('#menuBtn'), menuDrop=$('#menuDrop'), backdrop=$('#backdrop');
+function closeMenu(){ menuDrop.style.display='none'; backdrop.classList.remove('show'); }
+menuBtn.addEventListener('click',()=>{ menuDrop.style.display= menuDrop.style.display==='block'?'none':'block'; if(menuDrop.style.display==='block') backdrop.classList.add('show'); else backdrop.classList.remove('show');});
+backdrop.addEventListener('click',closeMenu);
 
-/*** ====== LANG TOGGLE ====== ***/
-$('#langBtn').addEventListener('click', ()=>{
-  LANG = (LANG==='en'?'ko':'en');
-  document.documentElement.lang = LANG;
-  applyLang();
-  // 현재 썸네일도 규칙에 맞게 재적용
-  if (STATE.currentTrack){
-    setStatusThumb(trackThumbJpg(STATE.path, STATE.currentTrack.name));
-  } else {
-    statusBlank();
-  }
+const mBack=$('#modalBack'), modal=$('#modal'), mTitle=$('#modalTitle'), mBody=$('#modalBody'), mClose=$('#modalClose');
+function showModal(title, text){ mTitle.textContent=title; mBody.textContent=text; mBack.style.display='block'; modal.style.display='block'; }
+function hideModal(){ mBack.style.display='none'; modal.style.display='none'; }
+mClose.addEventListener('click', hideModal); mBack.addEventListener('click', hideModal);
+
+$$('.menu-text').forEach(a=>{
+  a.addEventListener('click', async (e)=>{
+    e.preventDefault(); closeMenu();
+    const href=a.getAttribute('href');
+    try{ const r=await fetch(href,{cache:'no-store'}); const txt=await r.text(); showModal(a.textContent.trim(), txt); }
+    catch(_){ showModal(a.textContent.trim(), LANG==='en'?'Failed to load.':'불러올 수 없습니다.'); }
+  });
 });
 
-/*** ====== ROUTER: Tabs ====== ***/
-const tabLibrary = $('#tabLibrary'), tabGenerator = $('#tabGenerator');
-const secLibrary = $('#library'), secGenerator = $('#generator');
+/* ====== Tabs ====== */
+const tabLibrary=$('#tabLibrary'), tabGenerator=$('#tabGenerator');
+const secLibrary=$('#library'), secGenerator=$('#generator');
 function setTab(name){
-  if (name==='generator'){
-    tabGenerator.classList.add('active'); tabLibrary.classList.remove('active');
-    secGenerator.classList.add('active'); secLibrary.classList.remove('active');
-    document.body.classList.add('mode-generator'); document.body.classList.remove('mode-library');
-  } else {
-    tabLibrary.classList.add('active'); tabGenerator.classList.remove('active');
-    secLibrary.classList.add('active'); secGenerator.classList.remove('active');
-    document.body.classList.add('mode-library'); document.body.classList.remove('mode-generator');
+  if(name==='generator'){
+    tabGenerator.classList.add('active');tabLibrary.classList.remove('active');
+    secGenerator.classList.add('active');secLibrary.classList.remove('active');
+    document.body.classList.add('mode-generator');document.body.classList.remove('mode-library');
+  }else{
+    tabLibrary.classList.add('active');tabGenerator.classList.remove('active');
+    secLibrary.classList.add('active');secGenerator.classList.remove('active');
+    document.body.classList.add('mode-library');document.body.classList.remove('mode-generator');
   }
 }
-tabLibrary.addEventListener('click', ()=>setTab('library'));
-tabGenerator.addEventListener('click', ()=>setTab('generator'));
+tabLibrary.addEventListener('click',()=>setTab('library'));
+tabGenerator.addEventListener('click',()=>setTab('generator'));
 
-/*** ====== LIBRARY: Data & Thumbs ====== ***/
-// 우선순위 1) media/library.json  2) window.LIBRARY_MANIFEST (본 파일 아래쪽에 예시 있음)
-let LIB = null;
+/* ====== Supabase URL helpers ====== */
+function folderUrl(path){ // path e.g. "Quantum_Torus_X"
+  return `${MEDIA_BASE}/${encodeURIComponent(path)}`;
+}
+function trackUrl(path, file){ // file e.g. "Brain_Heart_Cohesion.mp3"
+  return `${MEDIA_BASE}/${encodeURIComponent(path)}/${encodeURIComponent(file)}`;
+}
+function trackThumb(path, stem){ // stem without ext
+  const name = stem + (LANG==='en' ? '_E.jpg' : '.jpg');
+  return `${MEDIA_BASE}/${encodeURIComponent(path)}/${encodeURIComponent(name)}`;
+}
+function folderThumb(path){ // folder.jpg or folder_e.jpg at folder root
+  const name = (LANG==='en' ? 'folder_e.jpg' : 'folder.jpg');
+  return `${MEDIA_BASE}/${encodeURIComponent(path)}/${encodeURIComponent(name)}`;
+}
+
+/* ====== Library data ====== */
+let LIB=null;
 async function loadLibrary(){
   try{
-    const r = await fetch('media/library.json',{cache:'no-store'});
-    if (r.ok){ LIB = await r.json(); return; }
+    const r=await fetch('media/library.json',{cache:'no-store'});
+    if(r.ok){ LIB=await r.json(); return; }
   }catch(_){}
-  if (window.LIBRARY_MANIFEST) LIB = window.LIBRARY_MANIFEST;
+  if(window.LIBRARY_MANIFEST) LIB=window.LIBRARY_MANIFEST;
 }
-function trackThumbJpg(path, name){
-  const base = path ? path.replace(/\/+$/,'')+'/' : '';
-  const stem = (name||'').replace(/\.[^.]+$/,'');
-  return base + stem + (LANG==='en' ? '_E.jpg' : '.jpg');
-}
-function folderThumbJpg(path){
-  const base = path ? path.replace(/\/+$/,'')+'/' : '';
-  return base + (LANG==='en' ? 'folder_e.jpg' : 'folder.jpg');
-}
+const STATE={path:'',stack:[],currentTrack:null,playlistName:(LANG==='en'?'Default':'기본'),playlists:{}};
 
-const STATE = { path:'', stack:[], currentTrack:null, playlistName:'Default', playlists:{} };
+const strip=$('#strip'), breadcrumb=$('#breadcrumb');
+function statusBlank(){ const st=$('#statusThumb'); st.classList.add('status-blank'); st.style.backgroundImage='none'; $('#statusText')?.remove(); const p=st.parentElement; let s=p.querySelector('#statusText'); if(!s){ s=document.createElement('div'); s.id='statusText'; p.appendChild(s);} s.textContent=t('noTrack'); }
+function setStatusThumb(url){ const st=$('#statusThumb'); st.classList.remove('status-blank'); st.style.backgroundImage=`url("${url}")`; let s=st.parentElement.querySelector('#statusText'); if(!s){ s=document.createElement('div'); s.id='statusText'; st.parentElement.appendChild(s);} s.textContent=t('ready'); }
 
-function statusBlank(){
-  const st=$('#statusThumb'); st.classList.add('status-blank'); st.style.backgroundImage='none';
-  $('#statusText').textContent = t('noTrack');
-}
-function setStatusThumb(url){
-  const st=$('#statusThumb'); st.classList.remove('status-blank'); st.style.backgroundImage=`url("${url}")`;
-  $('#statusText').textContent = t('ready');
-}
+function getNodeByPath(path){ if(!path) return LIB?.categories||[]; const cat=(LIB?.categories||[]).find(c=>c.name===path); return cat?{tracks:cat.tracks}:null; }
 
-function renderGrid(){
-  const grid = $('#grid'); grid.innerHTML='';
-  const bc = $('#breadcrumb'); bc.textContent = '/' + (STATE.path||'');
-  // path가 공백이면 루트 카테고리
-  const node = getNodeByPath(STATE.path);
-  const items = [];
-  if (!STATE.path){
-    // 카테고리
-    (node||[]).forEach(cat=>{
-      const card = makeCard(cat.name, folderThumbJpg('media/'+cat.name), true, cat.name);
-      grid.appendChild(card);
+function renderStrip(){
+  strip.innerHTML='';
+  breadcrumb.textContent='/' + (STATE.path||'');
+  if(!STATE.path){
+    // root: show category folders
+    (LIB?.categories||[]).forEach(cat=>{
+      const card=makeCard(cat.name, folderThumb(cat.name), true, cat.name);
+      strip.appendChild(card);
     });
   }else{
-    // 상위로
-    const up = document.createElement('div');
-    up.className='card';
-    up.innerHTML = `<div class="thumb" style="display:flex;align-items:center;justify-content:center;color:#9fc7ff">⬆︎</div><div class="label">..</div>`;
-    up.addEventListener('click',()=>{ STATE.path = STATE.stack.pop()||''; renderGrid(); });
-    grid.appendChild(up);
-    // 트랙들
-    const catTracks = node?.tracks||[];
-    catTracks.forEach(tr=>{
-      const thumb = trackThumbJpg('media/'+STATE.path, tr.file.replace(/\.[^.]+$/,''));
-      const card = makeCard(tr.name || tr.file.replace(/\.[^.]+$/,''), thumb, false, tr.file);
-      grid.appendChild(card);
+    // up button as first card
+    const up=document.createElement('div'); up.className='card';
+    up.innerHTML=`<div class="thumb" style="display:flex;align-items:center;justify-content:center;color:#9fc7ff">⬆︎</div><div class="label">..</div>`;
+    up.addEventListener('click',()=>{ STATE.path=STATE.stack.pop()||''; renderStrip(); });
+    strip.appendChild(up);
+    // tracks
+    const node=getNodeByPath(STATE.path); const tracks=node?.tracks||[];
+    tracks.forEach(tr=>{
+      const stem=(tr.name||tr.file).replace(/\.[^.]+$/,'');
+      const card=makeCard(tr.name||stem, trackThumb(STATE.path, stem), false, tr.file);
+      strip.appendChild(card);
     });
   }
 }
+
 function makeCard(label, thumbUrl, isFolder, fileOrFolder){
-  const card = document.createElement('div'); card.className='card';
-  if (isFolder) card.classList.add('folder');
-  const th = document.createElement('div'); th.className='thumb'; th.style.backgroundImage=`url("${thumbUrl}")`; card.appendChild(th);
-  const lb = document.createElement('div'); lb.className='label'; lb.textContent=label; card.appendChild(lb);
+  const card=document.createElement('div'); card.className='card'; if(isFolder) card.classList.add('folder');
+  const th=document.createElement('div'); th.className='thumb'; th.style.backgroundImage=`url("${thumbUrl}")`; card.appendChild(th);
+  const lb=document.createElement('div'); lb.className='label'; lb.textContent=label; card.appendChild(lb);
   card.addEventListener('click', ()=>{
-    if (isFolder){
-      STATE.stack.push(STATE.path); STATE.path = fileOrFolder; renderGrid();
-      statusBlank();
+    if(isFolder){
+      STATE.stack.push(STATE.path); STATE.path=fileOrFolder; renderStrip(); statusBlank();
     }else{
-      // 트랙 선택
-      const url = 'media/'+STATE.path+'/'+fileOrFolder;
-      PLAYER.src = url;
-      PLAYER.load();
-      setStatusThumb(trackThumbJpg('media/'+STATE.path, fileOrFolder.replace(/\.[^.]+$/,'')));
-      STATE.currentTrack = { name:fileOrFolder.replace(/\.[^.]+$/,''), url };
+      const url=trackUrl(STATE.path, fileOrFolder); PLAYER.src=url; PLAYER.load();
+      const stem=fileOrFolder.replace(/\.[^.]+$/,''); setStatusThumb(trackThumb(STATE.path, stem));
+      STATE.currentTrack={name:stem,url};
     }
   });
   return card;
 }
-function getNodeByPath(path){
-  // 루트면 카테고리 배열
-  if (!path) return LIB?.categories || [];
-  const cat = (LIB?.categories||[]).find(c=>c.name===path);
-  return cat ? { tracks:cat.tracks } : null;
-}
 
-/*** ====== PLAYER & CONTROLS ====== ***/
-const PLAYER = $('#player');
-let loop = false; let timerId = null;
+/* ====== Library nav controls ====== */
+$('#btnBack').addEventListener('click',()=>{ STATE.path=STATE.stack.pop()||''; renderStrip(); });
+$('#btnHome').addEventListener('click',()=>{ STATE.stack.length=0; STATE.path=''; renderStrip(); });
+$('#btnRefresh').addEventListener('click',()=>{ renderStrip(); });
 
-$('#btnPlay').addEventListener('click', ()=>{ if (PLAYER.paused) PLAYER.play(); else PLAYER.pause(); });
-$('#btnLoop').addEventListener('click', ()=>{
-  loop = !loop; PLAYER.loop = loop; $('#btnLoop').textContent = loop? t('loopOn') : t('loopOff');
-});
-$('#btnTimer').addEventListener('click', ()=>{
-  const m = prompt(LANG==='en'?'Sleep timer minutes (0=off)':'타이머(분, 0=해제)', '20');
-  const mins = Math.max(0, parseInt(m||'0',10));
-  if (timerId){ clearTimeout(timerId); timerId=null; }
-  if (mins>0){ timerId = setTimeout(()=>{ PLAYER.pause(); }, mins*60*1000); }
-});
+/* ====== Player & playlist ====== */
+const PLAYER=$('#player'); let loop=false; let timerId=null;
+$('#btnPlay').addEventListener('click',()=>{ if(PLAYER.paused) PLAYER.play(); else PLAYER.pause(); });
+$('#btnLoop').addEventListener('click',()=>{ loop=!loop; PLAYER.loop=loop; $('#btnLoop').textContent=loop?t('loopOn'):t('loopOff'); });
+$('#btnTimer').addEventListener('click',()=>{ const m=prompt(LANG==='en'?'Sleep timer minutes (0=off)':'타이머(분, 0=해제)','20'); const mins=Math.max(0,parseInt(m||'0',10)); if(timerId){clearTimeout(timerId);timerId=null;} if(mins>0){ timerId=setTimeout(()=>{PLAYER.pause();}, mins*60*1000);} });
 
-/*** ====== PLAYLIST ====== ***/
-const PL = $('#playlist');
-function loadPLStore(){
-  try{
-    const raw = localStorage.getItem('pl_store_v1');
-    if (raw) STATE.playlists = JSON.parse(raw);
-  }catch(_){}
-  if (!STATE.playlists[STATE.playlistName]) STATE.playlists[STATE.playlistName] = [];
-}
-function savePLStore(){
-  try{ localStorage.setItem('pl_store_v1', JSON.stringify(STATE.playlists)); }catch(_){}
-}
-function renderPL(){
-  PL.innerHTML='';
-  const names = Object.keys(STATE.playlists);
-  names.forEach(n=>{
-    const pill = document.createElement('div'); pill.className='pill'; pill.textContent=n;
-    if (n===STATE.playlistName) pill.classList.add('active');
-    pill.addEventListener('click',()=>{ STATE.playlistName=n; renderPL(); });
-    PL.appendChild(pill);
-  });
-}
-$('#btnAddPL').addEventListener('click', ()=>{
-  const name = prompt(LANG==='en'?'New playlist name':'새 플레이리스트 이름', 'My List');
-  if (!name) return;
-  if (!STATE.playlists[name]) STATE.playlists[name] = [];
-  STATE.playlistName = name;
-  savePLStore(); renderPL();
-});
-$('#btnSavePL').addEventListener('click', ()=>{
-  if (!STATE.currentTrack){ alert(LANG==='en'?'Select a track first':'먼저 트랙을 선택하세요'); return; }
-  const list = STATE.playlists[STATE.playlistName] || (STATE.playlists[STATE.playlistName]=[]);
-  list.push(STATE.currentTrack);
-  savePLStore(); alert(LANG==='en'?'Saved to playlist':'플레이리스트에 저장됨');
-});
-$('#btnLoadPL').addEventListener('click', ()=>{
-  const list = STATE.playlists[STATE.playlistName]||[];
-  if (!list.length){ alert(LANG==='en'?'Playlist is empty':'플레이리스트가 비어 있습니다'); return; }
-  // 첫 곡 재생
-  const t = list[0];
-  PLAYER.src = t.url; PLAYER.load(); PLAYER.play().catch(()=>{});
-  setStatusThumb(trackThumbJpg(STATE.path, t.name));
-});
+const PL=$('#playlist');
+function loadPLStore(){ try{ const raw=localStorage.getItem('pl_store_v1'); if(raw) STATE.playlists=JSON.parse(raw);}catch(_){}
+  if(!STATE.playlists[STATE.playlistName]) STATE.playlists[STATE.playlistName]=[]; }
+function savePLStore(){ try{ localStorage.setItem('pl_store_v1', JSON.stringify(STATE.playlists)); }catch(_){} }
+function renderPL(){ PL.innerHTML=''; Object.keys(STATE.playlists).forEach(n=>{ const pill=document.createElement('div'); pill.className='card'; pill.style.flex='0 0 auto'; pill.style.width='auto'; pill.style.minWidth='92px'; pill.style.textAlign='center'; pill.innerHTML=`<div class="label">${n}</div>`; if(n===STATE.playlistName) pill.style.borderColor='#1f4e79'; pill.addEventListener('click',()=>{STATE.playlistName=n; renderPL();}); PL.appendChild(pill);}); }
 
-/*** ====== GENERATOR (WebAudio) ====== ***/
-const aCtx = new (window.AudioContext||window.webkitAudioContext)();
-let genGain, oscL, oscR, analyser; // for osc
+$('#btnAddPL').addEventListener('click',()=>{ const def=LANG==='en'?'My List':'내 리스트'; const name=prompt(LANG==='en'?'New playlist name':'새 플레이리스트 이름', def); if(!name) return; if(!STATE.playlists[name]) STATE.playlists[name]=[]; STATE.playlistName=name; savePLStore(); renderPL(); });
+$('#btnSavePL').addEventListener('click',()=>{ if(!STATE.currentTrack){ alert(LANG==='en'?'Select a track first':'먼저 트랙을 선택하세요'); return; } const list=STATE.playlists[STATE.playlistName]||(STATE.playlists[STATE.playlistName]=[]); list.push(STATE.currentTrack); savePLStore(); alert(LANG==='en'?'Saved to playlist':'플레이리스트에 저장됨'); });
+$('#btnLoadPL').addEventListener('click',()=>{ const list=STATE.playlists[STATE.playlistName]||[]; if(!list.length){ alert(LANG==='en'?'Playlist is empty':'플레이리스트가 비어 있습니다'); return; } const t=list[0]; PLAYER.src=t.url; PLAYER.load(); PLAYER.play().catch(()=>{}); setStatusThumb(trackThumb(STATE.path, t.name)); });
+
+/* ====== Generator (WebAudio + dual-scope) ====== */
+const aCtx=new (window.AudioContext||window.webkitAudioContext)(); let genGain, oscL, oscR, anaL, anaR;
 function ensureNodes(){
-  if (!genGain){
-    genGain = aCtx.createGain(); genGain.gain.value = 0.25; genGain.connect(aCtx.destination);
-  }
-  if (!oscL){ oscL = aCtx.createOscillator(); oscL.type='sine'; oscL.frequency.value=440; const g=aCtx.createGain(); g.gain.value=0.5; oscL.connect(g).connect(genGain); oscL.start(); }
-  if (!oscR){ oscR = aCtx.createOscillator(); oscR.type='sine'; oscR.frequency.value=440; const g=aCtx.createGain(); g.gain.value=0.5; oscR.connect(g).connect(genGain); oscR.start(); }
-  if (!analyser){ analyser = aCtx.createAnalyser(); analyser.fftSize=2048; genGain.connect(analyser); }
+  if(!genGain){ genGain=aCtx.createGain(); genGain.gain.value=0.25; genGain.connect(aCtx.destination); }
+  if(!oscL){ oscL=aCtx.createOscillator(); oscL.type='sine'; oscL.frequency.value=440; const g=aCtx.createGain(); g.gain.value=0.5; oscL.connect(g).connect(genGain); oscL.start(); }
+  if(!oscR){ oscR=aCtx.createOscillator(); oscR.type='sine'; oscR.frequency.value=440; const g=aCtx.createGain(); g.gain.value=0.5; oscR.connect(g).connect(genGain); oscR.start(); }
+  if(!anaL){ anaL=aCtx.createAnalyser(); anaL.fftSize=2048; }
+  if(!anaR){ anaR=aCtx.createAnalyser(); anaR.fftSize=2048; }
+  // 분석은 개별로
+  try{ oscL.connect(anaL); }catch(_){} try{ oscR.connect(anaR); }catch(_){}
 }
-function makePulse(duty){
-  duty = Math.max(1,Math.min(99, duty||50));
-  const D=duty/100, N=32;
-  const real=new Float32Array(N+1), imag=new Float32Array(N+1);
-  for (let n=1;n<=N;n++){ imag[n]=(2/(n*Math.PI))*Math.sin(n*Math.PI*D); }
-  try{ return new PeriodicWave(aCtx,{real,imag,disableNormalization:true}); }
-  catch(_){ return aCtx.createPeriodicWave(real,imag,{disableNormalization:true}); }
-}
+function makePulse(duty){ duty=Math.max(1,Math.min(99,duty||50)); const D=duty/100,N=32,real=new Float32Array(N+1),imag=new Float32Array(N+1); for(let n=1;n<=N;n++){ imag[n]=(2/(n*Math.PI))*Math.sin(n*Math.PI*D);} try{ return new PeriodicWave(aCtx,{real,imag,disableNormalization:true}); }catch(_){ return aCtx.createPeriodicWave(real,imag,{disableNormalization:true}); } }
 
 const waveSel=$('#waveSel'), freqNum=$('#freqNum'), freqSlider=$('#freqSlider'), duty=$('#duty'), dutyRow=$('#dutyRow');
 const bnEnable=$('#bnEnable'), bnDiff=$('#bnDiff');
 
 function applyGen(){
   ensureNodes();
-  const f = Math.max(1, Math.min(20000, parseFloat(freqNum.value)||440));
-  const w = (waveSel.value||'sine').toLowerCase();
-  const d = parseFloat(duty.value)||50;
-  const diff = Math.max(1, Math.min(100, parseFloat(bnDiff.value)||4));
-  const L = f, R = bnEnable.checked ? (f + diff) : f;
-
-  try{ oscL.frequency.setTargetAtTime(L,aCtx.currentTime,0.01); }catch(_){ oscL.frequency.value=L; }
-  try{ oscR.frequency.setTargetAtTime(R,aCtx.currentTime,0.01); }catch(_){ oscR.frequency.value=R; }
-
-  if (w==='square'){ const pw=makePulse(d); oscL.setPeriodicWave(pw); oscR.setPeriodicWave(pw); dutyRow.style.display='flex'; }
-  else if (w==='pulse'){ const pw2=makePulse(d); oscL.setPeriodicWave(pw2); oscR.setPeriodicWave(pw2); dutyRow.style.display='flex'; }
-  else {
-    oscL.type=w; oscR.type=w; dutyRow.style.display = (w==='sine'?'none':'flex');
-  }
+  const f=Math.max(1,Math.min(20000,parseFloat(freqNum.value)||440));
+  const w=(waveSel.value||'sine').toLowerCase();
+  const d=parseFloat(duty.value)||50;
+  const diff=Math.max(1,Math.min(100,parseFloat(bnDiff.value)||4));
+  const L=f, R=bnEnable.checked?(f+diff):f;
+  try{ oscL.frequency.setTargetAtTime(L,aCtx.currentTime,0.01);}catch(_){oscL.frequency.value=L;}
+  try{ oscR.frequency.setTargetAtTime(R,aCtx.currentTime,0.01);}catch(_){oscR.frequency.value=R;}
+  if(w==='square'||w==='pulse'){ const pw=makePulse(d); oscL.setPeriodicWave(pw); oscR.setPeriodicWave(pw); dutyRow.style.display='flex'; }
+  else { oscL.type=w; oscR.type=w; dutyRow.style.display=(w==='sine'?'none':'flex'); }
 }
-freqNum.addEventListener('input', ()=>{ freqSlider.value=freqNum.value; applyGen(); });
-freqSlider.addEventListener('input', ()=>{ freqNum.value=freqSlider.value; applyGen(); });
-waveSel.addEventListener('change', applyGen);
-duty.addEventListener('input', applyGen);
-bnEnable.addEventListener('change', applyGen);
-bnDiff.addEventListener('input', applyGen);
-
-const genPlay = $('#genPlay'), genStop=$('#genStop');
-let genRunning = false;
-genPlay.addEventListener('click', async ()=>{
-  await aCtx.resume();
-  ensureNodes();
-  genRunning = !genRunning;
-  genGain.gain.setTargetAtTime(genRunning ? 0.25 : 0.0, aCtx.currentTime, 0.02);
-});
-genStop.addEventListener('click', ()=>{
-  ensureNodes();
-  genRunning=false; genGain.gain.setTargetAtTime(0.0, aCtx.currentTime, 0.02);
+[freqNum,freqSlider,waveSel,duty,bnEnable,bnDiff].forEach(el=>{
+  el.addEventListener('input',()=>{ if(el===freqSlider) freqNum.value=freqSlider.value; if(el===freqNum) freqSlider.value=freqNum.value; applyGen(); });
+  el.addEventListener('change',applyGen);
 });
 
-$('#genSave').addEventListener('click', ()=>{
-  const p = {
-    wave:waveSel.value, freq:parseFloat(freqNum.value)||440,
-    duty:parseFloat(duty.value)||50, bn: !!bnEnable.checked, diff: parseFloat(bnDiff.value)||4
-  };
-  const name = prompt(LANG==='en'?'Preset name':'프리셋 이름','Preset 1');
-  if (!name) return;
-  try{
-    const raw = localStorage.getItem('gen_presets_v1'); const store = raw? JSON.parse(raw):{};
-    store[name]=p; localStorage.setItem('gen_presets_v1', JSON.stringify(store));
-    alert(LANG==='en'?'Saved':'저장됨');
-  }catch(_){}
+const genPlay=$('#genPlay'), genStop=$('#genStop'); let genRunning=false;
+genPlay.addEventListener('click', async ()=>{ await aCtx.resume(); ensureNodes(); genRunning=!genRunning; genGain.gain.setTargetAtTime(genRunning?0.25:0.0, aCtx.currentTime, 0.02); });
+genStop.addEventListener('click',()=>{ ensureNodes(); genRunning=false; genGain.gain.setTargetAtTime(0.0, aCtx.currentTime, 0.02); });
+
+$('#genSave').addEventListener('click',()=>{
+  const p={wave:waveSel.value,freq:parseFloat(freqNum.value)||440,duty:parseFloat(duty.value)||50,bn:!!bnEnable.checked,diff:parseFloat(bnDiff.value)||4};
+  const name=prompt(LANG==='en'?'Preset name':'프리셋 이름','Preset 1'); if(!name) return;
+  try{ const raw=localStorage.getItem('gen_presets_v1'); const store=raw?JSON.parse(raw):{}; store[name]=p; localStorage.setItem('gen_presets_v1', JSON.stringify(store)); alert(LANG==='en'?'Saved':'저장됨'); }catch(_){}
 });
-$('#genLoad').addEventListener('click', ()=>{
+$('#genLoad').addEventListener('click',()=>{
   let store={}; try{ const raw=localStorage.getItem('gen_presets_v1'); if(raw) store=JSON.parse(raw);}catch(_){}
-  const names = Object.keys(store); if (!names.length){ alert(LANG==='en'?'No presets':'프리셋 없음'); return; }
-  const name = prompt((LANG==='en'?'Type preset name:\n':'불러올 프리셋 이름:\n')+names.join(', '), names[0]);
-  const p = store[name]; if (!p) return;
-  waveSel.value=p.wave; freqNum.value=p.freq; freqSlider.value=p.freq; duty.value=p.duty; bnEnable.checked=!!p.bn; bnDiff.value=p.diff;
-  applyGen();
+  const names=Object.keys(store); if(!names.length){ alert(LANG==='en'?'No presets':'프리셋 없음'); return; }
+  const name=prompt((LANG==='en'?'Type preset name:\n':'불러올 프리셋 이름:\n')+names.join(', '), names[0]); const p=store[name]; if(!p) return;
+  waveSel.value=p.wave; freqNum.value=p.freq; freqSlider.value=p.freq; duty.value=p.duty; bnEnable.checked=!!p.bn; bnDiff.value=p.diff; applyGen();
 });
 
-/*** ====== OSCILLOSCOPE ====== ***/
-const osc = $('#osc'), octx = osc.getContext('2d');
-function sizeOsc(){
-  const dpr = window.devicePixelRatio||1;
-  const w = osc.clientWidth||600, h = osc.clientHeight||140;
-  osc.width = Math.floor(w*dpr); osc.height=Math.floor(h*dpr);
-  octx.setTransform(dpr,0,0,dpr,0,0);
-}
-sizeOsc(); addEventListener('resize', sizeOsc, {passive:true});
-const oscZoom=$('#oscZoom'), oscColor=$('#oscColor');
-let zoom = 2;
-oscZoom.addEventListener('change', ()=>{ zoom=parseInt(oscZoom.value)||2; });
+/* ====== Oscilloscope (full width + dual lines) ====== */
+const osc=$('#osc'), octx=osc.getContext('2d'); const oscZoom=$('#oscZoom'), oscColor=$('#oscColor'); let zoom=2;
+function sizeOsc(){ const dpr=window.devicePixelRatio||1; const w=osc.clientWidth||600, h=osc.clientHeight||160; osc.width=Math.floor(w*dpr); osc.height=Math.floor(h*dpr); octx.setTransform(dpr,0,0,dpr,0,0); }
+sizeOsc(); addEventListener('resize',sizeOsc,{passive:true}); oscZoom.addEventListener('change',()=>{ zoom=parseInt(oscZoom.value)||2; });
 
 function drawOsc(){
-  requestAnimationFrame(drawOsc);
-  if (!analyser) return;
-  const len = analyser.fftSize; const data = new Uint8Array(len);
-  analyser.getByteTimeDomainData(data);
-  const w=osc.clientWidth||600, h=osc.clientHeight||140;
+  requestAnimationFrame(drawOsc); if(!anaL||!anaR) return;
+  const w=osc.clientWidth||600, h=osc.clientHeight||160;
   octx.clearRect(0,0,w,h);
   // grid
   octx.strokeStyle='rgba(100,180,220,.08)'; octx.lineWidth=1;
   for(let gx=0;gx<w;gx+=Math.max(40,w/10)){ octx.beginPath(); octx.moveTo(gx,0); octx.lineTo(gx,h); octx.stroke(); }
   for(let gy=0;gy<h;gy+=Math.max(28,h/6)){ octx.beginPath(); octx.moveTo(0,gy); octx.lineTo(w,gy); octx.stroke(); }
-  // wave
-  const col = oscColor.value||'#39e3ff';
-  octx.strokeStyle=col; octx.lineWidth=2; octx.shadowColor=col; octx.shadowBlur=8;
-  octx.beginPath();
-  const slice=(data.length/w)/Math.max(1,(zoom/1)); const ymid=h/2, yscale=.9;
-  for(let x=0;x<w;x++){ const idx=Math.min(data.length-1, Math.floor(x*slice)); const v=(data[idx]-128)/128; const y=ymid+v*ymid*yscale; if(x===0) octx.moveTo(x,y); else octx.lineTo(x,y); }
-  octx.stroke(); octx.shadowBlur=0;
+
+  const col=oscColor.value||'#39e3ff';
+  // left
+  const bufL=new Uint8Array(anaL.fftSize); anaL.getByteTimeDomainData(bufL);
+  octx.beginPath(); octx.lineWidth=2; octx.strokeStyle=col; octx.shadowColor=col; octx.shadowBlur=8;
+  const stepL=(bufL.length/(w*zoom)); for(let x=0;x<=w-1;x++){ const idx=Math.min(bufL.length-1, Math.floor(x*stepL)); const v=(bufL[idx]-128)/128; const y=h*0.25 + v*(h*0.22); if(x===0) octx.moveTo(0,y); else octx.lineTo(x,y); } octx.stroke(); octx.shadowBlur=0;
+
+  // right (if binaural)
+  const bufR=new Uint8Array(anaR.fftSize); anaR.getByteTimeDomainData(bufR);
+  const colR='rgba(57,227,255,0.6)';
+  octx.beginPath(); octx.lineWidth=2; octx.strokeStyle=colR; octx.shadowColor=colR; octx.shadowBlur=6;
+  const stepR=(bufR.length/(w*zoom)); for(let x=0;x<=w-1;x++){ const idx=Math.min(bufR.length-1, Math.floor(x*stepR)); const v=(bufR[idx]-128)/128; const y=h*0.75 + v*(h*0.22); if(x===0) octx.moveTo(0,y); else octx.lineTo(x,y); } octx.stroke(); octx.shadowBlur=0;
 }
 drawOsc();
 
-/*** ====== BOOT ====== ***/
-(async function boot(){
-  applyLang();
-  // 루트에서 시작
-  await loadLibrary();
-  STATE.path=''; STATE.stack.length=0; renderGrid(); statusBlank();
+/* ====== Boot ====== */
+const langBtn=$('#langBtn');
+langBtn.addEventListener('click',()=>{ LANG=(LANG==='en'?'ko':'en'); document.documentElement.lang=LANG; applyLang(); renderStrip(); renderPL(); if(STATE.currentTrack){ setStatusThumb(trackThumb(STATE.path, STATE.currentTrack.name)); } else { statusBlank(); } });
 
-  // 플레이어 버튼 UX
-  $('#btnPlay').addEventListener('click', async ()=>{ await PLAYER.play().catch(()=>{}); });
+(async function init(){
+  applyLang();
+  await loadLibrary();
+  STATE.path=''; STATE.stack.length=0;
+  renderStrip(); statusBlank();
+  loadPLStore(); renderPL();
 
   // iOS unlock
   const unlock=async()=>{ try{ await aCtx.resume(); }catch(_){ } window.removeEventListener('touchend',unlock); window.removeEventListener('click',unlock); };
   window.addEventListener('touchend',unlock,{once:true}); window.addEventListener('click',unlock,{once:true});
-
-  // playlist init
-  loadPLStore(); renderPL();
 })();
 </script>
 
 <script>
-/* ================== (옵션) 내장 라이브러리 매니페스트 예시 ==================
-   - 만약 media/library.json 을 두면 이 예시는 무시됩니다(외부 JSON이 우선).
-   - 실제 폴더/파일명과 일치시켜 주세요.
-*/
+/* ===== (옵션) 내장 라이브러리 예시: media/library.json 없을 때 사용 ===== */
 window.LIBRARY_MANIFEST = {
   "categories":[
-    {
-      "name":"Quantum_Torus_X",
-      "tracks":[
-        {"name":"Brain_Heart_Cohesion","file":"Brain_Heart_Cohesion.mp3"},
-        {"name":"Golden_Ocean","file":"Golden_Ocean.mp3"}
-      ]
-    },
-    {
-      "name":"Crystal_Frequencies",
-      "tracks":[
-        {"name":"Moldavite_Activation","file":"Moldavite_Activation.mp3"},
-        {"name":"Rose_Quartz","file":"Rose_Quartz.mp3"}
-      ]
-    }
+    {"name":"Quantum_Torus_X","tracks":[{"name":"Brain_Heart_Cohesion","file":"Brain_Heart_Cohesion.mp3"},{"name":"Golden_Ocean","file":"Golden_Ocean.mp3"}]},
+    {"name":"Crystal_Frequencies","tracks":[{"name":"Moldavite_Activation","file":"Moldavite_Activation.mp3"},{"name":"Rose_Quartz","file":"Rose_Quartz.mp3"}]}
   ]
 };
-/* --------- media/library.json 포맷 예시 ----------
-{
-  "categories":[
-    {"name":"Quantum_Torus_X","tracks":[{"name":"Brain_Heart_Cohesion","file":"Brain_Heart_Cohesion.mp3"}]},
-    {"name":"Crystal_Frequencies","tracks":[{"name":"Moldavite_Activation","file":"Moldavite_Activation.mp3"}]}
-  ]
-}
---------------------------------------------------- */
 </script>
 </body>
 </html>
