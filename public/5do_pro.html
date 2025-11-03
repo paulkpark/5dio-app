@@ -159,6 +159,20 @@ header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10
 #fxCanvas.blend-bright { mix-blend-mode: lighten; }
 </style>
 
+
+<style>
+/* Force-hide legacy spectrum visualizer */
+.visual-wrap, #vizCanvas, #viz, #vizCanvas2 {
+  display:none !important;
+  visibility:hidden !important;
+  pointer-events:none !important;
+  height:0 !important;
+  padding:0 !important;
+  margin:0 !important;
+  border:0 !important;
+}
+</style>
+
 </head>
 <body>
 
@@ -226,10 +240,10 @@ header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10
 <!-- Player -->
 <div class="player-wrap">
   <div class="status-wrap">
-    <div id="loadingThumb" class="status-thumb loaded" aria-label="loading thumbnail" style="background-image: url(&quot;https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Quantum_Torus_X/Heart_Brain_Cohesion.jpg&quot;);"></div>
-    <div class="muted" id="statusText">재생 준비됨</div>
+    <div id="loadingThumb" class="status-thumb></div>
+    <div class="muted" id="statusText">선곡되지 않음</div>
   </div>
-  <audio id="player" controls="" crossorigin="anonymous" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Quantum_Torus_X/Heart_Brain_Cohesion.mp3"></audio>
+  <audio id="player" controls="" crossorigin="anonymous"></audio>
 </div>
 
 <!-- Spectrum Visualizer -->
@@ -296,11 +310,6 @@ header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10
     
   </div>
 </section>
-
-<div class="visual-wrap" style="">
-  <canvas id="vizCanvas" height="280" width="0"></canvas>
-</div>
-
 <!-- Modal for /texts/*.txt -->
 <div id="txtModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);align-items:center;justify-content:center;z-index:9999">
   <div style="background:#0f1524;color:#cfead1;border:1px solid #334;max-width:720px;width:90%;max-height:75vh;overflow:auto;border-radius:14px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.5)">
@@ -1408,6 +1417,32 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if (!genVisible) showFx();
   });
 })();
+</script>
+
+
+<script>
+(function(){
+  try{
+    if (window.vizRAF) { cancelAnimationFrame(window.vizRAF); window.vizRAF = 0; }
+    if (window.drawViz) { window.drawViz = function(){}; }
+    if (window.startViz) { window.startViz = function(){}; }
+    if (window.stopViz) { window.stopViz = function(){}; }
+    if (window.analyser && window.analyser.disconnect) { try{ window.analyser.disconnect(); }catch(e){} }
+    if (window.sourceNode && window.sourceNode.disconnect) { try{ window.sourceNode.disconnect(); }catch(e){} }
+  }catch(e){}
+})();
+</script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const st = document.getElementById('loadingThumb');
+  const tx = document.getElementById('statusText');
+  if (st) { st.classList.remove('loaded'); st.style.backgroundImage = 'none'; }
+  if (tx && (!tx.textContent || /재생 준비됨|Ready to play/i.test(tx.textContent))) {
+    tx.textContent = (window.lang==='en' ? 'No track loaded' : '선곡되지 않음');
+  }
+});
 </script>
 
 </body></html>
