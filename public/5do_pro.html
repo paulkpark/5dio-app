@@ -160,16 +160,76 @@ header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10
 </style>
 
 
+
+
+
+
+
+
+
+
+
 <style>
-/* Force-hide legacy spectrum visualizer remnants */
-.visual-wrap, #vizCanvas, #viz, #vizCanvas2 {
-  display:none !important;
-  visibility:hidden !important;
-  pointer-events:none !important;
-  height:0 !important;
-  padding:0 !important;
-  margin:0 !important;
-  border:0 !important;
+/* Toroidal Vortex FX Canvas */
+#fxCanvas{
+  width:100%;
+  height:220px;
+  display:none;
+  border-radius:12px;
+  overflow:hidden;
+  background:#02060f; /* deep space */
+  box-shadow: inset 0 0 30px rgba(0,150,255,0.08);
+}
+</style>
+
+
+<style>
+/* Kill legacy spectrum visualizer */
+.visual-wrap, #viz, #vizCanvas, #vizCanvas2 {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  height: 0 !important;
+  margin: 0 !important; padding: 0 !important; border: 0 !important;
+}
+</style>
+
+
+<style>
+:root{
+  --ls-blue-core: #7fe3ff;
+  --ls-blue-glow1: rgba(127,227,255,0.95);
+  --ls-blue-glow2: rgba(90,210,255,0.85);
+  --ls-blue-glow3: rgba(40,170,255,0.70);
+  --ls-blue-glow4: rgba(0,120,255,0.55);
+}
+/* Title */
+.app-title{
+  color: var(--ls-blue-core) !important;
+  text-shadow:
+    0 0 2px var(--ls-blue-glow1),
+    0 0 6px var(--ls-blue-glow2),
+    0 0 14px var(--ls-blue-glow3),
+    0 0 28px var(--ls-blue-glow4);
+  letter-spacing: 0.2px;
+}
+/* Hamburger + header icons */
+.hamburger span,
+.hamburger span::before,
+.hamburger span::after{
+  background: var(--ls-blue-core) !important;
+  box-shadow:
+    0 0 4px var(--ls-blue-glow2),
+    0 0 10px var(--ls-blue-glow3);
+}
+header .icon, header .icon svg path, header .icon svg rect, header .icon svg circle{
+  fill: var(--ls-blue-core) !important;
+  stroke: var(--ls-blue-core) !important;
+  filter: drop-shadow(0 0 6px var(--ls-blue-glow3));
+}
+/* Optional: top tabs accent if class names exist */
+.tabs .tab, .top-tabs .tab, .nav-tabs .tab{
+  color: var(--ls-blue-core);
 }
 </style>
 
@@ -1290,7 +1350,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
 </script>
 
 
-<canvas id="fxCanvas"></canvas>
+<canvas id="fxCanvas" style="display:none"></canvas>
 
 <script>
 /* === Fantasy FX: GPU-light canvas animation, independent from audio === */
@@ -1420,31 +1480,242 @@ document.addEventListener('DOMContentLoaded', ()=>{
 </script>
 
 
+
+
+
+
+
+
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  const st = document.getElementById('loadingThumb') || document.getElementById('statusThumb');
-  const tx = document.getElementById('statusText');
-  if (st) {
-    st.classList.add('loaded');
-    st.style.backgroundImage = 'none';
-  }
-  if (tx && (!tx.textContent || /재생 준비됨|Ready to play/i.test(tx.textContent))) {
-    tx.textContent = (window.lang==='en' ? 'No track loaded' : '선곡되지 않음');
-  }
-});
+// Show Pleiades FX only while <audio id="player"> is playing
+(function(){
+  const cv = document.getElementById('fxCanvas');
+  const player = document.getElementById('player');
+  if (!cv || !player) return;
+
+  function showFX(){ cv.style.display='block'; window.pleiadesStart && window.pleiadesStart(); }
+  function hideFX(){ window.pleiadesStop && window.pleiadesStop(); cv.style.display='none'; }
+
+  player.addEventListener('play', showFX);
+  player.addEventListener('pause', hideFX);
+  player.addEventListener('ended', hideFX);
+
+  if (!player.paused && !player.ended) showFX();
+})();
 </script>
 
 
 <script>
+/* Toroidal Vortex (audio-independent, elegant, not cheesy) */
+(function(){
+  const cv = document.getElementById('fxCanvas');
+  if (!cv) return;
+  const ctx = cv.getContext('2d', { alpha: false });
+  let rid=null, running=false, t0=performance.now();
+
+  function size(){
+    const dpr = window.devicePixelRatio || 1;
+    const w = cv.clientWidth || 680;
+    const h = cv.clientHeight || 220;
+    cv.width = Math.floor(w*dpr);
+    cv.height= Math.floor(h*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+
+  // Palette: lightsaber blues + subtle magenta/cyan accents
+  const hues = [
+    {r: 140, g: 220, b: 255}, // core cyan-blue
+    {r:  40, g: 170, b: 255}, // outer blue
+    {r:  90, g: 200, b: 255}, // mid blue
+    {r: 160, g: 255, b: 240}  // cyan tint
+  ];
+
+  // Particles on a torus parametric surface: R (major), r (minor)
+  const R = 1.0, r = 0.36;
+  const N = 900; // particles
+  const pts = Array.from({length:N}, (_,i)=>{
+    const u = Math.random()*Math.PI*2;
+    const v = Math.random()*Math.PI*2;
+    const hue = hues[i % hues.length];
+    return { u, v, hue, a: 0.55 + 0.45*Math.random(), s: 0.4 + Math.random()*0.8 };
+  });
+
+  function torus(u, v){
+    const x = (R + r*Math.cos(v)) * Math.cos(u);
+    const y = (R + r*Math.cos(v)) * Math.sin(u);
+    const z =  r * Math.sin(v);
+    return {x,y,z};
+  }
+
+  function frame(){
+    if(!running) return;
+    const now = performance.now();
+    const dt = Math.min(0.05, (now - t0)*0.001); // clamp dt
+    t0 = now;
+
+    const w = cv.clientWidth || 680;
+    const h = cv.clientHeight || 220;
+    const cx = w*0.5, cy = h*0.5;
+    const scale = Math.min(w, h) * 0.42;
+
+    // Fade trail for elegant persistence
+    ctx.fillStyle = 'rgba(2, 6, 15, 0.24)';
+    ctx.fillRect(0,0,w,h);
+
+    // Soft center glow (accumulator)
+    const g = ctx.createRadialGradient(cx, cy, 10, cx, cy, Math.max(w,h)*0.7);
+    g.addColorStop(0, 'rgba(80,180,255,0.10)');
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,w,h);
+
+    // Animate rotation
+    const rotU = now * 0.00025;
+    const rotV = now * 0.00037;
+
+    for (const p of pts){
+      // evolve params
+      p.u += dt * (0.6 + 0.7*p.s);
+      p.v += dt * (0.8 + 0.9*p.s);
+
+      const U = p.u + rotU;
+      const V = p.v + rotV;
+
+      const P = torus(U, V);
+      // simple 3D rotation around X for tilt
+      const tilt = 0.55;
+      const y2 = P.y*Math.cos(tilt) - P.z*Math.sin(tilt);
+      const z2 = P.y*Math.sin(tilt) + P.z*Math.cos(tilt);
+      const x2 = P.x;
+
+      // depth fade and scale
+      const depth = (z2 + (R+r)) / (2*(R+r)); // 0..1
+      const s = scale * (0.65 + 0.35*depth);
+      const x = cx + x2 * s;
+      const y = cy + y2 * s;
+
+      const alpha = 0.35 + 0.55*depth;
+      ctx.globalAlpha = alpha * p.a;
+
+      // glow stroke
+      ctx.beginPath();
+      ctx.arc(x, y, 1.1 + 1.2*depth, 0, Math.PI*2);
+      const c = p.hue;
+      ctx.fillStyle = `rgba(${c.r},${c.g},${c.b},0.85)`;
+      ctx.shadowColor = `rgba(${c.r},${c.g},${c.b},0.7)`;
+      ctx.shadowBlur = 10 + 18*depth;
+      ctx.fill();
+    }
+
+    rid = requestAnimationFrame(frame);
+  }
+
+  function start(){ if(running) return; running = true; size(); t0=performance.now(); rid=requestAnimationFrame(frame); }
+  function stop(){ running = false; if (rid) cancelAnimationFrame(rid); rid = null; }
+
+  window.addEventListener('resize', ()=>{ if (running) size(); }, {passive:true});
+  window.torusStart = start;
+  window.torusStop  = stop;
+})();
+</script>
+
+
+
+
+
+<script>
+// Force library to start at ROOT categories (not a subfolder)
+document.addEventListener('DOMContentLoaded', () => {
+  try{
+    if (window.state && 'path' in window.state) window.state.path = '';
+    if (window.currentPath !== undefined) window.currentPath = '';
+    if (typeof window.buildRoot === 'function') window.buildRoot();
+    else if (typeof window.buildThumbs === 'function') window.buildThumbs('');
+    const bc = document.getElementById('breadcrumb') || document.querySelector('.breadcrumb');
+    if (bc) bc.textContent = '/';
+  }catch(e){}
+}, {once:true});
+</script>
+
+
+<script>
+// Neutralize legacy viz loops/functions
 (function(){
   try{
-    if (window.vizRAF) { cancelAnimationFrame(window.vizRAF); window.vizRAF = 0; }
+    if (window.vizRAF) { try{cancelAnimationFrame(window.vizRAF);}catch(_){}; window.vizRAF = 0; }
     if (window.drawViz) { window.drawViz = function(){}; }
-    if (window.startViz) { window.startViz = function(){}; }
-    if (window.stopViz) { window.stopViz = function(){}; }
-    if (window.analyser && window.analyser.disconnect) { try{ window.analyser.disconnect(); }catch(e){} }
-    if (window.sourceNode && window.sourceNode.disconnect) { try{ window.sourceNode.disconnect(); }catch(e){} }
-  }catch(e){}
+    if (window.startViz){ window.startViz = function(){}; }
+    if (window.stopViz){ window.stopViz  = function(){}; }
+    // also common analyser/source vars
+    if (window.analyser && window.analyser.disconnect) try{ window.analyser.disconnect(); }catch(_){}
+    if (window.sourceNode && window.sourceNode.disconnect) try{ window.sourceNode.disconnect(); }catch(_){}
+  }catch(_){}
+})();
+</script>
+
+
+<script>
+// Show toroidal FX only while <audio id="player"> is PLAYING (strict v2)
+(function(){
+  const cv = document.getElementById('fxCanvas');
+  const player = document.getElementById('player');
+  if (!cv || !player) return;
+
+  function showFX(){ cv.style.display='block'; window.torusStart && window.torusStart(); }
+  function hideFX(){ window.torusStop && window.torusStop(); cv.style.display='none'; }
+
+  // default hidden
+  hideFX();
+
+  // Any non-playing state => hide
+  const hideEvents = ['pause','ended','emptied','waiting','stalled','suspend','abort','error','seeking'];
+  hideEvents.forEach(ev => player.addEventListener(ev, hideFX));
+
+  // Only 'play' starts it
+  player.addEventListener('play', showFX);
+
+  // src/url changes => hide until next play
+  const mo = new MutationObserver(()=> hideFX());
+  mo.observe(player, { attributes:true, attributeFilter:['src'] });
+
+  // If some old code tries to show #viz, kill it again
+  setInterval(()=>{
+    const viz = document.getElementById('viz') || document.getElementById('vizCanvas') || document.getElementById('vizCanvas2');
+    if (viz) { viz.style.display='none'; viz.removeAttribute('width'); viz.removeAttribute('height'); }
+  }, 800);
+})();
+</script>
+
+
+<script>
+// Force BLANK default thumbnail until the user picks a track
+(function(){
+  let userSelected = false;
+  const st = document.getElementById('loadingThumb') || document.getElementById('statusThumb');
+  const tx = document.getElementById('statusText');
+
+  document.addEventListener('click', (e)=>{
+    if (e.target && e.target.closest && e.target.closest('.card')) {
+      userSelected = true;
+    }
+  }, true);
+
+  function blank(){
+    if (!st) return;
+    st.classList.add('loaded');        // keep layout
+    st.style.backgroundImage = 'none'; // blank
+  }
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    blank();
+    if (tx && (!tx.textContent || /Ready|재생 준비됨/i.test(tx.textContent))) {
+      tx.textContent = (window.lang==='en' ? 'No track loaded' : '선곡되지 않음');
+    }
+    const mo = new MutationObserver(()=>{ if (!userSelected) blank(); });
+    if (st) mo.observe(st, { attributes:true, attributeFilter:['style','class'] });
+    // extra guard for the first 20s
+    let n=0; const t = setInterval(()=>{ if (!userSelected) blank(); if (++n>40) clearInterval(t); }, 500);
+  });
 })();
 </script>
 
