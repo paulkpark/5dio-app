@@ -1,6 +1,5 @@
 <!doctype html>
 <html lang="ko">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
@@ -19,7 +18,7 @@ header{position:sticky;top:0;z-index:50;background:linear-gradient(180deg,#0a101
   border-bottom:1px solid #0f1b2a;padding:8px 10px}
 .header-row{display:flex;align-items:center;gap:10px;justify-content:space-between;max-width:1120px;margin:0 auto;position:relative}
 .left{display:flex;align-items:center;gap:10px}
-.center-tabs{position:absolute;left:calc(50% + 10px);transform:translateX(-50%);display:flex;align-items:center;gap:8px}
+.center-tabs{position:absolute;left:calc(50% + 20px);transform:translateX(-50%);display:flex;align-items:center;gap:8px}
 .right{margin-left:auto;display:flex;align-items:center;gap:10px}
 .app-title{
   font-weight:700;font-size:18px;letter-spacing:.3px;color:#9fe5ff;
@@ -79,21 +78,23 @@ main{max-width:1120px;margin:10px auto 40px;padding:0 10px}
 .nav-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 #breadcrumb{display:none!important}
 
-/* Oscilloscope */
-.osc-hdr{display:flex;align-items:center;gap:12px;margin:8px 0}
-#osc{width:100%;height:160px;border:1px solid rgba(255,255,255,.1);border-radius:8px;background:#02070d}
+/* Generator tidy UI */
+.gen-wrap{display:grid;gap:14px}
+.gen-row{display:grid;grid-template-columns:160px 1fr;gap:10px;align-items:center}
+@media (max-width:640px){ .gen-row{grid-template-columns:1fr;gap:8px} }
+.gen-label{color:#cfe9ff;font-weight:600}
+.gen-sub{color:#a7c4de}
+.gen-flex{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.gen-input{background:#0f1a28;border:1px solid #13263c;color:#e9f4ff;border-radius:8px;padding:8px 10px}
+.gen-range{width:min(540px,100%)}
+.gen-check{display:flex;gap:8px;align-items:center;color:#cfe6ff}
+.gen-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 
-/* Modal */
-.modal-back{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;z-index:100}
-.modal{position:fixed;inset:auto 0 0 0;margin:auto;top:8%;max-width:720px;background:#0e1520;border:1px solid #18304c;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.4);display:none;z-index:101;padding:16px}
-.modal .mhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.modal .mbody{max-height:60vh;overflow:auto;white-space:pre-wrap;color:#cfe6ff}
+/* Scope fill */
+#osc{display:block;width:100%;height:200px;border:1px solid rgba(255,255,255,.1);border-radius:8px;background:#02070d}
 
 /* Visibility by mode */
 body.mode-library #oscWrap{display:none!important}
-
-/* Title keep one line on small screens */
-@media (max-width:390px){ .center-tabs{ left:calc(58%) } }
 </style>
 </head>
 <body class="mode-library">
@@ -148,7 +149,7 @@ body.mode-library #oscWrap{display:none!important}
             <button id="btnTimer" class="btn small" data-i18n="timer">Timer</button>
           </div>
           <div class="controls">
-            <label style="color:#b8d1ea">Playlist</label>
+            <label style="color:#b8d1ea" data-i18n="playlist">Playlist</label>
             <div id="playlist" class="strip" style="gap:6px;overflow-y:hidden"></div>
             <button id="btnAddPL"  class="btn small" data-i18n="new">+ New</button>
             <button id="btnSavePL" class="btn small" data-i18n="save">Save</button>
@@ -161,46 +162,65 @@ body.mode-library #oscWrap{display:none!important}
 
   <!-- Generator -->
   <section id="generator" class="section">
-    <div class="panel">
-      <div class="row" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        <label data-i18n="waveform">Waveform</label>
-        <select id="waveSel">
+    <div class="panel gen-wrap">
+      <!-- Row 1: 파형 선택 -->
+      <div class="gen-row">
+        <label class="gen-label" data-i18n="waveform">Waveform</label>
+        <select id="waveSel" class="gen-input">
           <option value="sine">Sine</option>
           <option value="triangle">Triangle</option>
           <option value="sawtooth">Sawtooth</option>
           <option value="square">Square</option>
           <option value="pulse">Pulse</option>
         </select>
-
-        <label data-i18n="frequency" style="margin-left:10px">Frequency (Hz)</label>
-        <input id="freqNum" type="number" value="440" min="1" max="20000" step="1" style="width:120px">
-        <input id="freqSlider" type="range" min="1" max="20000" step="1" style="flex:1;min-width:220px">
       </div>
 
-      <!-- Duty 항상 노출 -->
-      <div class="row" id="dutyRow" style="display:flex;align-items:center;gap:12px;margin-top:8px">
-        <label data-i18n="duty">Duty</label>
-        <input id="duty" type="range" min="5" max="95" step="1" value="50" style="flex:1;min-width:220px">
+      <!-- Row 2: 주파수 (파형 아래줄) -->
+      <div class="gen-row">
+        <label class="gen-label" data-i18n="frequency">Frequency (Hz)</label>
+        <div class="gen-flex">
+          <input id="freqNum" type="number" min="1" max="20000" step="1" value="440" class="gen-input" style="width:120px">
+          <input id="freqSlider" type="range" min="1" max="20000" step="1" value="440" class="gen-range">
+        </div>
       </div>
 
-      <div class="row" style="display:flex;align-items:center;gap:12px;margin-top:8px">
-        <label>Binaural</label>
-        <input id="bnEnable" type="checkbox" style="transform:translateY(1px)">
-        <label data-i18n="difference" style="margin-left:10px">Difference (Hz)</label>
-        <input id="bnDiff" type="number" value="4" min="1" max="100" step="1" style="width:80px">
+      <!-- Row 3: Duty (숫자 + 슬라이더) -->
+      <div class="gen-row">
+        <label class="gen-label" data-i18n="duty">Duty</label>
+        <div class="gen-flex">
+          <input id="dutyNum" type="number" min="1" max="100" step="1" value="50" class="gen-input" style="width:86px">
+          <input id="duty" type="range" min="1" max="100" step="1" value="50" class="gen-range">
+        </div>
       </div>
 
-      <div id="oscWrap" class="panel" style="margin-top:12px">
-        <div class="osc-hdr">
-          <label data-i18n="osc">Oscilloscope</label>
-          <input id="oscColor" type="color" value="#39e3ff" title="Wave Color">
-          <label data-i18n="zoom">Zoom x</label>
-          <select id="oscZoom"><option>1</option><option selected>2</option><option>3</option></select>
+      <!-- Row 4: Binaural -->
+      <div class="gen-row">
+        <label class="gen-label">Binaural</label>
+        <div class="gen-flex">
+          <label class="gen-check">
+            <input id="bnEnable" type="checkbox">
+            <span data-i18n="enable">Enable</span>
+          </label>
+          <label class="gen-sub" data-i18n="difference">Difference (Hz)</label>
+          <input id="bnDiff" type="number" min="1" max="100" step="1" value="4" class="gen-input" style="width:86px">
+        </div>
+      </div>
+
+      <!-- Row 5: 오실로스코프 -->
+      <div class="gen-row">
+        <div class="gen-flex" style="gap:12px;align-items:center">
+          <label class="gen-label" data-i18n="osc">Oscilloscope</label>
+          <label class="gen-sub" data-i18n="zoom">Zoom x</label>
+          <select id="oscZoom" class="gen-input" style="width:72px">
+            <option>1</option><option selected>2</option><option>3</option>
+          </select>
+          <input id="oscColor" type="color" value="#39e3ff" class="gen-input" title="Wave Color" style="width:46px;padding:0;height:32px">
         </div>
         <canvas id="osc"></canvas>
       </div>
 
-      <div class="row" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <!-- Row 6: 컨트롤 -->
+      <div class="gen-row gen-controls">
         <button id="genPlay" class="btn accent" data-i18n="playpause">Play/Pause</button>
         <button id="genStop" class="btn" data-i18n="stop">Stop</button>
         <button id="genSave" class="btn" data-i18n="savePreset">Save Preset</button>
@@ -214,330 +234,389 @@ body.mode-library #oscWrap{display:none!important}
 <div class="backdrop" id="backdrop"></div>
 
 <!-- Modal -->
-<div class="modal-back" id="modalBack"></div>
-<div class="modal" id="modal">
-  <div class="mhead">
+<div class="modal-back" id="modalBack" style="position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;z-index:100"></div>
+<div class="modal" id="modal" style="position:fixed;inset:auto 0 0 0;margin:auto;top:8%;max-width:720px;background:#0e1520;border:1px solid #18304c;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.4);display:none;z-index:101;padding:16px">
+  <div class="mhead" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
     <div id="modalTitle">Info</div>
     <button id="modalClose" class="btn small">✕</button>
   </div>
-  <div id="modalBody" class="mbody">…</div>
+  <div id="modalBody" class="mbody" style="max-height:60vh;overflow:auto;white-space:pre-wrap;color:#cfe6ff">…</div>
 </div>
 
+<!-- supabase-js UMD -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
 <script>
-/* ===== Supabase public media base ===== */
-const SUPABASE_URL = "https://xdjgumqdwedgzwqturcx.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
-const BUCKET = "media";
-
-/* ====== Globals / i18n ====== */
-const $=(s,r=document)=>r.querySelector(s); const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
-let LANG=(document.documentElement.lang||'ko').toLowerCase().startsWith('en')?'en':'ko';
-
-const I18N={
-  ko:{library:'라이브러리',generator:'주파수 생성기',waveform:'파형',frequency:'주파수 (Hz)',duty:'듀티',difference:'차이 (Hz)',osc:'오실로스코프',zoom:'줌',
-      noTrack:'선곡되지 않음',ready:'재생 준비됨',loopOn:'루프: 켬',loopOff:'루프: 끔',timer:'타이머',playpause:'재생/일시정지',stop:'정지',
-      new:'+ 새로 만들기',save:'저장',load:'불러오기',savePreset:'프리셋 저장',loadPreset:'프리셋 불러오기',home:'홈',back:'뒤로',refresh:'새로고침'},
-  en:{library:'Library',generator:'Generator',waveform:'Waveform',frequency:'Frequency (Hz)',duty:'Duty',difference:'Difference (Hz)',osc:'Oscilloscope',zoom:'Zoom',
-      noTrack:'No track loaded',ready:'Ready to play',loopOn:'Loop: On',loopOff:'Loop: Off',timer:'Timer',playpause:'Play/Pause',stop:'Stop',
-      new:'+ New',save:'Save',load:'Load',savePreset:'Save Preset',loadPreset:'Load Preset',home:'Home',back:'Back',refresh:'Refresh'}
-};
-function t(k){return I18N[LANG][k]||k;}
-function applyLang(){
-  $('#tabLibrary').textContent=t('library'); $('#tabGenerator').textContent=t('generator');
-  $$('[data-i18n="waveform"]').forEach(n=>n.textContent=t('waveform'));
-  $$('[data-i18n="frequency"]').forEach(n=>n.textContent=t('frequency'));
-  $$('[data-i18n="duty"]').forEach(n=>n.textContent=t('duty'));
-  $$('[data-i18n="difference"]').forEach(n=>n.textContent=t('difference'));
-  $$('[data-i18n="osc"]').forEach(n=>n.textContent=t('osc'));
-  $$('[data-i18n="zoom"]').forEach(n=>n.textContent=t('zoom'));
-  $$('[data-i18n="playpause"]').forEach(n=>n.textContent=t('playpause'));
-  $$('[data-i18n="stop"]').forEach(n=>n.textContent=t('stop'));
-  $$('[data-i18n="new"]').forEach(n=>n.textContent=t('new'));
-  $$('[data-i18n="save"]').forEach(n=>n.textContent=t('save'));
-  $$('[data-i18n="load"]').forEach(n=>n.textContent=t('load'));
-  $$('[data-i18n="savePreset"]').forEach(n=>n.textContent=t('savePreset'));
-  $$('[data-i18n="loadPreset"]').forEach(n=>n.textContent=t('loadPreset'));
-  $('#btnHome').textContent=t('home'); $('#btnBack').textContent='←'; $('#btnRefresh').textContent='⟳';
-  $('#btnLoop').textContent=loop? t('loopOn'):t('loopOff'); $('#btnTimer').textContent=t('timer');
-  $('#langBtn').textContent=(LANG==='en'?'English':'한국어');
-  if(!STATE.currentTrack){ $('#statusText')?.remove(); const st=$('#statusThumb'); const s=document.createElement('div'); s.id='statusText'; st.parentElement.appendChild(s); s.textContent=t('noTrack'); }
-}
-
-/* ====== Hamburger & Modal ====== */
-const menuBtn=$('#menuBtn'), menuDrop=$('#menuDrop'), backdrop=$('#backdrop');
-function closeMenu(){ menuDrop.style.display='none'; backdrop.classList.remove('show'); }
-menuBtn.addEventListener('click',()=>{ menuDrop.style.display= menuDrop.style.display==='block'?'none':'block'; if(menuDrop.style.display==='block') backdrop.classList.add('show'); else backdrop.classList.remove('show');});
-backdrop.addEventListener('click',closeMenu);
-
-const mBack=$('#modalBack'), modal=$('#modal'), mTitle=$('#modalTitle'), mBody=$('#modalBody'), mClose=$('#modalClose');
-function showModal(title, text){ mTitle.textContent=title; mBody.textContent=text; mBack.style.display='block'; modal.style.display='block'; }
-function hideModal(){ mBack.style.display='none'; modal.style.display='none'; }
-mClose.addEventListener('click', hideModal); mBack.addEventListener('click', hideModal);
-
-$$('.menu-text').forEach(a=>{
-  a.addEventListener('click', async (e)=>{
-    e.preventDefault(); closeMenu();
-    const href=a.getAttribute('href');
-    try{ const r=await fetch(href,{cache:'no-store'}); const txt=await r.text(); showModal(a.textContent.trim(), txt); }
-    catch(_){ showModal(a.textContent.trim(), LANG==='en'?'Failed to load.':'불러올 수 없습니다.'); }
-  });
-});
-
-/* ====== Tabs ====== */
-const tabLibrary=$('#tabLibrary'), tabGenerator=$('#tabGenerator');
-const secLibrary=$('#library'), secGenerator=$('#generator');
-function setTab(name){
-  if(name==='generator'){
-    tabGenerator.classList.add('active');tabLibrary.classList.remove('active');
-    secGenerator.classList.add('active');secLibrary.classList.remove('active');
-    document.body.classList.add('mode-generator');document.body.classList.remove('mode-library');
-  }else{
-    tabLibrary.classList.add('active');tabGenerator.classList.remove('active');
-    secLibrary.classList.add('active');secGenerator.classList.remove('active');
-    document.body.classList.add('mode-library');document.body.classList.remove('mode-generator');
+window.addEventListener('DOMContentLoaded', () => {
+  /* ===== i18n ===== */
+  const $=(s,r=document)=>r.querySelector(s); const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+  let LANG=(document.documentElement.lang||'ko').toLowerCase().startsWith('en')?'en':'ko';
+  const I18N={
+    ko:{library:'라이브러리',generator:'주파수 생성기',waveform:'파형',frequency:'주파수 (Hz)',duty:'듀티',difference:'차이 (Hz)',osc:'오실로스코프',zoom:'줌',
+        noTrack:'선곡되지 않음',ready:'재생 준비됨',loopOn:'루프: 켬',loopOff:'루프: 끔',timer:'타이머',playpause:'재생/일시정지',stop:'정지',
+        new:'+ 새로 만들기',save:'저장',load:'불러오기',savePreset:'프리셋 저장',loadPreset:'프리셋 불러오기',home:'홈',back:'뒤로',refresh:'새로고침',playlist:'플레이리스트',enable:'사용'},
+    en:{library:'Library',generator:'Generator',waveform:'Waveform',frequency:'Frequency (Hz)',duty:'Duty',difference:'Difference (Hz)',osc:'Oscilloscope',zoom:'Zoom',
+        noTrack:'No track loaded',ready:'Ready to play',loopOn:'Loop: On',loopOff:'Loop: Off',timer:'Timer',playpause:'Play/Pause',stop:'Stop',
+        new:'+ New',save:'Save',load:'Load',savePreset:'Save Preset',loadPreset:'Load Preset',home:'Home',back:'Back',refresh:'Refresh',playlist:'Playlist',enable:'Enable'}
+  };
+  const t=k=> (I18N[LANG][k]||k);
+  function applyLang(){
+    $('#tabLibrary').textContent=t('library'); $('#tabGenerator').textContent=t('generator');
+    $$('[data-i18n="waveform"]').forEach(n=>n.textContent=t('waveform'));
+    $$('[data-i18n="frequency"]').forEach(n=>n.textContent=t('frequency'));
+    $$('[data-i18n="duty"]').forEach(n=>n.textContent=t('duty'));
+    $$('[data-i18n="difference"]').forEach(n=>n.textContent=t('difference'));
+    $$('[data-i18n="osc"]').forEach(n=>n.textContent=t('osc'));
+    $$('[data-i18n="zoom"]').forEach(n=>n.textContent=t('zoom'));
+    $$('[data-i18n="playpause"]').forEach(n=>n.textContent=t('playpause'));
+    $$('[data-i18n="stop"]').forEach(n=>n.textContent=t('stop'));
+    $$('[data-i18n="new"]').forEach(n=>n.textContent=t('new'));
+    $$('[data-i18n="save"]').forEach(n=>n.textContent=t('save'));
+    $$('[data-i18n="load"]').forEach(n=>n.textContent=t('load'));
+    $$('[data-i18n="savePreset"]').forEach(n=>n.textContent=t('savePreset'));
+    $$('[data-i18n="loadPreset"]').forEach(n=>n.textContent=t('loadPreset'));
+    $('#btnHome').textContent=t('home'); $('#btnBack').textContent='←'; $('#btnRefresh').textContent='⟳';
+    $('#btnLoop').textContent=loop ? t('loopOn') : t('loopOff');
+    $('#btnTimer').textContent=t('timer');
+    $('label[style*="color:#b8d1ea"]')?.setAttribute('data-i18n','playlist');
+    if($('label[data-i18n="playlist"]')) $('label[data-i18n="playlist"]').textContent=t('playlist');
+    $('#langBtn').textContent=(LANG==='en'?'English':'한국어');
+    if(!STATE.currentTrack){ statusBlank(); }
   }
-}
-tabLibrary.addEventListener('click',()=>setTab('library'));
-tabGenerator.addEventListener('click',()=>setTab('generator'));
 
-/* ====== Supabase URL helpers ====== */
-function folderUrl(path){ return `${MEDIA_BASE}/${encodeURIComponent(path)}`; }
-function trackUrl(path, file){ return `${MEDIA_BASE}/${encodeURIComponent(path)}/${encodeURIComponent(file)}`; }
+  /* ===== Supabase ===== */
+  const SUPABASE_URL = "https://xdjgumqdwedgzwqturcx.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";  // ← 프로젝트 anon 키로 교체
+  const BUCKET = "media";
+  const SB = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const MEDIA_BASE = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}`;
 
-/* ---------- Image ping 기반 썸네일 로더 ---------- */
-function probeImage(url){
-  return new Promise((resolve)=> {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = ()=> resolve(url);
-    img.onerror = ()=> resolve(null);
-    img.src = url + (url.includes('?') ? '&' : '?') + 'v=' + Date.now(); // cache-bust
-  });
-}
-async function pickFirstExisting(urls){
-  for(const u of urls){
-    const ok = await probeImage(u);
-    if (ok) return ok;
-  }
-  return null;
-}
-function buildBasePath(path){ return `${MEDIA_BASE}/${encodeURIComponent(path)}/`; }
-async function resolveTrackThumb(path, stem){
-  const base = buildBasePath(path);
-  const cand = (LANG==='en')
-    ? [`${base}${encodeURIComponent(stem)}_E.jpg`,
-       `${base}${encodeURIComponent(stem)}_E.JPG`,
-       `${base}${encodeURIComponent(stem)}_E.jpeg`]
-    : [`${base}${encodeURIComponent(stem)}.jpg`,
-       `${base}${encodeURIComponent(stem)}.JPG`,
-       `${base}${encodeURIComponent(stem)}.jpeg`];
-  return await pickFirstExisting(cand);
-}
-async function resolveFolderThumb(path){
-  const base = buildBasePath(path);
-  const names = (LANG==='en')
-    ? ['folder_e.jpg','folder_e.JPG','folder_e.jpeg']
-    : ['folder.jpg','folder.JPG','folder.jpeg'];
-  return await pickFirstExisting(names.map(n => base + encodeURIComponent(n)));
-}
-async function setStatusThumbAsync(path, stem){
-  const st = document.getElementById('statusThumb');
-  const url = await resolveTrackThumb(path, stem);
-  if (url){
-    st.classList.remove('status-blank');
-    st.style.backgroundImage = `url("${url}")`;
-    let s = st.parentElement.querySelector('#statusText');
-    if(!s){ s=document.createElement('div'); s.id='statusText'; st.parentElement.appendChild(s); }
-    s.textContent = t('ready');
-  } else {
-    statusBlank();
-  }
-}
+  /* ===== 상태/요소 ===== */
+  const STATE = { path:'', stack:[], currentTrack:null, playlistName:(LANG==='en'?'Default':'기본'), playlists:{} };
+  const strip = $('#strip');
+  const PLAYER = $('#player');
 
-
-// ========= Supabase client =========
-const SUPABASE_URL = "https://xdjgumqdwedgzwqturcx.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";   // ← 퍼블릭 anon 키
-const BUCKET = "media";
-
-const SB = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-const MEDIA_BASE = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}`;
-
-// ========= 상태 =========
-const STATE = { path: '', stack: [], currentTrack: null, playlistName: (LANG==='en'?'Default':'기본'), playlists:{} };
-const strip = document.getElementById('strip');
-const PLAYER = document.getElementById('player');
-
-// ========= 유틸 =========
-const isAudio = (name)=> /\.mp3$/i.test(name);
-const stemOf  = (fname)=> fname.replace(/\.[^.]+$/,'');
-const joinPublic = (...parts)=> parts.map(s => encodeURIComponent(s)).join('/');
-const trackPublicUrl = (folder, file)=> `${MEDIA_BASE}/${joinPublic(folder, file)}`;
-
-// 썸네일 규칙
-async function resolveFolderThumb(folder){
-  const base = `${MEDIA_BASE}/${encodeURIComponent(folder)}/`;
-  const names = (LANG==='en')
-    ? ['folder_e.jpg','folder_e.JPG','folder_e.jpeg']
-    : ['folder.jpg','folder.JPG','folder.jpeg'];
-  for(const n of names){
-    const u = base + n;
-    if (await pingImage(u)) return u;
-  }
-  return null;
-}
-async function resolveTrackThumb(folder, file){
-  const base = `${MEDIA_BASE}/${encodeURIComponent(folder)}/`;
-  const stem = stemOf(file);
-  const cand = (LANG==='en')
-    ? [`${stem}_E.jpg`,`${stem}_E.JPG`,`${stem}_E.jpeg`]
-    : [`${stem}.jpg`,`${stem}.JPG`,`${stem}.jpeg`];
-  for(const n of cand){
-    const u = base + n;
-    if (await pingImage(u)) return u;
-  }
-  return null;
-}
-function pingImage(url){
-  return new Promise(res=>{
-    const img=new Image(); img.onload=()=>res(true); img.onerror=()=>res(false);
-    img.src = url+(url.includes('?')?'&':'?')+'v='+Date.now();
-  });
-}
-
-// ========= Storage Scan 핵심 =========
-// 1) 루트 카테고리 폴더 나열
-async function listRootFolders(){
-  const out = [];
-  // Supabase Storage list (루트)
-  let page=0, more=true;
-  while(more){
-    const { data, error } = await SB.storage.from(BUCKET).list('', { limit: 100, offset: page*100 });
-    if (error) throw error;
-    // 폴더만 추출: Storage는 폴더를 "id/metadata가 빈 객체 & name만 있는 엔트리"로 돌려줌
-    const folders = (data||[]).filter(it => !it.id && !it.metadata && !/\./.test(it.name));
-    out.push(...folders.map(f => f.name));
-    more = (data||[]).length === 100;
-    page++;
-  }
-  // 알파벳/한글 순 정렬(원하면 커스텀 정렬)
-  out.sort((a,b)=> a.localeCompare(b));
-  return out;
-}
-
-// 2) 특정 폴더 내 파일 나열 (오디오만)
-async function listTracks(folder){
-  const tracks=[];
-  let page=0, more=true;
-  while(more){
-    const { data, error } = await SB.storage.from(BUCKET).list(folder, { limit:100, offset:page*100 });
-    if (error) throw error;
-    (data||[]).forEach(it=>{
-      if (isAudio(it.name)) tracks.push({ file: it.name, name: stemOf(it.name) });
+  /* ===== 햄버거/모달 ===== */
+  const menuBtn=$('#menuBtn'), menuDrop=$('#menuDrop'), backdrop=$('#backdrop');
+  const mBack=$('#modalBack'), modal=$('#modal'), mTitle=$('#modalTitle'), mBody=$('#modalBody'), mClose=$('#modalClose');
+  const closeMenu=()=>{ menuDrop.style.display='none'; backdrop.classList.remove('show'); };
+  menuBtn?.addEventListener('click',()=>{ const open=menuDrop.style.display==='block'; menuDrop.style.display=open?'none':'block'; backdrop.classList.toggle('show',!open);});
+  backdrop?.addEventListener('click',closeMenu);
+  function showModal(title,text){ mTitle.textContent=title; mBody.textContent=text; mBack.style.display='block'; modal.style.display='block'; }
+  function hideModal(){ mBack.style.display='none'; modal.style.display='none'; }
+  mClose?.addEventListener('click',hideModal); mBack?.addEventListener('click',hideModal);
+  $$('.menu-text').forEach(a=>{
+    a.addEventListener('click', async e=>{
+      e.preventDefault(); closeMenu();
+      try{ const r=await fetch(a.getAttribute('href'),{cache:'no-store'}); showModal(a.textContent.trim(), await r.text()); }
+      catch{ showModal(a.textContent.trim(), LANG==='en'?'Failed to load.':'불러올 수 없습니다.'); }
     });
-    more = (data||[]).length === 100;
-    page++;
-  }
-  // 파일명 정렬
-  tracks.sort((a,b)=> a.name.localeCompare(b.name));
-  return tracks;
-}
-
-// ========= 렌더링 =========
-async function renderStrip(){
-  strip.innerHTML = '';
-  if(!STATE.path){
-    // 루트: 카테고리 폴더들
-    const folders = await listRootFolders();
-    if (!folders.length){
-      // 루트 비어있을 때(혹은 권한/경로 문제)
-      const empty = document.createElement('div');
-      empty.style.color='#9ab6d1'; empty.textContent = (LANG==='en'?'No folders':'폴더가 없습니다');
-      strip.appendChild(empty);
-      return;
-    }
-    for(const name of folders){
-      const card = await makeFolderCard(name);
-      strip.appendChild(card);
-    }
-  } else {
-    // 폴더 내부: 트랙 썸네일만 (맨앞 Blank/Back 제거)
-    const list = await listTracks(STATE.path);
-    for(const tr of list){
-      const card = await makeTrackCard(STATE.path, tr.file);
-      strip.appendChild(card);
-    }
-  }
-}
-
-async function makeFolderCard(folderName){
-  const card=document.createElement('div'); card.className='card folder';
-  const th=document.createElement('div'); th.className='thumb'; card.appendChild(th);
-  const lb=document.createElement('div'); lb.className='label'; lb.textContent=folderName; card.appendChild(lb);
-
-  // 썸네일
-  const u = await resolveFolderThumb(folderName);
-  if (u) th.style.backgroundImage=`url("${u}")`;
-
-  // 클릭 → 진입
-  card.addEventListener('click', ()=>{
-    STATE.stack.push(STATE.path);
-    STATE.path = folderName;
-    renderStrip().catch(console.error);
-    statusBlank();
   });
-  return card;
-}
 
-async function makeTrackCard(folder, file){
-  const stem = stemOf(file);
-  const card=document.createElement('div'); card.className='card';
-  const th=document.createElement('div'); th.className='thumb'; card.appendChild(th);
-  const lb=document.createElement('div'); lb.className='label'; lb.textContent=stem; card.appendChild(lb);
+  /* ===== 탭 ===== */
+  const tabLibrary=$('#tabLibrary'), tabGenerator=$('#tabGenerator');
+  const secLibrary=$('#library'), secGenerator=$('#generator');
+  function setTab(name){
+    const lib = name!=='generator';
+    tabLibrary.classList.toggle('active',lib); tabGenerator.classList.toggle('active',!lib);
+    secLibrary.classList.toggle('active',lib);  secGenerator.classList.toggle('active',!lib);
+    document.body.classList.toggle('mode-library',lib);
+    document.body.classList.toggle('mode-generator',!lib);
+  }
+  tabLibrary.addEventListener('click',()=>setTab('library'));
+  tabGenerator.addEventListener('click',()=>setTab('generator'));
 
-  // 썸네일
-  const u = await resolveTrackThumb(folder, file);
-  if (u) th.style.backgroundImage=`url("${u}")`;
+  /* ===== 썸네일 유틸 ===== */
+  const isAudio = n=>/\.mp3$/i.test(n);
+  const stem    = n=>n.replace(/\.[^.]+$/,'');
+  const imgOk = url => new Promise(res=>{ const i=new Image(); i.onload=()=>res(true); i.onerror=()=>res(false); i.src=url+(url.includes('?')?'&':'?')+'v='+Date.now();});
+  async function folderThumb(folder){
+    const base = `${MEDIA_BASE}/${encodeURIComponent(folder)}/`;
+    const names = LANG==='en' ? ['folder_e.jpg','folder_e.JPG','folder_e.jpeg'] : ['folder.jpg','folder.JPG','folder.jpeg'];
+    for(const n of names){ const u=base+n; if(await imgOk(u)) return u; } return null;
+  }
+  async function trackThumb(folder, file){
+    const base = `${MEDIA_BASE}/${encodeURIComponent(folder)}/`;
+    const s = stem(file);
+    const cand = LANG==='en' ? [`${s}_E.jpg`,`${s}_E.JPG`,`${s}_E.jpeg`] : [`${s}.jpg`,`${s}.JPG`,`${s}.jpeg`];
+    for(const n of cand){ const u=base+n; if(await imgOk(u)) return u; } return null;
+  }
 
-  // 클릭 → 로딩 & 상태썸네일 갱신
-  card.addEventListener('click', ()=>{
-    const url = trackPublicUrl(folder, file);
-    PLAYER.src = url; PLAYER.load();
-    setStatusThumbAsync(folder, stem);
-    STATE.currentTrack = { name: stem, url };
+  /* ===== Storage Scan ===== */
+  async function listRoot(){
+    let out=[], page=0, more=true;
+    while(more){
+      const { data, error } = await SB.storage.from(BUCKET).list('', { limit:100, offset:page*100 });
+      if(error) throw error;
+      out.push(...(data||[]).filter(it => !it.id && !it.metadata && !/\./.test(it.name)).map(it=>it.name));
+      more = (data||[]).length===100; page++;
+    }
+    return out.sort((a,b)=>a.localeCompare(b));
+  }
+  async function listTracks(folder){
+    let list=[], page=0, more=true;
+    while(more){
+      const { data, error } = await SB.storage.from(BUCKET).list(folder, { limit:100, offset:page*100 });
+      if(error) throw error;
+      (data||[]).forEach(it=>{ if(isAudio(it.name)) list.push(it.name); });
+      more = (data||[]).length===100; page++;
+    }
+    return list.sort((a,b)=>a.localeCompare(b));
+  }
+
+  /* ===== 렌더 ===== */
+  function statusBlank(){
+    const st = $('#statusThumb'); st.classList.add('status-blank'); st.style.backgroundImage='none';
+    let lab = st.parentElement.querySelector('#statusText'); if(!lab){ lab=document.createElement('div'); lab.id='statusText'; st.parentElement.appendChild(lab); }
+    lab.textContent = t('noTrack');
+  }
+  async function renderStrip(){
+    strip.innerHTML='';
+    if(!STATE.path){
+      const folders = await listRoot();
+      if(!folders.length){ const d=document.createElement('div'); d.style.color='#9ab6d1'; d.textContent=(LANG==='en'?'No folders':'폴더가 없습니다'); strip.appendChild(d); return; }
+      for(const name of folders){
+        const card=document.createElement('div'); card.className='card folder';
+        const th=document.createElement('div'); th.className='thumb'; const lb=document.createElement('div'); lb.className='label'; lb.textContent=name;
+        card.append(th,lb);
+        const u = await folderThumb(name); if(u) th.style.backgroundImage=`url("${u}")`;
+        card.addEventListener('click',()=>{ STATE.stack.push(''); STATE.path=name; renderStrip(); statusBlank(); });
+        strip.appendChild(card);
+      }
+    } else {
+      const files = await listTracks(STATE.path);
+      for(const f of files){
+        const card=document.createElement('div'); card.className='card';
+        const th=document.createElement('div'); th.className='thumb'; const lb=document.createElement('div'); lb.className='label'; lb.textContent=stem(f);
+        card.append(th,lb);
+        const u = await trackThumb(STATE.path, f); if(u) th.style.backgroundImage=`url("${u}")`;
+        card.addEventListener('click',()=>{
+          const url = `${MEDIA_BASE}/${encodeURIComponent(STATE.path)}/${encodeURIComponent(f)}`;
+          PLAYER.src = url; PLAYER.load();
+          setTimeout(()=>PLAYER.play().catch(()=>{}), 0);
+          (async ()=>{ const u2=await trackThumb(STATE.path,f); const st=$('#statusThumb'); if(u2){ st.classList.remove('status-blank'); st.style.backgroundImage=`url("${u2}")`; } else { statusBlank(); } })();
+          STATE.currentTrack = { name: stem(f), url };
+        });
+        strip.appendChild(card);
+      }
+    }
+  }
+
+  /* ===== Library controls ===== */
+  $('#btnBack').addEventListener('click',()=>{ STATE.path=''; STATE.stack.pop(); renderStrip(); });
+  $('#btnHome').addEventListener('click',()=>{ STATE.path=''; STATE.stack.length=0; renderStrip(); });
+  $('#btnRefresh').addEventListener('click',()=>renderStrip());
+
+  /* ===== Player & playlist ===== */
+  let loop=false; let timerId=null;
+  $('#btnPlay').addEventListener('click',()=>{ if(PLAYER.paused) PLAYER.play(); else PLAYER.pause(); });
+  $('#btnLoop').addEventListener('click',()=>{ loop=!loop; PLAYER.loop=loop; $('#btnLoop').textContent=loop?t('loopOn'):t('loopOff'); });
+  $('#btnTimer').addEventListener('click',()=>{ const m=prompt(LANG==='en'?'Sleep timer minutes (0=off)':'타이머(분, 0=해제)','20'); const mins=Math.max(0,parseInt(m||'0',10)); if(timerId){clearTimeout(timerId);timerId=null;} if(mins>0){ timerId=setTimeout(()=>{PLAYER.pause();}, mins*60*1000);} });
+
+  const PL=$('#playlist');
+  function loadPLStore(){ try{ const raw=localStorage.getItem('pl_store_v1'); if(raw) STATE.playlists=JSON.parse(raw);}catch(_){}
+    if(!STATE.playlists[STATE.playlistName]) STATE.playlists[STATE.playlistName]=[]; }
+  function savePLStore(){ try{ localStorage.setItem('pl_store_v1', JSON.stringify(STATE.playlists)); }catch(_){} }
+  function renderPL(){ PL.innerHTML=''; Object.keys(STATE.playlists).forEach(n=>{ const pill=document.createElement('div'); pill.className='card'; pill.style.flex='0 0 auto'; pill.style.width='auto'; pill.style.minWidth='92px'; pill.style.textAlign='center'; pill.innerHTML=`<div class="label">${n}</div>`; if(n===STATE.playlistName) pill.style.borderColor='#1f4e79'; pill.addEventListener('click',()=>{STATE.playlistName=n; renderPL();}); PL.appendChild(pill);}); }
+
+  $('#btnAddPL').addEventListener('click',()=>{ const def=LANG==='en'?'My List':'내 리스트'; const name=prompt(LANG==='en'?'New playlist name':'새 플레이리스트 이름', def); if(!name) return; if(!STATE.playlists[name]) STATE.playlists[name]=[]; STATE.playlistName=name; savePLStore(); renderPL(); });
+  $('#btnSavePL').addEventListener('click',()=>{ if(!STATE.currentTrack){ alert(LANG==='en'?'Select a track first':'먼저 트랙을 선택하세요'); return; } const list=STATE.playlists[STATE.playlistName]||(STATE.playlists[STATE.playlistName]=[]); list.push(STATE.currentTrack); savePLStore(); alert(LANG==='en'?'Saved to playlist':'플레이리스트에 저장됨'); });
+  $('#btnLoadPL').addEventListener('click',()=>{ const list=STATE.playlists[STATE.playlistName]||[]; if(!list.length){ alert(LANG==='en'?'Playlist is empty':'플레이리스트가 비어 있습니다'); return; } const t=list[0]; PLAYER.src=t.url; PLAYER.load(); PLAYER.play().catch(()=>{}); (async()=>{ const parts=t.url.split('/'); const folder=decodeURIComponent(parts[parts.length-2]); const file=decodeURIComponent(parts[parts.length-1]); const st=$('#statusThumb'); const u=await trackThumb(folder,file); if(u){ st.classList.remove('status-blank'); st.style.backgroundImage=`url("${u}")`; } })(); });
+
+  /* ===== Generator (WebAudio + dual-scope) ===== */
+  const aCtx=new (window.AudioContext||window.webkitAudioContext)(); let genGain, oscL, oscR, anaL, anaR; let genRunning=false;
+
+  function ensureNodes(){
+    if(!genGain){ genGain=aCtx.createGain(); genGain.gain.value=0.25; genGain.connect(aCtx.destination); }
+    if(!oscL){ oscL=aCtx.createOscillator(); oscL.type='sine'; oscL.frequency.value=440; const g=aCtx.createGain(); g.gain.value=0.5; oscL.connect(g).connect(genGain); oscL.start(); }
+    if(!oscR){ oscR=aCtx.createOscillator(); oscR.type='sine'; oscR.frequency.value=440; const g=aCtx.createGain(); g.gain.value=0.5; oscR.connect(g).connect(genGain); oscR.start(); }
+    if(!anaL){ anaL=aCtx.createAnalyser(); anaL.fftSize=2048; }
+    if(!anaR){ anaR=aCtx.createAnalyser(); anaR.fftSize=2048; }
+    try{ oscL.connect(anaL); }catch(_){}
+    try{ oscR.connect(anaR); }catch(_){}
+  }
+  function makePulseWave(ctx, dutyPct){
+    const D = Math.min(0.99, Math.max(0.01, (dutyPct||50)/100));
+    const N = 32;
+    const real = new Float32Array(N+1);
+    const imag = new Float32Array(N+1);
+    for (let n=1; n<=N; n++){ imag[n] = (2/(n*Math.PI))*Math.sin(n*Math.PI*D); }
+    try{ return new PeriodicWave(ctx,{real,imag,disableNormalization:true}); }
+    catch{ return ctx.createPeriodicWave(real,imag,{disableNormalization:true}); }
+  }
+
+  const waveSel   = $('#waveSel');
+  const freqNum   = $('#freqNum');
+  const freqSlider= $('#freqSlider');
+  const dutyNum   = $('#dutyNum');
+  const duty      = $('#duty');
+  const bnEnable  = $('#bnEnable');
+  const bnDiff    = $('#bnDiff');
+
+  const oscCan    = $('#osc');
+  const octx      = oscCan.getContext('2d');
+  const oscZoom   = $('#oscZoom');
+  const oscColor  = $('#oscColor');
+  let zoom = parseInt(oscZoom?.value||'2',10) || 2;
+
+  function sizeOsc(){
+    const dpr = window.devicePixelRatio || 1;
+    const rect = oscCan.getBoundingClientRect();
+    const w = Math.max(200, Math.round(rect.width));
+    const h = Math.max(140, Math.round(rect.height));
+    oscCan.width  = Math.floor(w * dpr);
+    oscCan.height = Math.floor(h * dpr);
+    octx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    octx.clearRect(0,0,w,h);
+  }
+  window.addEventListener('resize', sizeOsc, {passive:true});
+  sizeOsc();
+
+  function syncDuty(from){
+    if (from==='num'){
+      let v = Math.min(100, Math.max(1, parseInt(dutyNum.value||'50',10)));
+      dutyNum.value = v; duty.value = v;
+    } else {
+      let v = Math.min(100, Math.max(1, parseInt(duty.value||'50',10)));
+      duty.value = v; dutyNum.value = v;
+    }
+    applyGen();
+  }
+  dutyNum.addEventListener('input', ()=>syncDuty('num'));
+  duty.addEventListener('input',     ()=>syncDuty('range'));
+
+  function syncFreq(from){
+    if (from==='num'){
+      let v = Math.min(20000, Math.max(1, parseInt(freqNum.value||'440',10)));
+      freqNum.value = v; freqSlider.value = v;
+    } else {
+      let v = Math.min(20000, Math.max(1, parseInt(freqSlider.value||'440',10)));
+      freqSlider.value = v; freqNum.value = v;
+    }
+    applyGen();
+  }
+  freqNum.addEventListener('input',   ()=>syncFreq('num'));
+  freqSlider.addEventListener('input',()=>syncFreq('range'));
+
+  oscZoom?.addEventListener('change', ()=>{ zoom = parseInt(oscZoom.value||'2',10)||2; });
+
+  function drawOsc(){
+    requestAnimationFrame(drawOsc);
+    if (!genRunning || !anaL || !anaR) return;
+
+    const w = oscCan.clientWidth;
+    const h = oscCan.clientHeight;
+
+    octx.clearRect(0,0,w,h);
+
+    // grid
+    octx.strokeStyle='rgba(100,180,220,.08)';
+    octx.lineWidth=1;
+    for(let gx=0; gx<w; gx+=Math.max(40, w/10)){ octx.beginPath(); octx.moveTo(gx,0); octx.lineTo(gx,h); octx.stroke(); }
+    for(let gy=0; gy<h; gy+=Math.max(28, h/6)){ octx.beginPath(); octx.moveTo(0,gy); octx.lineTo(w,gy); octx.stroke(); }
+
+    const colorL = oscColor.value || '#39e3ff';
+    const colorR = 'rgba(57,227,255,0.6)';
+
+    // Left
+    const bufL = new Uint8Array(anaL.fftSize);
+    anaL.getByteTimeDomainData(bufL);
+    const stepL = bufL.length / (w * Math.max(1, zoom));
+    octx.beginPath();
+    octx.lineWidth = 2;
+    octx.strokeStyle = colorL;
+    octx.shadowColor = colorL; octx.shadowBlur = 8;
+    for (let x=0; x<w; x++){
+      const i = Math.min(bufL.length-1, Math.floor(x * stepL));
+      const v = (bufL[i]-128)/128;
+      const y = h*0.28 + v*(h*0.22);
+      x===0 ? octx.moveTo(0,y) : octx.lineTo(x,y);
+    }
+    octx.stroke(); octx.shadowBlur=0;
+
+    // Right
+    const bufR = new Uint8Array(anaR.fftSize);
+    anaR.getByteTimeDomainData(bufR);
+    const stepR = bufR.length / (w * Math.max(1, zoom));
+    octx.beginPath();
+    octx.lineWidth = 2;
+    octx.strokeStyle = colorR;
+    octx.shadowColor = colorR; octx.shadowBlur = 6;
+    for (let x=0; x<w; x++){
+      const i = Math.min(bufR.length-1, Math.floor(x * stepR));
+      const v = (bufR[i]-128)/128;
+      const y = h*0.74 + v*(h*0.22);
+      x===0 ? octx.moveTo(0,y) : octx.lineTo(x,y);
+    }
+    octx.stroke(); octx.shadowBlur=0;
+  }
+  drawOsc();
+
+  function makePulseWave(ctx, dutyPct){
+    const D = Math.min(0.99, Math.max(0.01, (dutyPct||50)/100));
+    const N = 32;
+    const real = new Float32Array(N+1);
+    const imag = new Float32Array(N+1);
+    for (let n=1; n<=N; n++){ imag[n] = (2/(n*Math.PI))*Math.sin(n*Math.PI*D); }
+    try{ return new PeriodicWave(ctx,{real,imag,disableNormalization:true}); }
+    catch{ return ctx.createPeriodicWave(real,imag,{disableNormalization:true}); }
+  }
+
+  function applyGen(){
+    ensureNodes();
+    const f  = Math.max(1, Math.min(20000, parseFloat(freqNum.value)||440));
+    const wv = (waveSel.value||'sine').toLowerCase();
+    const d  = Math.max(1, Math.min(100, parseFloat(duty.value||'50')));
+    const diff = Math.max(1, Math.min(100, parseFloat(bnDiff.value||'4')));
+    const L = f;
+    const R = bnEnable.checked ? (f + diff) : f;
+
+    try{ oscL.frequency.setTargetAtTime(L, aCtx.currentTime, 0.01);}catch(_){oscL.frequency.value=L;}
+    try{ oscR.frequency.setTargetAtTime(R, aCtx.currentTime, 0.01);}catch(_){oscR.frequency.value=R;}
+
+    if (wv==='square' || wv==='pulse') {
+      const pw = makePulseWave(aCtx, d);
+      oscL.setPeriodicWave(pw);
+      oscR.setPeriodicWave(pw);
+    } else {
+      oscL.type = wv; oscR.type = wv;
+    }
+  }
+
+  const genPlay=$('#genPlay'), genStop=$('#genStop');
+  genPlay.addEventListener('click', async ()=>{ await aCtx.resume(); ensureNodes(); genRunning=!genRunning; genGain.gain.setTargetAtTime(genRunning?0.25:0.0, aCtx.currentTime, 0.02); });
+  genStop.addEventListener('click',()=>{ ensureNodes(); genRunning=false; genGain.gain.setTargetAtTime(0.0, aCtx.currentTime, 0.02); });
+
+  $('#genSave').addEventListener('click',()=>{
+    const p={wave:waveSel.value,freq:parseFloat(freqNum.value)||440,duty:parseFloat(duty.value)||50,bn:!!bnEnable.checked,diff:parseFloat(bnDiff.value)||4};
+    const name=prompt(LANG==='en'?'Preset name':'프리셋 이름','Preset 1'); if(!name) return;
+    try{ const raw=localStorage.getItem('gen_presets_v1'); const store=raw?JSON.parse(raw):{}; store[name]=p; localStorage.setItem('gen_presets_v1', JSON.stringify(store)); alert(LANG==='en'?'Saved':'저장됨'); }catch(_){}
   });
-  return card;
-}
+  $('#genLoad').addEventListener('click',()=>{
+    let store={}; try{ const raw=localStorage.getItem('gen_presets_v1'); if(raw) store=JSON.parse(raw);}catch(_){}
+    const names=Object.keys(store); if(!names.length){ alert(LANG==='en'?'No presets':'프리셋 없음'); return; }
+    const name=prompt((LANG==='en'?'Type preset name:\n':'불러올 프리셋 이름:\n')+names.join(', '), names[0]); const p=store[name]; if(!p) return;
+    waveSel.value=p.wave; freqNum.value=p.freq; freqSlider.value=p.freq; duty.value=p.duty; dutyNum.value=p.duty; bnEnable.checked=!!p.bn; bnDiff.value=p.diff; applyGen();
+  });
 
-// ========= 상태 썸네일 & 안내 =========
-function statusBlank(){
-  const st=document.getElementById('statusThumb');
-  st.classList.add('status-blank');
-  st.style.backgroundImage='none';
-  let txt = st.parentElement.querySelector('#statusText');
-  if(!txt){ txt=document.createElement('div'); txt.id='statusText'; st.parentElement.appendChild(txt); }
-  txt.textContent = (LANG==='en'?'No track loaded':'선곡되지 않음');
-}
+  /* ===== 언어 토글 ===== */
+  $('#langBtn').addEventListener('click',()=>{ LANG = (LANG==='en'?'ko':'en'); applyLang(); renderStrip(); renderPL(); if(STATE.currentTrack){ /*status 썸네일 유지*/ } else { statusBlank(); } });
 
-// ========= 네비 버튼 =========
-document.getElementById('btnBack').addEventListener('click',()=>{
-  STATE.path = STATE.stack.pop() || '';
-  renderStrip().catch(console.error);
-});
-document.getElementById('btnHome').addEventListener('click',()=>{
-  STATE.stack.length=0; STATE.path='';
-  renderStrip().catch(console.error);
-});
-document.getElementById('btnRefresh').addEventListener('click',()=>{
-  renderStrip().catch(console.error);
-});
+  /* ===== 부팅 ===== */
+  function loadPLStore(){ try{ const raw=localStorage.getItem('pl_store_v1'); if(raw) STATE.playlists=JSON.parse(raw);}catch(_){}
+    if(!STATE.playlists[STATE.playlistName]) STATE.playlists[STATE.playlistName]=[]; }
+  function renderPL(){ $('#playlist').innerHTML=''; Object.keys(STATE.playlists).forEach(n=>{ const pill=document.createElement('div'); pill.className='card'; pill.style.flex='0 0 auto'; pill.style.width='auto'; pill.style.minWidth='92px'; pill.style.textAlign='center'; pill.innerHTML=`<div class="label">${n}</div>`; if(n===STATE.playlistName) pill.style.borderColor='#1f4e79'; pill.addEventListener('click',()=>{STATE.playlistName=n; renderPL();}); $('#playlist').appendChild(pill);}); }
 
-// ========= 부팅 =========
-(async function bootScan(){
-  statusBlank();
+  applyLang();
   STATE.path=''; STATE.stack.length=0;
-  await renderStrip();
-})();
+  renderStrip();
+  statusBlank();
+  loadPLStore(); renderPL();
+
+  // iOS unlock gesture
+  const unlock=async()=>{ try{ const ctx=aCtx; if(ctx && ctx.state==='suspended') await ctx.resume(); }catch(_){ } window.removeEventListener('touchend',unlock); window.removeEventListener('click',unlock); };
+  window.addEventListener('touchend',unlock,{once:true}); window.addEventListener('click',unlock,{once:true});
+});
 </script>
 </body>
 </html>
