@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<!-- saved from url=(0045)file:///Users/paulpark/Downloads/5do_pro.html -->
+<html lang="ko"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>5DO Pro</title>
+<style>
+  :root{
+    --bg:#0b0f17; --panel:#101826; --panel2:#0f1524; --border:#334;
+    --text:#cfead1; --muted:#8fb1a0; --accent:#7ef1c0; --accent2:#55d0ff; --accent3:#a38cff;
+  }
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,Noto Sans KR,sans-serif}
+  a{color:inherit;text-decoration:none}
+
+  /* Header */
+  /* overridden below */
+  .left-pack{display:flex;align-items:center;gap:10px}
+  .logo{font-weight:700;color:var(--accent);font-size:1.05rem}
+  .right-pack{display:flex;align-items:center;gap:10px}
+
+  /* Hamburger (Lite 스타일 프레임) */
+  .menu-container{position:relative}
+  .hamburger{width:34px;height:26px;border:1px solid var(--border);border-radius:8px;display:grid;place-items:center;cursor:pointer;background:#131c2b}
+  .hamburger span,.hamburger span::before,.hamburger span::after{display:block;content:"";width:16px;height:2px;background:#cfead1;border-radius:2px;position:relative}
+  .hamburger span::before{position:absolute;top:-6px}
+  .hamburger span::after {position:absolute;top: 6px}
+
+  .side-menu{display:none;position:absolute;top:34px;left:0;background:#0f1524;border:1px solid #324;
+    border-radius:12px;padding:10px;width:min(260px,80vw);box-shadow:0 20px 50px rgba(0,0,0,.45)}
+  .side-menu.open{display:block}
+  .menu-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.25);backdrop-filter:saturate(120%) blur(2px);display:none}
+  .menu-backdrop.show{display:block}
+  .side-menu a{display:block;padding:10px;border-bottom:1px dashed #2f3a55}
+  .side-menu a:last-child{border-bottom:none}
+  .menu-text{text-decoration:underline;cursor:pointer}
+
+  /* Lang toggle */
+  #langToggle{min-width:44px;height:28px;padding:0 10px;border:1px solid var(--border);border-radius:10px;background:#131c2b;color:var(--text);cursor:pointer}
+
+  /* Toolbar */
+  .toolbar{display:flex;align-items:center;gap:10px;padding:10px 14px 6px}
+   .icon-btn{display:flex;align-items:center;justify-content:center;height:30px;border-radius:10px;border:1px solid rgba(120,180,200,.22);background:#0f1524;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)} 
+  .icon-btn:hover{box-shadow:inset 0 0 16px rgba(126,241,192,.12)}
+  .icon{width:18px;height:18px;stroke:#cfead1;fill:none;stroke-width:2;opacity:.95}
+  .icon path{stroke:url(#grad);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 2px rgba(126,241,192,.35))}
+  svg defs linearGradient stop:nth-child(1){stop-color:var(--accent)}
+  svg defs linearGradient stop:nth-child(2){stop-color:var(--accent2)}
+  svg defs linearGradient stop:nth-child(3){stop-color:var(--accent3)}
+
+  /* Horizontal thumbnails */
+  .strip{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding:10px 14px}
+  .strip::-webkit-scrollbar{height:8px}
+  .strip::-webkit-scrollbar-thumb{background:#1a2438;border-radius:8px}
+  .card{min-width:120px;scroll-snap-align:start;background:#0f1524;border:1px solid #283044;border-radius:14px;padding:8px;display:flex;flex-direction:column;gap:6px;cursor:pointer}
+  .thumb{width:100%;aspect-ratio:1/1;border-radius:10px;background:#09101c;overflow:hidden;background-size:cover;background-position:center}
+  .thumb[data-src]{background-image:none} /* lazy 상태 */
+  .label{display:none}
+
+  /* Player + status */
+  .player-wrap{padding:0 14px 14px}
+  .status-wrap{display:flex;align-items:center;gap:12px;margin:6px 0 10px}
+  .status-thumb{
+    width:124px;height:124px;border-radius:14px;position:relative;overflow:hidden;
+    background: radial-gradient(120px 80px at 40% 35%, #1a2335 0%, #0b0f17 70%),
+                linear-gradient(135deg, rgba(126,241,192,.15), rgba(85,208,255,.12), rgba(163,140,255,.15));
+    box-shadow: 0 0 18px rgba(126,241,192,.25), inset 0 0 24px rgba(163,140,255,.15);
+    border:1px solid rgba(120,180,200,.12);
+    background-size: cover; background-position: center; background-repeat:no-repeat;
+  }
+  .status-thumb::before{
+    content:"";position:absolute;inset:-25% -25%;
+    background: conic-gradient(from 0deg,#7ef1c0,#55d0ff,#a38cff,#7ef1c0);
+    filter: blur(22px);opacity:.22;animation:spinGlow 6s linear infinite;
+  }
+  .status-thumb.loaded::before{ display:none; }
+  @keyframes spinGlow{to{transform:rotate(360deg)}}
+  audio{width:100%;margin-top:6px;background:#0f1524;border:1px solid #273246;border-radius:12px}
+  .muted{color:#7ea296}
+
+  /* Spectrum Visualizer (bottom) */
+  .visual-wrap{padding:6px 12px 14px}
+  #vizCanvas{width:100%;height:140px;display:block;background:linear-gradient(180deg,#0e1524 0%, #0b0f17 100%);
+    border-top:1px solid #243145;border-bottom:1px solid #243145;border-radius:12px}
+
+
+/* Header grid: left | center(tabs) | right(lang) */
+/* overridden below */
+.tabs{justify-self:center;display:flex;gap:8px;transform:translateX(clamp(8px,2vw,22px))}
+.tab{padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:#171d2b;color:#dfe7f6;cursor:pointer;font-size:.85rem}
+.tab.active{background:#1f2739;border-color:#334}
+.right-pack{display:flex;align-items:center;gap:10px;justify-self:end}
+/* Generator layout (from Pro) */
+.gen-wrap{ padding:12px }
+#gen .grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px }
+#gen .field{ background:#141a27; border:1px solid #2a3044; border-radius:12px; padding:12px; min-height:62px; display:flex; flex-direction:column; justify-content:center }
+#gen .field h4{ margin:0 0 8px; font-size:.95rem; color:#dfe7f6 }
+#gen .field.full{ grid-column:1/-1 }
+.gen-actions{ display:flex; gap:12px; align-items:center; justify-content:center; flex-wrap:wrap }
+/* Controls bar for library */
+.controls-adv{display:flex;gap:10px;justify-content:center;margin:12px 0}
+/* iTunes-like buttons */
+.btn-itunes{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:120px;height:48px;padding:0 18px;border-radius:12px;border:1px solid #2a3148;
+  background:linear-gradient(180deg,#232a3b 0%, #151b24 100%);color:#e7efff;font-weight:600;letter-spacing:.2px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 4px 14px rgba(0,0,0,.25);
+  cursor:pointer;transition:transform .05s ease, filter .15s ease;
+}
+.btn-itunes:hover{ filter:brightness(1.08) }
+.btn-itunes:active{ transform:translateY(1px) }
+.btn-itunes.primary{ border-color:#3b6bd6;background:linear-gradient(180deg,#2c5bd4 0%, #233a86 100%) }
+.btn-itunes.lg{ min-width:160px;height:64px;font-size:1.05rem;border-radius:14px }
+/* Align Binaural & Harmonics row */
+#gen .row-bb-harm{ display:grid; grid-template-columns:1fr 1fr; gap:12px }
+#gen .row-bb-harm .field{ min-height:68px }
+
+/* header overridden below */.tabs{justify-self:center;display:flex;gap:8px;transform:translateX(clamp(8px,2vw,22px))}.tab{padding:6px 10px;border:1px solid var(--border);border-radius:10px;background:#101826;color:#cfead1;cursor:pointer;font-size:.86rem}.tab.active{background:#182131}.right-pack{display:flex;align-items:center;gap:10px;justify-self:end}
+.section{display:none}.section.active{display:block}
+.mini-select{height:38px;border-radius:10px;border:1px solid rgba(120,180,200,.22);background:#0f1524;color:#cfead1;padding:0 8px}
+
+/* === header override === */
+header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
+.tabs{justify-self:center;display:flex;gap:10px;transform:translateX(clamp(8px,2vw,22px))}
+.tab{padding:6px 12px;border:1px solid var(--border);border-radius:12px;background:#101826;color:#cfead1;cursor:pointer;font-size:.86rem}
+.tab.active{background:#182131}
+.right-pack{display:flex;align-items:center;gap:10px;justify-self:end}
+
+
+/* align binaural + harmonics on same row */
+#gen .row-bh{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+#gen .row-bh .field{min-height:72px}
+
+
+/* minimal square control buttons */
+.ctrlbar{display:grid;grid-template-columns:34px 34px 34px 1fr;gap:8px;align-items:center}
+ .icon-btn{display:flex;align-items:center;justify-content:center;height:30px;border-radius:10px;border:1px solid rgba(120,180,200,.22);background:#0f1524;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)} 
+.icon-btn:hover{filter:brightness(1.06)}
+.icon{width:18px;height:18px;stroke:#cfead1;fill:none;stroke-width:2;opacity:.95}
+.preset-select{height:34px;border-radius:10px;border:1px solid rgba(120,180,200,.22);background:#0f1524;color:#cfead1;padding:0 10px}
+
+</style>
+
+<style>
+/* === Fantasy FX Canvas (non-audio, lockscreen-safe) === */
+#fxCanvas{
+  position: relative;
+  width: 100%;
+  height: 220px;
+  display: none;
+  border-radius: 12px;
+  overflow: hidden;
+  background: radial-gradient(120% 120% at 0% 0%, rgba(0,255,200,0.12), transparent),
+              radial-gradient(120% 120% at 100% 0%, rgba(255,0,180,0.10), transparent),
+              radial-gradient(120% 120% at 50% 100%, rgba(120,180,255,0.10), transparent),
+              #000;
+  mix-blend-mode: screen;
+}
+#fxCanvas.blend-bright { mix-blend-mode: lighten; }
+</style>
+
+
+<style>
+/* Force-hide legacy spectrum visualizer remnants */
+.visual-wrap, #vizCanvas, #viz, #vizCanvas2 {
+  display:none !important;
+  visibility:hidden !important;
+  pointer-events:none !important;
+  height:0 !important;
+  padding:0 !important;
+  margin:0 !important;
+  border:0 !important;
+}
+</style>
+
+
+<style>
+:root{
+  --ls-blue-core:#8fe8ff;
+  --ls-blue-glow1:rgba(160,240,255,1);
+  --ls-blue-glow2:rgba(90,210,255,0.95);
+  --ls-blue-glow3:rgba(40,170,255,0.80);
+  --ls-blue-glow4:rgba(0,120,255,0.65);
+}
+.app-title{
+  color:var(--ls-blue-core)!important;
+  text-shadow:
+    0 0 3px var(--ls-blue-glow1),
+    0 0 8px var(--ls-blue-glow2),
+    0 0 18px var(--ls-blue-glow3),
+    0 0 36px var(--ls-blue-glow4);
+  letter-spacing:.25px;
+}
+.hamburger span, .hamburger span::before, .hamburger span::after{
+  background:var(--ls-blue-core)!important;
+  box-shadow: 0 0 6px var(--ls-blue-glow2), 0 0 14px var(--ls-blue-glow3);
+}
+header .icon, header .icon svg path, header .icon svg rect, header .icon svg circle{
+  fill:var(--ls-blue-core)!important;
+  stroke:var(--ls-blue-core)!important;
+  filter: drop-shadow(0 0 8px var(--ls-blue-glow3));
+}
+.visual-wrap,#viz,#vizCanvas,#vizCanvas2{
+  display:none!important;visibility:hidden!important;pointer-events:none!important;
+  height:0!important;margin:0!important;padding:0!important;border:0!important;
+}
+.status-blank{
+  background:#0a0f18;
+  background-image:
+    radial-gradient(60% 40% at 50% 0%, rgba(90,210,255,.08), rgba(0,0,0,0)),
+    radial-gradient(70% 60% at 50% 100%, rgba(0,120,255,.06), rgba(0,0,0,0));
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:12px;
+}
+#loadingThumb,#statusThumb{background-image:none!important}
+</style>
+
+</head>
+<body>
+
+<header>
+  <div class="left-pack">
+    <div class="menu-container">
+      <div id="menuBtn" class="hamburger"><span></span></div>
+      <nav id="sideMenu" class="side-menu">
+        <a class="mbtn" href="https://5dshop.co.kr/" target="_blank" rel="noopener">Shop</a>
+        <a class="mbtn menu-text" data-file="faq">FAQ</a>
+        <a class="mbtn menu-text" data-file="manual">Manual</a>
+        <a class="mbtn menu-text" data-file="contact">Contact</a>
+        <a class="mbtn menu-text" data-file="about">About</a>
+      </nav>
+    </div>
+    <div class="logo">5DO Pro</div>
+  </div>
+  <div class="tabs">
+    <div class="tab active" data-target="lib">5DO</div>
+    <div class="tab" data-target="gen">Freq. Gen.</div>
+  </div>
+  <div class="right-pack"><button id="langToggle" class="pill" title="EN/KO">KO</button></div>
+</header>
+<div class="menu-backdrop" id="menuBackdrop"></div>
+
+<!-- Toolbar with gradient defs -->
+<section id="lib" class="section active">
+<div class="toolbar">
+  <svg width="0" height="0" style="position:absolute;left:-9999px;top:-9999px">
+    <defs>
+      <lineargradient id="grad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#7ef1c0"></stop>
+        <stop offset="50%" stop-color="#55d0ff"></stop>
+        <stop offset="100%" stop-color="#a38cff"></stop>
+      </lineargradient>
+    </defs>
+  </svg>
+
+  <button id="btnBack" class="icon-btn" title="Back" aria-label="Back">
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M14 6l-6 6 6 6M19 12H8"></path>
+    </svg>
+  </button>
+
+  <button id="btnRoot" class="icon-btn" title="Root" aria-label="Root">
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 4a4 4 0 0 1 4 4v1h2a2 2 0 0 1 2 2v7h-6v-4H10v4H4v-7a2 2 0 0 1 2-2h2V8a4 4 0 0 1 4-4z"></path>
+    </svg>
+  </button>
+
+  <button id="btnRefresh" class="icon-btn" title="Refresh" aria-label="Refresh">
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v6h-6"></path>
+    </svg>
+  </button>
+
+  <button id="loopBtn" class="pill">루프: 꺼짐</button>
+  <button id="timerBtn" class="pill">Timer</button>
+  <button id="playlistBtn" class="pill">Playlist</button>
+</div>
+
+<!-- Horizontal thumbnails -->
+<div id="strip" class="strip" aria-label="Media Library"><div class="card"><div class="thumb" style="background-image: url(&quot;https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Quantum_Torus_X/DNA_Recalibration.jpg&quot;);"></div><div class="label"></div></div><div class="card"><div class="thumb" style="background-image: url(&quot;https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Quantum_Torus_X/Heart_Brain_Cohesion.jpg&quot;);"></div><div class="label"></div></div><div class="card"><div class="thumb" style="background-image: url(&quot;https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Quantum_Torus_X/Torus_Field_Synchrony.jpg&quot;);"></div><div class="label"></div></div></div>
+
+<!-- Player -->
+<div class="player-wrap">
+  <div class="status-wrap">
+    <div id="loadingThumb" class="status-thumb loaded" aria-label="loading thumbnail" style="background-image: url(&quot;https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Quantum_Torus_X/Heart_Brain_Cohesion.jpg&quot;);"></div>
+    <div class="muted" id="statusText">재생 준비됨</div>
+  </div>
+  <audio id="player" controls="" crossorigin="anonymous" playsinline webkit-playsinline preload="metadata" controlslist="nodownload noplaybackrate"></audio>
+</div>
+
+<!-- Spectrum Visualizer -->
+</section>
+<section id="gen" class="section" aria-label="Generator">
+  <div class="gen-wrap">
+    <div class="field full">
+      <canvas id="oscGen" height="100" width="640"></canvas>
+    </div>
+
+    <div class="grid">
+      <div class="field">
+        <h4 id="lblFreq">Frequency (Hz)</h4>
+        <input id="genFreq" type="number" min="1" max="24000" step="0.1" value="432">
+      </div>
+      <div class="field">
+        <h4 id="lblWave">Waveform</h4>
+        <select id="genWave">
+          <option value="sine">Sine</option>
+          <option value="square">Square</option>
+          <option value="sawtooth">Saw</option>
+          <option value="triangle">Triangle</option>
+        </select>
+      </div>
+
+<div class="field">
+  <h4 id="lblBB">Binaural</h4>
+  <div style="display:flex;align-items:center;gap:8px">
+    <input id="genBinaural" type="checkbox" aria-label="Binaural">
+    <label id="lblBBdiff" for="genBeat">차이 (Hz)</label>
+  </div>
+  <input id="genBeat" type="number" min="0" max="1000" step="0.1" value="7">
+</div>
+      <div class="field">
+        <h4 id="lblHarmonics">Harmonics</h4>
+        <label id="lblHarmHelp" for="genHarmonics">배음</label>
+        <input id="genHarmonics" type="number" min="1" max="8" step="1" value="1">
+      </div>
+
+      <div class="field">
+        <h4 id="lblLevel">Level</h4>
+        <input id="genLevel" type="range" min="0" max="1" step="0.01" value="0.5">
+      </div>
+      <div class="field">
+        <h4 id="lblDuty">Duty Cycle</h4>
+        <input id="genDuty" type="range" min="0.05" max="0.95" step="0.01" value="0.50" disabled="">
+      </div>
+
+      <div class="field full">
+  <div class="gen-actions ctrlbar" id="genCtrlBar">
+  <button id="genToggle" class="icon-btn" title="재생/일시정지" aria-label="재생/일시정지"><svg class="icon" viewBox="0 0 24 24"><polygon points="8,5 8,19 19,12" stroke-linejoin="round"></polygon></svg></button>
+  <button id="btnSavePreset" class="icon-btn" title="프리셋 저장" aria-label="프리셋 저장">
+    <svg class="icon" viewBox="0 0 24 24"><path d="M12 3v10m0 0l-4-4m4 4l4-4"></path><rect x="5" y="15" width="14" height="6" rx="1"></rect></svg>
+  </button>
+  <button id="btnDeletePreset" class="icon-btn" title="프리셋 삭제" aria-label="프리셋 삭제">
+    <svg class="icon" viewBox="0 0 24 24"><path d="M6 7h12M9 7v11m6-11v11M5 7l1 14h12l1-14M9 4h6l1 3H8z"></path></svg>
+  </button>
+  <select id="presetSelect" class="preset-select"><option value="">프리셋 선택</option></select>
+
+  </div>
+</div>
+    
+    </div>
+    
+  </div>
+</section>
+<!-- Modal for /texts/*.txt -->
+<div id="txtModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);align-items:center;justify-content:center;z-index:9999">
+  <div style="background:#0f1524;color:#cfead1;border:1px solid #334;max-width:720px;width:90%;max-height:75vh;overflow:auto;border-radius:14px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+    <div style="text-align:right;margin-bottom:8px">
+      <button id="txtClose" style="padding:6px 10px;border:1px solid #334;background:#192033;color:#cfead1;border-radius:8px;cursor:pointer">Close</button>
+    </div>
+    <pre id="txtBody" style="white-space:pre-wrap;line-height:1.55;font-family:system-ui, Apple SD Gothic Neo, Noto Sans KR, sans-serif;"></pre>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" crossorigin="anonymous"></script>
+
+
+
+
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const st = document.getElementById('loadingThumb') || document.getElementById('statusThumb');
+  const tx = document.getElementById('statusText');
+  if (st) {
+    st.classList.add('loaded');
+    st.style.backgroundImage = 'none';
+  }
+  if (tx && (!tx.textContent || /재생 준비됨|Ready to play/i.test(tx.textContent))) {
+    tx.textContent = (window.lang==='en' ? 'No track loaded' : '선곡되지 않음');
+  }
+});
+</script>
+
+
+<script>
+(function(){
+  try{
+    if (window.vizRAF) { cancelAnimationFrame(window.vizRAF); window.vizRAF = 0; }
+    if (window.drawViz) { window.drawViz = function(){}; }
+    if (window.startViz) { window.startViz = function(){}; }
+    if (window.stopViz) { window.stopViz = function(){}; }
+    if (window.analyser && window.analyser.disconnect) { try{ window.analyser.disconnect(); }catch(e){} }
+    if (window.sourceNode && window.sourceNode.disconnect) { try{ window.sourceNode.disconnect(); }catch(e){} }
+  }catch(e){}
+})();
+</script>
+
+
+<script>
+(function(){
+  function getLang(){ try{ return (window.lang || document.documentElement.lang || 'ko').toLowerCase().startsWith('en') ? 'en' : 'ko'; }catch(e){ return 'ko'; } }
+  window.trackThumbJpg = function(path, name){
+    var lang=getLang();
+    var base = (path ? path.replace(/\/+$/,'')+'/' : '');
+    var stem = name.replace(/\.[^/.]+$/,'');
+    var fname = (lang==='en') ? (stem + '_E.jpg') : (stem + '.jpg');
+    return base + fname;
+  };
+  window.folderThumbJpg = function(path){
+    var lang=getLang();
+    var base = (path ? path.replace(/\/+$/,'')+'/' : '');
+    var fname = (lang==='en') ? 'folder_e.jpg' : 'folder.jpg';
+    return base + fname;
+  };
+  document.addEventListener('DOMContentLoaded', function(){
+    try{
+      if (window.state && 'path' in window.state) window.state.path='';
+      if (window.currentPath!==undefined) window.currentPath='';
+      if (typeof window.buildRoot==='function') window.buildRoot();
+      else if (typeof window.buildThumbs==='function') window.buildThumbs('');
+      var bc=document.getElementById('breadcrumb')||document.querySelector('.breadcrumb'); if(bc) bc.textContent='/';
+    }catch(e){}
+    var st=document.getElementById('loadingThumb')||document.getElementById('statusThumb');
+    var tx=document.getElementById('statusText');
+    if(st){ st.style.backgroundImage='none'; st.classList.add('status-blank','loaded'); }
+    if(tx && (!tx.textContent || /Ready|재생 준비됨/i.test(tx.textContent))){
+      tx.textContent = (getLang()==='en'?'No track loaded':'선곡되지 않음');
+    }
+    document.addEventListener('click', function(e){
+      var card = e.target && e.target.closest && e.target.closest('.card');
+      if(!card) return;
+      var label = card.querySelector('.label'); var name = (label && label.textContent||'').trim();
+      if(card.dataset && card.dataset.filename) name = card.dataset.filename;
+      var path = (window.state && window.state.path!=null) ? window.state.path : (window.currentPath||'');
+      var isFolder = card.classList.contains('folder') || !!card.dataset.isFolder;
+      var imgUrl = isFolder ? window.folderThumbJpg(path ? path + '/' + name : name) : window.trackThumbJpg(path, name);
+      if(st){ st.style.backgroundImage='url("'+imgUrl+'")'; st.classList.add('loaded'); }
+      if(tx){ tx.textContent=(getLang()==='en'?'Ready to play':'재생 준비됨'); }
+    }, true);
+  }, {once:true});
+})();
+</script>
+
+
+<script>
+(function(){
+  var host = document.getElementById('oscHost') || document.querySelector('#generator, .generator, .freq-generator, .panel-generator') || document.body;
+  if (!document.getElementById('oscWrap')){
+    var wrap=document.createElement('div'); wrap.id='oscWrap'; wrap.style.margin='10px 0';
+    wrap.innerHTML = '<div style="display:flex;align-items:center;gap:12px;margin:6px 0;">'
+      + '<label style="min-width:80px">Oscilloscope</label>'
+      + '<input id="oscColor" type="color" value="#39e3ff" title="Wave Color">'
+      + '<label style="margin-left:8px">Zoom x</label>'
+      + '<select id="oscZoom"><option>1</option><option selected>2</option><option>3</option></select>'
+      + '</div>'
+      + '<canvas id="osc" style="width:100%;height:140px;border:1px solid rgba(255,255,255,.1);border-radius:8px;background:#02070d;"></canvas>';
+    host.appendChild(wrap);
+  }
+  var cv=document.getElementById('osc'); if(!cv) return;
+  var ctx=cv.getContext('2d'), color=document.getElementById('oscColor'), zoomSel=document.getElementById('oscZoom'), zoom=2;
+  var aCtx=window.aCtx||window.audioCtx||null;
+  function pickOut(){ return window.genGain||window.masterGain||window.outputNode||window.mainGain||null; }
+  var out=pickOut(), analyser=null, data=null;
+  function ensureAnalyser(){
+    if(!aCtx||!out||!out.connect) return;
+    if(!analyser){ analyser=aCtx.createAnalyser(); analyser.fftSize=2048; data=new Uint8Array(analyser.fftSize); try{ out.connect(analyser);}catch(_){}}}
+  function size(){ var dpr=window.devicePixelRatio||1,w=cv.clientWidth||600,h=cv.clientHeight||140; cv.width=Math.floor(w*dpr); cv.height=Math.floor(h*dpr); ctx.setTransform(dpr,0,0,dpr,0,0); }
+  window.addEventListener('resize', size, {passive:true}); size();
+  zoomSel&&zoomSel.addEventListener('change', function(){ zoom=parseInt(zoomSel.value)||2; });
+  var raf=null;
+  (function draw(){
+    raf=requestAnimationFrame(draw);
+    if(!analyser){ ensureAnalyser(); if(!analyser) return; }
+    analyser.getByteTimeDomainData(data);
+    var w=cv.clientWidth||600,h=cv.clientHeight||140;
+    ctx.clearRect(0,0,w,h);
+    ctx.strokeStyle='rgba(100,180,220,.08)'; ctx.lineWidth=1;
+    for(var gx=0;gx<w;gx+=Math.max(40,w/10)){ ctx.beginPath();ctx.moveTo(gx,0);ctx.lineTo(gx,h);ctx.stroke(); }
+    for(var gy=0;gy<h;gy+=Math.max(28,h/6)){ ctx.beginPath();ctx.moveTo(0,gy);ctx.lineTo(w,gy);ctx.stroke(); }
+    var col=(color&&color.value)||'#39e3ff'; ctx.strokeStyle=col; ctx.lineWidth=2; ctx.shadowColor=col; ctx.shadowBlur=8;
+    ctx.beginPath();
+    var slice=(data.length/(w))/Math.max(1,(zoom/1)); var ymid=h/2, yscale=0.9;
+    for(var x=0;x<w;x++){ var idx=Math.min(data.length-1,Math.floor(x*slice)); var v=(data[idx]-128)/128; var y=ymid+v*ymid*yscale; if(x===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }
+    ctx.stroke(); ctx.shadowBlur=0;
+  })();
+  window.__oscRefresh = function(){ analyser=null; ensureAnalyser(); };
+})();
+</script>
+
+
+<script>
+(function(){
+  var aCtx=window.aCtx||window.audioCtx||null;
+  function q(s){return document.querySelector(s);}
+  function qq(s){return Array.prototype.slice.call(document.querySelectorAll(s));}
+  var freqNum=q('#freq, #frequency, input[name="freq"], input[data-role="freq"], .freq-input input[type=number]');
+  var waveSel=q('#wave, #waveform, select[name="wave"], .wave-select select');
+  var dutyUI=q('#duty, #dutyCycle, input[name="duty"]');
+  // freq slider inject
+  var freqSlider=q('#freqSlider');
+  if(!freqSlider){ var holder=(freqNum&&freqNum.parentElement)||document.body;
+    var row=document.createElement('div'); row.style.display='flex';row.style.alignItems='center';row.style.gap='10px';row.style.margin='6px 0';
+    row.innerHTML='<input id="freqSlider" type="range" min="1" max="20000" step="1" style="flex:1">';
+    holder.parentElement && holder.parentElement.insertBefore(row, holder.nextSibling); freqSlider=row.querySelector('#freqSlider'); }
+  function getFreq(){ var v=(freqNum&&parseFloat(freqNum.value))||(freqSlider&&parseFloat(freqSlider.value))||440; return Math.max(1,Math.min(20000,v||440)); }
+  function setFreqUI(v){ if(freqNum) freqNum.value=(''+v); if(freqSlider) freqSlider.value=v; }
+  if(freqNum){ freqNum.addEventListener('input',function(){ var v=getFreq(); if(freqSlider) freqSlider.value=v; apply(); }); freqNum.addEventListener('change',function(){ var v=getFreq(); if(freqSlider) freqSlider.value=v; apply(); }); }
+  if(freqSlider){ if(!freqSlider.value) freqSlider.value=(freqNum&&freqNum.value)||440; freqSlider.addEventListener('input',function(){ if(freqNum) freqNum.value=freqSlider.value; apply(); }); }
+  if(!dutyUI && waveSel){ var row=document.createElement('div'); row.style.display='flex';row.style.alignItems='center';row.style.gap='8px';row.style.margin='6px 0';
+    row.innerHTML='<label style="min-width:90px">Duty</label><input id="dutyCycle" type="range" min="5" max="95" step="1" value="50" style="flex:1">';
+    waveSel.parentElement && waveSel.parentElement.appendChild(row); dutyUI=row.querySelector('#dutyCycle'); }
+  function dutyVisible(show){ if(!dutyUI) return; var p=dutyUI.closest('div'); if(p) p.style.display=show?'':'none'; }
+  function getDuty(){ return dutyUI?(parseFloat(dutyUI.value)||50):50; }
+  if(waveSel){ waveSel.addEventListener('change',function(){ var w=(waveSel.value||'sine').toLowerCase(); dutyVisible(w!=='sine'); apply(); }); dutyVisible(((waveSel.value||'sine').toLowerCase()!=='sine')); }
+  if(dutyUI){ dutyUI.addEventListener('input', apply); }
+  // hide level controls
+  qq('#level, #levelSlider, .level, input[name="level"]').forEach(function(el){ el.style.display='none'; });
+  function L(){ return window.oscL||window.mainOsc||null; }
+  function R(){ return window.oscR||null; }
+  function makePulse(ac, duty){ duty=Math.max(1,Math.min(99,duty||50)); var D=duty/100, N=32; var real=new Float32Array(N+1), imag=new Float32Array(N+1); real[0]=0; imag[0]=0;
+    for(var n=1;n<=N;n++){ var bn=(2/(n*Math.PI))*Math.sin(n*Math.PI*D); real[n]=0.0; imag[n]=bn; }
+    try{ return new PeriodicWave(ac,{real:real,imag:imag,disableNormalization:true}); }catch(e){ return ac.createPeriodicWave(real,imag,{disableNormalization:true}); } }
+  function apply(){
+    var f=getFreq(), w=(waveSel&&waveSel.value||'sine').toLowerCase();
+    var l=L(), r=R();
+    if(l&&l.frequency) try{ l.frequency.setTargetAtTime(f,aCtx.currentTime,0.01);}catch(e){ l.frequency.value=f; }
+    if(r&&r.frequency) try{ r.frequency.setTargetAtTime(f,aCtx.currentTime,0.01);}catch(e){ r.frequency.value=f; }
+    if(w==='sine'||w==='triangle'||w==='sawtooth'||w==='square'){
+      if(w==='square'&&dutyUI){ var pw=makePulse(aCtx,getDuty()); if(l&&l.setPeriodicWave) l.setPeriodicWave(pw); if(r&&r.setPeriodicWave) r.setPeriodicWave(pw); }
+      else { if(l&&l.type) l.type=w; if(r&&r.type) r.type=w; }
+    }else if(w==='pulse'){ var pw2=makePulse(aCtx,getDuty()); if(l&&l.setPeriodicWave) l.setPeriodicWave(pw2); if(r&&r.setPeriodicWave) r.setPeriodicWave(pw2); }
+    if(window.__oscRefresh) window.__oscRefresh();
+  }
+  if(freqNum && !freqNum.value) freqNum.value=440; if(freqSlider && !freqSlider.value) freqSlider.value=440; setTimeout(apply,50);
+})();
+</script>
+
+</body></html>
