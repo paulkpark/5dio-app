@@ -140,10 +140,25 @@ header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10
 .preset-select{height:34px;border-radius:10px;border:1px solid rgba(120,180,200,.22);background:#0f1524;color:#cfead1;padding:0 10px}
 
 </style>
+
 <style>
-/* --- scope sizing patch --- */
-#osc{height:180px; min-height:160px; display:block;}
+/* === Fantasy FX Canvas (non-audio, lockscreen-safe) === */
+#fxCanvas{
+  position: relative;
+  width: 100%;
+  height: 220px;
+  display: none;
+  border-radius: 12px;
+  overflow: hidden;
+  background: radial-gradient(120% 120% at 0% 0%, rgba(0,255,200,0.12), transparent),
+              radial-gradient(120% 120% at 100% 0%, rgba(255,0,180,0.10), transparent),
+              radial-gradient(120% 120% at 50% 100%, rgba(120,180,255,0.10), transparent),
+              #000;
+  mix-blend-mode: screen;
+}
+#fxCanvas.blend-bright { mix-blend-mode: lighten; }
 </style>
+
 </head>
 <body>
 
@@ -214,7 +229,7 @@ header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10
     <div id="loadingThumb" class="status-thumb loaded" aria-label="loading thumbnail" style="background-image: url(&quot;https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Quantum_Torus_X/Heart_Brain_Cohesion.jpg&quot;);"></div>
     <div class="muted" id="statusText">재생 준비됨</div>
   </div>
-  <audio id="player" controls="" crossorigin="anonymous" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Quantum_Torus_X/Heart_Brain_Cohesion.mp3" playsinline webkit-playsinline preload="auto"></audio>
+  <audio id="player" controls="" crossorigin="anonymous" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Quantum_Torus_X/Heart_Brain_Cohesion.mp3"></audio>
 </div>
 
 <!-- Spectrum Visualizer -->
@@ -1266,370 +1281,132 @@ document.addEventListener('DOMContentLoaded', ()=>{
 </script>
 
 
-<audio id="genBg" style="display:none" playsinline webkit-playsinline></audio>
+<canvas id="fxCanvas"></canvas>
 
 <script>
+/* === Fantasy FX: GPU-light canvas animation, independent from audio === */
 (function(){
-  const player = document.getElementById('player');
-  async function resumeIfNeeded(){
-    try{
-      if (player && player.paused === false) { await player.play().catch(()=>{}); }
-      if (window.audioCtx && window.audioCtx.state === 'suspended') { await window.audioCtx.resume().catch(()=>{}); }
-      if (window.gctx && window.gctx.state === 'suspended') { await window.gctx.resume().catch(()=>{}); }
-    }catch(e){}
-  }
-  document.addEventListener('visibilitychange', ()=>{ if (document.visibilityState==='visible') resumeIfNeeded(); });
-  window.addEventListener('pageshow', resumeIfNeeded);
-  document.addEventListener('touchend', resumeIfNeeded, { once:true });
-  document.addEventListener('click',    resumeIfNeeded, { once:true });
+  const cv = document.getElementById('fxCanvas');
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  let rid = null, running = false;
+  let t0 = performance.now();
 
-  if ('mediaSession' in navigator && player){
-    function artFromStatus(){
-      try{
-        const st = document.getElementById('statusThumb') || document.getElementById('loadingThumb');
-        if (!st) return null;
-        let bg = st.style.backgroundImage || '';
-        bg = bg.replace(/^url\(["']?/, '').replace(/["']?\)$/, '');
-        return bg || null;
-      }catch(_){ return null; }
-    }
-    function setMeta(title){
-      try{
-        const artworkUrl = artFromStatus();
-        navigator.mediaSession.metadata = new MediaMetadata({
-          title: title || (window.nowTitle || '5DO Pro'),
-          artist: '5DO',
-          album: 'Library',
-          artwork: artworkUrl ? [{src: artworkUrl, sizes: '512x512', type: 'image/jpeg'}] : []
-        });
-      }catch(_){}
-    }
-    player.addEventListener('play', ()=> setMeta());
-    player.addEventListener('ended', ()=> setMeta('5DO Pro'));
-    try{
-      navigator.mediaSession.setActionHandler('play',  ()=> player.play().catch(()=>{}));
-      navigator.mediaSession.setActionHandler('pause', ()=> player.pause());
-    }catch(_){}
-  }
-})();
-</script>
-
-
-<script>
-(function(){
-  const genBg = document.getElementById('genBg');
-  if (!genBg) return;
-  let attached = false;
-
-  function tryAttach(){
-    try{
-      const ctx  = window.gctx || window.audioCtx || null;
-      const gain = window.gGain || window.masterGain || null;
-      if (!ctx || !gain || attached) return;
-      if (!window._genMsDest) window._genMsDest = ctx.createMediaStreamDestination();
-      try { gain.connect(window._genMsDest); } catch(_){}
-      genBg.srcObject = window._genMsDest.stream;
-      genBg.loop = true;
-      genBg.play().catch(()=>{});
-      attached = true;
-    }catch(_){}
-  }
-
-  document.addEventListener('click', tryAttach, {once:true});
-  document.addEventListener('touchend', tryAttach, {once:true});
-  let last = null;
-  setInterval(()=>{
-    if (typeof window.genOn === 'boolean' && window.genOn !== last){
-      last = window.genOn;
-      if (last) tryAttach();
-      if (!last && genBg) { try{ genBg.pause(); }catch(_){} }
-    }
-  }, 600);
-})();
-</script>
-
-
-<audio id="keeperAudio" src="data:audio/mp3;base64,/+MYxAAAAANIAAAAAExBTUUzLjk4LjIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" style="display:none" loop playsinline webkit-playsinline></audio>
-
-<script>
-(function(){
-  const player = document.getElementById('player');
-  const keeper = document.getElementById('keeperAudio');
-  if (!player || !keeper) return;
-
-  keeper.volume = 0.0; // inaudible
-
-  async function keepAliveOnHide(){
-    try{
-      // If user intended to play, keep both alive
-      if (!player.paused){
-        // re-assert play on main player (some iOS versions pause on lock)
-        await player.play().catch(()=>{});
-        // run tiny silent loop to keep audio session active
-        await keeper.play().catch(()=>{});
-      }
-    }catch(_){}
-  }
-  function stopKeeperOnShow(){
-    try{ keeper.pause(); keeper.currentTime = 0; }catch(_){}
-  }
-
-  document.addEventListener('visibilitychange', ()=>{
-    if (document.visibilityState === 'hidden'){ keepAliveOnHide(); }
-    else { stopKeeperOnShow(); }
-  });
-
-  // When user hits play, ensure keeper is also ready for the next hide
-  player.addEventListener('play', ()=>{ try{ keeper.load(); }catch(_){} });
-
-  // Safety: on page show, try to resume both
-  window.addEventListener('pageshow', ()=>{
-    if (!player.paused){ player.play().catch(()=>{}); }
-    stopKeeperOnShow();
-  });
-})();
-</script>
-
-
-<script>
-(function(){
-  const player = document.getElementById('player');
-  if (!player) return;
-  let timer = null;
-  document.addEventListener('visibilitychange', ()=>{
-    if (document.visibilityState === 'hidden'){
-      if (timer) return;
-      timer = setInterval(()=>{
-        if (!player.paused){ player.play().catch(()=>{}); }
-      }, 4000); // every 4s gently re-assert play
-    }else{
-      if (timer){ clearInterval(timer); timer = null; }
-    }
-  });
-})();
-</script>
-
-
-
-
-
-<canvas id="osc" style="width:100%;height:180px;display:block;"></canvas>
-
-<script>
-(function(){
-  // ===== Stereo Oscilloscope v2 (2x zoom, clipping guard, robust stereo detect, neon-green) =====
-  let scope = null, rafId = null, retryId = null;
-
-  function haveGenNodes(){
-    const AC   = window.gctx || window.audioCtx || null;
-    const gain = window.gGain || window.masterGain || null;
-    return { AC, gain };
-  }
-
-  function getBinauralState(){
-    // Prefer explicit UI checkbox if present
-    const candidates = [
-      '#genBinaural', '#gBB', '#binaural', 'input[name="binaural"]',
-      '[data-binaural="1"]', '[data-role="binaural"]'
-    ];
-    for (const sel of candidates){
-      const el = document.querySelector(sel);
-      if (el && 'checked' in el) return !!el.checked;
-    }
-    // Fallback: infer by oscillator frequencies if exposed
-    try{
-      const L = window.gOscL, R = window.gOscR;
-      if (L && R && L.frequency && R.frequency){
-        const dl = Math.abs((L.frequency.value || 0) - (R.frequency.value || 0));
-        return dl > 0.01;
-      }
-    }catch(_){}
-    return false;
-  }
-
-  function ensureCanvasSize(c, ctx2d){
+  function resize(){
     const dpr = window.devicePixelRatio || 1;
-    // If no explicit css height, enforce 180px
-    const cssH = (c.clientHeight || 0);
-    const hCss = cssH > 0 ? cssH : 180;
-    const cssW = c.clientWidth || c.offsetWidth || 600;
-    const w = Math.max(240, cssW);
-    const h = Math.max(120, hCss);
-    c.width  = Math.floor(w * dpr);
-    c.height = Math.floor(h * dpr);
-    ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
-    return {w, h};
+    const w = cv.clientWidth || cv.offsetWidth || 600;
+    const h = cv.clientHeight || 220;
+    cv.width = Math.floor(w * dpr);
+    cv.height = Math.floor(h * dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
   }
+  const stars = Array.from({length: 80}, ()=>({ x: Math.random(), y: Math.random(), z: Math.random()*0.6 + 0.4, tw: Math.random()*0.7+0.3 }));
+  const blobs = Array.from({length: 3}, ()=>({ x: Math.random(), y: Math.random(), r: Math.random()*0.25+0.15, p: Math.random()*Math.PI*2, s: 0.3+Math.random()*0.7 }));
 
-  function initOscScope(){
-    const canvas = document.getElementById('osc');
-    if (!canvas) return false;
-    const ctx2d  = canvas.getContext('2d');
+  function frame(){
+    if (!running) return;
+    const now = performance.now();
+    const dt = (now - t0) * 0.001;
+    t0 = now;
 
-    const { AC, gain } = haveGenNodes();
-    if (!AC || !gain) return false;
+    const w = cv.clientWidth || 600;
+    const h = cv.clientHeight || 220;
+    ctx.clearRect(0,0,w,h);
 
-    // Avoid duplicate wiring
-    if (window.__scopeConnectedV2) {
-      scope = window.__scopeConnectedV2;
-      return true;
+    const g = ctx.createLinearGradient(0,0,w,h);
+    g.addColorStop(0.0,'rgba(0,255,160,0.06)');
+    g.addColorStop(0.5,'rgba(160,0,255,0.05)');
+    g.addColorStop(1.0,'rgba(40,120,255,0.06)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,w,h);
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (const s of stars){
+      const sx = (s.x + Math.sin(now*0.0001 + s.z)*0.01)*w;
+      const sy = (s.y + Math.cos(now*0.00013 + s.z)*0.015)*h;
+      const a = 0.35 + 0.35*Math.sin(now*0.006 + s.tw*5.0);
+      ctx.globalAlpha = a;
+      ctx.beginPath();
+      ctx.arc(sx, sy, 0.7 + s.z*1.3, 0, Math.PI*2);
+      ctx.fillStyle = '#39ff14';
+      ctx.fill();
     }
+    ctx.restore();
 
-    // Tap gGain to a splitter (non-invasive)
-    const splitter = AC.createChannelSplitter(2);
-    try { gain.connect(splitter); } catch(_){ /* already connected */ }
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+    for (const b of blobs){
+      b.p += dt * (0.2 + b.s*0.4);
+      const bx = (b.x + Math.sin(b.p)*0.12 + 0.02*Math.cos(now*0.0005))*w;
+      const by = (b.y + Math.cos(b.p*0.9)*0.12 + 0.02*Math.sin(now*0.0004))*h;
+      const br = (b.r + 0.04*Math.sin(b.p*1.3))*Math.min(w,h);
 
-    const anaL = AC.createAnalyser();
-    const anaR = AC.createAnalyser();
-    anaL.fftSize = 2048;
-    anaR.fftSize = 2048;
-    splitter.connect(anaL, 0);
-    splitter.connect(anaR, 1);
+      const rg = ctx.createRadialGradient(bx,by, br*0.2, bx,by, br);
+      rg.addColorStop(0,'rgba(57,255,20,0.24)');
+      rg.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle = rg;
+      ctx.beginPath();
+      ctx.arc(bx,by,br,0,Math.PI*2);
+      ctx.fill();
+    }
+    ctx.restore();
 
-    const zoom = 2; // 2x
-    scope = window.__scopeConnectedV2 = { canvas, ctx2d, anaL, anaR, zoom, running:true };
-
-    const resize = ()=> { ensureCanvasSize(canvas, ctx2d); };
-    resize(); window.addEventListener('resize', resize, {passive:true});
-
-    if (rafId) cancelAnimationFrame(rafId);
-    const draw = ()=>{
-      if (!scope || !scope.running){ rafId = requestAnimationFrame(draw); return; }
-      const { ctx2d, anaL, anaR, zoom } = scope;
-      const size = ensureCanvasSize(scope.canvas, ctx2d);
-      const w = size.w, h = size.h;
-      const isBinaural = getBinauralState();
-
-      // Clear
-      ctx2d.clearRect(0,0,w,h);
-
-      // Neon green style
-      ctx2d.lineWidth = 1.6;
-      ctx2d.strokeStyle = '#39ff14';
-      ctx2d.shadowColor = '#39ff14';
-      ctx2d.shadowBlur = 8;
-
-      // Guides
-      ctx2d.save();
-      ctx2d.globalAlpha = 0.22;
-      ctx2d.beginPath();
-      if (isBinaural){
-        ctx2d.moveTo(0, h*0.25); ctx2d.lineTo(w, h*0.25);
-        ctx2d.moveTo(0, h*0.75); ctx2d.lineTo(w, h*0.75);
-      } else {
-        ctx2d.moveTo(0, h*0.5); ctx2d.lineTo(w, h*0.5);
-      }
-      ctx2d.stroke();
-      ctx2d.restore();
-
-      function drawTrace(analyser, yTop, segH){
-        if (!analyser) return;
-        const N = analyser.fftSize;
-        const data = new Uint8Array(N);
-        analyser.getByteTimeDomainData(data);
-
-        const amp = 0.5 * zoom; // 1x:0.5 → 2x:1.0
-        ctx2d.beginPath();
-        for (let i=0;i<N;i++){
-          const v = (data[i]-128)/128; // -1..+1
-          let y = (v * amp + 0.5) * segH + yTop;
-          if (y < yTop) y = yTop;               // top clip
-          if (y > yTop + segH - 1) y = yTop + segH - 1; // bottom clip
-          const x = (i/(N-1))*w;
-          if (i===0) ctx2d.moveTo(x,y); else ctx2d.lineTo(x,y);
-        }
-        ctx2d.stroke();
-      }
-
-      if (isBinaural){
-        drawTrace(anaL, 0,   h/2);
-        drawTrace(anaR, h/2, h/2);
-      } else {
-        drawTrace(anaL, 0, h);
-      }
-
-      rafId = requestAnimationFrame(draw);
-    };
-    rafId = requestAnimationFrame(draw);
-    return true;
+    rid = requestAnimationFrame(frame);
   }
 
-  function ensureScope(){
-    if (initOscScope()) return;
-    if (retryId) clearInterval(retryId);
-    retryId = setInterval(()=>{
-      if (initOscScope()){ clearInterval(retryId); retryId=null; }
-    }, 400);
+  function start(){
+    if (running) return;
+    running = true;
+    resize();
+    rid = requestAnimationFrame(frame);
+  }
+  function stop(){
+    running = false;
+    if (rid) cancelAnimationFrame(rid);
+    rid = null;
   }
 
-  window.startOscScope = function(){ ensureScope(); if (scope) scope.running = true; };
-  window.stopOscScope  = function(){ if (scope) scope.running = false; };
+  window.fxStart = start;
+  window.fxStop  = stop;
 
-  if (document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', ensureScope);
-  } else {
-    ensureScope();
-  }
+  window.addEventListener('resize', ()=>{ if (running) resize(); }, {passive:true});
 })();
 </script>
 
 
 <script>
+// === FX tab glue: show on Library tab, off on Generator tab ===
 (function(){
-  // Stronger keep-alive: a near-silent oscillator routed to a hidden <audio> via MediaStreamDestination.
-  // This tends to keep iOS audio session alive better than data-URI MP3.
-  const genBg = document.getElementById('genBg') || (function(){
-    const a = document.createElement('audio');
-    a.id = 'genBg'; a.style.display='none'; a.setAttribute('playsinline',''); a.setAttribute('webkit-playsinline','');
-    document.body.appendChild(a);
-    return a;
-  })();
+  const fx = document.getElementById('fxCanvas');
+  if (!fx) return;
+  const $ = (s)=>document.querySelector(s);
 
-  let attached = false;
-  async function tryAttach(){
-    try{
-      const ctx = (window.gctx || window.audioCtx || new (window.AudioContext||window.webkitAudioContext)());
-      window._keepAliveCtx = ctx;
-      if (!window._genMsDest) window._genMsDest = ctx.createMediaStreamDestination();
-      // build a near-silent oscillator if not present
-      if (!window._keepAliveOsc){
-        const osc = ctx.createOscillator();
-        const g   = ctx.createGain();
-        osc.type='sine'; osc.frequency.value = 30; // low freq, minimal power
-        g.gain.value = 0.0001; // near-silent but non-zero
-        osc.connect(g); g.connect(window._genMsDest);
-        osc.start();
-        window._keepAliveOsc = osc;
-      }
-      genBg.srcObject = window._genMsDest.stream;
-      genBg.loop = true;
-      await genBg.play().catch(()=>{});
-      attached = true;
-    }catch(_){}
+  function showFx(){
+    fx.style.display='block';
+    window.fxStart && window.fxStart();
+    const viz = $('#viz'); if (viz) viz.style.display='none';
+  }
+  function hideFx(){
+    window.fxStop && window.fxStop();
+    fx.style.display='none';
+    const viz = $('#viz'); if (viz) viz.style.display='none';
   }
 
-  // Engage on first user gesture and whenever main playback is active and page hidden
-  function engageIfHidden(){
-    if (document.visibilityState === 'hidden') tryAttach();
-  }
-  document.addEventListener('visibilitychange', engageIfHidden);
-  document.addEventListener('click', ()=> tryAttach(), {once:true});
-  document.addEventListener('touchend', ()=> tryAttach(), {once:true});
-  // Also small heartbeat
-  setInterval(()=>{ if (document.visibilityState==='hidden') tryAttach(); }, 5000);
-})();
-</script>
+  window.showLibraryFx = showFx;
+  window.hideLibraryFx = hideFx;
 
+  const libTab = $('#tabLib') || document.querySelector('[data-tab="library"]');
+  const genTab = $('#tabGen') || document.querySelector('[data-tab="generator"]');
 
-<script>
-(function(){
-  const st = document.getElementById('statusThumb') || document.getElementById('loadingThumb');
-  if (st){
-    st.classList.remove('loaded');
-    st.style.backgroundImage = 'none'; // default blank
-  }
-  const t = document.getElementById('statusText');
-  if (t) t.textContent = (window.lang==='en'?'Ready':'대기');
+  if (libTab) libTab.addEventListener('click', ()=> showFx());
+  if (genTab) genTab.addEventListener('click', ()=> hideFx());
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const genPane = $('#genPane') || $('#osc')?.parentElement;
+    const genVisible = genPane && getComputedStyle(genPane).display !== 'none';
+    if (!genVisible) showFx();
+  });
 })();
 </script>
 
