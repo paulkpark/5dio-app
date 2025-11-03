@@ -158,7 +158,14 @@ header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10
 }
 #fxCanvas.blend-bright { mix-blend-mode: lighten; }
 </style>
-
+<style>
+/* Force-hide legacy spectrum visualizer */
+#viz{
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+</style>
 </head>
 <body>
 
