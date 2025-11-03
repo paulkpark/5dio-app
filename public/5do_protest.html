@@ -175,44 +175,14 @@ header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10
 
 
 <style>
-:root{
-  --ls-blue-core:#8fe8ff;
-  --ls-blue-glow1:rgba(160,240,255,1);
-  --ls-blue-glow2:rgba(90,210,255,0.95);
-  --ls-blue-glow3:rgba(40,170,255,0.80);
-  --ls-blue-glow4:rgba(0,120,255,0.65);
-}
-.app-title{
-  color:var(--ls-blue-core)!important;
-  text-shadow:
-    0 0 3px var(--ls-blue-glow1),
-    0 0 8px var(--ls-blue-glow2),
-    0 0 18px var(--ls-blue-glow3),
-    0 0 36px var(--ls-blue-glow4);
-  letter-spacing:.25px;
-}
-.hamburger span, .hamburger span::before, .hamburger span::after{
-  background:var(--ls-blue-core)!important;
-  box-shadow: 0 0 6px var(--ls-blue-glow2), 0 0 14px var(--ls-blue-glow3);
-}
-header .icon, header .icon svg path, header .icon svg rect, header .icon svg circle{
-  fill:var(--ls-blue-core)!important;
-  stroke:var(--ls-blue-core)!important;
-  filter: drop-shadow(0 0 8px var(--ls-blue-glow3));
-}
-.visual-wrap,#viz,#vizCanvas,#vizCanvas2{
-  display:none!important;visibility:hidden!important;pointer-events:none!important;
-  height:0!important;margin:0!important;padding:0!important;border:0!important;
-}
-.status-blank{
-  background:#0a0f18;
-  background-image:
-    radial-gradient(60% 40% at 50% 0%, rgba(90,210,255,.08), rgba(0,0,0,0)),
-    radial-gradient(70% 60% at 50% 100%, rgba(0,120,255,.06), rgba(0,0,0,0));
-  border:1px solid rgba(255,255,255,.06);
-  border-radius:12px;
-}
+:root{--ls-blue-core:#8fe8ff;--ls-blue-glow1:rgba(160,240,255,1);--ls-blue-glow2:rgba(90,210,255,0.95);--ls-blue-glow3:rgba(40,170,255,0.80);--ls-blue-glow4:rgba(0,120,255,0.65);}
+.app-title{color:var(--ls-blue-core)!important;text-shadow:0 0 3px var(--ls-blue-glow1),0 0 8px var(--ls-blue-glow2),0 0 18px var(--ls-blue-glow3),0 0 36px var(--ls-blue-glow4);letter-spacing:.25px;}
+.hamburger span,.hamburger span::before,.hamburger span::after{background:var(--ls-blue-core)!important;box-shadow:0 0 6px var(--ls-blue-glow2),0 0 14px var(--ls-blue-glow3);}
+header .icon,header .icon svg path,header .icon svg rect,header .icon svg circle{fill:var(--ls-blue-core)!important;stroke:var(--ls-blue-core)!important;filter:drop-shadow(0 0 8px var(--ls-blue-glow3));}
+.visual-wrap,#viz,#vizCanvas,#vizCanvas2{display:none!important;visibility:hidden!important;pointer-events:none!important;height:0!important;margin:0!important;padding:0!important;border:0!important;}
+.status-blank{background:#0a0f18;background-image:radial-gradient(60% 40% at 50% 0%, rgba(90,210,255,.08), rgba(0,0,0,0)),radial-gradient(70% 60% at 50% 100%, rgba(0,120,255,.06), rgba(0,0,0,0));border:1px solid rgba(255,255,255,.06);border-radius:12px;}
 #loadingThumb,#statusThumb{background-image:none!important}
+body.mode-library #oscWrap{display:none!important}
 </style>
 
 </head>
@@ -363,6 +333,977 @@ header .icon, header .icon svg path, header .icon svg rect, header .icon svg cir
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" crossorigin="anonymous"></script>
+<script>
+(() => {
+  // ===== Supabase =====
+  const SUPA_URL = "https://xdjgumqdwedgzwqturcx.supabase.co";
+  const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
+  const supa = (window.supabase && window.supabase.createClient) ? window.supabase.createClient(SUPA_URL, SUPA_KEY) : null;
+  const BUCKET = 'media';
+  const PUBLIC_BASE = `${SUPA_URL}/storage/v1/object/public/${BUCKET}`;
+
+  // ===== El refs & state =====
+  const $ = s => document.querySelector(s);
+  const $$= s => Array.from(document.querySelectorAll(s));
+
+  const langBtn = $('#langToggle');
+  let lang = localStorage.getItem('lang') || 'ko';
+  window.lang = lang;                  // ← 전역 반영
+  const setLangLabel = ()=> langBtn.textContent = (lang==='en'?'EN':'KO');
+  setLangLabel();
+
+  const strip = $('#strip');
+  const player= $('#player');
+  const statusThumb = $('#loadingThumb');
+  const statusText  = $('#statusText');
+
+  // path stack & helpers
+  const pathStack = [];
+  const currentPath = ()=> pathStack.join('/');
+
+  // ===== Lazy loader =====
+  const io = new IntersectionObserver((entries)=>{
+    for(const e of entries){
+      if(e.isIntersecting){
+        const el = e.target;
+        const url = el.getAttribute('data-src');
+        if(url){
+          el.style.backgroundImage = `url("${url}")`;
+          el.removeAttribute('data-src');
+        }
+        io.unobserve(el);
+      }
+    }
+  }, {root:null,rootMargin:'200px',threshold:0.01});
+
+  // ===== URL helpers (JPG only, lang-suffix) =====
+  function folderJpg(folder){
+    const name = (lang==='en') ? 'folder_e.jpg' : 'folder.jpg';
+    return `${PUBLIC_BASE}/${encodeURIComponent(folder)}/${name}`;
+  }
+  function trackThumbJpg(folder, trackFile){
+    const base = trackFile.replace(/\.(mp3|wav|m4a)$/i,'');
+    const suffix = (lang==='en') ? '_E' : '';
+    return `${PUBLIC_BASE}/${encodeURIComponent(folder)}/${encodeURIComponent(base+suffix)}.jpg`;
+  }
+  function trackAudioUrl(folder, trackFile){
+    return `${PUBLIC_BASE}/${encodeURIComponent(folder)}/${encodeURIComponent(trackFile)}`;
+  }
+
+  // ===== List from Supabase =====
+  async function listPath(path){
+    const p = path ? path + '/' : '';
+    const { data, error } = await supa.storage.from(BUCKET).list(p, {
+      limit: 1000, sortBy: { column:'name', order:'asc' }
+    });
+    if(error){ console.warn(error); return []; }
+    return data || [];
+  }
+  const isFolder = item => !item?.metadata || !item?.metadata.mimetype;
+  const isAudio  = item => !!item?.metadata?.mimetype && /^audio\//.test(item.metadata.mimetype);
+
+  // ===== Render =====
+  async function render(){
+    strip.innerHTML = '';
+    const path = currentPath();
+    const items = await listPath(path);
+    const folders = items.filter(isFolder);
+    const files   = items.filter(isAudio);
+
+    // folders
+    for(const f of folders){
+      const card = document.createElement('div');
+      card.className = 'card';
+      const th = document.createElement('div');
+      th.className='thumb';
+      th.setAttribute('data-src', folderJpg(f.name)); // lazy
+      card.appendChild(th);
+      const lb = document.createElement('div'); lb.className='label'; card.appendChild(lb); // hidden label (kept for layout)
+      card.addEventListener('click', (e)=>{
+        e.preventDefault(); e.stopPropagation();
+        pathStack.push(f.name);
+        render();
+      });
+      strip.appendChild(card);
+      io.observe(th);
+    }
+
+    // files
+    for(const file of files){
+      const card = document.createElement('div');
+      card.className='card';
+      const th = document.createElement('div');
+      th.className='thumb';
+      th.setAttribute('data-src', trackThumbJpg(path || '', file.name)); // lazy
+      card.appendChild(th);
+      const lb = document.createElement('div'); lb.className='label'; card.appendChild(lb);
+      const audioUrl = trackAudioUrl(path || '', file.name);
+      card.dataset.url = audioUrl;
+      card.dataset.filename = file.name;
+      card.dataset.path = (path || '');
+      card.addEventListener('click', (e)=>{
+        e.preventDefault(); e.stopPropagation();
+        const url = audioUrl;
+        card.dataset.url = audioUrl;          // ← 플레이리스트/큐 추가에서 사용
+        card.dataset.filename = file.name;    // (옵션) 표시용
+        card.dataset.path = (path || '');        // 로드만 하고 자동재생 금지
+        player.src = url;
+        player.load?.();
+        // 로딩 썸네일 갱신
+        statusThumb.classList.add('loaded');
+        statusThumb.style.backgroundImage = `url("${trackThumbJpg(path || '', file.name)}")`;
+        statusText.textContent = (lang==='en' ? 'Ready to play' : '재생 준비됨');
+      });
+      strip.appendChild(card);
+      io.observe(th);
+    }
+  }
+
+  // ===== Menu =====
+  (function initMenu(){
+    const btn = $('#menuBtn');
+    const pane= $('#sideMenu');
+    const bd  = $('#menuBackdrop');
+    const open = ()=>{ pane.classList.add('open'); bd.classList.add('show'); };
+    const close= ()=>{ pane.classList.remove('open'); bd.classList.remove('show'); };
+    btn.addEventListener('click', (e)=>{ e.stopPropagation(); pane.classList.contains('open')?close():open(); });
+    bd.addEventListener('click', close);
+    document.addEventListener('keydown', e=>{ if(e.key==='Escape') close(); });
+
+    // /texts modal
+    $$('.menu-text').forEach(a=>{
+      const file = a.getAttribute('data-file');
+      a.addEventListener('click', async (e)=>{
+        e.preventDefault();
+        try{
+          const res = await fetch(`texts/${file}.txt?ts=${Date.now()}`, {cache:'no-store'});
+          const txt = await res.text();
+          $('#txtBody').textContent = txt;
+          $('#txtModal').style.display='flex';
+          close();
+        }catch(err){ alert('문서를 불러올 수 없습니다. (/texts/*.txt 확인)'); }
+      });
+    });
+    $('#txtClose').addEventListener('click', ()=> $('#txtModal').style.display='none');
+    $('#txtModal').addEventListener('click', (e)=>{ if(e.target.id==='txtModal') $('#txtModal').style.display='none';});
+  })();
+
+  // ===== Nav buttons =====
+  $('#btnBack').addEventListener('click', ()=>{ if(pathStack.length) pathStack.pop(); render(); });
+  $('#btnRoot').addEventListener('click', ()=>{ pathStack.length=0; render(); });
+  $('#btnRefresh').addEventListener('click', ()=> render());
+
+  // ===== Lang toggle =====
+  langBtn.addEventListener('click', ()=>{
+    lang = (lang==='en'?'ko':'en');
+    window.lang = lang;                  // ← 전역 갱신
+    localStorage.setItem('lang', lang);
+    setLangLabel();
+    // 상태 초기화 후 다시 렌더
+    statusThumb.classList.remove('loaded');
+    statusThumb.style.backgroundImage='';
+    statusText.textContent = (lang==='en' ? 'No track loaded' : '선곡되지 않음');
+    render();
+  });
+
+  // ===== Spectrum Visualizer (5DO 네온 바) =====
+  let audioCtx, analyser, sourceNode, vizRAF = 0;
+  const vizCanvas = document.getElementById('vizCanvas');
+  const vctx = vizCanvas.getContext('2d', {alpha:false});
+  function resizeViz(){
+    // 픽셀 밀도 대응
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    const cssW = vizCanvas.clientWidth || vizCanvas.parentElement.clientWidth;
+    const cssH = vizCanvas.clientHeight || 140;
+    vizCanvas.width  = Math.floor(cssW * dpr);
+    vizCanvas.height = Math.floor(cssH * dpr);
+    vctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener('resize', resizeViz); resizeViz();
+
+  function ensureAudioGraph(){
+    if(!audioCtx){
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 1024;
+      analyser.smoothingTimeConstant = 0.78;
+      sourceNode = audioCtx.createMediaElementSource(player);
+      sourceNode.connect(analyser);
+      analyser.connect(audioCtx.destination);
+    }
+  }
+
+  function drawViz(){
+    const w = vizCanvas.width, h = vizCanvas.height;
+    vctx.clearRect(0,0,w,h);
+    // 배경
+    const gradBg = vctx.createLinearGradient(0,0,0,h);
+    gradBg.addColorStop(0,'#0e1524'); gradBg.addColorStop(1,'#0b0f17');
+    vctx.fillStyle = gradBg; vctx.fillRect(0,0,w,h);
+
+    const bufLen = analyser.frequencyBinCount;
+    const data = new Uint8Array(bufLen);
+    analyser.getByteFrequencyData(data);
+
+    const bars = Math.min(96, Math.floor(w/7));
+    const step = Math.floor(bufLen / bars);
+    const barW = Math.max(3, (w / bars) * 0.6);
+
+    for(let i=0;i<bars;i++){
+      const idx = i*step;
+      const v = data[idx] / 255; // 0~1
+      const barH = Math.max(4, v * (h*0.9));
+      const x = i * (w / bars) + (w / bars - barW)/2;
+      const y = h - barH;
+
+      const g = vctx.createLinearGradient(0,y,0,y+barH);
+      g.addColorStop(0,'#7ef1c0'); g.addColorStop(0.5,'#55d0ff'); g.addColorStop(1,'#a38cff');
+      vctx.fillStyle = g;
+      vctx.fillRect(x,y,barW,barH);
+
+      // 외곽선 살짝
+      vctx.globalAlpha = 0.18;
+      vctx.strokeStyle = '#bfe';
+      vctx.strokeRect(x+0.5,y+0.5,barW-1,barH-1);
+      vctx.globalAlpha = 1;
+    }
+  }
+
+  function startViz(){
+    cancelAnimationFrame(vizRAF);
+    const loop = ()=>{
+      vizRAF = requestAnimationFrame(loop);
+      if(!analyser) return;
+      drawViz();
+    };
+    vizRAF = requestAnimationFrame(loop);
+  }
+  function stopViz(){ cancelAnimationFrame(vizRAF); vizRAF = 0; }
+
+  // 사용자 제스처 후만 오디오 그래프 허용
+  player.addEventListener('play', async ()=>{
+    ensureAudioGraph();
+    if(audioCtx.state === 'suspended'){ try{ await audioCtx.resume(); }catch{} }
+    startViz();
+  });
+  player.addEventListener('pause', ()=> stopViz());
+  player.addEventListener('ended', ()=> stopViz());
+
+  // ===== Init =====
+  statusThumb.classList.remove('loaded');
+  statusText.textContent = (lang==='en' ? 'No track loaded' : '선곡되지 않음');
+  render();
+
+
+  console.log('[5DO Lite] ready with spectrum + lazy JPG thumbnails');
+})();
+
+  (function(){
+    const tabs = document.querySelectorAll('.tab');
+    const sections = document.querySelectorAll('.section,#gen');
+    tabs.forEach(t=>t.addEventListener('click', ()=>{
+      tabs.forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
+      const target = t.dataset.target;
+      sections.forEach(s=>{ if (s.id==='lib' || s.id==='gen') s.classList.remove('active'); });
+      const el = document.getElementById(target); if(el) el.classList.add('active');
+      if(target==='gen'){ try{ document.getElementById('player').pause(); }catch(e){} }
+    }));
+    const lg = document.getElementById('langToggle');
+    if(lg){ lg.addEventListener('click', ()=>{ try{ updateGeneratorLang(); }catch(e){} try{ if(window.renderPresetList) window.renderPresetList(); }catch(e){} }); }
+  })();
+
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', ()=>{
+  const tabs = document.querySelectorAll('.tab');
+  tabs.forEach(t=>t.addEventListener('click', ()=>{
+    tabs.forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    const target=t.dataset.target;
+    document.querySelectorAll('#lib,#gen').forEach(s=>s.classList.remove('active'));
+    const el=document.getElementById(target);
+    if(el){ el.classList.add('active'); }
+    if(target==='gen'){ const pl=document.getElementById('player'); if(pl) try{ pl.pause(); }catch(e){} }
+  }));
+  const lg=document.getElementById('langToggle');
+  if(lg){ lg.addEventListener('click', ()=>{ try{ updateGeneratorLang(); }catch(e){} try{ if(window.renderPresetList) window.renderPresetList(); }catch(e){} });}
+});
+</script>
+
+
+<script>
+(function(){
+  const PKEY='genPresets';
+  const $ = s => document.querySelector(s);
+
+  function getPresets(){ try{return JSON.parse(localStorage.getItem(PKEY)||'[]')}catch(e){return[]} }
+  function setPresets(a){ localStorage.setItem(PKEY, JSON.stringify(a.slice(0,10))); }
+
+  // 렌더러 (단일 정의)
+  window.renderPresetList = function(){
+    const sel = document.getElementById('presetSelect'); if(!sel) return;
+    const list = getPresets();
+    sel.innerHTML = '<option value="">' + ((window.lang==='en')?'Select Preset':'프리셋 선택') + '</option>';
+    list.forEach(p=>{
+      const o=document.createElement('option'); o.value=p.name; o.textContent=p.name; sel.appendChild(o);
+    });
+  };
+
+  function savePreset(){
+    const data = {
+      freq: document.getElementById('genFreq').value,
+      wave: document.getElementById('genWave').value,
+      binaural: !!document.getElementById('genBinaural')?.checked,
+      beat: document.getElementById('genBeat').value,
+      harm: document.getElementById('genHarmonics').value
+    };
+    const name = prompt((window.lang==='en')?'Preset name':'프리셋 이름'); if(!name) return;
+    const list = getPresets().filter(p=>p.name!==name);
+    list.unshift({name,data}); setPresets(list); renderPresetList();
+    alert((window.lang==='en')?'Preset saved':'프리셋 저장됨');
+  }
+
+  function loadPreset(){
+    const sel = document.getElementById('presetSelect'); if(!sel||!sel.value) return;
+    const f = getPresets().find(p=>p.name===sel.value); if(!f) return;
+    const d=f.data||{};
+    document.getElementById('genFreq').value = d.freq||'432';
+    document.getElementById('genWave').value = d.wave||'sine';
+    const bb=document.getElementById('genBinaural'); if(bb) bb.checked=!!d.binaural;
+    document.getElementById('genBeat').value = d.beat||'7';
+    document.getElementById('genHarmonics').value = d.harm||'1';
+  }
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    renderPresetList();
+    const saveBtn=document.getElementById('btnSavePreset');
+    const loadSel=document.getElementById('presetSelect');
+    saveBtn && saveBtn.addEventListener('click', savePreset);
+    loadSel && loadSel.addEventListener('change', loadPreset);
+    const lg=document.getElementById('langToggle');
+    lg && lg.addEventListener('click', ()=> setTimeout(renderPresetList,0));
+  });
+})();
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', ()=>{
+  const tabs=document.querySelectorAll('.tab');
+  const viz=document.querySelector('.visual-wrap');
+  function apply(target){
+    if(viz){ viz.style.display = (target==='gen') ? 'none' : ''; }
+  }
+  tabs.forEach(t=>t.addEventListener('click', ()=>apply(t.dataset.target)));
+  // initialize
+  const active=document.querySelector('.tab.active'); if(active) apply(active.dataset.target);
+});
+</script>
+
+
+<script>
+(function(){
+  // Full i18n for Generator (EN/KR)
+  window.GEN_I18N = {
+    en: {
+      frequency: "Frequency",
+      waveform: "Waveform",
+      binaural: "Binaural",
+      difference: "Difference (Hz)",
+      harmonics: "Harmonics",
+      play: "Play",
+      pause: "Pause",
+      save: "Save Preset",
+      del: "Delete Preset",
+      selectPreset: "Select Preset",
+      saved: "Preset saved",
+      deleted: "Preset deleted",
+      noPreset: "No preset",
+      tooltipPlayPause: "Play/Pause",
+      tooltipSave: "Save Preset",
+      tooltipDelete: "Delete Preset"
+    },
+    ko: {
+      frequency: "주파수",
+      waveform: "파형",
+      binaural: "바이노럴",
+      difference: "차이 (Hz)",
+      harmonics: "배음",
+      play: "재생",
+      pause: "일시정지",
+      save: "프리셋 저장",
+      del: "프리셋 삭제",
+      selectPreset: "프리셋 선택",
+      saved: "프리셋 저장됨",
+      deleted: "프리셋 삭제됨",
+      noPreset: "프리셋 없음",
+      tooltipPlayPause: "재생/일시정지",
+      tooltipSave: "프리셋 저장",
+      tooltipDelete: "프리셋 삭제"
+    }
+  };
+
+  window.updateGeneratorLang = function(){
+    const lang = (window.lang==='en') ? 'en' : 'ko';
+    const L = window.GEN_I18N[lang];
+    function T(id, text){ const el = document.getElementById(id); if(el) el.textContent = text; }
+    // Labels (assumes label containers have these ids or data-i18n attributes)
+    // 교체 부분만 예시
+const elFreq = document.getElementById('lblFreq');
+const elWave = document.getElementById('lblWave');
+const elBin  = document.getElementById('lblBB');
+const elDiff = document.getElementById('lblBBdiff');
+const elHar  = document.getElementById('lblHarmonics');
+
+    if(elFreq) elFreq.textContent = L.frequency;
+    if(elWave) elWave.textContent = L.waveform;
+    if(elBin)  elBin.textContent  = L.binaural;
+    if(elDiff) elDiff.textContent = L.difference;
+    if(elHar)  elHar.textContent  = L.harmonics;
+
+    // Buttons (tooltips/titles)
+    const btnToggle = document.getElementById('genToggle');
+    const btnSave   = document.getElementById('btnSavePreset');
+    const btnDel    = document.getElementById('btnDeletePreset');
+    const presetSel = document.getElementById('presetSelect');
+
+    if(btnToggle){ btnToggle.title = L.tooltipPlayPause; btnToggle.setAttribute('aria-label', L.tooltipPlayPause); }
+    if(btnSave){ btnSave.title = L.tooltipSave; btnSave.setAttribute('aria-label', L.tooltipSave); }
+    if(btnDel){ btnDel.title = L.tooltipDelete; btnDel.setAttribute('aria-label', L.tooltipDelete); }
+    if(presetSel){
+      // localize first placeholder option ONLY if no selection
+      if(presetSel.selectedIndex === 0){
+        presetSel.options[0].textContent = L.selectPreset;
+      }
+    }
+
+    // Save normalized messages for alerts elsewhere
+    window.GEN_MSG = {
+      saved: L.saved,
+      deleted: L.deleted,
+      noPreset: L.noPreset
+    };
+  };
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    // initial
+    window.updateGeneratorLang && window.updateGeneratorLang();
+    // reapply on lang toggle
+    const lg = document.getElementById('langToggle');
+    if(lg){ lg.addEventListener('click', ()=> setTimeout(()=> window.updateGeneratorLang && window.updateGeneratorLang(), 0)); }
+  });
+})();
+</script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', ()=>{
+  const diffInput = document.getElementById('genBeat');
+  const binChk    = document.getElementById('genBinaural');
+  // If either not found, do nothing
+  if(!diffInput || !binChk) return;
+
+  // 1) Ensure Difference label exists and move checkbox directly before it
+  let diffLabel = document.querySelector('label[for="genBeat"]');
+  if(!diffLabel){
+    // Create a label if missing
+    diffLabel = document.createElement('label');
+    diffLabel.setAttribute('for','genBeat');
+    diffLabel.dataset.i18n = 'difference';
+    diffLabel.textContent = (window.lang==='en')?'Difference (Hz)':'차이 (Hz)';
+    diffInput.parentElement && diffInput.parentElement.insertBefore(diffLabel, diffInput);
+  }
+
+  // 2) Remove any "Enable" text next to the checkbox
+  // If checkbox is within a label like <label><input id="genBinaural"> Enable</label>, strip the text node
+  if(binChk.parentElement && binChk.parentElement.tagName.toLowerCase()==='label'){
+    // Keep only the checkbox in that label
+    binChk.parentElement.textContent = '';
+    binChk.parentElement.appendChild(binChk);
+  }
+
+  // 3) Place checkbox before the Difference label
+  diffLabel.parentElement && diffLabel.parentElement.insertBefore(binChk, diffLabel);
+
+  // 4) Toggle enabling of Difference input based on checkbox
+  function applyState(){
+    const on = binChk.checked;
+    diffInput.disabled = !on;
+    diffInput.style.opacity = on ? '' : '0.5';
+  }
+  binChk.addEventListener('change', applyState);
+  applyState();
+});
+</script>
+
+<style>
+/* === Playlist Manager === */
+#plModal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.45);z-index:9999}
+#plSheet{width:min(680px,94vw);max-height:80vh;overflow:auto;background:#0f1524;border:1px solid #2a3044;border-radius:16px;box-shadow:0 24px 64px rgba(0,0,0,.5);padding:16px}
+#plHeader{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+#plHeader h3{margin:0;font-size:1.05rem;color:#e7efff}
+#plClose{background:transparent;border:0;color:#9fb7ff;font-size:20px;cursor:pointer}
+#plGrid{display:grid;grid-template-columns: 1fr 1fr; gap:14px}
+#plLeft, #plRight{border:1px solid #2a3044;border-radius:12px;padding:12px;min-height:220px;background:#101728}
+#plLeft h4, #plRight h4{margin:0 0 8px;color:#dfe7f6;font-size:.95rem}
+.pl-row{display:flex;align-items:center;gap:8px;margin:6px 0}
+.pl-row input[type="text"]{flex:1;min-width:0;border:1px solid #2a3044;border-radius:10px;padding:8px 10px;background:#0f1524;color:#dfe7f6}
+.pl-btn{height:34px;padding:0 10px;border-radius:10px;border:1px solid #2a3044;background:#0f1524;color:#dfe7f6;cursor:pointer}
+.pl-btn:hover{filter:brightness(1.06)}
+.pl-list{display:flex;flex-direction:column;gap:6px;max-height:240px;overflow:auto}
+.pl-item{display:flex;align-items:center;justify-content:space-between;border:1px solid #2a3044;border-radius:10px;padding:8px 10px;background:#0f1524;color:#cfead1}
+.pl-item .act{display:flex;gap:6px}
+.small{font-size:.82rem;opacity:.75}
+</style>
+
+<div id="plModal">
+  <div id="plSheet">
+    <div id="plHeader">
+      <h3>Playlists</h3>
+      <button id="plClose" aria-label="Close">✕</button>
+    </div>
+    <div id="plGrid">
+      <div id="plLeft">
+        <h4>Manage</h4>
+        <div class="pl-row">
+          <input id="plNewName" type="text" placeholder="New playlist name">
+          <button id="plNewBtn" class="pl-btn">New</button>
+        </div>
+        <div class="pl-row">
+          <select id="plSelect" class="preset-select" style="flex:1"></select>
+          <button id="plRenameBtn" class="pl-btn">Rename</button>
+          <button id="plDeleteBtn" class="pl-btn">Delete</button>
+        </div>
+        <div class="pl-list" id="plList"></div>
+      </div>
+      <div id="plRight">
+        <h4>Add / Load</h4>
+        <div class="pl-row">
+          <button id="plAddCurrent" class="pl-btn">Add Playing</button>
+          <button id="plAddAll" class="pl-btn">Add All Visible</button>
+        </div>
+        <div class="pl-row">
+          <button id="plLoad" class="pl-btn" style="flex:1">Load Playlist to Player Queue</button>
+        </div>
+        <div class="small">Tip: “Add All Visible”는 현재 보이는 카드들을 순서대로 플레이리스트에 추가합니다.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+(function(){
+  // Storage structure: { name: [{url, title}], ... }
+  const KEY='userPlaylists';
+  const $=s=>document.querySelector(s);
+  const $$=s=>Array.from(document.querySelectorAll(s));
+  function getDB(){ try{ return JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(e){ return {}; } }
+  function setDB(db){ localStorage.setItem(KEY, JSON.stringify(db)); }
+  function listNames(){ return Object.keys(getDB()); }
+  function ensure(name){ const db=getDB(); if(!db[name]){ db[name]=[]; setDB(db);} }
+  function addTrack(name, url, title){ ensure(name); const db=getDB(); db[name].push({url,title}); setDB(db); }
+  function setTracks(name, arr){ ensure(name); const db=getDB(); db[name]=arr; setDB(db); }
+  function getTracks(name){ const db=getDB(); return db[name]||[]; }
+  function renameList(oldName, newName){ const db=getDB(); if(!db[oldName]) return; if(db[newName]) return; db[newName]=db[oldName]; delete db[oldName]; setDB(db); }
+  function deleteList(name){ const db=getDB(); delete db[name]; setDB(db); }
+
+  // UI refs
+  const modal = $('#plModal');
+  const openBtn = $('#playlistBtn');
+  const closeBtn = $('#plClose');
+  const plNewName = $('#plNewName');
+  const plNewBtn = $('#plNewBtn');
+  const plSelect = $('#plSelect');
+  const plRenameBtn = $('#plRenameBtn');
+  const plDeleteBtn = $('#plDeleteBtn');
+  const plList = $('#plList');
+  const plAddCurrent = $('#plAddCurrent');
+  const plAddAll = $('#plAddAll');
+  const plLoad = $('#plLoad');
+
+  function open(){ if(modal) modal.style.display='flex'; refresh(); }
+  function close(){ if(modal) modal.style.display='none'; }
+  openBtn && openBtn.addEventListener('click', open);
+  closeBtn && closeBtn.addEventListener('click', close);
+  modal && modal.addEventListener('click', (e)=>{ if(e.target===modal) close(); });
+
+  function refresh(){
+    // select
+    if(!plSelect) return;
+    const names = listNames().sort();
+    plSelect.innerHTML='';
+    names.forEach(n=>{ const o=document.createElement('option'); o.value=n; o.textContent=n; plSelect.appendChild(o); });
+    renderList();
+  }
+  function renderList(){
+    if(!plList) return; plList.innerHTML='';
+    const name = plSelect && plSelect.value;
+    if(!name){ plList.innerHTML='<div class="small">No playlist selected</div>'; return; }
+    const rows = getTracks(name);
+    rows.forEach((t,i)=>{
+      const row=document.createElement('div'); row.className='pl-item';
+      const left=document.createElement('div'); left.textContent = (t.title||'') + ' '; left.className='truncate';
+      const right=document.createElement('div'); right.className='act';
+      const up=document.createElement('button'); up.className='pl-btn'; up.textContent='↑';
+      const down=document.createElement('button'); down.className='pl-btn'; down.textContent='↓';
+      const del=document.createElement('button'); del.className='pl-btn'; del.textContent='✕';
+      up.addEventListener('click', ()=>{ const arr=getTracks(name); if(i<=0) return; const a=arr[i-1]; arr[i-1]=arr[i]; arr[i]=a; setTracks(name, arr); renderList(); });
+      down.addEventListener('click', ()=>{ const arr=getTracks(name); if(i>=arr.length-1) return; const a=arr[i+1]; arr[i+1]=arr[i]; arr[i]=a; setTracks(name, arr); renderList(); });
+      del.addEventListener('click', ()=>{ const arr=getTracks(name); arr.splice(i,1); setTracks(name, arr); renderList(); });
+      right.append(up,down,del); row.append(left,right); plList.appendChild(row);
+    });
+  }
+
+  // Manage
+  plNewBtn && plNewBtn.addEventListener('click', ()=>{
+    const name = (plNewName.value||'').trim();
+    if(!name) return;
+    const db=getDB(); if(db[name]){ alert('이미 존재하는 이름입니다'); return; }
+    db[name]=[]; setDB(db); plNewName.value=''; refresh(); plSelect.value=name; renderList();
+  });
+  plRenameBtn && plRenameBtn.addEventListener('click', ()=>{
+    const name = plSelect.value; if(!name) return;
+    const next = prompt('새 이름', name); if(!next || next===name) return;
+    const db=getDB(); if(db[next]){ alert('이미 존재하는 이름입니다'); return; }
+    renameList(name, next); refresh(); plSelect.value=next; renderList();
+  });
+  plDeleteBtn && plDeleteBtn.addEventListener('click', ()=>{
+    const name = plSelect.value; if(!name) return;
+    if(!confirm(`'${name}' 삭제할까요?`)) return;
+    deleteList(name); refresh();
+  });
+  plSelect && plSelect.addEventListener('change', renderList);
+
+  // Add tracks
+  function currentPlaying(){
+    const audio = document.getElementById('player');
+    if(!audio) return null;
+    return {url: audio.currentSrc || audio.src, title: document.querySelector('.now-title')?.textContent || ''};
+  }
+  plAddCurrent && plAddCurrent.addEventListener('click', ()=>{
+    const name = plSelect.value; if(!name) return;
+    const cur = currentPlaying(); if(!cur || !cur.url){ alert('재생중인 항목이 없습니다'); return; }
+    addTrack(name, cur.url, cur.title||cur.url.split('/').pop());
+    renderList();
+  });
+  plAddAll && plAddAll.addEventListener('click', ()=>{
+    const name = plSelect.value; if(!name) return;
+    const cards = $$('#strip .card');
+    if(!cards.length){ alert('추가할 카드가 없습니다'); return; }
+    const tracks = cards.map(c=>({ url: c.getAttribute('data-url')||c.dataset.url||'', title: c.querySelector('.t')?.textContent||''})).filter(t=>t.url);
+    const arr = getTracks(name).concat(tracks);
+    setTracks(name, arr); renderList();
+  });
+
+  // Load playlist into player queue
+  plLoad && plLoad.addEventListener('click', ()=>{
+    const name = plSelect.value; if(!name) return;
+    const rows = getTracks(name); if(!rows.length){ alert('플레이리스트가 비어 있습니다'); return; }
+    // Wire into existing simple queue used by library player
+    const player = $('#player'); if(!player) return;
+    window._libPlaylist = rows.map(r=>r.url);
+    window._libIndex = -1;
+    function playAt(i){
+      if(!window._libPlaylist || !window._libPlaylist.length) return;
+      if(i<0 || i>=window._libPlaylist.length) return;
+      window._libIndex = i;
+      player.src = window._libPlaylist[i];
+      player.play().catch(()=>{});
+    }
+    // expose playAt globally if not already
+    window.playAt = playAt;
+    playAt(0);
+    close();
+  });
+
+  // If a basic library queue exists in page, enhance 'ended' behavior
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const player = $('#player');
+    if(player){
+      player.addEventListener('ended', ()=>{
+        if(window._libPlaylist && window._libPlaylist.length){
+          const next = (window._libIndex||0)+1;
+          if(next < window._libPlaylist.length) window.playAt(next);
+        }
+      });
+    }
+  });
+})();
+</script>
+
+
+<script>
+(function(){
+  const $=s=>document.querySelector(s);
+  // ===== LIB CONTROLS =====
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const player=$('#player');
+    const loopBtn=$('#loopBtn');
+    const timerBtn=$('#timerBtn');
+    const plBtn=$('#playlistBtn');
+
+    if(loopBtn && player){
+      function syncLoopUI(){ loopBtn.classList.toggle('active', !!player.loop); loopBtn.textContent = player.loop ? (window.lang==='en'?'Loop: On':'루프: 켜짐') : (window.lang==='en'?'Loop: Off':'루프: 꺼짐'); }
+      syncLoopUI();
+      loopBtn.addEventListener('click', ()=>{ player.loop = !player.loop; syncLoopUI(); });
+    }
+    if(timerBtn && player){
+      timerBtn.addEventListener('click', ()=>{
+        const minStr = prompt( (window.lang==='en') ? 'Sleep timer (minutes)?' : '수면 타이머 (분)?', '20' );
+        const mins = parseFloat(minStr||'0');
+        if(mins>0){ setTimeout(()=>{ try{ player.pause(); }catch(e){} }, mins*60000); alert( (window.lang==='en') ? 'Timer set' : '타이머 설정됨' ); }
+      });
+    }
+    // plBtn wired in playlist JS; ensure exists
+  });
+
+  // ===== GENERATOR WIRING =====
+  let masterGain;
+  document.addEventListener('DOMContentLoaded', ()=>{
+    // Level slider control to master gain (generator)
+    const level = document.getElementById('genLevel');
+    if(level){
+      const setup = ()=>{
+        try{
+          if(!window.audioCtx) window.audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+          if(!masterGain){ masterGain = audioCtx.createGain(); masterGain.gain.value = (parseFloat(level.value||'0.5')); masterGain.connect(audioCtx.destination); }
+        }catch(e){}
+      };
+      setup();
+      level.addEventListener('input', ()=>{ if(masterGain) masterGain.gain.value = (parseFloat(level.value||'0.5')); });
+    }
+
+    // Binaural checkbox wiring to enable/disable Difference
+    const bin = document.getElementById('genBinaural');
+    const diff = document.getElementById('genBeat');
+    function applyDiffState(){ if(diff){ diff.disabled = !(bin && bin.checked); diff.style.opacity = (diff.disabled? '0.5' : ''); } }
+    if(bin){ bin.addEventListener('change', applyDiffState); applyDiffState(); }
+
+    // Replace existing startGen to honor masterGain + binaural
+    if(typeof window.startGen === 'function'){
+      const originalStart = window.startGen;
+      window.startGen = async function(){
+        if(!window.audioCtx) window.audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+        if(audioCtx.state==='suspended') await audioCtx.resume();
+        if(!masterGain){ masterGain = audioCtx.createGain(); masterGain.connect(audioCtx.destination); }
+        // call original to build nodes if it uses globals; otherwise create simple tones
+        try{ return originalStart(); }catch(e){ /* fallback simple oscillator */ 
+          const freq = parseFloat(document.getElementById('genFreq')?.value||'432');
+          const wave = (document.getElementById('genWave')?.value||'sine').toLowerCase();
+          const useBin = bin && bin.checked;
+          const beat = parseFloat(diff?.value||'7');
+          const oscL = audioCtx.createOscillator();
+          const gainL = audioCtx.createGain();
+          oscL.type = wave; oscL.frequency.value = freq - (useBin? beat/2 : 0);
+          gainL.gain.value = (parseFloat(document.getElementById('genLevel')?.value||'50')/100);
+          oscL.connect(gainL).connect(masterGain);
+          if(useBin){
+            const oscR = audioCtx.createOscillator();
+            const gainR = audioCtx.createGain();
+            oscR.type = wave; oscR.frequency.value = freq + beat/2;
+            gainR.gain.value = (parseFloat(document.getElementById('genLevel')?.value||'50')/100);
+            const splitter = audioCtx.createChannelMerger(2);
+            gainL.connect(splitter, 0, 0);
+            gainR.connect(splitter, 0, 1);
+            splitter.connect(masterGain);
+            oscR.start();
+            window._oscR = oscR; window._gainR = gainR;
+          }
+          oscL.start();
+          window._oscL = oscL; window._gainL = gainL;
+        }
+      };
+    }
+
+    // Toggle button play/pause (if exists)
+    const toggle = document.getElementById('genToggle');
+    if(toggle){
+      const svgPlay  = '<svg class="icon" viewBox="0 0 24 24"><polygon points="8,5 8,19 19,12" stroke-linejoin="round"/></svg>';
+      const svgPause = '<svg class="icon" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
+      let playing = false;
+      function setIcon(){ toggle.innerHTML = playing ? svgPause : svgPlay; }
+      setIcon();
+      toggle.addEventListener('click', async ()=>{
+        if(!playing){ try{ await (window.startGen && window.startGen()); playing=true; setIcon(); }catch(e){} }
+        else{ try{ (window._oscL&&_oscL.stop()); (window._oscR&&_oscR.stop()); playing=false; setIcon(); }catch(e){} }
+      });
+    }
+  });
+
+  // ===== I18N hook: refresh generator labels when lang toggled =====
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const lg = document.getElementById('langToggle');
+    if(lg){ lg.addEventListener('click', ()=>{ try{ window.updateGeneratorLang && window.updateGeneratorLang(); }catch(e){} }); }
+  });
+})();
+</script>
+
+
+
+
+<script>
+(function(){
+  const $=s=>document.querySelector(s);
+  function ensureCtx(){
+    let ctx = window.audioCtx;
+    if(!ctx){ ctx = new (window.AudioContext||window.webkitAudioContext)(); window.audioCtx = ctx; }
+    return ctx;
+  }
+  const genFreq=$('#genFreq'), genWave=$('#genWave');
+  const genToggle=$('#genToggle');
+  const btnSave=$('#btnSavePreset');
+  const genBinaural=$('#genBinaural'), genBeat=$('#genBeat'), genHarm=$('#genHarmonics');
+  let oscL=null, oscR=null, gainL=null, gainR=null, merger=null, analyserGen=null; window.rafGen=0;
+
+  function stopAll(){
+    try{ oscL && oscL.stop(); }catch(e){}
+    try{ oscR && oscR.stop(); }catch(e){}
+    try{ gainL && gainL.disconnect(); }catch(e){}
+    try{ gainR && gainR.disconnect(); }catch(e){}
+    try{ merger && merger.disconnect(); }catch(e){}
+    oscL=oscR=gainL=gainR=merger=null; if(window.rafGen){ cancelAnimationFrame(window.rafGen); window.rafGen=0; }
+  }
+  function makeOsc(ctx, f, type){ const o=ctx.createOscillator(); o.type=type||'sine'; o.frequency.value=f; const g=ctx.createGain(); g.gain.value=0.2; o.connect(g); return {o,g}; }
+  async function startGen(){
+    const ctx = ensureCtx(); try{ await ctx.resume(); }catch(e){}
+    stopAll();
+    const base=parseFloat(genFreq?.value||432), type=genWave?.value||'sine';
+    const BB=!!(genBinaural&&genBinaural.checked), diff=parseFloat(genBeat?.value||0), harm=Math.max(1,parseInt(genHarm?.value||1,10));
+    const fL=base*harm, fR=BB?(base*harm+diff):fL;
+    const L=makeOsc(ctx,fL,type), R=makeOsc(ctx,fR,type);
+    const mix=ctx.createChannelMerger(2); L.g.connect(mix,0,0); R.g.connect(mix,0,1);
+    analyserGen=ctx.createAnalyser(); analyserGen.fftSize=2048; mix.connect(analyserGen); analyserGen.connect(ctx.destination);
+    L.o.start(); R.o.start(); oscL=L.o; oscR=R.o; gainL=L.g; gainR=R.g; merger=mix; drawScope();
+  }
+  function drawScope(){
+    if(!analyserGen) return;
+    const cvs=document.getElementById('oscGen'); if(!cvs) return;
+    const g=cvs.getContext('2d'), w=cvs.width, h=cvs.height; const buf=new Uint8Array(analyserGen.fftSize);
+    function tick(){ window.rafGen=requestAnimationFrame(tick);
+      analyserGen.getByteTimeDomainData(buf); g.clearRect(0,0,w,h); g.beginPath();
+      for(let x=0;x<w;x++){ const v=buf[Math.floor(x*buf.length/w)]/128-1; const y=h/2+v*(h*0.4); x?g.lineTo(x,y):g.moveTo(x,y); }
+      g.lineWidth=2; g.strokeStyle='#8bd1ff'; g.stroke();
+    } cancelAnimationFrame(window.rafGen||0); tick();
+  }
+  let isGenPlaying=false;
+  function setToggleIcon(){
+    const playSVG = '<svg class="icon" viewBox="0 0 24 24"><polygon points="8,5 8,19 19,12" stroke-linejoin="round"/></svg>';
+    const pauseSVG= '<svg class="icon" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
+    if(genToggle) genToggle.innerHTML = isGenPlaying ? pauseSVG : playSVG;
+  }
+  async function toggleGen(){
+    if(isGenPlaying){ stopAll(); isGenPlaying=false; setToggleIcon(); return; }
+    try{ await startGen(); isGenPlaying=true; setToggleIcon(); }catch(e){ console.warn(e); }
+  }
+  genToggle && genToggle.addEventListener('click', toggleGen);
+
+  const PKEY='genPresets';
+  function getPresets(){ try{return JSON.parse(localStorage.getItem(PKEY)||'[]')}catch(e){return[]} }
+  function setPresets(a){ localStorage.setItem(PKEY, JSON.stringify(a.slice(0,10))); }
+  function savePreset(){
+    const data={freq:genFreq.value,wave:genWave.value,binaural:!!(genBinaural&&genBinaural.checked),beat:genBeat.value,harm:genHarm.value};
+    const name = prompt((window.lang==='en')?'Preset name':'프리셋 이름'); if(!name) return;
+    const list=getPresets().filter(p=>p.name!==name); list.unshift({name,data}); setPresets(list); renderPresetList();
+    alert((window.lang==='en')?'Preset saved':'프리셋 저장됨');
+  }
+  btnSave && btnSave.addEventListener('click', savePreset);
+  window.renderPresetList = function(){ const sel=document.getElementById('presetSelect'); if(!sel) return; const list=getPresets(); sel.innerHTML='<option value="">'+((window.lang==='en')?'Select Preset':'프리셋 선택')+'</option>'; list.forEach(p=>{ const o=document.createElement('option'); o.value=p.name; o.textContent=p.name; sel.appendChild(o); }); };
+  document.addEventListener('DOMContentLoaded', ()=>{ renderPresetList(); setToggleIcon(); });('click', loadPreset);
+  window.renderPresetList = function(){ const sel=document.getElementById('presetSelect'); if(!sel) return; const list=getPresets(); sel.innerHTML='<option value="">'+((window.lang==='en')?'Select Preset':'프리셋 선택')+'</option>'; list.forEach(p=>{ const o=document.createElement('option'); o.value=p.name; o.textContent=p.name; sel.appendChild(o); }); };
+  document.addEventListener('DOMContentLoaded', ()=>{ renderPresetList(); });})();
+</script>
+
+<script>
+(function(){
+  const $=s=>document.querySelector(s);
+  const player=$('#player'), loopBtn=$('#loopToggle'), timerBtn=$('#timerBtn'), plBtn=$('#playlistBtn');
+  if(!player) return;
+  let loop=false, timerId=null, playlist=[], idx=-1;
+  function setLoop(v){ loop=!!v; loopBtn && loopBtn.classList.toggle('primary', loop); }
+  loopBtn && loopBtn.addEventListener('click', ()=> setLoop(!loop));
+  player.addEventListener('ended', ()=>{ if(loop){ try{ player.currentTime=0; player.play(); }catch(e){} } else { playAt(idx+1); } });
+  timerBtn && timerBtn.addEventListener('click', ()=>{ const mins=prompt((window.lang==='en')?'Sleep timer (minutes)':'수면 타이머 (분)'); if(mins===null) return; const m=parseInt(mins,10); if(isNaN(m)||m<=0) return alert((window.lang==='en')?'Invalid minutes':'분 값을 확인하세요'); if(timerId) clearTimeout(timerId); timerId=setTimeout(()=>{ try{ player.pause(); }catch(e){} }, m*60000); alert((window.lang==='en')?`Timer set: ${m} min`:`타이머 설정: ${m}분`); });
+  function rebuild(){ playlist=[]; document.querySelectorAll('#strip .card').forEach(c=>{ const url=c.getAttribute('data-url')||c.dataset.url||''; if(url) playlist.push(url); }); }
+  function playAt(i){ if(!playlist.length) rebuild(); if(i<0||i>=playlist.length) return; idx=i; player.src=playlist[idx]; player.play().catch(()=>{}); }
+  document.addEventListener('click', (e)=>{ const card=e.target.closest('#strip .card'); if(!card) return; rebuild(); const cards=Array.from(document.querySelectorAll('#strip .card')); const i=cards.indexOf(card); if(i>=0) playAt(i); });
+})();
+</script>
+
+<script>
+// === Safe bindings for Hamburger & Language Toggle ===
+(function(){
+  const $  = (s)=>document.querySelector(s);
+  const $$ = (s)=>Array.from(document.querySelectorAll(s));
+
+  const menuBtn  = $('#menuBtn');
+  const menuDrop = $('#menuDrop');
+  const backdrop = $('#backdrop');
+  const langBtn  = $('#langToggle');
+
+  // Language state
+  try {
+    if (!window.lang) window.lang = localStorage.getItem('lang') || 'ko';
+  } catch(_) { window.lang = 'ko'; }
+
+  function applyLangSafe(){
+    // if project has applyLang use it, else update a few basics
+    if (typeof window.applyLang === 'function') {
+      window.applyLang();
+    } else {
+      // Update common labels if present
+      $('#tabLib') && ($('#tabLib').textContent = (window.lang==='en'?'5DO':'5DO'));
+      $('#tabGen') && ($('#tabGen').textContent = (window.lang==='en'?'Freq. Gen.':'주파수 생성기'));
+    }
+    if (langBtn) langBtn.textContent = (window.lang==='en'?'EN':'KO');
+  }
+
+  // Hamburger
+  if (menuBtn && menuDrop && backdrop) {
+    const closeMenu = ()=>{ menuDrop.style.display='none'; backdrop.classList.remove('show'); };
+    menuBtn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const open = menuDrop.style.display==='block';
+      menuDrop.style.display = open ? 'none' : 'block';
+      backdrop.classList.toggle('show', !open);
+    });
+    backdrop.addEventListener('click', closeMenu);
+    document.addEventListener('click', (e)=>{
+      if (!menuDrop.contains(e.target) && e.target !== menuBtn) closeMenu();
+    });
+    // text links
+    $$('.menu-text').forEach(a=>a.addEventListener('click', async (e)=>{
+      e.preventDefault();
+      const name = a.dataset.file;
+      try {
+        const res = await fetch(`texts/${name}.txt?ts=${Date.now()}`, {cache:'no-store'});
+        const txt = await res.text();
+        alert(txt);
+      } catch(_){ alert(`[${name}.txt] 불러오기 실패`); }
+      closeMenu();
+    }));
+  }
+
+  // Language toggle
+  if (langBtn) {
+    langBtn.addEventListener('click', ()=>{
+      window.lang = (window.lang==='en') ? 'ko' : 'en';
+      try { localStorage.setItem('lang', window.lang); } catch(_){}
+      // call project fn if exists
+      if (typeof window.buildThumbs === 'function') window.buildThumbs();
+      if (typeof window.renderPresetList === 'function') window.renderPresetList();
+      applyLangSafe();
+    });
+    // initial label
+    applyLangSafe();
+  }
+})();
+</script>
+
+
+
+
 
 
 
@@ -400,140 +1341,90 @@ document.addEventListener('DOMContentLoaded', () => {
 
 <script>
 (function(){
-  function getLang(){ try{ return (window.lang || document.documentElement.lang || 'ko').toLowerCase().startsWith('en') ? 'en' : 'ko'; }catch(e){ return 'ko'; } }
-  window.trackThumbJpg = function(path, name){
-    var lang=getLang();
-    var base = (path ? path.replace(/\/+$/,'')+'/' : '');
-    var stem = name.replace(/\.[^/.]+$/,'');
-    var fname = (lang==='en') ? (stem + '_E.jpg') : (stem + '.jpg');
-    return base + fname;
-  };
-  window.folderThumbJpg = function(path){
-    var lang=getLang();
-    var base = (path ? path.replace(/\/+$/,'')+'/' : '');
-    var fname = (lang==='en') ? 'folder_e.jpg' : 'folder.jpg';
-    return base + fname;
-  };
+  if(window.__finalPatch) return; window.__finalPatch=true;
+  const $=(s,r=document)=>r.querySelector(s);
+  function getLang(){ const l=(window.lang||document.documentElement.lang||'ko').toLowerCase(); return l.startsWith('en')?'en':'ko'; }
+  window.trackThumbJpg=function(path,name){ const base=path?path.replace(/\/+$/,'')+'/':''; const stem=(name||'').replace(/\.[^.]+$/,''); return base+stem+(getLang()==='en'?'_E.jpg':'.jpg'); };
+  window.folderThumbJpg=function(path){ const base=path?path.replace(/\/+$/,'')+'/':''; return base+(getLang()==='en'?'folder_e.jpg':'folder.jpg'); };
   document.addEventListener('DOMContentLoaded', function(){
     try{
-      if (window.state && 'path' in window.state) window.state.path='';
-      if (window.currentPath!==undefined) window.currentPath='';
-      if (typeof window.buildRoot==='function') window.buildRoot();
-      else if (typeof window.buildThumbs==='function') window.buildThumbs('');
-      var bc=document.getElementById('breadcrumb')||document.querySelector('.breadcrumb'); if(bc) bc.textContent='/';
-    }catch(e){}
-    var st=document.getElementById('loadingThumb')||document.getElementById('statusThumb');
-    var tx=document.getElementById('statusText');
-    if(st){ st.style.backgroundImage='none'; st.classList.add('status-blank','loaded'); }
-    if(tx && (!tx.textContent || /Ready|재생 준비됨/i.test(tx.textContent))){
-      tx.textContent = (getLang()==='en'?'No track loaded':'선곡되지 않음');
-    }
-    document.addEventListener('click', function(e){
-      var card = e.target && e.target.closest && e.target.closest('.card');
-      if(!card) return;
-      var label = card.querySelector('.label'); var name = (label && label.textContent||'').trim();
-      if(card.dataset && card.dataset.filename) name = card.dataset.filename;
-      var path = (window.state && window.state.path!=null) ? window.state.path : (window.currentPath||'');
-      var isFolder = card.classList.contains('folder') || !!card.dataset.isFolder;
-      var imgUrl = isFolder ? window.folderThumbJpg(path ? path + '/' + name : name) : window.trackThumbJpg(path, name);
-      if(st){ st.style.backgroundImage='url("'+imgUrl+'")'; st.classList.add('loaded'); }
-      if(tx){ tx.textContent=(getLang()==='en'?'Ready to play':'재생 준비됨'); }
-    }, true);
+      if(window.pathStack) window.pathStack.length=0;
+      if(window.state && 'path' in window.state) window.state.path='';
+      if(window.currentPath!==undefined) window.currentPath='';
+      if(typeof window.buildRoot==='function') window.buildRoot();
+      else if(typeof window.buildThumbs==='function') window.buildThumbs('');
+      const bc=$('#breadcrumb')||document.querySelector('.breadcrumb'); if(bc) bc.textContent='/';
+      document.body.classList.add('mode-library');
+      const st=$('#statusThumb, #loadingThumb'); const tx=$('#statusText');
+      if(st){ st.classList.add('status-blank','loaded'); st.style.backgroundImage='none'; }
+      if(tx && (!tx.textContent || /Ready|재생 준비됨/i.test(tx.textContent))){ tx.textContent=(getLang()==='en'?'No track loaded':'선곡되지 않음'); }
+    }catch(e){ console.warn('root enforce fail', e); }
   }, {once:true});
-})();
-</script>
+  document.addEventListener('click', function(e){
+    const card=e.target.closest?.('.card'); if(!card) return;
+    const st=$('#statusThumb, #loadingThumb'); const tx=$('#statusText');
+    let name=(card.dataset?.filename||card.dataset?.name)||(card.querySelector('.label')?.textContent||'').trim();
+    const path=(window.state && window.state.path!=null)?window.state.path:(window.currentPath||'');
+    const isFolder=card.classList.contains('folder')||!!card.dataset?.isFolder;
+    const img=isFolder?window.folderThumbJpg(path?path+'/'+name:name):window.trackThumbJpg(path,name);
+    if(st){ st.style.backgroundImage='url("'+img+'")'; st.classList.add('loaded'); }
+    if(tx){ tx.textContent=(getLang()==='en'?'Ready to play':'재생 준비됨'); }
+  }, true);
 
+  function toLibrary(){ document.body.classList.add('mode-library'); document.body.classList.remove('mode-generator'); }
+  function toGenerator(){ document.body.classList.add('mode-generator'); document.body.classList.remove('mode-library'); ensureOsc(); }
+  window.__toLibrary=toLibrary; window.__toGenerator=toGenerator;
+  const libBtn=document.querySelector('[data-tab-btn="library"], #tabLibrary, .tab-library, button[aria-controls="library"]');
+  const genBtn=document.querySelector('[data-tab-btn="generator"], #tabGenerator, .tab-generator, button[aria-controls="generator"]');
+  libBtn && libBtn.addEventListener('click', toLibrary);
+  genBtn && genBtn.addEventListener('click', toGenerator);
 
-<script>
-(function(){
-  var host = document.getElementById('oscHost') || document.querySelector('#generator, .generator, .freq-generator, .panel-generator') || document.body;
-  if (!document.getElementById('oscWrap')){
-    var wrap=document.createElement('div'); wrap.id='oscWrap'; wrap.style.margin='10px 0';
-    wrap.innerHTML = '<div style="display:flex;align-items:center;gap:12px;margin:6px 0;">'
-      + '<label style="min-width:80px">Oscilloscope</label>'
-      + '<input id="oscColor" type="color" value="#39e3ff" title="Wave Color">'
-      + '<label style="margin-left:8px">Zoom x</label>'
-      + '<select id="oscZoom"><option>1</option><option selected>2</option><option>3</option></select>'
-      + '</div>'
-      + '<canvas id="osc" style="width:100%;height:140px;border:1px solid rgba(255,255,255,.1);border-radius:8px;background:#02070d;"></canvas>';
+  function hostGen(){ return document.querySelector('#generator, .generator, [data-tab="generator"], #tab-generator, #generatorPanel, #gen-panel')||document.body; }
+  function ensureOsc(){
+    if(document.getElementById('oscWrap')) return;
+    const host=hostGen();
+    const wrap=document.createElement('div'); wrap.id='oscWrap'; wrap.style.margin='12px 0';
+    wrap.innerHTML='<div style="display:flex;align-items:center;gap:12px;margin:6px 0;"><label style="min-width:88px">Oscilloscope</label><input id="oscColor" type="color" value="#39e3ff" title="Wave Color"><label style="margin-left:8px">Zoom x</label><select id="oscZoom"><option>1</option><option selected>2</option><option>3</option></select></div><canvas id="osc" style="width:100%;height:140px;border:1px solid rgba(255,255,255,.1);border-radius:8px;background:#02070d;"></canvas>';
     host.appendChild(wrap);
+    hookOsc();
   }
-  var cv=document.getElementById('osc'); if(!cv) return;
-  var ctx=cv.getContext('2d'), color=document.getElementById('oscColor'), zoomSel=document.getElementById('oscZoom'), zoom=2;
-  var aCtx=window.aCtx||window.audioCtx||null;
-  function pickOut(){ return window.genGain||window.masterGain||window.outputNode||window.mainGain||null; }
-  var out=pickOut(), analyser=null, data=null;
-  function ensureAnalyser(){
-    if(!aCtx||!out||!out.connect) return;
-    if(!analyser){ analyser=aCtx.createAnalyser(); analyser.fftSize=2048; data=new Uint8Array(analyser.fftSize); try{ out.connect(analyser);}catch(_){}}}
-  function size(){ var dpr=window.devicePixelRatio||1,w=cv.clientWidth||600,h=cv.clientHeight||140; cv.width=Math.floor(w*dpr); cv.height=Math.floor(h*dpr); ctx.setTransform(dpr,0,0,dpr,0,0); }
-  window.addEventListener('resize', size, {passive:true}); size();
-  zoomSel&&zoomSel.addEventListener('change', function(){ zoom=parseInt(zoomSel.value)||2; });
-  var raf=null;
-  (function draw(){
-    raf=requestAnimationFrame(draw);
-    if(!analyser){ ensureAnalyser(); if(!analyser) return; }
-    analyser.getByteTimeDomainData(data);
-    var w=cv.clientWidth||600,h=cv.clientHeight||140;
-    ctx.clearRect(0,0,w,h);
-    ctx.strokeStyle='rgba(100,180,220,.08)'; ctx.lineWidth=1;
-    for(var gx=0;gx<w;gx+=Math.max(40,w/10)){ ctx.beginPath();ctx.moveTo(gx,0);ctx.lineTo(gx,h);ctx.stroke(); }
-    for(var gy=0;gy<h;gy+=Math.max(28,h/6)){ ctx.beginPath();ctx.moveTo(0,gy);ctx.lineTo(w,gy);ctx.stroke(); }
-    var col=(color&&color.value)||'#39e3ff'; ctx.strokeStyle=col; ctx.lineWidth=2; ctx.shadowColor=col; ctx.shadowBlur=8;
-    ctx.beginPath();
-    var slice=(data.length/(w))/Math.max(1,(zoom/1)); var ymid=h/2, yscale=0.9;
-    for(var x=0;x<w;x++){ var idx=Math.min(data.length-1,Math.floor(x*slice)); var v=(data[idx]-128)/128; var y=ymid+v*ymid*yscale; if(x===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }
-    ctx.stroke(); ctx.shadowBlur=0;
-  })();
-  window.__oscRefresh = function(){ analyser=null; ensureAnalyser(); };
-})();
-</script>
-
-
-<script>
-(function(){
-  var aCtx=window.aCtx||window.audioCtx||null;
-  function q(s){return document.querySelector(s);}
-  function qq(s){return Array.prototype.slice.call(document.querySelectorAll(s));}
-  var freqNum=q('#freq, #frequency, input[name="freq"], input[data-role="freq"], .freq-input input[type=number]');
-  var waveSel=q('#wave, #waveform, select[name="wave"], .wave-select select');
-  var dutyUI=q('#duty, #dutyCycle, input[name="duty"]');
-  // freq slider inject
-  var freqSlider=q('#freqSlider');
-  if(!freqSlider){ var holder=(freqNum&&freqNum.parentElement)||document.body;
-    var row=document.createElement('div'); row.style.display='flex';row.style.alignItems='center';row.style.gap='10px';row.style.margin='6px 0';
-    row.innerHTML='<input id="freqSlider" type="range" min="1" max="20000" step="1" style="flex:1">';
-    holder.parentElement && holder.parentElement.insertBefore(row, holder.nextSibling); freqSlider=row.querySelector('#freqSlider'); }
-  function getFreq(){ var v=(freqNum&&parseFloat(freqNum.value))||(freqSlider&&parseFloat(freqSlider.value))||440; return Math.max(1,Math.min(20000,v||440)); }
-  function setFreqUI(v){ if(freqNum) freqNum.value=(''+v); if(freqSlider) freqSlider.value=v; }
-  if(freqNum){ freqNum.addEventListener('input',function(){ var v=getFreq(); if(freqSlider) freqSlider.value=v; apply(); }); freqNum.addEventListener('change',function(){ var v=getFreq(); if(freqSlider) freqSlider.value=v; apply(); }); }
-  if(freqSlider){ if(!freqSlider.value) freqSlider.value=(freqNum&&freqNum.value)||440; freqSlider.addEventListener('input',function(){ if(freqNum) freqNum.value=freqSlider.value; apply(); }); }
-  if(!dutyUI && waveSel){ var row=document.createElement('div'); row.style.display='flex';row.style.alignItems='center';row.style.gap='8px';row.style.margin='6px 0';
-    row.innerHTML='<label style="min-width:90px">Duty</label><input id="dutyCycle" type="range" min="5" max="95" step="1" value="50" style="flex:1">';
-    waveSel.parentElement && waveSel.parentElement.appendChild(row); dutyUI=row.querySelector('#dutyCycle'); }
-  function dutyVisible(show){ if(!dutyUI) return; var p=dutyUI.closest('div'); if(p) p.style.display=show?'':'none'; }
-  function getDuty(){ return dutyUI?(parseFloat(dutyUI.value)||50):50; }
-  if(waveSel){ waveSel.addEventListener('change',function(){ var w=(waveSel.value||'sine').toLowerCase(); dutyVisible(w!=='sine'); apply(); }); dutyVisible(((waveSel.value||'sine').toLowerCase()!=='sine')); }
-  if(dutyUI){ dutyUI.addEventListener('input', apply); }
-  // hide level controls
-  qq('#level, #levelSlider, .level, input[name="level"]').forEach(function(el){ el.style.display='none'; });
-  function L(){ return window.oscL||window.mainOsc||null; }
-  function R(){ return window.oscR||null; }
-  function makePulse(ac, duty){ duty=Math.max(1,Math.min(99,duty||50)); var D=duty/100, N=32; var real=new Float32Array(N+1), imag=new Float32Array(N+1); real[0]=0; imag[0]=0;
-    for(var n=1;n<=N;n++){ var bn=(2/(n*Math.PI))*Math.sin(n*Math.PI*D); real[n]=0.0; imag[n]=bn; }
-    try{ return new PeriodicWave(ac,{real:real,imag:imag,disableNormalization:true}); }catch(e){ return ac.createPeriodicWave(real,imag,{disableNormalization:true}); } }
-  function apply(){
-    var f=getFreq(), w=(waveSel&&waveSel.value||'sine').toLowerCase();
-    var l=L(), r=R();
-    if(l&&l.frequency) try{ l.frequency.setTargetAtTime(f,aCtx.currentTime,0.01);}catch(e){ l.frequency.value=f; }
-    if(r&&r.frequency) try{ r.frequency.setTargetAtTime(f,aCtx.currentTime,0.01);}catch(e){ r.frequency.value=f; }
-    if(w==='sine'||w==='triangle'||w==='sawtooth'||w==='square'){
-      if(w==='square'&&dutyUI){ var pw=makePulse(aCtx,getDuty()); if(l&&l.setPeriodicWave) l.setPeriodicWave(pw); if(r&&r.setPeriodicWave) r.setPeriodicWave(pw); }
-      else { if(l&&l.type) l.type=w; if(r&&r.type) r.type=w; }
-    }else if(w==='pulse'){ var pw2=makePulse(aCtx,getDuty()); if(l&&l.setPeriodicWave) l.setPeriodicWave(pw2); if(r&&r.setPeriodicWave) r.setPeriodicWave(pw2); }
-    if(window.__oscRefresh) window.__oscRefresh();
+  function hookOsc(){
+    const cv=document.getElementById('osc'); if(!cv) return;
+    const ctx=cv.getContext('2d'); const aCtx=window.aCtx||window.audioCtx||null;
+    function pickOut(){ return window.genGain||window.masterGain||window.outputNode||window.mainGain||null; }
+    let out=pickOut(), analyser=null, data=null;
+    function ensureAnalyser(){ if(!aCtx||!out||!out.connect) return; if(!analyser){ analyser=aCtx.createAnalyser(); analyser.fftSize=2048; data=new Uint8Array(analyser.fftSize); try{ out.connect(analyser);}catch(_){} }}
+    function size(){ const dpr=window.devicePixelRatio||1,w=cv.clientWidth||600,h=cv.clientHeight||140; cv.width=Math.floor(w*dpr); cv.height=Math.floor(h*dpr); ctx.setTransform(dpr,0,0,dpr,0,0); }
+    window.addEventListener('resize', size, {passive:true}); size();
+    const color=document.getElementById('oscColor'); const zoomSel=document.getElementById('oscZoom'); let zoom=2; zoomSel&&zoomSel.addEventListener('change', ()=>{ zoom=parseInt(zoomSel.value)||2; });
+    (function draw(){ requestAnimationFrame(draw); if(!analyser){ ensureAnalyser(); if(!analyser) return; } analyser.getByteTimeDomainData(data); const w=cv.clientWidth||600,h=cv.clientHeight||140; ctx.clearRect(0,0,w,h); ctx.strokeStyle='rgba(100,180,220,.08)'; ctx.lineWidth=1; for(let gx=0;gx<w;gx+=Math.max(40,w/10)){ ctx.beginPath(); ctx.moveTo(gx,0); ctx.lineTo(gx,h); ctx.stroke(); } for(let gy=0;gy<h;gy+=Math.max(28,h/6)){ ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(w,gy); ctx.stroke(); } const col=(color&&color.value)||'#39e3ff'; ctx.strokeStyle=col; ctx.lineWidth=2; ctx.shadowColor=col; ctx.shadowBlur=8; ctx.beginPath(); const slice=(data.length/w)/Math.max(1,(zoom/1)); const ymid=h/2, yscale=.9; for(let x=0;x<w;x++){ const idx=Math.min(data.length-1,Math.floor(x*slice)); const v=(data[idx]-128)/128; const y=ymid+v*ymid*yscale; if(x===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);} ctx.stroke(); ctx.shadowBlur=0; })();
+    window.__oscRefresh=function(){ analyser=null; ensureAnalyser(); };
   }
-  if(freqNum && !freqNum.value) freqNum.value=440; if(freqSlider && !freqSlider.value) freqSlider.value=440; setTimeout(apply,50);
+
+  function bindGenerator(){
+    const freqNum=document.querySelector('#freq, #frequency, input[name="freq"], input[data-role="freq"], .freq-input input[type=number]');
+    const waveSel=document.querySelector('#wave, #waveform, select[name="wave"], .wave-select select');
+    let dutyUI=document.querySelector('#duty, #dutyCycle, input[name="duty"]');
+    if(freqNum && !document.getElementById('freqSlider')){ const row=document.createElement('div'); row.style.display='flex'; row.style.alignItems='center'; row.style.gap='10px'; row.style.margin='6px 0'; row.innerHTML='<input id="freqSlider" type="range" min="1" max="20000" step="1" style="flex:1">'; freqNum.parentElement && freqNum.parentElement.after(row); }
+    const freqSlider=document.getElementById('freqSlider');
+    function getFreq(){ const v=(freqNum&&parseFloat(freqNum.value))||(freqSlider&&parseFloat(freqSlider.value))||440; return Math.max(1,Math.min(20000,v||440)); }
+    function setFreqUI(v){ if(freqNum) freqNum.value=String(v); if(freqSlider) freqSlider.value=String(v); }
+    freqNum && freqNum.addEventListener('input', ()=>{ setFreqUI(getFreq()); applyGen(); });
+    freqNum && freqNum.addEventListener('change', ()=>{ setFreqUI(getFreq()); applyGen(); });
+    freqSlider && freqSlider.addEventListener('input', ()=>{ setFreqUI(getFreq()); applyGen(); });
+    if(freqNum && !freqNum.value) freqNum.value=440; if(freqSlider && !freqSlider.value) freqSlider.value=440;
+    if(!dutyUI && waveSel){ const row=document.createElement('div'); row.style.display='flex'; row.style.alignItems='center'; row.style.gap='8px'; row.style.margin='6px 0'; row.innerHTML='<label style="min-width:90px">Duty</label><input id="dutyCycle" type="range" min="5" max="95" step="1" value="50" style="flex:1">'; waveSel.parentElement && waveSel.parentElement.appendChild(row); dutyUI=row.querySelector('#dutyCycle'); }
+    function dutyVisible(show){ if(!dutyUI) return; const p=dutyUI.closest('div'); if(p) p.style.display=show?'':'none'; }
+    function getDuty(){ return dutyUI ? (parseFloat(dutyUI.value)||50) : 50; }
+    waveSel && waveSel.addEventListener('change', ()=>{ const w=(waveSel.value||'sine').toLowerCase(); dutyVisible(w!=='sine'); applyGen(); });
+    dutyUI && dutyUI.addEventListener('input', applyGen);
+    document.querySelectorAll('#level, #levelSlider, .level, input[name="level"]').forEach(el=>el.style.display='none');
+    function L(){ return window.oscL||window.mainOsc||null; } function R(){ return window.oscR||null; }
+    function makePulse(ac, duty){ duty=Math.max(1,Math.min(99,duty||50)); const D=duty/100, N=32; const real=new Float32Array(N+1), imag=new Float32Array(N+1); for(let n=1;n<=N;n++){ imag[n]=(2/(n*Math.PI))*Math.sin(n*Math.PI*D); } try{ return new PeriodicWave(ac,{real,imag,disableNormalization:true}); }catch(e){ return (ac||window.aCtx).createPeriodicWave(real,imag,{disableNormalization:true}); } }
+    function applyGen(){ const aCtx=window.aCtx||window.audioCtx||null; if(!aCtx) return; const f=getFreq(); const w=(waveSel&&waveSel.value||'sine').toLowerCase(); const l=L(), r=R(); if(l?.frequency){ try{ l.frequency.setTargetAtTime(f,aCtx.currentTime,0.01);}catch(e){ l.frequency.value=f; } } if(r?.frequency){ try{ r.frequency.setTargetAtTime(f,aCtx.currentTime,0.01);}catch(e){ r.frequency.value=f; } } if(w==='sine'||w==='triangle'||w==='sawtooth'||w==='square'){ if(w==='square'&&dutyUI){ const pw=makePulse(aCtx,getDuty()); l?.setPeriodicWave&&l.setPeriodicWave(pw); r?.setPeriodicWave&&r.setPeriodicWave(pw); } else { if('type' in (l||{})) l.type=w; if('type' in (r||{})) r.type=w; } } else if(w==='pulse'){ const pw2=makePulse(aCtx,getDuty()); l?.setPeriodicWave&&l.setPeriodicWave(pw2); r?.setPeriodicWave&&r.setPeriodicWave(pw2); } window.__oscRefresh && window.__oscRefresh(); }
+    setTimeout(applyGen,60);
+  }
+  document.addEventListener('DOMContentLoaded', bindGenerator, {once:true});
 })();
 </script>
 
