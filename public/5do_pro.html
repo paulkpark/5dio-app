@@ -1719,4 +1719,120 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 </script>
 
+
+<script>
+(function ensureFxCanvas(){
+  var cv = document.getElementById('fxCanvas');
+  if(!cv){
+    cv = document.createElement('canvas');
+    cv.id = 'fxCanvas';
+    cv.style.display = 'none';
+    document.body.appendChild(cv);
+  }
+})();
+</script>
+
+
+<script>
+/* Toroidal Vortex Animation (null-safe) */
+(function(){
+  var cv = document.getElementById('fxCanvas');
+  if(!cv) return;
+  var ctx = cv.getContext && cv.getContext('2d');
+  if(!ctx) return;
+
+  var rid=null, running=false, t0=performance.now();
+  function size(){
+    var dpr = window.devicePixelRatio || 1;
+    var w = cv.clientWidth || 680;
+    var h = cv.clientHeight || 220;
+    cv.width = Math.floor(w*dpr);
+    cv.height= Math.floor(h*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+
+  var hues = [
+    {r:140,g:220,b:255},
+    {r: 40,g:170,b:255},
+    {r: 90,g:200,b:255},
+    {r:160,g:255,b:240}
+  ];
+  var R=1.0, r=0.36, N=900;
+  var pts = Array.from({length:N}, function(_,i){
+    return { u:Math.random()*Math.PI*2, v:Math.random()*Math.PI*2,
+             hue:hues[i%hues.length], a:0.55+0.45*Math.random(), s:0.4+Math.random()*0.8 };
+  });
+  function torus(u,v){ var x=(R+r*Math.cos(v))*Math.cos(u);
+    var y=(R+r*Math.cos(v))*Math.sin(u);
+    var z= r*Math.sin(v); return {x:x,y:y,z:z}; }
+
+  function frame(){
+    if(!running) return;
+    var now=performance.now();
+    var dt=Math.min(0.05,(now-t0)*0.001); t0=now;
+    var w=cv.clientWidth||680, h=cv.clientHeight||220, cx=w*0.5, cy=h*0.5;
+    var scale=Math.min(w,h)*0.42;
+    ctx.fillStyle='rgba(2,6,15,0.24)'; ctx.fillRect(0,0,w,h);
+    var g=ctx.createRadialGradient(cx,cy,10,cx,cy,Math.max(w,h)*0.7);
+    g.addColorStop(0,'rgba(80,180,255,0.10)'); g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+    var rotU=now*0.00025, rotV=now*0.00037;
+    for (var i=0;i<pts.length;i++){
+      var p=pts[i]; p.u += dt*(0.6+0.7*p.s); p.v += dt*(0.8+0.9*p.s);
+      var U=p.u+rotU, V=p.v+rotV, P=torus(U,V);
+      var tilt=0.55; var y2=P.y*Math.cos(tilt)-P.z*Math.sin(tilt);
+      var z2=P.y*Math.sin(tilt)+P.z*Math.cos(tilt); var x2=P.x;
+      var depth=(z2+(R+r))/(2*(R+r)); var s=scale*(0.65+0.35*depth);
+      var x=cx+x2*s, y=cy+y2*s;
+      ctx.globalAlpha=(0.35+0.55*depth)*p.a;
+      ctx.beginPath(); ctx.arc(x,y,1.1+1.2*depth,0,Math.PI*2);
+      var c=p.hue; ctx.fillStyle='rgba('+c.r+','+c.g+','+c.b+',0.85)';
+      ctx.shadowColor='rgba('+c.r+','+c.g+','+c.b+',0.7)'; ctx.shadowBlur=10+18*depth;
+      ctx.fill();
+    }
+    rid=requestAnimationFrame(frame);
+  }
+  function start(){ if(running) return; running=true; size(); t0=performance.now(); rid=requestAnimationFrame(frame); }
+  function stop(){ running=false; if(rid) cancelAnimationFrame(rid); rid=null; }
+  window.addEventListener('resize', function(){ if(running) size(); }, {passive:true});
+  window.torusStart=start; window.torusStop=stop;
+})();
+</script>
+
+
+<script>
+// Keep default thumbnail BLANK until the user selects a track
+(function(){
+  var userSelected = false;
+  var st = document.getElementById('loadingThumb') || document.getElementById('statusThumb');
+  var tx = document.getElementById('statusText');
+  document.addEventListener('click', function(e){
+    if (e.target && e.target.closest && e.target.closest('.card')) userSelected = true;
+  }, true);
+  function blank(){
+    if (!st) return;
+    st.classList.add('loaded');
+    st.style.backgroundImage = 'none';
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    blank();
+    if (tx && (!tx.textContent || /Ready|재생 준비됨/i.test(tx.textContent))){
+      tx.textContent = (window.lang==='en' ? 'No track loaded' : '선곡되지 않음');
+    }
+    var mo = new MutationObserver(function(){ if (!userSelected) blank(); });
+    if (st) mo.observe(st, { attributes:true, attributeFilter:['style','class'] });
+    var n=0; var t=setInterval(function(){ if (!userSelected) blank(); if (++n>40) clearInterval(t); }, 500);
+  });
+})();
+</script>
+
+
+<script>
+window.loadPreset = window.loadPreset || function(name){
+  console.warn('[guard] loadPreset not defined. Requested:', name);
+};
+var ps=document.getElementById('presetSelect');
+if(ps){ ps.addEventListener('change', function(e){ if (window.loadPreset) window.loadPreset(e.target.value); }); }
+</script>
+
 </body></html>
