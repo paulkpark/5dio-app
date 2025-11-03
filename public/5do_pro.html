@@ -1416,5 +1416,74 @@ document.addEventListener('DOMContentLoaded', ()=>{
   });
 })();
 </script>
+<script>
+// Neutralize legacy spectrum visualizer loops if present
+(function(){
+  try{
+    if (window.vizRAF) { cancelAnimationFrame(window.vizRAF); window.vizRAF = null; }
+    if (window.drawViz) { window.drawViz = function(){}; }
+    if (window.vizAnalyser && window.vizAnalyser.disconnect) {
+      try{ window.vizAnalyser.disconnect(); }catch(e){}
+    }
+  }catch(e){}
+})();
+</script>
 
-</body></html>
+<script>
+// Keep default loading thumbnail BLANK until user explicitly selects a track
+(function(){
+  const player = document.getElementById('player');
+  const st = document.getElementById('statusThumb') || document.getElementById('loadingThumb');
+  const tx = document.getElementById('statusText');
+  let userSelected = false;
+
+  // 카드 클릭 시에만 '선택됨'으로 간주
+  document.addEventListener('click', function(e){
+    const card = e.target.closest && e.target.closest('.card');
+    if (card) userSelected = true;
+  }, true);
+
+  function blank(){
+    if (!st) return;
+    st.classList.remove('loaded');
+    st.style.backgroundImage = 'none';
+    if (tx) tx.textContent = (window.lang==='en'?'Ready':'대기');
+  }
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    blank();
+    // 다른 스크립트가 기본 썸네일을 다시 올려도 사용자 선택 전엔 계속 빈 화면 유지
+    const mo = new MutationObserver(()=>{ if (!userSelected) blank(); });
+    if (st) mo.observe(st, { attributes:true, attributeFilter:['style','class'] });
+
+    // 초기 몇 초 동안 추가 보정
+    let n=0;
+    const t = setInterval(()=>{ if (!userSelected) blank(); if (++n>40) clearInterval(t); }, 500); // ~20s
+  });
+})();
+</script>
+
+<!-- (선택) 라이브러리 탭에서 쓸 오디오 비독립 오로라 FX가 이미 있다면 아래 glue만 유지 -->
+<script>
+// Show FX on Library, hide on Generator (오디오와 무관한 캔버스 애니메이션 전환)
+(function(){
+  const fx=document.getElementById('fxCanvas'); if(!fx) return;
+  const $=s=>document.querySelector(s);
+  function showFx(){ fx.style.display='block'; window.fxStart&&window.fxStart(); const viz=$('#viz'); if(viz) viz.style.display='none'; }
+  function hideFx(){ window.fxStop&&window.fxStop(); fx.style.display='none'; const viz=$('#viz'); if(viz) viz.style.display='none'; }
+  window.showLibraryFx=showFx; window.hideLibraryFx=hideFx;
+
+  const libTab=$('#tabLib')||document.querySelector('[data-tab="library"]');
+  const genTab=$('#tabGen')||document.querySelector('[data-tab="generator"]');
+  if(libTab) libTab.addEventListener('click',()=>showFx());
+  if(genTab) genTab.addEventListener('click',()=>hideFx());
+
+  document.addEventListener('DOMContentLoaded',()=>{
+    const genPane=$('#genPane') || $('#osc')?.parentElement;
+    const genVisible=genPane && getComputedStyle(genPane).display!=='none';
+    if(!genVisible) showFx();
+  });
+})();
+</script>
+</body>
+</html>
