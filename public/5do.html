@@ -1,123 +1,234 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="ko">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
-<title>5DO Pro</title>
-<style>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>5DO</title>
 
+<!-- Supabase UMD -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
+<style>
 :root{
-  --bg:#060913;
-  --panel:#0c1422;
-  --ink:#eaf2ff;
-  --muted:#9bb3cc;
-  --stroke:#163050;
-  --glow:rgba(160,92,255,.25); /* dark violet glow */
-  --accent:#a05cff; /* dark violet neon */
+  --bg:#0a0f14; --panel:#0e1520; --line:#13243a; --muted:#8aa6c3; --txt:#e8f2ff;
+  --blue:#9fe5ff; --blue2:#39e3ff; --stroke:#1d415f; --glow:rgba(57,227,255,.18);
+  --card:#0b131e; --thumb:#0a1018; --accent:#7fd9ff;
+  --title-glow:0 0 3px rgba(180,240,255,1),0 0 8px rgba(110,220,255,.95),0 0 18px rgba(50,180,255,.85),0 0 36px rgba(0,120,255,.7);
 }
 *{box-sizing:border-box}
-html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
-.wrap{max-width:920px;margin:0 auto;padding:14px 14px 28px}
-header{display:flex;align-items:center;gap:10px}
-.hamburger{width:30px;height:22px;position:relative;cursor:pointer}
-.hamburger:before,.hamburger:after,.hamburger span{content:"";position:absolute;left:0;right:0;height:3px;background:#9ecfff;border-radius:2px;box-shadow:0 0 12px rgba(82,180,255,.55)}
-.hamburger:before{top:0}.hamburger span{top:9px}.hamburger:after{bottom:0}
-.title{font-weight:800;letter-spacing:.2px;font-size:20px;text-shadow:0 0 14px rgba(160,92,255,.55), 0 0 3px rgba(160,92,255,.9)}
-.header-spacer{flex:1}
-.tabs{display:flex;gap:10px}
-.tab{padding:8px 12px;border:1px solid var(--stroke);border-radius:10px;background:var(--panel);color:var(--ink);opacity:.85}
-.lang{margin-left:10px}
-button,select,input{color:var(--ink)}
-.btn{background:var(--panel);border:1px solid var(--stroke);border-radius:12px;padding:10px 14px;box-shadow:inset 0 0 14px var(--glow);cursor:pointer}
-.btn:active{transform:translateY(1px)}
-.gen-input,.gen-range,select{background:#0f1a28;border:1px solid #13263c;border-radius:10px}
-.gen-input{padding:8px 10px;min-height:36px}
-.gen-range{height:32px}
-.gen-label{font-weight:800;color:#cfe0ff}
-.gen-sub{color:#b5cce0}
-.gen-chip{padding:6px 10px;border:1px solid var(--stroke);border-radius:10px;background:#0d1e2f;color:#cfe0ff;font-size:12px}
-.gen-grid{display:grid;gap:12px;margin-top:10px}
-.gen-row2{display:grid;grid-template-columns:160px 1fr;gap:12px;align-items:center}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui, -apple-system, Segoe UI, Roboto, Pretendard, Noto Sans KR, sans-serif}
+a{color:inherit;text-decoration:none}
+button{cursor:pointer}
+
+/* Header */
+header{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;
+  padding:10px 12px;background:linear-gradient(180deg,#0a1018,#0a0f14 60%);border-bottom:1px solid #0f1b2a}
+.left-pack{display:flex;align-items:center;gap:10px}
+.app-title{color:var(--blue);text-shadow:var(--title-glow);white-space:nowrap;font-weight:800;font-size:18px}
+.center-tabs{position:absolute;left:calc(50% + 30px);transform:translateX(-50%);top:10px;display:flex;gap:8px}
+.tab{padding:6px 10px;border:1px solid var(--stroke);border-radius:10px;background:#0d1e2f}
+.tab.active{background:#0f2336}
+.right-pack{display:flex;align-items:center;gap:8px;transform:translateX(-6px)} /* ← 10px→6px 미세 조정 */
+#langBtn{padding:6px 10px;border:1px solid var(--stroke);border-radius:10px;background:#0d1e2f}
+
+/* Hamburger */
+.hamburger{width:32px;height:22px;position:relative;transform:translateY(4px)} /* 아이콘 2px 하향 */
+.hamburger span,.hamburger span:before,.hamburger span:after{
+  position:absolute;left:0;right:0;height:2px;background:#8fe8ff;content:"";box-shadow:0 0 6px rgba(110,220,255,.95),0 0 14px rgba(50,180,255,.85)
+}
+.hamburger span{top:10px}
+.hamburger span:before{top:-8px}
+.hamburger span:after{top:8px}
+.dropdown{position:absolute;top:42px;left:0;background:#0b1420;border:1px solid #16324f;min-width:260px;border-radius:12px;
+  box-shadow:0 16px 40px rgba(0,0,0,.45);display:none;max-height:70vh;overflow:auto}
+.dropdown a{display:block;padding:11px 14px;border-bottom:1px solid #0f1b2a}
+.dropdown a:last-child{border-bottom:0}
+.dropdown a:hover{background:#0e1a2a}
+.menu-container{position:relative}
+
+/* Main */
+main{padding:12px}
+.hidden{display:none!important}
+
+/* Library status */
+.status{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:6px 0 12px}
+#statusThumb{width:64px;height:64px;border:1px solid #14253b;border-radius:12px;background:#0b1018;background-size:cover;background-position:center}
+.status-blank{
+  background-image:radial-gradient(60% 40% at 50% 0%, rgba(90,210,255,.08), rgba(0,0,0,0)),
+                   radial-gradient(70% 60% at 50% 100%, rgba(0,120,255,.06), rgba(0,0,0,0));
+}
+.status-meta{min-width:220px;max-width:min(560px,60vw)}
+.status-title{font-weight:800;margin-bottom:2px}
+.status-title.playing{
+  background:linear-gradient(90deg,#b6ecff,#39e3ff,#7fffd4,#39e3ff,#b6ecff);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:cycle 4.5s linear infinite
+}
+@keyframes cycle{0%{background-position:0%}100%{background-position:200%}}
+.status-line{color:#9bbad6;opacity:.9;font-size:13px;line-height:1.4}
+
+/* Player + nav */
+.playerbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.playerbar .controls button{background:#0d1e2f;border:1px solid var(--stroke);color:var(--txt);padding:8px 10px;border-radius:10px;box-shadow:inset 0 0 10px var(--glow)}
+.nav-row{display:flex;align-items:center;gap:12px;margin:6px 0 12px}
+.nav-row .nav-btn{width:48px;height:48px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;background:#0d1e2f;border:1px solid var(--stroke);box-shadow:inset 0 0 10px var(--glow);padding:0}
+.nav-row .nav-btn svg{width:24px;height:24px;stroke:#8fe8ff;fill:none;filter:drop-shadow(0 0 4px rgba(110,220,255,.9)) drop-shadow(0 0 10px rgba(50,180,255,.7))}
+
+/* Search/Filter */
+.filterbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:4px 0 10px}
+.filterbar input, .filterbar select{background:#0f1a28;border:1px solid #13263c;color:#e9f4ff;border-radius:10px;padding:8px 10px}
+
+/* Thumbs */
+#favoritesWrap{margin:10px 0 2px 0; display:none;}
+#favoritesTitle{color:#cfe9ff;font-weight:800;margin:4px 0 8px 2px}
+#favoritesStrip{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory}
+#favoritesStrip .card{flex:0 0 132px;scroll-snap-align:start}
+
+.strip{display:flex;gap:12px;overflow-x:auto;padding:6px 2px;scroll-snap-type:x mandatory}
+.card{flex:0 0 132px;display:flex;flex-direction:column;background:var(--card);
+  border:1px solid #102035;border-radius:14px;overflow:hidden;cursor:pointer;scroll-snap-align:start;position:relative}
+.thumb{width:100%;height:132px;background:var(--thumb);background-size:cover;background-position:center}
+.card .star{
+  position:absolute; right:8px; top:8px; width:26px; height:26px;
+  border-radius:9px; background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.15);
+  display:flex; align-items:center; justify-content:center; cursor:pointer; backdrop-filter: blur(2px);
+}
+.card .star svg{width:18px;height:18px; stroke:#8fe8ff; fill:none; filter: drop-shadow(0 0 4px rgba(110,220,255,.8))}
+.card.fav .star svg{ fill:#9fe5ff; stroke:#9fe5ff; }
+
+/* Generator */
+.section{margin-top:14px;border-top:1px solid #0f1b2a;padding-top:12px}
+.gen-grid{display:grid;gap:10px}
+.gen-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.gen-toolbar .btn{padding:8px 12px;border-radius:10px;border:1px solid var(--stroke);background:#0d1e2f;box-shadow:inset 0 0 10px var(--glow)}
+.gen-row2{display:grid;grid-template-columns:140px 1fr;gap:10px;align-items:center}
+@media (max-width:640px){.gen-row2{grid-template-columns:1fr}}
 .gen-inline{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-@media (max-width:680px){.gen-row2{grid-template-columns:1fr}}
-.panel{border:1px solid var(--stroke);border-radius:14px;background:linear-gradient(180deg,rgba(23,32,55,.55),rgba(8,14,26,.55));padding:12px}
-.osc-wrap{position:relative;margin-top:12px}
+.gen-inline .gen-input{min-width:80px}
+.gen-chip{padding:6px 10px;border:1px solid var(--stroke);border-radius:10px;background:#0d1e2f;color:var(--txt);font-size:12px}
+.gen-input, .gen-range, select{background:#0f1a28;border:1px solid #13263c;color:#e9f4ff;border-radius:10px}
+.gen-range{height:32px}
+label.gen-label{color:#cfe9ff;font-weight:700}
+.small-note{font-size:12px;color:#a7c4de}
+
+/* Oscilloscope */
+.osc-wrap{position:relative}
 #osc{display:block;width:100%;height:160px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:#02070d}
+@media (max-width:420px){ #osc{height:140px} }
 .osc-toolbar{position:absolute;top:8px;right:8px;display:flex;align-items:center;gap:8px;z-index:6}
-.osc-color-btn{width:28px;height:28px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:linear-gradient(135deg,#b68cff,#6a3eff);box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.osc-color-btn{width:28px;height:28px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:linear-gradient(135deg,#3be8ff,#1f7aff);box-shadow:0 2px 8px rgba(0,0,0,.25);cursor:pointer}
 .osc-pop{position:absolute;top:40px;right:0;padding:10px;border-radius:12px;background:rgba(15,17,24,.96);border:1px solid rgba(255,255,255,.12);box-shadow:0 12px 28px rgba(0,0,0,.35);display:none}
 .osc-pop.show{display:block}
 .osc-swatches{display:grid;grid-template-columns:repeat(6,22px);gap:8px}
-.osc-swatch{width:22px;height:22px;border-radius:6px;border:1px solid rgba(255,255,255,.25)}
-.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
-.toolbar .btn{padding:8px 12px}
-select#presetLoad{min-width:164px}
-/* compact for iPhone */
-@media (max-width:420px){
-  .btn{padding:8px 10px;font-size:12px}
-  .gen-input{padding:8px 10px;font-size:12px;min-height:32px}
-  .gen-range{height:26px}
-  #osc{height:140px}
-}
-/* modal basic */
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:60}
-.modal .box{max-width:560px;width:92%;border:1px solid var(--stroke);background:var(--panel);border-radius:16px;padding:16px}
-.modal.show{display:flex}
+.osc-swatch{width:22px;height:22px;border-radius:6px;border:1px solid rgba(255,255,255,.25);cursor:pointer}
 
-/* Tabs bar adjustments for center + lang right */
-header{gap:12px}
-.tabs{margin:0 auto}
-.tab{cursor:pointer;user-select:none}
-.tab[aria-selected="true"]{outline:1px solid #2a4e7d}
+/* Modal */
+.backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;z-index:90}
+.modal{position:fixed;inset:auto 10px 10px 10px;top:8%;max-width:760px;max-height:80vh;
+  background:#0e1520;border:1px solid #18304c;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.4);display:none;z-index:101;padding:16px}
+.mhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+#modalBody{white-space:pre-wrap;line-height:1.55;color:#d7e8ff;max-height:60vh;overflow:auto}
 
-/* Library placeholder styles */
-.lib-toolbar{display:flex;gap:8px;align-items:center;margin-top:12px}
-.lib-btn{padding:8px 12px;border:1px solid var(--stroke);border-radius:10px;background:var(--panel)}
-.lib-strip{display:grid;grid-auto-flow:column;grid-auto-columns:120px;gap:10px;overflow-x:auto;padding:10px;margin:10px 0;border:1px dashed #1b2f4d;border-radius:12px}
-.lib-thumb{width:120px;height:120px;border-radius:12px;background:#0b1322;display:flex;align-items:center;justify-content:center;color:#7aa3d8}
-.lib-meta{min-height:54px;color:#9bb3cc}
+/* Playlist Panel */
+#plPanel{display:none; position:fixed; inset:auto 10px 10px 10px; top:12%; max-width:760px; margin:auto;
+  background:#0e1520;border:1px solid #18304c;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.45); z-index:120}
+#plHead{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #15263f}
+#plBody{padding:12px 14px; display:grid; gap:10px; max-height:56vh; overflow:auto}
+.pl-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#0b1420;border:1px solid #12253e;border-radius:10px;padding:8px 10px}
+#plFoot{display:flex;justify-content:flex-end;gap:10px;padding:10px 14px;border-top:1px solid #15263f}
+.btn{background:#0d1e2f;border:1px solid #1d415f;color:#e8f2ff;padding:8px 10px;border-radius:10px;cursor:pointer}
+.btn:hover{transform:translateY(-1px)}
+.small{font-size:12px;padding:6px 8px}
 
-/* Generator scope row: label on left + slider right */
-.scope-grid{display:grid;grid-template-columns:120px 1fr;gap:12px;align-items:center}
-@media (max-width:560px){.scope-grid{grid-template-columns:100px 1fr}}
+/* Cleanup */
+#verBadge{display:none}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div class="hamburger" id="menuBtn"><span></span></div>
-    <div class="title">5DO Pro</div>
-    <div class="header-spacer"></div>
-    <div class="tabs">
-      <div class="tab" id="tabLibrary" aria-selected="true">Library</div>
-      <div class="tab" id="tabGenerator" aria-selected="false">Generator</div>
-    </div>
-    <button class="btn lang" id="langBtn">EN/KR</button>
-  </header>
-
-  <!-- Library Page -->
-  <section id="pageLibrary">
-    <div class="lib-toolbar">
-      <button class="lib-btn" id="libBack">Back</button>
-      <button class="lib-btn" id="libHome">Home</button>
-      <button class="lib-btn" id="libRefresh">Refresh</button>
-    </div>
-    <div class="panel">
-      <div class="gen-label" style="margin-bottom:6px">Media Thumbnails (placeholder)</div>
-      <div class="lib-strip" id="libStrip">
-        <div class="lib-thumb">Folder</div>
-        <div class="lib-thumb">Folder</div>
-        <div class="lib-thumb">Folder</div>
-        <div class="lib-thumb">Folder</div>
+<header>
+  <div class="left-pack">
+    <div class="menu-container">
+      <div id="menuBtn" class="hamburger"><span></span></div>
+      <div id="menuDrop" class="dropdown">
+        <a href="https://5dshop.co.kr" target="_blank" rel="noopener" data-i18n="menu.shop">Shop</a>
+        <a href="#" class="menu-text" data-txt="faq" data-i18n="menu.faq">FAQ</a>
+        <a href="#" class="menu-text" data-txt="manual" data-i18n="menu.manual">Manual</a>
+        <a href="#" class="menu-text" data-txt="contact" data-i18n="menu.contact">Contact</a>
+        <a href="#" class="menu-text" data-txt="about" data-i18n="menu.about">About</a>
       </div>
-      <div class="lib-meta" id="libMeta">Select a track to see title/description here.</div>
+    </div>
+    <div class="app-title">5DO Pro</div>
+  </div>
+
+  <!-- 탭/언어 약간 좌로 이동 (타이틀 한 줄 유지) -->
+  <div class="center-tabs" style="left:calc(50% + 24px)">
+    <button id="tabLibrary" class="tab active" data-i18n="tab.library">Library</button>
+    <button id="tabGenerator" class="tab" data-i18n="tab.generator">Generator</button>
+  </div>
+
+  <div class="right-pack" style="transform:translateX(-12px)">
+    <button id="langBtn">KR/EN</button>
+  </div>
+</header>
+
+<main>
+  <!-- Library -->
+  <section id="pageLibrary">
+    <div class="nav-row">
+      <button id="btnBack" class="nav-btn" title="Back" aria-label="Back">
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7" fill="none"><path d="M15 6l-6 6 6 6"/></svg>
+      </button>
+      <button id="btnHome" class="nav-btn" title="Home" aria-label="Home">
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7" fill="none"><path d="M3 12l9-8 9 8"/><path d="M9 21V9h6v12"/></svg>
+      </button>
+      <button id="btnRefresh" class="nav-btn" title="Refresh" aria-label="Refresh">
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7" fill="none"><path d="M21 12a9 9 0 1 0-2.64 6.36"/><path d="M21 12v-6h-6"/></svg>
+      </button>
+    </div>
+
+    <!-- 검색/필터 -->
+    <div class="filterbar">
+      <input id="searchInput" type="text" placeholder="검색어…" />
+      <select id="searchMode">
+        <option value="folder">폴더</option>
+        <option value="track">곡명</option>
+      </select>
+      <button id="searchBtn" class="btn small">검색</button>
+      <button id="searchClear" class="btn small">지우기</button>
+    </div>
+
+    <div id="favoritesWrap">
+      <div id="favoritesTitle">★ Favorites</div>
+      <div id="favoritesStrip"></div>
+    </div>
+
+    <div class="strip" id="strip"></div>
+
+    <div class="status">
+      <div id="statusThumb" class="status-blank"></div>
+      <div class="status-meta">
+        <div id="metaTitle" class="status-title"></div>
+        <div id="metaDesc" class="status-line"></div>
+        <div id="metaComposer" class="status-line"></div>
+      </div>
+    </div>
+
+    <div class="playerbar">
+      <div class="controls">
+        <button id="btnPlay" data-i18n="player.play">Play</button>
+        <button id="btnPause" data-i18n="player.pause">Pause</button>
+        <button id="btnLoop" data-i18n="player.loop">Loop</button>
+        <button id="btnTimer" data-i18n="player.timer">Timer</button>
+        <button id="btnPlaylist" data-i18n="player.playlists" onclick="openPlPanel()">Playlists</button>
+      </div>
+      <audio id="player" controls playsinline style="width:min(520px, 100%);"></audio>
     </div>
   </section>
 
-  <!-- Generator Page (ported) -->
-  <section id="pageGenerator" style="display:none">
+  <!-- Generator -->
+  <section id="pageGenerator" class="hidden">
     <div class="osc-wrap">
-      <canvas id="osc" aria-label="waveform viewer"></canvas>
+      <canvas id="osc"></canvas>
       <div class="osc-toolbar" id="oscToolbar">
         <button class="osc-color-btn" id="oscColorBtn" title="Waveform Color"></button>
         <div class="osc-pop" id="oscPop">
@@ -126,26 +237,26 @@ header{gap:12px}
       </div>
     </div>
 
-    <div class="toolbar">
-      <button id="genPlay" class="btn" data-i18n="gen.play">Play</button>
-      <button id="genStop" class="btn" data-i18n="gen.stop">Stop</button>
-      <button id="presetSave" class="btn" data-i18n="gen.preset_save">Save Preset</button>
-      <select id="presetLoad" class="gen-input" data-i18n-select="gen.preset_load">
-        <option value="">Load Preset…</option>
+    <div class="gen-toolbar" style="margin-top:6px">
+      <button id="genPlay" class="btn" data-i18n="play">Play</button>
+      <button id="genStop" class="btn" data-i18n="stop">Stop</button>
+      <button id="presetSave" class="btn" data-i18n="preset_save">Save Preset</button>
+      <select id="presetLoad" class="gen-input" style="min-width:160px">
+        <option value="" data-i18n="preset_load">Load Preset…</option>
       </select>
-      <select id="oscColor" class="gen-input" title="Color">
-        <option value="#a05cff">Dark Violet</option>
+      <select id="oscColor" class="gen-input" style="margin-left:auto;min-width:120px">
         <option value="#39e3ff">Neon Blue</option>
         <option value="#00ffd5">Aqua</option>
         <option value="#00ff7f">Neon Green</option>
         <option value="#ffd166">Amber</option>
+        <option value="#ff5ea0">Magenta</option>
         <option value="#ffffff">White</option>
       </select>
     </div>
 
-    <div class="panel gen-grid">
+    <div class="gen-grid" style="margin-top:8px">
       <div class="gen-row2">
-        <label class="gen-label"><span data-i18n="gen.waveform">Waveform Vibration</span></label>
+        <label class="gen-label" data-i18n="gen.waveform">Waveform</label>
         <div class="gen-inline">
           <select id="wf" class="gen-input">
             <option value="sine">Sine</option>
@@ -153,423 +264,652 @@ header{gap:12px}
             <option value="triangle">Triangle</option>
             <option value="sawtooth">Saw</option>
           </select>
-          <span class="gen-chip" data-i18n="gen.binaural">Binaural (Left–Right Sync)</span>
-          <input type="checkbox" id="binEnable">
-          <label class="gen-sub" data-i18n="gen.diff_hz">Difference (Hz)</label>
-          <input id="binDiff" class="gen-input" type="number" min="0" max="40" step="0.1" value="4">
+          <span class="gen-chip">Binaural</span>
+          <input type="checkbox" id="binEnable"/>
+          <label class="gen-sub">Difference (Hz)</label>
+          <input id="binDiff" class="gen-input" type="number" min="0" max="40" step="0.1" value="4"/>
         </div>
       </div>
 
       <div class="gen-row2">
-        <label class="gen-label"><span data-i18n="gen.frequency">Frequency (Hz)</span></label>
+        <label class="gen-label" data-i18n="gen.frequency">Frequency (Hz)</label>
         <div class="gen-inline">
-          <input id="freq" class="gen-input" type="number" min="0" max="20000" step="0.1" value="432">
+          <input id="freq" class="gen-input" type="number" min="0" max="20000" step="0.1" value="432"/>
           <input id="freqRange" class="gen-range" type="range" min="0" max="20000" step="1" value="432" style="flex:1">
         </div>
       </div>
 
       <div class="gen-row2">
-        <label class="gen-label"><span data-i18n="gen.duty">Wave Ratio</span></label>
+        <label class="gen-label">Duty Cycle</label>
         <div class="gen-inline">
-          <input id="dutyNum" class="gen-input" type="number" min="1" max="100" step="1" value="50">
+          <input id="dutyNum" class="gen-input" type="number" min="1" max="100" step="1" value="50"/>
           <input id="duty" class="gen-range" type="range" min="1" max="100" step="1" value="50" style="flex:1">
         </div>
       </div>
 
       <div class="gen-row2">
-        <label class="gen-label"><span data-i18n="gen.harmonics">Harmonics Activation</span></label>
+        <label class="gen-label" data-i18n="harmonics_label">Harmonics</label>
         <div class="gen-inline">
-          <label class="gen-sub" data-i18n="gen.enable">Enable</label>
+          <label class="gen-sub" data-i18n="harmonics_enable">Enable</label>
           <input id="harmEnable" type="checkbox">
-          <label class="gen-sub" data-i18n="gen.base">Base</label>
+          <label class="gen-sub" data-i18n="harmonics_base">Base</label>
           <select id="harmBase" class="gen-input">
-            <option value="fund" data-i18n="gen.base_fund">Fundamental</option>
-            <option value="mid"  data-i18n="gen.base_mid">Mid (x2)</option>
-            <option value="high" data-i18n="gen.base_high">High (x4)</option>
+            <option value="fund" data-i18n="harm_base_fund">Fundamental</option>
+            <option value="mid"  data-i18n="harm_base_mid">Mid (x2)</option>
+            <option value="high" data-i18n="harm_base_high">High (x4)</option>
           </select>
-          <label class="gen-sub" data-i18n="gen.octaves"># of Octaves</label>
+          <label class="gen-sub" data-i18n="harm_octaves"># of Octaves</label>
           <select id="harmOct" class="gen-input">
-            <option>0</option><option>1</option><option>2</option><option>3</option><option>4</option>
+            <option value="0">0</option><option value="1">1</option>
+            <option value="2">2</option><option value="3">3</option><option value="4">4</option>
           </select>
         </div>
       </div>
 
-      <!-- Scope with each label on left and slider on right -->
-      <div>
-        <label class="gen-label"><span data-i18n="gen.scope">Wave Viewer</span></label>
-        <div class="scope-grid" style="margin-top:8px">
-          <div class="gen-sub" data-i18n="gen.zoom">Zoom</div>
-          <input id="oscZoom" type="range" class="gen-range" min="0.5" max="4" step="0.1" value="1">
-          <div class="gen-sub" data-i18n="gen.gamma">Gamma</div>
-          <input id="oscGamma" type="range" class="gen-range" min="0.6" max="2" step="0.05" value="1">
-          <div class="gen-sub" data-i18n="gen.line">Line</div>
-          <input id="oscLine" type="range" class="gen-range" min="1" max="4" step="0.5" value="2">
+      <div class="gen-row2">
+        <label class="gen-label">Scope</label>
+        <div class="gen-inline">
+          <label class="gen-sub">Zoom</label>
+          <input id="oscZoom" type="range" class="gen-range" min="0.5" max="4" step="0.1" value="1" style="width:180px">
+          <label class="gen-sub">Gamma</label>
+          <input id="oscGamma" type="range" class="gen-range" min="0.6" max="2" step="0.05" value="1" style="width:180px">
+          <label class="gen-sub">Line</label>
+          <input id="oscLine" type="range" class="gen-range" min="1" max="4" step="0.5" value="2" style="width:140px">
         </div>
       </div>
     </div>
   </section>
+</main>
+
+<!-- Modal (hamburger texts) -->
+<div class="backdrop" id="backdrop"></div>
+<div class="modal" id="modal">
+  <div class="mhead">
+    <div id="modalTitle" style="font-weight:800;color:#cfe9ff">Info</div>
+    <button id="modalClose" class="btn small">Close</button>
+  </div>
+  <div id="modalBody"></div>
 </div>
 
-<!-- Modal (for hamburger) -->
-<div class="modal" id="menuModal" role="dialog" aria-modal="true">
-  <div class="box">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <div style="font-weight:800">Menu</div>
-      <button class="btn" id="modalClose">Close</button>
+<!-- Playlist Panel -->
+<div id="plPanel" role="dialog" aria-modal="true" aria-labelledby="plTitle">
+  <div id="plHead">
+    <div id="plTitle" style="color:#cfe9ff;font-weight:800">Playlists</div>
+    <div>
+      <button id="plNewBtn" class="btn small">+ New</button>
+      <button id="plImportBtn" class="btn small">Import</button>
+      <button id="plExportBtn" class="btn small">Export</button>
+      <button id="plCloseBtn" class="btn small">Close</button>
     </div>
-    <div style="max-height:60vh;overflow:auto">
-      <p><strong>FAQ / Manual / Contact / About</strong> are shown here as scrollable content (placeholder).</p>
-    </div>
+  </div>
+  <div id="plBody"></div>
+  <div id="plFoot">
+    <button id="plSaveBtn" class="btn">Save</button>
   </div>
 </div>
 
 <script>
+/* ===== Supabase Config ===== */
+const SUPABASE_URL = "https://xdjgumqdwedgzwqturcx.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
+const BUCKET = "media";
+const SB = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const MEDIA_BASE = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}`;
 
-/** i18n (Style B: healing/5D tone) **/
-const GEN_I18N = {
-  en:{
-    "gen.play":"Play",
-    "gen.stop":"Stop",
-    "gen.preset_save":"Save Preset",
-    "gen.preset_load":"Load Preset…",
-    "gen.waveform":"Waveform Vibration",
-    "gen.binaural":"Binaural (Left–Right Sync)",
-    "gen.diff_hz":"Difference (Hz)",
-    "gen.frequency":"Frequency (Hz)",
-    "gen.duty":"Wave Ratio",
-    "gen.harmonics":"Harmonics Activation",
-    "gen.enable":"Enable",
-    "gen.base":"Base",
-    "gen.base_fund":"Fundamental",
-    "gen.base_mid":"Mid (x2)",
-    "gen.base_high":"High (x4)",
-    "gen.octaves":"# of Octaves",
-    "gen.scope":"Wave Viewer",
-    "gen.zoom":"Zoom",
-    "gen.gamma":"Gamma",
-    "gen.line":"Line",
-    "gen.preset_name_prompt":"Preset name"
+/* ===== i18n ===== */
+let LANG = (document.documentElement.lang==='en'?'en':'ko');
+const I18N = {
+  'ko': {
+    'tab.library':'라이브러리','tab.generator':'주파수 생성기',
+    'menu.shop':'Shop','menu.faq':'FAQ','menu.manual':'매뉴얼','menu.contact':'연락처','menu.about':'소개',
+    'player.play':'재생','player.pause':'일시정지','player.loop':'루프','player.timer':'타이머','player.playlists':'플레이리스트',
+    'gen.waveform':'파형','gen.frequency':'주파수 (Hz)',
+    'pl.no':'플레이리스트가 없습니다. 생성해 주세요.','pl.new':'새 목록','pl.delete':'삭제','pl.save':'저장','pl.import':'가져오기','pl.export':'내보내기','pl.close':'닫기'
   },
-  ko:{
-    "gen.play":"재생",
-    "gen.stop":"정지",
-    "gen.preset_save":"프리셋 저장",
-    "gen.preset_load":"프리셋 로드…",
-    "gen.waveform":"파형 진동",
-    "gen.binaural":"좌·우뇌 동기화",
-    "gen.diff_hz":"차이(Hz)",
-    "gen.frequency":"주파수(Hz)",
-    "gen.duty":"파형 비율",
-    "gen.harmonics":"하모닉스 활성화",
-    "gen.enable":"사용",
-    "gen.base":"베이스",
-    "gen.base_fund":"기본",
-    "gen.base_mid":"미드(x2)",
-    "gen.base_high":"하이(x4)",
-    "gen.octaves":"옥타브 수",
-    "gen.scope":"파동 뷰어",
-    "gen.zoom":"줌",
-    "gen.gamma":"감마",
-    "gen.line":"선 두께",
-    "gen.preset_name_prompt":"프리셋 이름"
+  'en': {
+    'tab.library':'Library','tab.generator':'Generator',
+    'menu.shop':'Shop','menu.faq':'FAQ','menu.manual':'Manual','menu.contact':'Contact','menu.about':'About',
+    'player.play':'Play','player.pause':'Pause','player.loop':'Loop','player.timer':'Timer','player.playlists':'Playlists',
+    'gen.waveform':'Waveform','gen.frequency':'Frequency (Hz)',
+    'pl.no':'No playlists. Create one.','pl.new':'New List','pl.delete':'Delete','pl.save':'Save','pl.import':'Import','pl.export':'Export','pl.close':'Close'
   }
 };
-let LANG = (document.documentElement.lang==='ko')?'ko':'en';
-function t(key){ return (GEN_I18N[LANG]&&GEN_I18N[LANG][key])||key; }
-function applyGenI18n(){
+function applyLang(){
   document.querySelectorAll('[data-i18n]').forEach(el=>{
-    const k=el.getAttribute('data-i18n'); const txt=t(k);
-    if(el.firstElementChild && el.firstElementChild.tagName==='SPAN'){ el.firstElementChild.textContent=txt; }
-    else el.textContent = txt;
+    const key = el.getAttribute('data-i18n');
+    el.textContent = (I18N[LANG] && I18N[LANG][key]) ? I18N[LANG][key] : el.textContent;
   });
-  document.querySelectorAll('[data-i18n-select]').forEach(sel=>{
-    const k=sel.getAttribute('data-i18n-select'); const ph=t(k);
-    const first=sel.querySelector('option[value=""]'); if(first) first.textContent = ph;
+  // Playlist header buttons
+  document.getElementById('plTitle').textContent = (LANG==='en'?'Playlists':'플레이리스트');
+  document.getElementById('plNewBtn').textContent = (LANG==='en'?'+ New':'+ 새 목록');
+  document.getElementById('plImportBtn').textContent = (LANG==='en'?'Import':'가져오기');
+  document.getElementById('plExportBtn').textContent = (LANG==='en'?'Export':'내보내기');
+  document.getElementById('plCloseBtn').textContent = (LANG==='en'?'Close':'닫기');
+  document.getElementById('plSaveBtn').textContent = (LANG==='en'?'Save':'저장');
+}
+
+/* ===== Shorthands & State ===== */
+const $ = (s,r=document)=>r.querySelector(s);
+const strip = $('#strip');
+const player = $('#player');
+const statusThumb = $('#statusThumb');
+const statusTitle = $('#metaTitle');
+const STATE = { path:'', stack:[], currentTrack:null, foldersCache:[], tracksCache:{} };
+
+/* ===== Helpers ===== */
+function imgOk(url){
+  return new Promise(res=>{
+    const i=new Image();
+    i.onload=()=>res(true); i.onerror=()=>res(false);
+    i.src=url+(url.includes('?')?'&':'?')+'v='+Date.now();
   });
 }
-document.getElementById('langBtn').addEventListener('click',()=>{
-  LANG = (LANG==='en')?'ko':'en';
-  document.documentElement.lang = (LANG==='ko')?'ko':'en';
-  applyGenI18n();
-});
-applyGenI18n();
+function stem(n){ return n.replace(/\.[^.]+$/, ''); }
 
-/** Modal (placeholder) **/
-const modal = document.getElementById('menuModal');
-document.getElementById('menuBtn').addEventListener('click',()=>{ modal.classList.add('show'); });
-document.getElementById('modalClose').addEventListener('click',()=>{ modal.classList.remove('show'); });
-
-/** WebAudio Graph **/
-let aCtx=null, master=null, analyser=null;
-let oscL=null, oscR=null, gainL=null, gainR=null, merger=null;
-let rafId=0;
-
-function ensureCtx(){
-  if(!aCtx){
-    aCtx = new (window.AudioContext||window.webkitAudioContext)();
+async function folderThumb(folder){
+  const base = `${MEDIA_BASE}/${encodeURIComponent(folder)}/`;
+  const names = (LANG==='en') ? ['folder_e.jpg','folder_E.jpg','folder_e.JPG'] : ['folder.jpg','folder.JPG'];
+  for(const n of names){
+    const u = base + n;
+    if(await imgOk(u)) return u;
   }
-  if(!master){ master = aCtx.createGain(); master.connect(aCtx.destination); }
-  if(!analyser){
-    analyser = aCtx.createAnalyser();
-    analyser.fftSize = 2048;
-    analyser.smoothingTimeConstant = 0.06;
-    analyser.connect(master); // put analyser just before destination
+  return null;
+}
+async function trackThumb(folder, file){
+  const base = `${MEDIA_BASE}/${encodeURIComponent(folder)}/`;
+  const s = stem(file);
+  const cand = (LANG==='en') ? [`${s}_E.jpg`,`${s}_E.JPG`,`${s}_E.jpeg`] : [`${s}.jpg`,`${s}.JPG`,`${s}.jpeg`];
+  for(const n of cand){
+    const u = base + n;
+    if(await imgOk(u)) return u;
+  }
+  return null;
+}
+
+async function listRoot(){
+  let out=[], page=0, more=true;
+  while(more){
+    const { data, error } = await SB.storage.from(BUCKET).list('', { limit:100, offset:page*100 });
+    if(error){ console.warn(error); break; }
+    const pageFolders = (data||[]).filter(it => !/\./.test(it.name)).map(it=>it.name);
+    out.push(...pageFolders);
+    more = (data||[]).length===100;
+    page++;
+  }
+  return out.sort((a,b)=>a.localeCompare(b,'en',{numeric:true,sensitivity:'base'}));
+}
+async function listTracks(folder){
+  if(STATE.tracksCache[folder]) return STATE.tracksCache[folder];
+  let list=[], page=0, more=true;
+  while(more){
+    const { data, error } = await SB.storage.from(BUCKET).list(folder, { limit:100, offset:page*100 });
+    if(error){ console.warn(error); break; }
+    for(const it of (data||[])){
+      if(/\.(mp3|m4a|aac|wav|flac|ogg)$/i.test(it.name)) list.push(it.name);
+    }
+    more = (data||[]).length===100; page++;
+  }
+  list = list.sort((a,b)=>a.localeCompare(b,'en',{numeric:true,sensitivity:'base'}));
+  STATE.tracksCache[folder] = list;
+  return list;
+}
+
+function statusBlank(){
+  statusThumb.classList.add('status-blank');
+  statusThumb.style.backgroundImage='none';
+  statusTitle.classList.remove('playing');
+  statusTitle.textContent='';
+  $('#metaDesc').textContent='';
+  $('#metaComposer').textContent='';
+}
+
+/* ===== Favorites ===== */
+const FAV_KEY='fiveDO_favs';
+function loadFavs(){ try{ return new Set(JSON.parse(localStorage.getItem(FAV_KEY)||'[]')); }catch{ return new Set(); } }
+function saveFavs(set){ localStorage.setItem(FAV_KEY, JSON.stringify([...set])); }
+const FAVS = loadFavs();
+function starSvg(){ return '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7"><path d="M12 3l3 6 6 .9-4.5 4.4 1 6.2-5.5-3-5.5 3 1-6.2L3 9.9 9 9z"/></svg>'; }
+function trackId(folder, file){ return (folder? `${folder}/${file}` : file); }
+
+async function renderFavoritesStrip(){
+  const wrap = $('#favoritesWrap'), fstrip = $('#favoritesStrip');
+  const list = [...FAVS];
+  if(list.length===0){ wrap.style.display='none'; fstrip.innerHTML=''; return; }
+  wrap.style.display=''; fstrip.innerHTML='';
+  for(const id of list){
+    const seg = id.split('/');
+    const folder = seg.length>1 ? seg.slice(0,-1).join('/') : '';
+    const file   = seg[seg.length-1];
+    const card = document.createElement('div'); card.className='card fav';
+    const th   = document.createElement('div'); th.className='thumb'; card.append(th);
+    const star = document.createElement('div'); star.className='star'; star.innerHTML=starSvg(); card.append(star);
+    const u = await (folder ? trackThumb(folder, file) : null);
+    if(u) th.style.backgroundImage=`url("${u}")`;
+    card.addEventListener('click', (e)=>{
+      if(e.target.closest('.star')) return;
+      const url = `${MEDIA_BASE}/${encodeURIComponent(folder)}/${encodeURIComponent(file)}`;
+      player.src = url; player.load?.(); player.play().catch(()=>{});
+      (async()=>{
+        const u2 = await trackThumb(folder, file);
+        if(u2){ statusThumb.classList.remove('status-blank'); statusThumb.style.backgroundImage=`url("${u2}")`; }
+        statusTitle.textContent = stem(file).replace(/[_\-]+/g,' ');
+        statusTitle.classList.add('playing');
+      })();
+    });
+    star.addEventListener('click',(e)=>{
+      e.stopPropagation();
+      const isFav = FAVS.has(id);
+      if(isFav){ FAVS.delete(id); card.classList.remove('fav'); }
+      else { FAVS.add(id); card.classList.add('fav'); }
+      saveFavs(FAVS);
+      renderFavoritesStrip();
+    });
+    fstrip.appendChild(card);
   }
 }
 
-function connectBinauralGraph(){
-  // Inputs
-  const bin = document.getElementById('binEnable').checked;
-  const diff = parseFloat(document.getElementById('binDiff').value)||0;
-  const f = Math.max(0, parseFloat(document.getElementById('freq').value)||0);
-  const wf = document.getElementById('wf').value;
-  const duty = Math.min(100, Math.max(1, parseInt(document.getElementById('duty').value||'50',10))) / 100;
-
-  // tear down
-  [oscL,oscR,gainL,gainR,merger].forEach(n=>{ try{n&&n.disconnect();}catch(_){} });
-  oscL=oscR=gainL=gainR=merger=null;
-
-  oscL = aCtx.createOscillator();
-  oscR = aCtx.createOscillator();
-  oscL.type = wf; oscR.type = wf;
-  oscL.frequency.value = f;
-  oscR.frequency.value = bin ? Math.max(0, f + diff) : f;
-
-  // duty for square only
-  if(wf==='square'){
-    try{
-      const real = new Float32Array(2); const imag = new Float32Array(2);
-      // simple PWM-esque approximation (duty): affects first harmonic
-      const a0 = 0;
-      const a1 = 4/Math.PI * Math.sin(Math.PI*duty);
-      real[0]=a0; real[1]=a1; imag[0]=imag[1]=0;
-      const wave = aCtx.createPeriodicWave(real, imag, {disableNormalization:true});
-      oscL.setPeriodicWave(wave);
-      oscR.setPeriodicWave(wave);
-    }catch(_){}
-  }
-
-  gainL = aCtx.createGain(); gainR = aCtx.createGain();
-  gainL.gain.value = 0.5; gainR.gain.value = 0.5;
-
-  merger = aCtx.createChannelMerger(2);
-  // L path
-  oscL.connect(gainL); gainL.connect(merger,0,0);
-  // R path
-  oscR.connect(gainR); gainR.connect(merger,0,1);
-  // To analyser → master
-  merger.connect(analyser);
-}
-
-function playGen(){
-  ensureCtx();
-  if(aCtx.state==='suspended'){ aCtx.resume(); }
-  connectBinauralGraph();
-
-  try{ oscL.start(); oscR.start(); }catch(_){/* already started */}
-
-  // Harmonics (octaves)
-  const harmOscs=[]; const harmGain=[];
-  if(document.getElementById('harmEnable').checked){
-    const baseSel = document.getElementById('harmBase').value; // fund/mid/high
-    const oct = parseInt(document.getElementById('harmOct').value||'0',10);
-    const f0 = Math.max(0, parseFloat(document.getElementById('freq').value)||0);
-    const scale = baseSel==='high'?4:(baseSel==='mid'?2:1);
-    for(let i=1;i<=oct;i++){
-      const o=aCtx.createOscillator(); o.type=document.getElementById('wf').value;
-      o.frequency.value = f0*scale*(2**i);
-      const g=aCtx.createGain(); g.gain.value = Math.max(0.05, 0.35/(i+0.5));
-      o.connect(g); g.connect(analyser); o.start();
-      harmOscs.push(o); harmGain.push(g);
+/* ===== Render strip ===== */
+async function renderStrip(){
+  strip.innerHTML='';
+  if(!STATE.path){
+    await renderFavoritesStrip();
+    if(!STATE.foldersCache.length) STATE.foldersCache = await listRoot();
+    const folders = STATE.foldersCache;
+    for(const name of folders){
+      const card = document.createElement('div'); card.className='card folder';
+      const th   = document.createElement('div'); th.className='thumb'; card.append(th);
+      const u = await folderThumb(name);
+      if(u) th.style.backgroundImage=`url("${u}")`;
+      const star = document.createElement('div'); star.className='star'; star.innerHTML=starSvg(); card.append(star);
+      card.addEventListener('click',(e)=>{
+        if(e.target.closest('.star')) return;
+        STATE.stack.push(''); STATE.path=name; statusBlank(); renderStrip();
+      });
+      strip.appendChild(card);
+    }
+  }else{
+    const files = await listTracks(STATE.path);
+    for(const f of files){
+      const card = document.createElement('div'); card.className='card';
+      card.setAttribute('data-file', f);
+      const th   = document.createElement('div'); th.className='thumb'; card.append(th);
+      const u = await trackThumb(STATE.path, f);
+      if(u) th.style.backgroundImage=`url("${u}")`;
+      const star = document.createElement('div'); star.className='star'; star.innerHTML=starSvg(); card.append(star);
+      card.addEventListener('click', async (e)=>{
+        if(e.target.closest('.star')) return;
+        const url = `${MEDIA_BASE}/${encodeURIComponent(STATE.path)}/${encodeURIComponent(f)}`;
+        player.src = url; player.load?.(); player.play().catch(()=>{});
+        const u2 = await trackThumb(STATE.path, f);
+        if(u2){ statusThumb.classList.remove('status-blank'); statusThumb.style.backgroundImage=`url("${u2}")`; }
+        statusTitle.textContent = stem(f).replace(/[_\-]+/g,' ');
+        statusTitle.classList.add('playing');
+        STATE.currentTrack = { name: stem(f), url };
+      });
+      star.addEventListener('click',(e)=>{
+        e.stopPropagation();
+        const id = trackId(STATE.path, f);
+        const isFav = FAVS.has(id);
+        if(isFav){ FAVS.delete(id); card.classList.remove('fav'); }
+        else { FAVS.add(id); card.classList.add('fav'); }
+        saveFavs(FAVS);
+        renderFavoritesStrip();
+      });
+      if(FAVS.has(trackId(STATE.path,f))) card.classList.add('fav');
+      strip.appendChild(card);
     }
   }
-
-  // Start drawing
-  const colSel = document.getElementById('oscColor');
-  const color = colSel ? colSel.value : getComputedStyle(document.documentElement).getPropertyValue('--accent')||'#a05cff';
-  drawOsc(color);
-
-  // Live change handlers
-  document.getElementById('freq').addEventListener('input', ()=>{ try{ oscL.frequency.value = parseFloat(freq.value)||0; oscR.frequency.value = (binEnable.checked?(parseFloat(freq.value)||0)+ (parseFloat(binDiff.value)||0) : parseFloat(freq.value)||0); }catch{} });
-  document.getElementById('freqRange').addEventListener('input', (e)=>{ freq.value = e.target.value; freq.dispatchEvent(new Event('input')); });
-  document.getElementById('binEnable').addEventListener('change', ()=>playGen()); // rebuild graph
-  document.getElementById('binDiff').addEventListener('change', ()=>playGen());
-  document.getElementById('wf').addEventListener('change', ()=>playGen());
-  document.getElementById('duty').addEventListener('input', ()=>playGen());
-  document.getElementById('dutyNum').addEventListener('input', (e)=>{ duty.value=e.target.value; duty.dispatchEvent(new Event('input')); });
-  document.getElementById('harmEnable').addEventListener('change', ()=>playGen());
-  document.getElementById('harmBase').addEventListener('change', ()=>playGen());
-  document.getElementById('harmOct').addEventListener('change', ()=>playGen());
-
-  // teardown hook
-  playGen._teardown = ()=>{
-    try{ oscL.stop(); oscR.stop(); }catch(_){}
-    [...harmOscs].forEach(o=>{ try{o.stop();}catch(_){}});
-    [oscL,oscR,gainL,gainR,merger].forEach(n=>{ try{n&&n.disconnect();}catch(_){}});
-    harmOscs.forEach(n=>{ try{n&&n.disconnect();}catch(_){}});
-    harmGain.forEach(n=>{ try{n&&n.disconnect();}catch(_){}});
-  };
 }
 
+/* ===== Search / Filter ===== */
+document.getElementById('searchBtn').addEventListener('click', async ()=>{
+  const q = ($('#searchInput').value||'').trim().toLowerCase();
+  const mode = $('#searchMode').value; // folder | track
+  if(!q){ renderStrip(); return; }
+  strip.innerHTML='';
+  if(mode==='folder'){
+    if(!STATE.foldersCache.length) STATE.foldersCache = await listRoot();
+    const list = STATE.foldersCache.filter(n=>n.toLowerCase().includes(q));
+    for(const name of list){
+      const card = document.createElement('div'); card.className='card folder';
+      const th   = document.createElement('div'); th.className='thumb'; card.append(th);
+      const u = await folderThumb(name);
+      if(u) th.style.backgroundImage=`url("${u}")`;
+      card.addEventListener('click',()=>{ STATE.stack.push(''); STATE.path=name; statusBlank(); renderStrip(); });
+      strip.appendChild(card);
+    }
+  }else{
+    // track search across folders
+    if(!STATE.foldersCache.length) STATE.foldersCache = await listRoot();
+    for(const folder of STATE.foldersCache){
+      const tracks = await listTracks(folder);
+      for(const f of tracks){
+        if(stem(f).toLowerCase().includes(q)){
+          const card = document.createElement('div'); card.className='card';
+          const th   = document.createElement('div'); th.className='thumb'; card.append(th);
+          const u = await trackThumb(folder, f); if(u) th.style.backgroundImage=`url("${u}")`;
+          card.addEventListener('click', async ()=>{
+            STATE.path = folder;
+            const url = `${MEDIA_BASE}/${encodeURIComponent(folder)}/${encodeURIComponent(f)}`;
+            player.src = url; player.load?.(); player.play().catch(()=>{});
+            const u2 = await trackThumb(folder, f);
+            if(u2){ statusThumb.classList.remove('status-blank'); statusThumb.style.backgroundImage=`url("${u2}")`; }
+            statusTitle.textContent = stem(f).replace(/[_\-]+/g,' ');
+            statusTitle.classList.add('playing');
+            STATE.currentTrack = { name: stem(f), url };
+          });
+          strip.appendChild(card);
+        }
+      }
+    }
+  }
+});
+document.getElementById('searchClear').addEventListener('click', ()=>{
+  $('#searchInput').value=''; renderStrip();
+});
+
+/* ===== Tabs / Language / Menu ===== */
+function showPage(which){
+  if(which==='lib'){ $('#pageLibrary').classList.remove('hidden'); $('#pageGenerator').classList.add('hidden');
+    $('#tabLibrary').classList.add('active'); $('#tabGenerator').classList.remove('active');
+  }else{
+    $('#pageLibrary').classList.add('hidden'); $('#pageGenerator').classList.remove('hidden');
+    $('#tabLibrary').classList.remove('active'); $('#tabGenerator').classList.add('active');
+  }
+}
+$('#tabLibrary').addEventListener('click',()=>showPage('lib'));
+$('#tabGenerator').addEventListener('click',()=>showPage('gen'));
+
+$('#langBtn').addEventListener('click',()=>{ LANG = (LANG==='en'?'ko':'en'); applyLang(); renderStrip(); if(!STATE.currentTrack) statusBlank(); });
+
+const menuBtn = $('#menuBtn'), menuDrop = $('#menuDrop'), backdrop=$('#backdrop'), modal=$('#modal');
+menuBtn.addEventListener('click',()=>{
+  const v = menuDrop.style.display==='block' ? 'none' : 'block';
+  menuDrop.style.display=v;
+});
+backdrop.addEventListener('click',()=>{ backdrop.style.display='none'; modal.style.display='none'; });
+$('#modalClose').addEventListener('click',()=>{ backdrop.style.display='none'; modal.style.display='none'; });
+document.querySelectorAll('.menu-text').forEach(a=>{
+  a.addEventListener('click', async (e)=>{
+    e.preventDefault();
+    menuDrop.style.display='none';
+    const key = a.dataset.txt; // faq, manual, contact, about
+    const path = `texts/${key}.txt`;
+    try{
+      const res = await fetch(path+'?v='+Date.now());
+      const txt = await res.text();
+      $('#modalTitle').textContent = (a.textContent||'Info');
+      $('#modalBody').textContent = txt;
+      backdrop.style.display='block'; modal.style.display='block';
+    }catch(err){
+      $('#modalTitle').textContent = 'Error';
+      $('#modalBody').textContent = 'Failed to load.';
+      backdrop.style.display='block'; modal.style.display='block';
+    }
+  });
+});
+
+/* ===== Player controls & nav ===== */
+$('#btnPlay').addEventListener('click',()=>{ player.play(); statusTitle.classList.add('playing'); });
+$('#btnPause').addEventListener('click',()=>{ player.pause(); statusTitle.classList.remove('playing'); });
+$('#btnLoop').addEventListener('click',()=>{ player.loop = !player.loop; alert(player.loop ? (LANG==='en'?'Loop On':'루프 켜짐') : (LANG==='en'?'Loop Off':'루프 꺼짐')); });
+$('#btnTimer').addEventListener('click',()=>{
+  const m = prompt(LANG==='en'?'Sleep timer (minutes)':'수면 타이머 (분)'); 
+  const t = Number(m||0); if(!t) return;
+  setTimeout(()=>{ player.pause(); statusTitle.classList.remove('playing'); }, t*60000);
+});
+
+$('#btnBack').addEventListener('click',()=>{ STATE.path=''; STATE.stack.pop(); renderStrip(); });
+$('#btnHome').addEventListener('click',()=>{ STATE.path=''; STATE.stack.length=0; renderStrip(); });
+$('#btnRefresh').addEventListener('click',()=>renderStrip());
+
+/* ===== Playlist ===== */
+const USER_ID_KEY='fiveDO_user_id';
+function uid(){ return 'u'+Math.random().toString(36).slice(2)+Date.now().toString(36); }
+function getUserId(){ let x=localStorage.getItem(USER_ID_KEY); if(!x){ x=uid(); localStorage.setItem(USER_ID_KEY,x); } return x; }
+const USER_ID = getUserId();
+const PL_KEY='fiveDO_playlists';
+const PL_CLOUD_PATH = `playlists/${USER_ID}.json`;
+function nowISO(){ return new Date().toISOString(); }
+function newPLState(){ return {version:1,updatedAt:nowISO(),lists:[]}; }
+function loadPLLocal(){ try{ return JSON.parse(localStorage.getItem(PL_KEY)||''); }catch{ return null; } }
+function savePLLocal(obj){ try{ obj.updatedAt=nowISO(); localStorage.setItem(PL_KEY, JSON.stringify(obj)); }catch{} }
+async function loadPLCloud(){
+  const url = `${MEDIA_BASE}/${PL_CLOUD_PATH}`;
+  try{ const res = await fetch(url+'?t='+Date.now(), {cache:'no-store'}); if(!res.ok) return null; return await res.json(); }
+  catch{ return null; }
+}
+async function savePLCloud(obj){
+  try{
+    const { error } = await SB.storage.from(BUCKET)
+      .upload(PL_CLOUD_PATH, new Blob([JSON.stringify(obj)], {type:'application/json'}), { upsert:true });
+    if(error) throw error;
+    return true;
+  }catch(e){ console.warn('[playlist] cloud save failed', e); return false; }
+}
+async function syncPlaylists(){
+  let local = loadPLLocal();
+  let cloud = await loadPLCloud();
+  if(!local && !cloud){
+    local = newPLState(); savePLLocal(local); await savePLCloud(local); return local;
+  }
+  if(local && !cloud){ await savePLCloud(local); return local; }
+  if(!local && cloud){ savePLLocal(cloud); return cloud; }
+  const L = new Date(local.updatedAt||0).getTime();
+  const C = new Date(cloud.updatedAt||0).getTime();
+  const base = (C>L)? cloud : local;
+  savePLLocal(base); if(C<L) await savePLCloud(base);
+  return base;
+}
+let PL_STATE=null;
+const plPanel = document.getElementById('plPanel'), plBody=document.getElementById('plBody');
+function openPlPanel(){ plPanel.style.display='block'; renderPL(); }
+function closePlPanel(){ plPanel.style.display='none'; }
+function renderPL(){
+  plBody.innerHTML='';
+  const lists = (PL_STATE?.lists)||[];
+  if(lists.length===0){ const row=document.createElement('div'); row.className='pl-row'; row.textContent=(LANG==='en'?'No playlists. Create one.':'플레이리스트가 없습니다. 생성해 주세요.'); plBody.appendChild(row); return; }
+  lists.forEach((pl,i)=>{
+    const row=document.createElement('div'); row.className='pl-row';
+    const name=document.createElement('input'); name.className='gen-input'; name.value=pl.name||('List '+(i+1));
+    const cnt=document.createElement('div'); cnt.style.opacity=.7; cnt.textContent=`${pl.items?.length||0} ${LANG==='en'?'tracks':'곡'}`;
+    const left=document.createElement('div'); left.style.display='flex'; left.style.gap='10px'; left.append(name,cnt);
+    const del=document.createElement('button'); del.className='btn small'; del.textContent=(LANG==='en'?'Delete':'삭제');
+    del.addEventListener('click',()=>{ PL_STATE.lists.splice(i,1); renderPL(); });
+    row.append(left,del);
+    name.addEventListener('input',()=>{ pl.name=name.value; });
+    plBody.appendChild(row);
+  });
+}
+document.getElementById('plNewBtn').addEventListener('click',()=>{ PL_STATE.lists.push({id:'pl_'+Date.now(),name:(LANG==='en'?'New List':'새 목록'),items:[]}); renderPL(); });
+document.getElementById('plExportBtn').addEventListener('click',()=>{
+  const blob=new Blob([JSON.stringify(PL_STATE,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='playlists.json'; a.click();
+});
+document.getElementById('plImportBtn').addEventListener('click',()=>{
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='application/json';
+  inp.onchange=async()=>{ const f=inp.files[0]; if(!f) return; try{ const text=await f.text(); const json=JSON.parse(text); if(json?.lists){ PL_STATE=json; renderPL(); } }catch(e){ console.warn('import failed', e); } };
+  inp.click();
+});
+document.getElementById('plSaveBtn').addEventListener('click', async ()=>{ savePLLocal(PL_STATE); await savePLCloud(PL_STATE); closePlPanel(); });
+document.getElementById('plCloseBtn').addEventListener('click', closePlPanel); // ← 닫기 버튼 동작 연결
+window.openPlPanel = openPlPanel;
+
+/* ===== Generator (WebAudio) ===== */
+let aCtx=null, analyser=null;
+let oscNodes=[]; // L/R + harmonics
+const cvs = document.getElementById('osc'), ctx2d = cvs.getContext('2d');
+let rafId = 0;
+
+function drawOsc(){
+  const W=cvs.width= cvs.clientWidth; const H=cvs.height = cvs.clientHeight;
+  ctx2d.clearRect(0,0,W,H);
+  if(!analyser){ cancelAnimationFrame(rafId); return; }
+  // scope params
+  const color = document.getElementById('oscColor').value;
+  const zoom  = parseFloat(document.getElementById('oscZoom').value)||1;
+  const gamma = parseFloat(document.getElementById('oscGamma').value)||1;
+  const line  = parseFloat(document.getElementById('oscLine').value)||2;
+
+  const buf = new Uint8Array(1024); analyser.getByteTimeDomainData(buf);
+  ctx2d.lineWidth=line; ctx2d.strokeStyle=color; ctx2d.beginPath();
+  const step = Math.max(1, Math.floor(buf.length/(W/zoom))); let x=0;
+  for(let i=0;i<buf.length;i+=step){
+    const t = Math.pow(buf[i]/255, gamma);
+    const y = t*H;
+    if(i===0) ctx2d.moveTo(x,y); else ctx2d.lineTo(x,y);
+    x += zoom; if(x>W) break;
+  }
+  ctx2d.stroke();
+  rafId = requestAnimationFrame(drawOsc);
+}
+function clearOsc(){ cancelAnimationFrame(rafId); ctx2d.clearRect(0,0,cvs.width,cvs.height); }
+
 function stopGen(){
-  if(typeof playGen._teardown==='function'){ playGen._teardown(); }
-  cancelAnimationFrame(rafId);
+  try{ oscNodes.forEach(n=>{ try{n.stop()}catch{} try{n.node?.stop?.()}catch{} }); }catch{}
+  try{ oscNodes.forEach(n=> n.disconnect && n.disconnect()); }catch{}
+  oscNodes=[];
+  if(analyser){ try{ analyser.disconnect(); }catch{} analyser=null; }
   clearOsc();
+}
+function playGen(){
+  if(!aCtx) aCtx = new (window.AudioContext||window.webkitAudioContext)();
+  stopGen();
+
+  const wf   = document.getElementById('wf').value;
+  const f0   = parseFloat(document.getElementById('freq').value)||0;
+  const bina = document.getElementById('binEnable').checked;
+  const diff = parseFloat(document.getElementById('binDiff').value)||0;
+  const duty = Math.max(1, Math.min(100, parseInt(document.getElementById('duty').value||'50',10)));
+  const hEn  = document.getElementById('harmEnable').checked;
+  const hBase= document.getElementById('harmBase').value; // fund/mid/high -> x1/x2/x4
+  const hOct = parseInt(document.getElementById('harmOct').value||'0',10);
+
+  const baseMul = (hBase==='mid'?2:(hBase==='high'?4:1));
+  const baseFreq = f0 * baseMul;
+
+  const merger = aCtx.createChannelMerger(2);
+  analyser = aCtx.createAnalyser(); analyser.fftSize=2048;
+
+  // helper to build osc with optional duty (square)
+  const mkOsc = (freq)=>{
+    const o = aCtx.createOscillator();
+    o.type = (wf==='square'?'square':(wf==='triangle'?'triangle':(wf==='sawtooth'?'sawtooth':'sine')));
+    o.frequency.value = Math.max(0,freq);
+    let node = o;
+    if(wf==='square'){
+      const shaper = aCtx.createWaveShaper();
+      const curve = new Float32Array(256);
+      const th = (duty/100)*2-1;
+      for(let i=0;i<256;i++){ const x=i/128-1; curve[i] = (x<th)? -1 : 1; }
+      shaper.curve = curve;
+      o.connect(shaper);
+      node = shaper;
+    }
+    const g = aCtx.createGain(); g.gain.value = 0.2;
+    node.connect(g);
+    return {osc:o, node:g};
+  };
+
+  // L/R + harmonics
+  const gens = [];
+  const leftBase  = baseFreq;
+  const rightBase = bina ? Math.max(0, baseFreq + diff) : baseFreq;
+
+  const buildChannel = (base, chIndex)=>{
+    // fundamental
+    gens.push(mkOsc(base));
+    // octaves (1..hOct)
+    if(hEn){
+      for(let k=1;k<=hOct;k++){
+        gens.push(mkOsc(base*Math.pow(2,k)));
+      }
+    }
+    // connect to merger
+    gens.slice(- (hEn? (1+hOct) : 1)).forEach(g=> g.node.connect(merger,0,chIndex));
+  };
+  buildChannel(leftBase, 0);
+  buildChannel(rightBase,1);
+
+  merger.connect(analyser).connect(aCtx.destination);
+
+  // start all
+  gens.forEach(g=>{ try{g.osc.start()}catch{} oscNodes.push(g.osc); });
+
+  drawOsc();
 }
 
 document.getElementById('genPlay').addEventListener('click', async ()=>{
-  try{
-    ensureCtx();
-    if(aCtx.state==='suspended') await aCtx.resume();
-    playGen();
-  }catch(e){ console.warn(e); }
+  try{ if(aCtx && aCtx.state==='suspended') await aCtx.resume(); }catch{}
+  playGen();
 });
-document.getElementById('genStop').addEventListener('click', ()=>{ stopGen(); });
+document.getElementById('genStop').addEventListener('click', stopGen);
 
-/** Oscilloscope **/
-const cvs=document.getElementById('osc');
-const ctx2d=cvs.getContext('2d');
-
-function getCtl(id, def){ const el=document.getElementById(id); if(!el) return def; const v=parseFloat(el.value); return isNaN(v)?def:v; }
-
-function drawOsc(color){
-  const dpr = Math.max(1, window.devicePixelRatio||1);
-  const W = cvs.clientWidth, H = cvs.clientHeight;
-  cvs.width = Math.max(1, Math.floor(W*dpr));
-  cvs.height = Math.max(1, Math.floor(H*dpr));
-  ctx2d.setTransform(dpr,0,0,dpr,0,0);
-  ctx2d.clearRect(0,0,W,H);
-
-  const zoom = getCtl('oscZoom',1);
-  const gamma = getCtl('oscGamma',1);
-  const line = getCtl('oscLine',2);
-  ctx2d.lineWidth = line;
-  ctx2d.strokeStyle = color || '#a05cff';
-
-  const buf = new Uint8Array(1024);
-  if(!analyser){
-    // idle baseline
-    ctx2d.beginPath(); ctx2d.moveTo(0,H*0.5); ctx2d.lineTo(W,H*0.5); ctx2d.stroke();
-    rafId = requestAnimationFrame(()=>drawOsc(color));
-    return;
-  }
-  try{ analyser.getByteTimeDomainData(buf); }catch{}
-
-  ctx2d.beginPath();
-  const step = Math.max(1, Math.floor((buf.length)/ (W/zoom)));
-  let x=0;
-  for(let i=0;i<buf.length;i+=step){
-    const t = buf[i]/255; // 0..1
-    const g = Math.pow(t, gamma);
-    const y = g*H;
-    if(i===0) ctx2d.moveTo(x,y); else ctx2d.lineTo(x,y);
-    x += zoom;
-    if(x>W) break;
-  }
-  ctx2d.stroke();
-  rafId = requestAnimationFrame(()=>drawOsc(color));
-}
-
-function clearOsc(){
-  const dpr = Math.max(1, window.devicePixelRatio||1);
-  const W = cvs.clientWidth, H = cvs.clientHeight;
-  cvs.width = Math.max(1, Math.floor(W*dpr));
-  cvs.height = Math.max(1, Math.floor(H*dpr));
-  ctx2d.setTransform(dpr,0,0,dpr,0,0);
-  ctx2d.clearRect(0,0,W,H);
-}
-
-/** Palette (icon + popover) **/
-(function(){
-  const btn = document.getElementById('oscColorBtn');
-  const pop = document.getElementById('oscPop');
-  const sw = document.getElementById('oscSwatches');
-  const colorSel = document.getElementById('oscColor');
-  const palette = ['#a05cff','#39e3ff','#00ffd5','#00ff7f','#ffd166','#ff5ea0','#ffffff','#d2d2d2','#8fbcff','#6a3eff','#b68cff','#d08bff'];
-  palette.forEach(c=>{
-    const b=document.createElement('button'); b.className='osc-swatch'; b.style.background=c;
-    b.addEventListener('click',()=>{
-      colorSel.value=c;
-      btn.style.background = `linear-gradient(135deg, ${c}, ${c})`;
-      drawOsc(c);
-      pop.classList.remove('show');
-    });
-    sw.appendChild(b);
+/* live param updates */
+['freq','freqRange','wf','binEnable','binDiff','duty','dutyNum','harmEnable','harmBase','harmOct']
+.forEach(id=>{
+  const el=document.getElementById(id);
+  if(!el) return;
+  const evt = (el.tagName==='SELECT' || el.type==='checkbox') ? 'change' : 'input';
+  el.addEventListener(evt, e=>{
+    if(id==='freq'){ $('#freqRange').value = e.target.value; }
+    if(id==='freqRange'){ $('#freq').value = e.target.value; }
+    if(id==='duty'){ $('#dutyNum').value = e.target.value; }
+    if(id==='dutyNum'){ $('#duty').value = e.target.value; }
+    if(aCtx && aCtx.state==='running') playGen();
   });
-  btn.style.background = `linear-gradient(135deg, ${colorSel.value}, ${colorSel.value})`;
-  btn.addEventListener('click',(e)=>{ e.stopPropagation(); pop.classList.toggle('show'); });
-  document.addEventListener('click',(e)=>{ if(!pop.contains(e.target) && e.target!==btn){ pop.classList.remove('show'); } });
-  colorSel.addEventListener('input',()=> drawOsc(colorSel.value));
-})();
+});
 
-/** Presets (localStorage) **/
-(function(){
-  const KEY='fiveDO_gen_presets_v1';
-  const sel = document.getElementById('presetLoad');
-  const saveBtn = document.getElementById('presetSave');
-  function load(){ try{ return JSON.parse(localStorage.getItem(KEY)||'[]'); }catch{ return []; } }
-  function save(arr){ localStorage.setItem(KEY, JSON.stringify(arr)); }
-  function rebuild(){
-    const arr = load();
-    sel.innerHTML = `<option value="">${t('gen.preset_load')}</option>`;
-    arr.forEach((p,i)=>{
-      const opt=document.createElement('option'); opt.value=String(i); opt.textContent=p.name||('Preset '+(i+1)); sel.appendChild(opt);
-    });
-  }
-  function snap(){
-    return {
-      name:'Preset '+new Date().toLocaleTimeString(),
-      wf: wf.value,
-      freq: parseFloat(freq.value)||432,
-      bin: binEnable.checked,
-      diff: parseFloat(binDiff.value)||4,
-      duty: parseInt(duty.value||'50',10)||50,
-      color: document.getElementById('oscColor').value,
-      zoom: parseFloat(oscZoom.value)||1,
-      gamma: parseFloat(oscGamma.value)||1,
-      line: parseFloat(oscLine.value)||2,
-      harm: harmEnable.checked,
-      hbase: harmBase.value,
-      hoct: parseInt(harmOct.value||'0',10)||0
-    };
-  }
-  function apply(p){
-    wf.value=p.wf; freq.value=p.freq; freqRange.value=p.freq;
-    binEnable.checked=!!p.bin; binDiff.value=p.diff;
-    duty.value=p.duty; dutyNum.value=p.duty;
-    document.getElementById('oscColor').value=p.color;
-    oscZoom.value=p.zoom; oscGamma.value=p.gamma; oscLine.value=p.line;
-    harmEnable.checked=!!p.harm; harmBase.value=p.hbase; harmOct.value=p.hoct;
-    drawOsc(p.color||document.getElementById('oscColor').value);
-  }
-  saveBtn.addEventListener('click', ()=>{
-    const nm = prompt(t('gen.preset_name_prompt'));
-    if(nm===null) return;
-    const arr = load();
-    const p = snap(); p.name = nm || ('Preset '+(arr.length+1));
-    arr.push(p); save(arr); rebuild();
-  });
-  sel.addEventListener('change', (e)=>{
-    const arr = load(); const idx = parseInt(e.target.value,10);
-    if(!isNaN(idx) && arr[idx]) apply(arr[idx]);
-  });
-  rebuild();
-})();
+/* scope live redraw when UI changes */
+['oscColor','oscZoom','oscGamma','oscLine'].forEach(id=>{
+  const el=document.getElementById(id);
+  el.addEventListener('input', ()=>{ /* next frame draws with new params */ });
+  el.addEventListener('change', ()=>{ /* ditto */ });
+});
 
-// Keep osc responsive on rotate/resize
-addEventListener('resize', ()=>drawOsc(document.getElementById('oscColor').value));
+/* ===== Boot ===== */
+document.addEventListener('DOMContentLoaded', async ()=>{
+  applyLang();
 
-// Tabs
-const pageLib = document.getElementById('pageLibrary');
-const pageGen = document.getElementById('pageGenerator');
-const tabLib = document.getElementById('tabLibrary');
-const tabGen = document.getElementById('tabGenerator');
-function showLib(){ pageLib.style.display=''; pageGen.style.display='none'; tabLib.setAttribute('aria-selected','true'); tabGen.setAttribute('aria-selected','false'); }
-function showGen(){ pageLib.style.display='none'; pageGen.style.display=''; tabLib.setAttribute('aria-selected','false'); tabGen.setAttribute('aria-selected','true'); }
-tabLib.addEventListener('click', showLib);
-tabGen.addEventListener('click', showGen);
-// Align default to Library page
-showLib();
+  // iOS unlock gesture
+  const unlock=()=>{ try{ player.play().then(()=>player.pause()).catch(()=>{}); }catch(_){} window.removeEventListener('touchend',unlock); window.removeEventListener('click',unlock); };
+  window.addEventListener('touchend',unlock,{once:true}); window.addEventListener('click',unlock,{once:true});
+
+  // Playlists
+  window.PL_STATE = await syncPlaylists();
+
+  // Initial library
+  STATE.path=''; STATE.stack=[];
+  await renderStrip();
+  statusBlank();
+
+  showPage('lib');
+});
 </script>
+
+<!-- Osc color popover wiring -->
+<script>
+(function(){
+  const $=s=>document.querySelector(s);
+  const btn = $('#oscColorBtn');
+  const pop = $('#oscPop');
+  const sw  = $('#oscSwatches');
+  const colorSel = $('#oscColor');
+  if(!btn || !pop || !sw) return;
+  const palette = ['#39e3ff','#00ffd5','#00ff7f','#9cff57','#ffd93b','#ff9f40','#ff5d8f','#c07dff','#6aa8ff','#ffffff','#d2d2d2','#0ff'];
+  if(!sw.dataset.ready){
+    sw.dataset.ready='1';
+    palette.forEach(c=>{
+      const b=document.createElement('button'); b.className='osc-swatch'; b.style.background=c;
+      b.addEventListener('click',()=>{ if(colorSel){ colorSel.value=c; colorSel.dispatchEvent(new Event('change')); } pop.classList.remove('show'); btn.style.background=c; });
+      sw.appendChild(b);
+    });
+    btn.style.background = colorSel?.value || '#39e3ff';
+  }
+  btn.addEventListener('click', (e)=>{ e.stopPropagation(); pop.classList.toggle('show'); });
+  document.addEventListener('click', (e)=>{ if(!pop.contains(e.target) && e.target!==btn){ pop.classList.remove('show'); } });
+})();
+</script>
+
 </body>
 </html>
