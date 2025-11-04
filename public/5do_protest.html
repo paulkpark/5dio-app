@@ -6,31 +6,29 @@
 <title>5DO Pro</title>
 <style>
 :root{
-  --bg:#0a0f14; --panel:#0e1520; --line:#122033; --muted:#7e9ab5; --txt:#e8f2ff;
-  --accent:#8fe8ff; --accent2:#39e3ff;
+  --bg:#0a0f14; --panel:#0e1520; --line:#13243a; --muted:#8aa6c3; --txt:#e8f2ff;
+  --blue:#9fe5ff; --blue2:#39e3ff;
 }
 *{box-sizing:border-box}
 html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Noto Sans KR,Apple SD Gothic Neo,Arial,sans-serif}
 
 /* Header */
-header{position:sticky;top:0;z-index:50;background:linear-gradient(180deg,#0a1018,#0a0f14 60%);
-  border-bottom:1px solid #0f1b2a;padding:8px 10px}
+header{position:sticky;top:0;z-index:50;background:linear-gradient(180deg,#0a1018,#0a0f14 60%);border-bottom:1px solid #0f1b2a;padding:8px 10px}
 .header-row{display:flex;align-items:center;gap:10px;justify-content:space-between;max-width:1120px;margin:0 auto;position:relative}
 .left{display:flex;align-items:center;gap:10px}
-.center-tabs{position:absolute;left:calc(50% + 30px); /* ← 탭을 오른쪽으로 10px 더 */
-  transform:translateX(-50%);display:flex;align-items:center;gap:8px}
+.center-tabs{position:absolute;left:calc(50% + 40px);transform:translateX(-50%);display:flex;gap:8px}
 .right{margin-left:auto;display:flex;align-items:center;gap:10px}
 .app-title{
-  font-weight:700;font-size:18px;letter-spacing:.3px;color:#9fe5ff;
+  font-weight:800;font-size:18px;letter-spacing:.3px;color:#9fe5ff;
   text-shadow:0 0 3px rgba(180,240,255,1),0 0 8px rgba(110,220,255,.95),0 0 18px rgba(50,180,255,.85),0 0 36px rgba(0,120,255,.7);
   white-space:nowrap;
 }
 @media (max-width:420px){ .center-tabs{ gap:6px } .app-title{ font-size:16px } }
 
 /* Buttons */
-button,.btn{background:#0f1a28;border:1px solid #13263c;color:var(--txt);padding:8px 10px;border-radius:8px;cursor:pointer}
-button:hover,.btn:hover{border-color:#1a3f64}
+button,.btn{background:#0f1a28;border:1px solid #172c46;color:var(--txt);padding:8px 10px;border-radius:8px;cursor:pointer}
+button:hover,.btn:hover{border-color:#1f4874}
 button.small{padding:6px 8px;border-radius:7px;font-size:12px}
 button.ghost{background:transparent;border-color:#17314f}
 button.accent{background:#0d1e2f;border-color:#1d415f;box-shadow:0 0 8px rgba(57,227,255,.15) inset}
@@ -105,17 +103,21 @@ main{max-width:1120px;margin:10px auto 40px;padding:0 10px}
 .gen-check{display:flex;gap:8px;align-items:center;color:#cfe6ff}
 .gen-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 
-/* Scope */
+/* Scope: single line, fills width */
 #osc{
   display:block;
   width:100%;
-  height:160px; /* 200->160 */
+  height:160px;
   border:1px solid rgba(255,255,255,.1);
   border-radius:8px;
   background:#02070d;
 }
 
-/* Visibility by mode */
+/* Modal */
+.modal-back{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;z-index:100}
+.modal{position:fixed;inset:auto 0 0 0;margin:auto;top:8%;max-width:720px;background:#0e1520;border:1px solid #18304c;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.4);display:none;z-index:101;padding:16px}
+.mhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+
 body.mode-library #oscWrap{display:none!important}
 </style>
 </head>
@@ -196,7 +198,6 @@ body.mode-library #oscWrap{display:none!important}
   <!-- Generator -->
   <section id="generator" class="section">
     <div class="panel gen-wrap">
-      <!-- Row 1: 파형 -->
       <div class="gen-row">
         <label class="gen-label" data-i18n="waveform">Waveform</label>
         <select id="waveSel" class="gen-input">
@@ -208,7 +209,6 @@ body.mode-library #oscWrap{display:none!important}
         </select>
       </div>
 
-      <!-- Row 2: 주파수 (파형 아래줄) -->
       <div class="gen-row">
         <label class="gen-label" data-i18n="frequency">Frequency (Hz)</label>
         <div class="gen-flex">
@@ -217,7 +217,6 @@ body.mode-library #oscWrap{display:none!important}
         </div>
       </div>
 
-      <!-- Row 3: Duty (숫자 + 슬라이더) -->
       <div class="gen-row">
         <label class="gen-label" data-i18n="duty">Duty</label>
         <div class="gen-flex">
@@ -226,7 +225,6 @@ body.mode-library #oscWrap{display:none!important}
         </div>
       </div>
 
-      <!-- Row 4: Binaural -->
       <div class="gen-row">
         <label class="gen-label">Binaural</label>
         <div class="gen-flex">
@@ -239,7 +237,6 @@ body.mode-library #oscWrap{display:none!important}
         </div>
       </div>
 
-      <!-- Row 5: 오실로스코프 -->
       <div class="gen-row" id="oscWrap">
         <div class="gen-flex" style="gap:12px;align-items:center">
           <label class="gen-label" data-i18n="osc">Oscilloscope</label>
@@ -252,7 +249,6 @@ body.mode-library #oscWrap{display:none!important}
         <canvas id="osc"></canvas>
       </div>
 
-      <!-- Row 6: 컨트롤 -->
       <div class="gen-row gen-controls">
         <button id="genPlay" class="btn accent" data-i18n="playpause">Play/Pause</button>
         <button id="genStop" class="btn" data-i18n="stop">Stop</button>
@@ -263,13 +259,12 @@ body.mode-library #oscWrap{display:none!important}
   </section>
 </main>
 
-<!-- Backdrop & Dropdown -->
 <div class="backdrop" id="backdrop"></div>
 
 <!-- Modal -->
-<div class="modal-back" id="modalBack" style="position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;z-index:100"></div>
-<div class="modal" id="modal" style="position:fixed;inset:auto 0 0 0;margin:auto;top:8%;max-width:720px;background:#0e1520;border:1px solid #18304c;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.4);display:none;z-index:101;padding:16px">
-  <div class="mhead" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+<div class="modal-back" id="modalBack"></div>
+<div class="modal" id="modal">
+  <div class="mhead">
     <div id="modalTitle">Info</div>
     <button id="modalClose" class="btn small">✕</button>
   </div>
@@ -307,15 +302,13 @@ window.addEventListener('DOMContentLoaded', () => {
     $$('[data-i18n="save"]').forEach(n=>n.textContent=t('save'));
     $$('[data-i18n="load"]').forEach(n=>n.textContent=t('load'));
     $('label[data-i18n="playlist"]')?.textContent=t('playlist');
-    $('#btnHome').title=t('home');
-    $('#btnBack').title=t('back');
-    $('#btnRefresh').title=t('refresh');
+    $('#btnHome').title=t('home'); $('#btnBack').title=t('back'); $('#btnRefresh').title=t('refresh');
     $('#langBtn').textContent=(LANG==='en'?'English':'한국어');
   }
 
   /* ===== Supabase ===== */
   const SUPABASE_URL = "https://xdjgumqdwedgzwqturcx.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU"; /* ← 여기에 실제 anon key */
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
   const BUCKET = "media";
   const SB = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const MEDIA_BASE = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}`;
@@ -416,7 +409,7 @@ window.addEventListener('DOMContentLoaded', () => {
         const u = await trackThumb(STATE.path, f); if(u) th.style.backgroundImage=`url("${u}")`;
         card.addEventListener('click',()=>{
           const url = `${MEDIA_BASE}/${encodeURIComponent(STATE.path)}/${encodeURIComponent(f)}`;
-          PLAYER.src = url; PLAYER.load(); setTimeout(()=>PLAYER.play().catch(()=>{}),0);
+          PLAYER.src = url; PLAYER.load?.(); setTimeout(()=>PLAYER.play().catch(()=>{}),0);
           (async ()=>{ const u2=await trackThumb(STATE.path,f); const st=$('#statusThumb'); if(u2){ st.classList.remove('status-blank'); st.style.backgroundImage=`url("${u2}")`; } else { statusBlank(); } })();
           STATE.currentTrack = { name: stem(f), url };
           (async ()=>{
@@ -442,7 +435,7 @@ window.addEventListener('DOMContentLoaded', () => {
   $('#btnHome').addEventListener('click',()=>{ STATE.path=''; STATE.stack.length=0; renderStrip(); });
   $('#btnRefresh').addEventListener('click',()=>renderStrip());
 
-  /* Player/Playlist (간단) */
+  /* Player/Playlist */
   let loop=false; let timerId=null;
   $('#btnPlay').addEventListener('click',()=>{ if(PLAYER.paused) PLAYER.play(); else PLAYER.pause(); });
   $('#btnLoop').addEventListener('click',()=>{ loop=!loop; PLAYER.loop=loop; $('#btnLoop').textContent=loop?t('loopOn'):t('loopOff'); });
@@ -456,6 +449,7 @@ window.addEventListener('DOMContentLoaded', () => {
   $('#btnAddPL').addEventListener('click',()=>{ const def=LANG==='en'?'My List':'내 리스트'; const name=prompt(LANG==='en'?'New playlist name':'새 플레이리스트 이름', def); if(!name) return; if(!STATE.playlists[name]) STATE.playlists[name]=[]; STATE.playlistName=name; savePLStore(); renderPL(); });
   $('#btnSavePL').addEventListener('click',()=>{ if(!STATE.currentTrack){ alert(LANG==='en'?'Select a track first':'먼저 트랙을 선택하세요'); return; } const list=STATE.playlists[STATE.playlistName]||(STATE.playlists[STATE.playlistName]=[]); list.push(STATE.currentTrack); savePLStore(); alert(LANG==='en'?'Saved to playlist':'플레이리스트에 저장됨'); });
   $('#btnLoadPL').addEventListener('click',()=>{ const list=STATE.playlists[STATE.playlistName]||[]; if(!list.length){ alert(LANG==='en'?'Playlist is empty':'플레이리스트가 비어 있습니다'); return; } const t=list[0]; PLAYER.src=t.url; PLAYER.load(); PLAYER.play().catch(()=>{}); });
+  loadPLStore(); renderPL();
 
   /* ===== Generator (WebAudio + single-line scope) ===== */
   const aCtx=new (window.AudioContext||window.webkitAudioContext)();
@@ -507,26 +501,16 @@ window.addEventListener('DOMContentLoaded', () => {
   sizeOsc();
 
   function syncDuty(from){
-    if (from==='num'){
-      let v = Math.min(100, Math.max(1, parseInt(dutyNum.value||'50',10)));
-      dutyNum.value = v; duty.value = v;
-    } else {
-      let v = Math.min(100, Math.max(1, parseInt(duty.value||'50',10)));
-      duty.value = v; dutyNum.value = v;
-    }
+    if (from==='num'){ let v = Math.min(100, Math.max(1, parseInt(dutyNum.value||'50',10))); dutyNum.value=v; duty.value=v; }
+    else { let v = Math.min(100, Math.max(1, parseInt(duty.value||'50',10))); duty.value=v; dutyNum.value=v; }
     applyGen();
   }
   dutyNum.addEventListener('input', ()=>syncDuty('num'));
   duty.addEventListener('input',     ()=>syncDuty('range'));
 
   function syncFreq(from){
-    if (from==='num'){
-      let v = Math.min(20000, Math.max(0, parseInt(freqNum.value||'432',10)));
-      freqNum.value = v; freqSlider.value = v;
-    } else {
-      let v = Math.min(20000, Math.max(0, parseInt(freqSlider.value||'432',10)));
-      freqSlider.value = v; freqNum.value = v;
-    }
+    if (from==='num'){ let v=Math.min(20000, Math.max(0, parseInt(freqNum.value||'432',10))); freqNum.value=v; freqSlider.value=v; }
+    else { let v=Math.min(20000, Math.max(0, parseInt(freqSlider.value||'432',10))); freqSlider.value=v; freqNum.value=v; }
     applyGen();
   }
   freqNum.addEventListener('input',   ()=>syncFreq('num'));
@@ -537,31 +521,24 @@ window.addEventListener('DOMContentLoaded', () => {
     requestAnimationFrame(drawOsc);
     const w = oscCan.clientWidth;
     const h = oscCan.clientHeight;
-
-    if (!genRunning || !anaL || !anaR) {
-      octx.clearRect(0,0,w,h);
-      return;
-    }
-
+    if (!genRunning || !anaL || !anaR) { octx.clearRect(0,0,w,h); return; }
     octx.clearRect(0,0,w,h);
 
     // grid
-    octx.strokeStyle='rgba(100,180,220,.08)';
-    octx.lineWidth=1;
+    octx.strokeStyle='rgba(100,180,220,.08)'; octx.lineWidth=1;
     for(let gx=0; gx<w; gx+=Math.max(40, w/10)){ octx.beginPath(); octx.moveTo(gx,0); octx.lineTo(gx,h); octx.stroke(); }
-    for(let gy=0; gy<h; gy+=Math.max(28, h/6)){ octx.beginPath(); octx.moveTo(0,gy); octx.lineTo(0+ w,gy); octx.stroke(); }
+    for(let gy=0; gy<h; gy+=Math.max(28, h/6)){ octx.beginPath(); octx.moveTo(0,gy); octx.lineTo(w,gy); octx.stroke(); }
 
     const baseY = h * 0.5;
     const amp   =  h * 0.40;
     const colorL = oscColor.value || '#39e3ff';
     const colorR = 'rgba(57,227,255,0.70)';
 
-    // Left
+    // Left channel
     const bufL = new Uint8Array(anaL.fftSize);
     anaL.getByteTimeDomainData(bufL);
     const stepL = bufL.length / (w * Math.max(1, zoom));
-    octx.beginPath(); octx.lineWidth = 2; octx.strokeStyle = colorL;
-    octx.shadowColor = colorL; octx.shadowBlur = 8;
+    octx.beginPath(); octx.lineWidth = 2; octx.strokeStyle = colorL; octx.shadowColor = colorL; octx.shadowBlur = 8;
     for (let x=0; x<w; x++){
       const i = Math.min(bufL.length-1, Math.floor(x * stepL));
       const v = (bufL[i]-128)/128; const y = baseY + v * amp;
@@ -569,13 +546,12 @@ window.addEventListener('DOMContentLoaded', () => {
     }
     octx.stroke(); octx.shadowBlur=0;
 
-    // Binaural overlap
+    // Overlap right if binaural
     if (bnEnable.checked){
       const bufR = new Uint8Array(anaR.fftSize);
       anaR.getByteTimeDomainData(bufR);
       const stepR = bufR.length / (w * Math.max(1, zoom));
-      octx.beginPath(); octx.lineWidth = 2; octx.strokeStyle = colorR;
-      octx.shadowColor = colorR; octx.shadowBlur = 6;
+      octx.beginPath(); octx.lineWidth = 2; octx.strokeStyle = colorR; octx.shadowColor = colorR; octx.shadowBlur = 6;
       for (let x=0; x<w; x++){
         const i = Math.min(bufR.length-1, Math.floor(x * stepR));
         const v = (bufR[i]-128)/128; const y = baseY + v * amp;
@@ -599,10 +575,12 @@ window.addEventListener('DOMContentLoaded', () => {
     try{ oscR.frequency.setTargetAtTime(R, aCtx.currentTime, 0.01);}catch(_){oscR.frequency.value=R;}
 
     if (wv==='square' || wv==='pulse') {
+      duty.disabled=false; dutyNum.disabled=false;
       const pw = makePulseWave(aCtx, d);
       oscL.setPeriodicWave(pw);
       oscR.setPeriodicWave(pw);
     } else {
+      duty.disabled=true; dutyNum.disabled=true;
       oscL.type = wv; oscR.type = wv;
     }
   }
@@ -650,17 +628,15 @@ window.addEventListener('DOMContentLoaded', () => {
     }catch(_){ STATE.playlists = {}; }
     if(!STATE.playlists[STATE.playlistName]) STATE.playlists[STATE.playlistName] = [];
     renderPL();
+    // iOS unlock for audio element (library playback keeps playing in background)
+    const unlock = async () => {
+      try { await PLAYER.play().catch(()=>{}); PLAYER.pause(); } catch(_) {}
+      window.removeEventListener('touchend',unlock); window.removeEventListener('click',unlock);
+    };
+    window.addEventListener('touchend', unlock, { once:true });
+    window.addEventListener('click',    unlock, { once:true });
   }
   boot();
-
-  // iOS unlock gesture
-  const unlock = async () => {
-    try { if (aCtx && aCtx.state === 'suspended') await aCtx.resume(); } catch(_){}
-    window.removeEventListener('touchend', unlock);
-    window.removeEventListener('click', unlock);
-  };
-  window.addEventListener('touchend', unlock, { once:true });
-  window.addEventListener('click',    unlock, { once:true });
 });
 </script>
 </body>
