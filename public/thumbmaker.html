@@ -1,17 +1,17 @@
 <!doctype html>
 <meta charset="utf-8" />
-<title>5DO Thumbnail Generator — Client Only</title>
+<title>5DO Thumbnail Generator — Client Only (KO/EN, Focus Auto‑Map)</title>
 <style>
   :root{ --bg:#0b1110; --card:#0e1715; --border:#1b2a26; --ink:#e8f5f1; --accent:#1f6456; }
   html,body{height:100%}
   body{margin:0; background:var(--bg); color:var(--ink); font:15px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", Segoe UI, Roboto, Helvetica, Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif}
-  .wrap{max-width:1180px; margin:28px auto; padding:0 16px}
-  .grid{display:grid; grid-template-columns: 380px 1fr; gap:18px}
+  .wrap{max-width:1240px; margin:28px auto; padding:0 16px}
+  .grid{display:grid; grid-template-columns: 420px 1fr; gap:18px}
   .card{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px}
   h1{margin:0 0 14px; font-weight:700; font-size:18px}
   label{font-size:12px; opacity:.9}
   input[type=text], select, textarea{width:100%; padding:10px 12px; margin:.35rem 0 1rem; background:#0c1413; color:var(--ink); border:1px solid var(--border); border-radius:10px}
-  textarea{min-height:60px}
+  textarea{min-height:72px}
   .row{display:grid; grid-template-columns:1fr 1fr; gap:10px}
   .row3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px}
   .btn{display:inline-flex; gap:10px; align-items:center; background:var(--accent); color:#fff; border:0; border-radius:10px; padding:10px 14px; cursor:pointer}
@@ -20,74 +20,100 @@
   canvas{width:100%; height:auto; border-radius:14px; border:1px solid var(--border); background:#061a17}
   .small{font-size:12px; opacity:.8}
   .checkboxes{display:flex; gap:14px; flex-wrap:wrap; margin:.25rem 0 1rem}
+  #status{margin-top:8px; font-size:12px; color:#c7ffd9}
+  #status.err{color:#ffb7b7}
+  .topbar{display:flex; gap:10px; align-items:center; justify-content:space-between; margin-bottom:8px}
 </style>
 <div class="wrap">
   <div class="grid">
     <div class="card">
-      <h1>5DO Thumbnail Generator</h1>
+      <div class="topbar">
+        <h1 id="t_app">5DO Thumbnail Generator</h1>
+        <div>
+          <label for="lang" class="small" id="t_lang">Language</label>
+          <select id="lang">
+            <option value="en">English</option>
+            <option value="ko">한국어</option>
+          </select>
+        </div>
+      </div>
 
-      <label>Thumbnail Type</label>
+      <label id="t_thumbType">Thumbnail Type</label>
       <select id="thumbType">
-        <option value="category">Category Folder (Title only)</option>
-        <option value="track">Audio Track (Title + Subtitle bottom-center)</option>
+        <option value="category" id="t_type_category">Category Folder (Title only)</option>
+        <option value="track" id="t_type_track">Audio Track (Title + Subtitle bottom-center)</option>
       </select>
 
-      <label>Title</label>
+      <label id="t_title">Title</label>
       <input id="title" type="text" placeholder="ORGAN HEALING SEQUENCES" value="ORGAN HEALING SEQUENCES" />
 
       <div id="subtitleBlock">
-        <label>Subtitle (shown bottom-center for Track)</label>
+        <label id="t_subtitle">Subtitle (shown bottom-center for Track)</label>
         <input id="subtitle" type="text" placeholder="15-Minute Frequency Protocol" />
       </div>
 
       <div class="row">
         <div>
-          <label>Title Font (macOS installed)</label>
+          <label id="t_titleFont">Title Font (macOS installed)</label>
           <select id="titleFont"></select>
         </div>
         <div>
-          <label>Subtitle Font (macOS installed)</label>
+          <label id="t_subtitleFont">Subtitle Font (macOS installed)</label>
           <select id="subtitleFont"></select>
         </div>
       </div>
 
       <div class="row3">
         <div>
-          <label>Title Size</label>
+          <label id="t_titleSize">Title Size</label>
           <input id="titleSize" type="range" min="56" max="120" value="88" />
         </div>
         <div>
-          <label>Subtitle Size</label>
+          <label id="t_subtitleSize">Subtitle Size</label>
           <input id="subtitleSize" type="range" min="32" max="72" value="46" />
         </div>
         <div>
-          <label>Letter Spacing</label>
+          <label id="t_tracking">Letter Spacing</label>
           <input id="tracking" type="range" min="0" max="8" value="0" />
+        </div>
+      </div>
+
+      <label id="t_focus">Focus Keyword (optional)</label>
+      <div class="row">
+        <input id="focus" type="text" placeholder="e.g. liver, heart chakra, solar plexus, detox, aura" />
+        <div>
+          <label class="small" for="focusMode" id="t_focusMode">Focus Mode</label>
+          <select id="focusMode">
+            <option value="manual" id="t_focusManual">Manual</option>
+            <option value="auto" id="t_focusAuto">Auto-map</option>
+          </select>
         </div>
       </div>
 
       <div class="row">
         <div>
-          <label>Focus (optional)</label>
-          <select id="focus">
-            <option value="">None</option>
-            <option value="liver">Liver</option>
-          </select>
-        </div>
-        <div>
-          <label>Style Template</label>
+          <label id="t_style">Style Template</label>
           <select id="style">
-            <option value="quantumClinical">Quantum + Clinical (Emerald–Gold)</option>
-            <option value="minimalZen">Minimal Zen</option>
+            <option value="quantumClinical" id="t_style_quantum">Quantum + Clinical (Emerald–Gold)</option>
+            <option value="minimalZen" id="t_style_minimal">Minimal Zen</option>
+            <option value="auroraBlue" id="t_style_aurora">Aurora Blue</option>
+            <option value="roseQuartz" id="t_style_rose">Rose Quartz</option>
+            <option value="amethyst" id="t_style_amethyst">Amethyst</option>
+            <option value="solarGold" id="t_style_solar">Solar Gold</option>
+            <option value="deepSpace" id="t_style_deep">Deep Space</option>
+            <option value="natureLeaf" id="t_style_leaf">Nature Leaf</option>
+            <option value="oceanTeal" id="t_style_ocean">Ocean Teal</option>
+            <option value="monochrome" id="t_style_mono">Monochrome</option>
+            <option value="crystalWhite" id="t_style_crystal">Crystal White</option>
           </select>
         </div>
       </div>
 
-      <label>Background Hint (optional prompt-ish note)</label>
-      <input id="prompt" type="text" placeholder="emerald-gold plasma, torus energy, gentle healing" />
+      <label id="t_prompt">Background Hint (prompt-ish note, 한국어 OK)</label>
+      <input id="prompt" type="text" placeholder="emerald-gold plasma, torus energy, gentle healing / 장기 포커스 에너지 링" />
 
       <div>
-        <label>Export Formats (multi-select)</label>
+        <label id="t_export">Export Formats (multi-select)</label>
         <div class="checkboxes">
           <label><input type="checkbox" id="fmtPNG" checked/> PNG</label>
           <label><input type="checkbox" id="fmtJPG"/> JPG</label>
@@ -99,14 +125,12 @@
         <button class="btn" id="btnRender">Generate</button>
         <button class="btn secondary" id="btnRegenerate">Regenerate (apply edits)</button>
         <button class="btn secondary" id="btnDownload">Download Selected</button>
-        <span class="small muted">1024×1024, top-center title; track mode puts subtitle bottom-center.</span>
+        <span class="small muted" id="t_hint">1024×1024. Track mode shows subtitle bottom-center.</span>
       </div>
 
-      <label>Edit Instructions</label>
-      <textarea id="editBox" placeholder='e.g. title bigger, subtitle smaller, tracking +2, focus liver on, style minimal, title:"ORGAN HEALING SEQUENCES", subtitle:"15-Minute Frequency Protocol"'></textarea>
-
-      <label>Edit Instructions</label>
-      <textarea id="editBox" placeholder='e.g. title bigger, subtitle smaller, tracking +2, focus liver on, style minimal, title font Cinzel, subtitle font Noto Sans KR, subtitle lower, title:"ORGAN HEALING SEQUENCES", subtitle:"15-Minute Frequency Protocol"'></textarea>
+      <label id="t_editlab">Edit Instructions</label>
+      <textarea id="editBox" placeholder="예: title bigger, subtitle lower, tracking +2, focus liver on, style minimal, title font Cinzel, subtitle font Noto Sans KR, title:'ORGAN HEALING SEQUENCES', subtitle:'15-Minute Frequency Protocol'"></textarea>
+      <div id="status" aria-live="polite"></div>
     </div>
 
     <div class="card">
@@ -116,232 +140,206 @@
 </div>
 
 <script>
-// --- Font list (macOS-friendly) ---
-const macFonts = [
-  {name:"SF Pro Display", css:"'SF Pro Display'"},
-  {name:"San Francisco (System)", css:"-apple-system, 'SF Pro Text'"},
-  {name:"Helvetica Neue", css:"'Helvetica Neue'"},
-  {name:"Helvetica", css:"Helvetica"},
-  {name:"Arial", css:"Arial"},
-  {name:"Times New Roman", css:"'Times New Roman'"},
-  {name:"Georgia", css:"Georgia"},
-  {name:"Cinzel", css:"Cinzel, 'Times New Roman', Georgia"},
-  {name:"Cormorant Garamond", css:"'Cormorant Garamond', Georgia, serif"},
-  {name:"Apple SD Gothic Neo", css:"'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif"},
-  {name:"Noto Sans KR", css:"'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif"},
-  {name:"Nanum Gothic", css:"'Nanum Gothic', 'Noto Sans KR', sans-serif"},
-  {name:"Pretendard (if installed)", css:"Pretendard, 'Noto Sans KR', sans-serif"},
-  {name:"Inter", css:"Inter, Arial, sans-serif"},
-];
+window.addEventListener('DOMContentLoaded', init);
 
-function fillFontDropdown(sel){
-  macFonts.forEach(f=>{
-    const o = document.createElement('option');
-    o.value = f.css; o.textContent = f.name; sel.appendChild(o);
-  });
+function init(){
+  try{
+    setupFonts();
+    bindUI();
+    applyLang(localStorage.getItem('lang') || 'ko');
+    render();
+    setStatus(i18n[document.getElementById('lang').value].ready);
+  }catch(e){ setError('Init failed: '+e.message); }
 }
 
-const titleFontSel = document.getElementById('titleFont');
-const subtitleFontSel = document.getElementById('subtitleFont');
-fillFontDropdown(titleFontSel); fillFontDropdown(subtitleFontSel);
-// Defaults
-[...titleFontSel.options].forEach((o,i)=>{ if(o.textContent.includes('Cinzel')) titleFontSel.selectedIndex = i; });
-[...subtitleFontSel.options].forEach((o,i)=>{ if(o.textContent.includes('Apple SD Gothic')) subtitleFontSel.selectedIndex = i; });
+function setStatus(msg){ const s=document.getElementById('status'); s.classList.remove('err'); s.textContent=msg; }
+function setError(msg){ const s=document.getElementById('status'); s.classList.add('err'); s.textContent=msg; }
+
+const i18n = {
+  en:{ app:'5DO Thumbnail Generator', lang:'Language', type:'Thumbnail Type', type_category:'Category Folder (Title only)', type_track:'Audio Track (Title + Subtitle bottom-center)', title:'Title', subtitle:'Subtitle (shown bottom-center for Track)', titleFont:'Title Font (macOS installed)', subtitleFont:'Subtitle Font (macOS installed)', titleSize:'Title Size', subtitleSize:'Subtitle Size', tracking:'Letter Spacing', focus:'Focus (optional)', focusMode:'Focus Mode', focusManual:'Manual', focusAuto:'Auto-map', liver:'Liver', heart:'Heart', lung:'Lung', kidney:'Kidney', style:'Style Template', prompt:'Background Hint (prompt-ish note, Korean OK)', export:'Export Formats (multi-select)', hint:'1024×1024. Track mode shows subtitle bottom-center.', editlab:'Edit Instructions', ready:'Ready. Generate to preview.', btnGen:'Generate', btnRegen:'Regenerate (apply edits)', btnDl:'Download Selected' },
+  ko:{ app:'5DO 썸네일 생성기', lang:'언어', type:'썸네일 유형', type_category:'카테고리 폴더 (제목만)', type_track:'오디오 트랙 (제목 + 하단 중앙 부제)', title:'제목', subtitle:'부제목 (트랙 선택 시 하단 중앙 표시)', titleFont:'제목 폰트 (macOS 설치 글꼴)', subtitleFont:'부제 폰트 (macOS 설치 글꼴)', titleSize:'제목 크기', subtitleSize:'부제 크기', tracking:'자간', focus:'포커스(선택)', focusMode:'포커스 모드', focusManual:'수동', focusAuto:'자동 매핑', liver:'간', heart:'심장', lung:'폐', kidney:'신장', style:'스타일 템플릿', prompt:'배경 힌트 (프롬프트식 메모, 한국어 OK)', export:'내보내기 형식 (다중선택)', hint:'1024×1024. 트랙 모드에서 부제는 하단 중앙에 표시됩니다.', editlab:'편집 지시(문장으로 입력 가능)', ready:'준비 완료. Generate를 눌러 미리보기를 생성하세요.', btnGen:'Generate', btnRegen:'Regenerate (수정 적용)', btnDl:'선택 형식 다운로드' }
+};
+
+function applyLang(lang){
+  const t = i18n[lang] || i18n.en;
+  const byId=(id,txt)=>{ const el=document.getElementById(id); if(el) el.textContent=txt; };
+  byId('t_app', t.app); byId('t_lang', t.lang); byId('t_thumbType', t.type); byId('t_type_category', t.type_category); byId('t_type_track', t.type_track); byId('t_title', t.title); byId('t_subtitle', t.subtitle); byId('t_titleFont', t.titleFont); byId('t_subtitleFont', t.subtitleFont); byId('t_titleSize', t.titleSize); byId('t_subtitleSize', t.subtitleSize); byId('t_tracking', t.tracking); byId('t_focus', t.focus); byId('t_focusMode', t.focusMode); byId('t_focusManual', t.focusManual); byId('t_focusAuto', t.focusAuto); byId('t_style', t.style); byId('t_prompt', t.prompt); byId('t_export', t.export); byId('t_hint', t.hint); byId('t_editlab', t.editlab);
+  document.getElementById('btnRender').textContent = t.btnGen;
+  document.getElementById('btnRegenerate').textContent = t.btnRegen;
+  document.getElementById('btnDownload').textContent = t.btnDl;
+  document.getElementById('t_style_quantum').textContent = (lang==='ko')?'퀀텀 + 임상 (에메랄드–골드)':'Quantum + Clinical (Emerald–Gold)';
+  document.getElementById('t_style_minimal').textContent = (lang==='ko')?'미니멀 젠':'Minimal Zen';
+  document.getElementById('t_style_aurora').textContent = (lang==='ko')?'오로라 블루':'Aurora Blue';
+  document.getElementById('t_style_rose').textContent = (lang==='ko')?'로즈 쿼츠':'Rose Quartz';
+  document.getElementById('t_style_amethyst').textContent = (lang==='ko')?'아메시스트':'Amethyst';
+  document.getElementById('t_style_solar').textContent = (lang==='ko')?'솔라 골드':'Solar Gold';
+  document.getElementById('t_style_deep').textContent = (lang==='ko')?'딥 스페이스':'Deep Space';
+  document.getElementById('t_style_leaf').textContent = (lang==='ko')?'네이처 리프':'Nature Leaf';
+  document.getElementById('t_style_ocean').textContent = (lang==='ko')?'오션 틸':'Ocean Teal';
+  document.getElementById('t_style_mono').textContent = (lang==='ko')?'모노크롬':'Monochrome';
+  document.getElementById('t_style_crystal').textContent = (lang==='ko')?'크리스탈 화이트':'Crystal White';
+
+  document.getElementById('title').placeholder = (lang==='ko')?'오거나이즈: ORGAN HEALING SEQUENCES':'ORGAN HEALING SEQUENCES';
+  document.getElementById('subtitle').placeholder = (lang==='ko')?'15분 주파수 프로토콜':'15-Minute Frequency Protocol';
+  document.getElementById('prompt').placeholder = (lang==='ko')?'에메랄드-골드 플라즈마, 토러스 에너지, 부드러운 힐링 / 장기 포커스 에너지 링':'emerald-gold plasma, torus energy, gentle healing / organ focus energy ring';
+
+  if(lang==='ko'){ selectOptionTextContains('subtitleFont','Apple SD Gothic'); }
+  localStorage.setItem('lang', lang);
+  document.getElementById('lang').value = lang;
+}
+
+function selectOptionTextContains(selectId, text){
+  const sel = document.getElementById(selectId);
+  for(let i=0;i<sel.options.length;i++){ if(sel.options[i].text.indexOf(text)>-1){ sel.selectedIndex=i; break; } }
+}
+
+const macFonts = [
+  {name:'SF Pro Display', css:"'SF Pro Display'"},
+  {name:'San Francisco (System)', css:"-apple-system, 'SF Pro Text'"},
+  {name:'Helvetica Neue', css:"'Helvetica Neue'"},
+  {name:'Helvetica', css:'Helvetica'},
+  {name:'Arial', css:'Arial'},
+  {name:'Times New Roman', css:"'Times New Roman'"},
+  {name:'Georgia', css:'Georgia'},
+  {name:'Cinzel', css:"Cinzel, 'Times New Roman', Georgia, serif"},
+  {name:'Cormorant Garamond', css:"'Cormorant Garamond', Georgia, serif"},
+  {name:'Apple SD Gothic Neo', css:"'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif"},
+  {name:'Noto Sans KR', css:"'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif"},
+  {name:'Nanum Gothic', css:"'Nanum Gothic', 'Noto Sans KR', sans-serif"},
+  {name:'Pretendard (if installed)', css:"Pretendard, 'Noto Sans KR', sans-serif"},
+  {name:'Inter', css:'Inter, Arial, sans-serif'}
+];
+
+function setupFonts(){
+  const titleFontSel = document.getElementById('titleFont');
+  const subtitleFontSel = document.getElementById('subtitleFont');
+  [titleFontSel, subtitleFontSel].forEach(sel=>{
+    sel.innerHTML='';
+    macFonts.forEach(f=>{ const o=document.createElement('option'); o.value=f.css; o.textContent=f.name; sel.appendChild(o); });
+  });
+  selectOptionTextContains('titleFont','Cinzel');
+  selectOptionTextContains('subtitleFont','Apple SD Gothic');
+}
+
+function bindUI(){
+  document.getElementById('btnRender').addEventListener('click', ()=>{ try{ render(); setStatus(i18n[document.getElementById('lang').value].ready); }catch(e){ setError('Render error: '+e.message); } });
+  document.getElementById('btnRegenerate').addEventListener('click', ()=>{ try{ const instr=document.getElementById('editBox').value.trim(); applyEdits(instr); render(); setStatus('Regenerated.'); }catch(e){ setError('Regenerate error: '+e.message); } });
+  document.getElementById('btnDownload').addEventListener('click', ()=>{ try{ downloadSelected(); setStatus('Downloaded.'); }catch(e){ setError('Download error: '+e.message); } });
+  document.getElementById('thumbType').addEventListener('change', e=>{ const block=document.getElementById('subtitleBlock'); block.style.display = e.target.value === 'track' ? 'block' : 'none'; });
+  document.getElementById('lang').addEventListener('change', e=>{ applyLang(e.target.value); });
+}
 
 const cv = document.getElementById('cv');
 const ctx = cv.getContext('2d');
+let subtitleBottomOffset = 70;
+window.__glowBoost = 1.0;
 
-// --- Edit instruction helpers (no-regex parsing to avoid font/escape issues) ---
-let subtitleBottomOffset = 70;   // bottom offset for subtitle (px)
-window.__glowBoost = 1.0;        // reserved, if you want to boost aura later
-
-function applyEdits(instr){
-  if(!instr) return;
-  const t = (''+instr).toLowerCase();
-  const get = id=>document.getElementById(id);
-
-  // parse quoted values: title:"..." , subtitle:"..."
-  function getQuoted(label){
-    const needle = label+':"';
-    const i = instr.indexOf(needle);
-    if(i>=0){ const s = i + needle.length; const e = instr.indexOf('"', s); if(e> s) return instr.slice(s, e); }
-    return null;
-  }
-  const qTitle = getQuoted('title'); if(qTitle!==null) get('title').value = qTitle;
-  const qSub   = getQuoted('subtitle'); if(qSub!==null) get('subtitle').value = qSub;
-
-  // sizes
-  function inc(id, step){ const el=get(id); const v = Number(el.value)||0; const min=Number(el.min)||0; const max=Number(el.max)||999; el.value = String(Math.max(min, Math.min(max, v+step))); }
-  if(t.includes('title bigger')||t.includes('제목 크게')) inc('titleSize', +6);
-  if(t.includes('title smaller')||t.includes('제목 작게')) inc('titleSize', -6);
-  if(t.includes('subtitle bigger')||t.includes('부제 크게')) inc('subtitleSize', +4);
-  if(t.includes('subtitle smaller')||t.includes('부제 작게')) inc('subtitleSize', -4);
-
-  // tracking
-  if(t.includes('increase spacing')||t.includes('more spacing')||t.includes('자간 늘')) inc('tracking', +1);
-  if(t.includes('decrease spacing')||t.includes('less spacing')||t.includes('자간 줄')) inc('tracking', -1);
-
-  // subtitle vertical position
-  if(t.includes('subtitle lower')||t.includes('subtitle down')||t.includes('부제 아래')) subtitleBottomOffset = Math.max(20, subtitleBottomOffset - 10);
-  if(t.includes('subtitle higher')||t.includes('subtitle up')||t.includes('부제 위'))   subtitleBottomOffset = Math.min(160, subtitleBottomOffset + 10);
-
-  // focus on/off
-  if(t.includes('liver focus on')||t.includes('간 포커스 켜')) get('focus').value = 'liver';
-  if(t.includes('focus off')||t.includes('포커스 끄')) get('focus').value = '';
-
-  // style
-  if(t.includes('style minimal')||t.includes('미니멀')) get('style').value = 'minimalZen';
-  if(t.includes('style quantum')||t.includes('임상')||t.includes('에메랄드')||t.includes('골드')) get('style').value = 'quantumClinical';
-
-  // fonts (simple contains match on dropdown labels)
-  function pickFont(selId, key){ if(!key) return; const sel=get(selId); const k=key.toLowerCase(); for(let i=0;i<sel.options.length;i++){ if(sel.options[i].text.toLowerCase().includes(k)){ sel.selectedIndex=i; break; } } }
-  const tfIdx = t.indexOf('title font '); if(tfIdx>=0){ const key = instr.slice(tfIdx+11).split(/[\n,]/)[0].trim(); pickFont('titleFont', key); }
-  const sfIdx = t.indexOf('subtitle font '); if(sfIdx>=0){ const key = instr.slice(sfIdx+14).split(/[\n,]/)[0].trim(); pickFont('subtitleFont', key); }
+function containsKorean(text){
+  for(let i=0;i<text.length;i++){ const code=text.charCodeAt(i); if(code>=0x3131 && code<=0xD79D) return true; }
+  return false;
 }
 
+function mapFocusAuto(txt){
+  if(!txt) return {};
+  const t = String(txt).toLowerCase();
+  let pos = [0.52, 0.55];
+  let color = 'rgba(120,255,210,0.35)';
+  let style = null;
+  const set = (xf,yf,c,st)=>{ pos=[xf,yf]; if(c) color=c; if(st) style=st; };
+  if(/liver|간/.test(t)) set(0.65,0.62,'rgba(120,255,180,0.38)','natureLeaf');
+  else if(/heart chakra|anahata|heart|심장/.test(t)) set(0.52,0.50,'rgba(120,255,180,0.38)','roseQuartz');
+  else if(/solar plexus|manipura|복부|상복부/.test(t)) set(0.52,0.58,'rgba(255,230,120,0.38)','solarGold');
+  else if(/throat|vishuddha|목|후두/.test(t)) set(0.52,0.40,'rgba(140,200,255,0.35)','auroraBlue');
+  else if(/third\s*eye|ajna|pineal|송과|제3의\s*눈/.test(t)) set(0.52,0.32,'rgba(160,150,255,0.38)','amethyst');
+  else if(/crown|sahasrara|정수리|백회/.test(t)) set(0.52,0.22,'rgba(255,255,255,0.40)','crystalWhite');
+  else if(/sacral|svadhisthana|하복부|단전/.test(t)) set(0.52,0.68,'rgba(255,170,120,0.38)','roseQuartz');
+  else if(/root|mula(dh)?ara|회음|기저/.test(t)) set(0.52,0.78,'rgba(255,120,120,0.38)','monochrome');
+  else if(/lung|폐/.test(t)) set(0.50,0.46,'rgba(140,220,255,0.32)','auroraBlue');
+  else if(/kidney|신장/.test(t)) set(0.58,0.70,'rgba(120,220,255,0.32)','oceanTeal');
+  else if(/aura|field|오라|필드|biofield/.test(t)) set(0.52,0.52,'rgba(120,255,230,0.36)','oceanTeal');
+  else if(/detox|cleanse|해독|정화/.test(t)) set(0.60,0.60,'rgba(170,255,140,0.40)','natureLeaf');
+  else if(/abundance|prosperity|풍요|번영/.test(t)) set(0.52,0.56,'rgba(255,225,150,0.42)','solarGold');
+  return { pos, color, style };
+}
 
-// --- Edit instruction helpers ---
-let subtitleBottomOffset = 70;   // bottom offset for subtitle (px)
-window.__glowBoost = 1.0;        // 1.0 = default, >1 = stronger aura
+function drawFocusOverlay(){
+  if(!window.__focusPos) return;
+  const fx = (window.__focusPos[0] <= 1) ? window.__focusPos[0]*cv.width : window.__focusPos[0];
+  const fy = (window.__focusPos[1] <= 1) ? window.__focusPos[1]*cv.height: window.__focusPos[1];
+  const main = window.__focusColor || 'rgba(120,255,210,'+(0.35*(window.__glowBoost||1))+')';
+  const glow = ctx.createRadialGradient(fx, fy, 10, fx, fy, 160);
+  glow.addColorStop(0, main);
+  glow.addColorStop(0.5, 'rgba(120,255,210,'+(0.18*(window.__glowBoost||1))+')');
+  glow.addColorStop(1, 'rgba(120,255,210,0.0)');
+  ctx.fillStyle=glow; ctx.beginPath(); ctx.arc(fx, fy, 200, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = 'rgba(250,235,180,'+(0.55*(window.__glowBoost||1))+')';
+  ctx.lineWidth = 1.8;
+  [120,155,190].forEach(r=>{ ctx.beginPath(); for(let a=0;a<=Math.PI*2;a+=0.035){ const x=fx+Math.cos(a)*r; const y=fy+Math.sin(a)*r*0.6; if(a===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);} ctx.stroke(); });
+}
 
 function applyEdits(instr){
   if(!instr) return;
-  const t = instr.toLowerCase();
+  const lower = String(instr).toLowerCase();
   const get = id=>document.getElementById(id);
-
-  // direct set: title:"..." subtitle:"..."
-  const mTitle = instr.match(/title\s*:\s*"([\s\S]*?)"/i); if(mTitle){ get('title').value = mTitle[1]; }
-  const mSub   = instr.match(/subtitle\s*:\s*"([\s\S]*?)"/i); if(mSub){ get('subtitle').value = mSub[1]; }
-
-  // sizes
-  const inc = (id, step)=>{ const el=get(id); el.value = String(Math.max(Number(el.min||0), Math.min(Number(el.max||999), Number(el.value)+step))); };
-  if(/title (bigger|larger)|제목 크게/.test(t)) inc('titleSize', +6);
-  if(/title (smaller)|제목 작게/.test(t)) inc('titleSize', -6);
-  if(/subtitle (bigger|larger)|부제 크게/.test(t)) inc('subtitleSize', +4);
-  if(/subtitle (smaller)|부제 작게/.test(t)) inc('subtitleSize', -4);
-
-  // tracking
-  if(/(increase|more) spacing|자간 늘/.test(t)) inc('tracking', +1);
-  if(/(decrease|less) spacing|자간 줄/.test(t)) inc('tracking', -1);
-
-  // subtitle vertical position
-  if(/subtitle (lower|down)|부제 아래/.test(t)) subtitleBottomOffset = Math.max(20, subtitleBottomOffset - 10);
-  if(/subtitle (higher|up)|부제 위/.test(t))   subtitleBottomOffset = Math.min(160, subtitleBottomOffset + 10);
-
-  // focus on/off
-  if(/focus.*liver.*on|간.*포커스.*켜|liver focus on/.test(t)) get('focus').value = 'liver';
-  if(/focus.*off|포커스.*끄/.test(t)) get('focus').value = '';
-
-  // style
-  if(/style.*minimal|미니멀/.test(t)) get('style').value = 'minimalZen';
-  if(/style.*quantum|임상|에메랄드|골드/.test(t)) get('style').value = 'quantumClinical';
-
-  // fonts: try to match by includes text
-  const pickFont = (selId, key)=>{
-    const sel = get(selId);
-    for(let i=0;i<sel.options.length;i++){
-      if(sel.options[i].text.toLowerCase().includes(key)) { sel.selectedIndex = i; break; }
-    }
-  };
-  const mTf = t.match(/title font\s+([a-z0-9 \-]+)|제목 폰트\s*([\w \-]+)/i);
-  if(mTf){ pickFont('titleFont', (mTf[1]||mTf[2]||'').trim()); }
-  const mSf = t.match(/subtitle font\s+([a-z0-9 \-]+)|부제 폰트\s*([\w \-]+)/i);
-  if(mSf){ pickFont('subtitleFont', (mSf[1]||mSf[2]||'').trim()); }
-
-  // glow boost
-  if(/more glow|글로우 더|광채 업/.test(t)) window.__glowBoost = Math.min(2.0, window.__glowBoost + 0.2);
-  if(/less glow|글로우 줄|광채 다운/.test(t)) window.__glowBoost = Math.max(0.4, window.__glowBoost - 0.2);
+  function getQuoted(label){ const needle=label+':"'; const i=instr.indexOf(needle); if(i>=0){ const s=i+needle.length; const e=instr.indexOf('"', s); if(e>s) return instr.slice(s,e);} return null; }
+  const qTitle=getQuoted('title'); if(qTitle!==null) get('title').value=qTitle;
+  const qSub=getQuoted('subtitle'); if(qSub!==null) get('subtitle').value=qSub;
+  function inc(id, step){ const el=get(id); const v=Number(el.value)||0; const min=Number(el.min)||0; const max=Number(el.max)||999; el.value=String(Math.max(min, Math.min(max, v+step))); }
+  if(lower.indexOf('title bigger')>-1 || instr.indexOf('제목 크게')>-1) inc('titleSize', +6);
+  if(lower.indexOf('title smaller')>-1 || instr.indexOf('제목 작게')>-1) inc('titleSize', -6);
+  if(lower.indexOf('subtitle bigger')>-1 || instr.indexOf('부제 크게')>-1) inc('subtitleSize', +4);
+  if(lower.indexOf('subtitle smaller')>-1 || instr.indexOf('부제 작게')>-1) inc('subtitleSize', -4);
+  if(lower.indexOf('increase spacing')>-1 || lower.indexOf('more spacing')>-1 || instr.indexOf('자간 늘')>-1) inc('tracking', +1);
+  if(lower.indexOf('decrease spacing')>-1 || lower.indexOf('less spacing')>-1 || instr.indexOf('자간 줄')>-1) inc('tracking', -1);
+  if(lower.indexOf('subtitle lower')>-1 || lower.indexOf('subtitle down')>-1 || instr.indexOf('부제 아래')>-1) subtitleBottomOffset = Math.max(20, subtitleBottomOffset - 10);
+  if(lower.indexOf('subtitle higher')>-1 || lower.indexOf('subtitle up')>-1 || instr.indexOf('부제 위')>-1)   subtitleBottomOffset = Math.min(160, subtitleBottomOffset + 10);
+  if(lower.indexOf('liver focus on')>-1 || instr.indexOf('간 포커스 켜')>-1) get('focus').value = 'liver';
+  if(lower.indexOf('focus off')>-1 || instr.indexOf('포커스 끄')>-1) get('focus').value = '';
+  if(lower.indexOf('style minimal')>-1 || instr.indexOf('미니멀')>-1) get('style').value = 'minimalZen';
+  if(lower.indexOf('style quantum')>-1 || instr.indexOf('임상')>-1 || instr.indexOf('에메랄드')>-1 || instr.indexOf('골드')>-1) get('style').value = 'quantumClinical';
+  function pickFont(selId, key){ if(!key) return; const sel=get(selId); const k=String(key).toLowerCase(); for(let i=0;i<sel.options.length;i++){ if(sel.options[i].text.toLowerCase().indexOf(k)>-1){ sel.selectedIndex=i; break; } } }
+  const tfIdx = lower.indexOf('title font '); if(tfIdx>=0){ const key = instr.slice(tfIdx+11).split('\n')[0].split(',')[0].trim(); pickFont('titleFont', key); }
+  const sfIdx = lower.indexOf('subtitle font '); if(sfIdx>=0){ const key2 = instr.slice(sfIdx+14).split('\n')[0].split(',')[0].trim(); pickFont('subtitleFont', key2); }
+  if(lower.indexOf('more glow')>-1 || instr.indexOf('글로우 더')>-1 || instr.indexOf('광채 업')>-1) window.__glowBoost = Math.min(2.0, window.__glowBoost + 0.2);
+  if(lower.indexOf('less glow')>-1 || instr.indexOf('글로우 줄')>-1 || instr.indexOf('광채 다운')>-1) window.__glowBoost = Math.max(0.4, window.__glowBoost - 0.2);
 }
 
 function drawBackground(style, hint, focus){
   const W = cv.width, H = cv.height;
-  // base fill
-  ctx.fillStyle = '#061a17';
-  ctx.fillRect(0,0,W,H);
+  ctx.fillStyle = '#061a17'; ctx.fillRect(0,0,W,H);
 
-  if(style === 'minimalZen'){
-    const g = ctx.createLinearGradient(0,0,0,H);
-    g.addColorStop(0, '#0f1f1b');
-    g.addColorStop(1, '#0a1512');
-    ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
-    return;
-  }
+  function gradientRad(c0,c1,c2){ const g=ctx.createRadialGradient(W*0.5,H*0.55,50,W*0.5,H*0.55,700); g.addColorStop(0,c0); g.addColorStop(0.5,c1); g.addColorStop(1,c2); ctx.fillStyle=g; ctx.fillRect(0,0,W,H); }
+  function baseEmerald(){ gradientRad('#0d2f29','#0b3a32','#061a17'); }
+  function torus(stroke){ stroke = stroke || 'rgba(255,220,140,0.28)'; ctx.save(); ctx.translate(W*0.5, H*0.58); ctx.strokeStyle=stroke; ctx.lineWidth=2.5; for(let r=190;r<=330;r+=28){ ctx.beginPath(); for(let a=0;a<=Math.PI*2;a+=0.02){ const wobble=1+0.015*Math.sin(a*6+r*0.03); const x=Math.cos(a)*r*wobble; const y=Math.sin(a)*(r*0.45)*wobble; if(a===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);} ctx.stroke(); } ctx.restore(); }
 
-  // quantumClinical: emerald–gold, plasma aurora, torus (glowBoost applied)
-  const grad = ctx.createRadialGradient(W*0.5, H*0.55, 50, W*0.5, H*0.55, 700);
-  grad.addColorStop(0, '#0d2f29');
-  grad.addColorStop(0.5, '#0b3a32');
-  grad.addColorStop(1, '#061a17');
-  ctx.fillStyle = grad; ctx.fillRect(0,0,W,H);
-
-  for (let i=0;i<3;i++){
-    const gx = W*0.5 + (i-1)*120;
-    const gy = H*0.6  + (i-1)*60;
-    const rg = ctx.createRadialGradient(gx, gy, 30, gx, gy, 320+i*40);
-    rg.addColorStop(0.0, `rgba(255,215,130,${0.18*(window.__glowBoost||1)})`);
-    rg.addColorStop(0.6, `rgba(255,200,90,${0.07*(window.__glowBoost||1)})`);
-    rg.addColorStop(1.0, 'rgba(255,200,90,0.0)');
-    ctx.fillStyle = rg;
-    ctx.beginPath(); ctx.arc(gx, gy, 400, 0, Math.PI*2); ctx.fill();
-  }
-
-  // torus rings
-  ctx.save();
-  ctx.translate(W*0.5, H*0.58);
-  ctx.strokeStyle = `rgba(255,220,140,${0.28*(window.__glowBoost||1)})`;
-  ctx.lineWidth = 2.5;
-  for (let r=190; r<=330; r+=28){
-    ctx.beginPath();
-    for (let a=0; a<=Math.PI*2; a+=0.02){
-      const wobble = 1 + 0.015*Math.sin(a*6 + r*0.03);
-      const x = Math.cos(a) * r * wobble;
-      const y = Math.sin(a) * (r*0.45) * wobble;
-      if(a===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-    }
-    ctx.stroke();
-  }
-  ctx.restore();
-
-  if(focus === 'liver'){
-    const lx = W*0.65, ly = H*0.62;
-    const glow = ctx.createRadialGradient(lx, ly, 10, lx, ly, 160);
-    glow.addColorStop(0, `rgba(80,255,200,${0.35*(window.__glowBoost||1)})`);
-    glow.addColorStop(0.5, `rgba(120,255,210,${0.18*(window.__glowBoost||1)})`);
-    glow.addColorStop(1, 'rgba(120,255,210,0.0)');
-    ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(lx, ly, 200, 0, Math.PI*2); ctx.fill();
-
-    ctx.strokeStyle = `rgba(250,235,180,${0.55*(window.__glowBoost||1)})`;
-    ctx.lineWidth = 1.8;
-    [120,155,190].forEach(r=>{
-      ctx.beginPath();
-      for(let a=0; a<=Math.PI*2; a+=0.035){
-        const x = lx + Math.cos(a)*r;
-        const y = ly + Math.sin(a)*r*0.6;
-        if(a===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-      }
-      ctx.stroke();
-    });
-  }
+  const styles = {
+    minimalZen: ()=>{ const g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,'#0f1f1b'); g.addColorStop(1,'#0a1512'); ctx.fillStyle=g; ctx.fillRect(0,0,W,H); },
+    quantumClinical: ()=>{ baseEmerald(); torus('rgba(255,220,140,'+(0.28*(window.__glowBoost||1))+')'); },
+    auroraBlue: ()=>{ gradientRad('#081b2a','#0b2740','#06121e'); torus('rgba(120,200,255,0.22)'); },
+    roseQuartz: ()=>{ gradientRad('#2a0f1a','#401126','#17080e'); torus('rgba(255,180,210,0.24)'); },
+    amethyst: ()=>{ gradientRad('#140a26','#25124b','#0c0720'); torus('rgba(200,170,255,0.26)'); },
+    solarGold: ()=>{ gradientRad('#2b1f05','#513b07','#140d03'); torus('rgba(255,225,150,0.30)'); },
+    deepSpace: ()=>{ gradientRad('#05070b','#0a0f16','#030408'); torus('rgba(190,220,255,0.20)'); },
+    natureLeaf: ()=>{ gradientRad('#0c2316','#134022','#07160e'); torus('rgba(160,255,200,0.26)'); },
+    oceanTeal: ()=>{ gradientRad('#062022','#0b3a3f','#041214'); torus('rgba(120,255,230,0.24)'); },
+    monochrome: ()=>{ gradientRad('#0a0a0a','#151515','#050505'); torus('rgba(220,220,220,0.22)'); },
+    crystalWhite: ()=>{ gradientRad('#0b0d10','#111518','#0a0d10'); torus('rgba(255,255,255,0.28)'); }
+  };
+  (styles[style]||styles.quantumClinical)();
 }
 
-function setLetterSpacing(spacing){
-  // Canvas doesn't support letter-spacing natively; manual method per char
-  return Number(spacing) || 0;
-}
+function setLetterSpacing(spacing){ return Number(spacing)||0; }
 
 function drawTextBlock({text, x, y, maxWidth, align='center', fontFamily, fontSize=88, tracking=0}){
   if(!text) return 0;
   ctx.textAlign = align; ctx.textBaseline = 'top';
   ctx.fillStyle = '#FFFFFF';
   ctx.font = `700 ${fontSize}px ${fontFamily}`;
-
-  // naive wrap per word for western; for KR we just slice by width
-  const isKR = /[\u3131-\uD79D]/u.test(text);
+  const isKR = containsKorean(text);
   const words = isKR ? text.split('') : text.split(/\s+/);
   const lines = [];
   let line = '';
   function widthOf(str){
-    // approximate tracking using measure per char
     if(!tracking) return ctx.measureText(str).width;
     let w = 0; for(const ch of str){ w += ctx.measureText(ch).width + tracking; } return w;
   }
@@ -351,19 +349,17 @@ function drawTextBlock({text, x, y, maxWidth, align='center', fontFamily, fontSi
     else line = test;
   });
   if(line) lines.push(line);
-
   let yy = y; const lh = Math.round(fontSize * (isKR ? 1.08 : 1.1));
   lines.forEach(str=>{
     if(!tracking){ ctx.fillText(str, x, yy); }
     else {
-      // per-char with tracking
-      let xx = x;
-      if(align==='center') xx -= widthOf(str)/2; else if(align==='right') xx -= widthOf(str);
+      let xx = x; const w = widthOf(str);
+      if(align==='center') xx -= w/2; else if(align==='right') xx -= w;
       for(const ch of str){ ctx.fillText(ch, xx, yy); xx += ctx.measureText(ch).width + tracking; }
     }
     yy += lh;
   });
-  return yy - y; // block height
+  return yy - y;
 }
 
 function render(){
@@ -371,8 +367,9 @@ function render(){
   const title = document.getElementById('title').value.trim();
   const subtitle = document.getElementById('subtitle').value.trim();
   const thumbType = document.getElementById('thumbType').value;
-  const style = document.getElementById('style').value;
-  const focus = document.getElementById('focus').value || '';
+  let style = document.getElementById('style').value;
+  const focusText = document.getElementById('focus').value.trim();
+  const focusMode = (document.getElementById('focusMode')||{value:'manual'}).value;
   const prompt = document.getElementById('prompt').value.trim();
   const titleFont = document.getElementById('titleFont').value;
   const subtitleFont = document.getElementById('subtitleFont').value;
@@ -380,18 +377,29 @@ function render(){
   const subtitleSize = Number(document.getElementById('subtitleSize').value);
   const tracking = setLetterSpacing(document.getElementById('tracking').value);
 
-  // background
-  drawBackground(style, prompt, focus);
+  window.__focusPos = null; window.__focusColor = null;
+  if (focusMode === 'auto'){
+    const m = mapFocusAuto(focusText);
+    if(m.style) style = m.style;
+    if(m.pos) window.__focusPos = m.pos;
+    if(m.color) window.__focusColor = m.color;
+  } else {
+    if(/^(liver|heart|lung|kidney)$/i.test(focusText)){
+      const dict = {liver:[0.65,0.62], heart:[0.52,0.50], lung:[0.50,0.46], kidney:[0.58,0.70]};
+      window.__focusPos = dict[focusText.toLowerCase()];
+    } else if (focusText){
+      window.__focusPos = [0.52, 0.55];
+    }
+  }
 
-  // Title top-center
+  drawBackground(style, prompt, focusText);
+  drawFocusOverlay();
+
   const topMargin = 80;
-  drawTextBlock({ text: title || '', x: W/2, y: topMargin, maxWidth: W*0.82,
-    align:'center', fontFamily: titleFont, fontSize: titleSize, tracking });
+  drawTextBlock({ text: title || '', x: W/2, y: topMargin, maxWidth: W*0.82, align:'center', fontFamily: titleFont, fontSize: titleSize, tracking });
 
-  // Subtitle: only if track type
   if(thumbType === 'track' && subtitle){
-    drawTextBlock({ text: subtitle, x: W/2, y: H - subtitleBottomOffset - subtitleSize,
-      maxWidth: W*0.85, align:'center', fontFamily: subtitleFont, fontSize: subtitleSize, tracking: Math.min(tracking, 4) });
+    drawTextBlock({ text: subtitle, x: W/2, y: H - subtitleBottomOffset - subtitleSize, maxWidth: W*0.85, align:'center', fontFamily: subtitleFont, fontSize: subtitleSize, tracking: Math.min(tracking, 4) });
   }
 }
 
@@ -399,23 +407,11 @@ function downloadSelected(){
   const wantPNG = document.getElementById('fmtPNG').checked;
   const wantJPG = document.getElementById('fmtJPG').checked;
   const wantWEBP = document.getElementById('fmtWEBP').checked;
-  if(!wantPNG && !wantJPG && !wantWEBP){ alert('Select at least one format.'); return; }
-  const title = document.getElementById('title').value.trim() || 'thumbnail';
+  if(!wantPNG && !wantJPG && !wantWEBP){ setError('Select at least one format.'); return; }
+  const title = (document.getElementById('title').value.trim()||'thumbnail').replace(/[^\w\-]+/g,'_');
   if(wantPNG){ dl(cv.toDataURL('image/png'), title + '.png'); }
   if(wantJPG){ dl(cv.toDataURL('image/jpeg', 0.95), title + '.jpg'); }
   if(wantWEBP){ dl(cv.toDataURL('image/webp', 0.95), title + '.webp'); }
 }
-function dl(dataURL, filename){ const a = document.createElement('a'); a.href = dataURL; a.download = filename; a.click(); }
-
-// UI bindings
-render();
-document.getElementById('btnRender').addEventListener('click', ()=>{ render(); });
-document.getElementById('btnRegenerate').addEventListener('click', ()=>{ const instr = document.getElementById('editBox').value.trim(); applyEdits(instr); render(); });
-document.getElementById('btnDownload').addEventListener('click', downloadSelected);
-
-document.getElementById('thumbType').addEventListener('change', e=>{
-  const block = document.getElementById('subtitleBlock');
-  block.style.display = e.target.value === 'track' ? 'block' : 'none';
-});
-(function(){ const block = document.getElementById('subtitleBlock'); block.style.display = document.getElementById('thumbType').value === 'track' ? 'block' : 'none'; })();
+function dl(dataURL, filename){ const a=document.createElement('a'); a.href = dataURL; a.download = filename; a.click(); }
 </script>
