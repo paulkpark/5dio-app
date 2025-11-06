@@ -1,0 +1,421 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>5DO Thumbnail Generator — Client Only</title>
+<style>
+  :root{ --bg:#0b1110; --card:#0e1715; --border:#1b2a26; --ink:#e8f5f1; --accent:#1f6456; }
+  html,body{height:100%}
+  body{margin:0; background:var(--bg); color:var(--ink); font:15px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", Segoe UI, Roboto, Helvetica, Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif}
+  .wrap{max-width:1180px; margin:28px auto; padding:0 16px}
+  .grid{display:grid; grid-template-columns: 380px 1fr; gap:18px}
+  .card{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px}
+  h1{margin:0 0 14px; font-weight:700; font-size:18px}
+  label{font-size:12px; opacity:.9}
+  input[type=text], select, textarea{width:100%; padding:10px 12px; margin:.35rem 0 1rem; background:#0c1413; color:var(--ink); border:1px solid var(--border); border-radius:10px}
+  textarea{min-height:60px}
+  .row{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  .row3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px}
+  .btn{display:inline-flex; gap:10px; align-items:center; background:var(--accent); color:#fff; border:0; border-radius:10px; padding:10px 14px; cursor:pointer}
+  .btn.secondary{background:#183f38}
+  .muted{opacity:.8}
+  canvas{width:100%; height:auto; border-radius:14px; border:1px solid var(--border); background:#061a17}
+  .small{font-size:12px; opacity:.8}
+  .checkboxes{display:flex; gap:14px; flex-wrap:wrap; margin:.25rem 0 1rem}
+</style>
+<div class="wrap">
+  <div class="grid">
+    <div class="card">
+      <h1>5DO Thumbnail Generator</h1>
+
+      <label>Thumbnail Type</label>
+      <select id="thumbType">
+        <option value="category">Category Folder (Title only)</option>
+        <option value="track">Audio Track (Title + Subtitle bottom-center)</option>
+      </select>
+
+      <label>Title</label>
+      <input id="title" type="text" placeholder="ORGAN HEALING SEQUENCES" value="ORGAN HEALING SEQUENCES" />
+
+      <div id="subtitleBlock">
+        <label>Subtitle (shown bottom-center for Track)</label>
+        <input id="subtitle" type="text" placeholder="15-Minute Frequency Protocol" />
+      </div>
+
+      <div class="row">
+        <div>
+          <label>Title Font (macOS installed)</label>
+          <select id="titleFont"></select>
+        </div>
+        <div>
+          <label>Subtitle Font (macOS installed)</label>
+          <select id="subtitleFont"></select>
+        </div>
+      </div>
+
+      <div class="row3">
+        <div>
+          <label>Title Size</label>
+          <input id="titleSize" type="range" min="56" max="120" value="88" />
+        </div>
+        <div>
+          <label>Subtitle Size</label>
+          <input id="subtitleSize" type="range" min="32" max="72" value="46" />
+        </div>
+        <div>
+          <label>Letter Spacing</label>
+          <input id="tracking" type="range" min="0" max="8" value="0" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>Focus (optional)</label>
+          <select id="focus">
+            <option value="">None</option>
+            <option value="liver">Liver</option>
+          </select>
+        </div>
+        <div>
+          <label>Style Template</label>
+          <select id="style">
+            <option value="quantumClinical">Quantum + Clinical (Emerald–Gold)</option>
+            <option value="minimalZen">Minimal Zen</option>
+          </select>
+        </div>
+      </div>
+
+      <label>Background Hint (optional prompt-ish note)</label>
+      <input id="prompt" type="text" placeholder="emerald-gold plasma, torus energy, gentle healing" />
+
+      <div>
+        <label>Export Formats (multi-select)</label>
+        <div class="checkboxes">
+          <label><input type="checkbox" id="fmtPNG" checked/> PNG</label>
+          <label><input type="checkbox" id="fmtJPG"/> JPG</label>
+          <label><input type="checkbox" id="fmtWEBP"/> WEBP</label>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+        <button class="btn" id="btnRender">Generate</button>
+        <button class="btn secondary" id="btnRegenerate">Regenerate (apply edits)</button>
+        <button class="btn secondary" id="btnDownload">Download Selected</button>
+        <span class="small muted">1024×1024, top-center title; track mode puts subtitle bottom-center.</span>
+      </div>
+
+      <label>Edit Instructions</label>
+      <textarea id="editBox" placeholder='e.g. title bigger, subtitle smaller, tracking +2, focus liver on, style minimal, title:"ORGAN HEALING SEQUENCES", subtitle:"15-Minute Frequency Protocol"'></textarea>
+
+      <label>Edit Instructions</label>
+      <textarea id="editBox" placeholder='e.g. title bigger, subtitle smaller, tracking +2, focus liver on, style minimal, title font Cinzel, subtitle font Noto Sans KR, subtitle lower, title:"ORGAN HEALING SEQUENCES", subtitle:"15-Minute Frequency Protocol"'></textarea>
+    </div>
+
+    <div class="card">
+      <canvas id="cv" width="1024" height="1024"></canvas>
+    </div>
+  </div>
+</div>
+
+<script>
+// --- Font list (macOS-friendly) ---
+const macFonts = [
+  {name:"SF Pro Display", css:"'SF Pro Display'"},
+  {name:"San Francisco (System)", css:"-apple-system, 'SF Pro Text'"},
+  {name:"Helvetica Neue", css:"'Helvetica Neue'"},
+  {name:"Helvetica", css:"Helvetica"},
+  {name:"Arial", css:"Arial"},
+  {name:"Times New Roman", css:"'Times New Roman'"},
+  {name:"Georgia", css:"Georgia"},
+  {name:"Cinzel", css:"Cinzel, 'Times New Roman', Georgia"},
+  {name:"Cormorant Garamond", css:"'Cormorant Garamond', Georgia, serif"},
+  {name:"Apple SD Gothic Neo", css:"'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif"},
+  {name:"Noto Sans KR", css:"'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif"},
+  {name:"Nanum Gothic", css:"'Nanum Gothic', 'Noto Sans KR', sans-serif"},
+  {name:"Pretendard (if installed)", css:"Pretendard, 'Noto Sans KR', sans-serif"},
+  {name:"Inter", css:"Inter, Arial, sans-serif"},
+];
+
+function fillFontDropdown(sel){
+  macFonts.forEach(f=>{
+    const o = document.createElement('option');
+    o.value = f.css; o.textContent = f.name; sel.appendChild(o);
+  });
+}
+
+const titleFontSel = document.getElementById('titleFont');
+const subtitleFontSel = document.getElementById('subtitleFont');
+fillFontDropdown(titleFontSel); fillFontDropdown(subtitleFontSel);
+// Defaults
+[...titleFontSel.options].forEach((o,i)=>{ if(o.textContent.includes('Cinzel')) titleFontSel.selectedIndex = i; });
+[...subtitleFontSel.options].forEach((o,i)=>{ if(o.textContent.includes('Apple SD Gothic')) subtitleFontSel.selectedIndex = i; });
+
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+
+// --- Edit instruction helpers (no-regex parsing to avoid font/escape issues) ---
+let subtitleBottomOffset = 70;   // bottom offset for subtitle (px)
+window.__glowBoost = 1.0;        // reserved, if you want to boost aura later
+
+function applyEdits(instr){
+  if(!instr) return;
+  const t = (''+instr).toLowerCase();
+  const get = id=>document.getElementById(id);
+
+  // parse quoted values: title:"..." , subtitle:"..."
+  function getQuoted(label){
+    const needle = label+':"';
+    const i = instr.indexOf(needle);
+    if(i>=0){ const s = i + needle.length; const e = instr.indexOf('"', s); if(e> s) return instr.slice(s, e); }
+    return null;
+  }
+  const qTitle = getQuoted('title'); if(qTitle!==null) get('title').value = qTitle;
+  const qSub   = getQuoted('subtitle'); if(qSub!==null) get('subtitle').value = qSub;
+
+  // sizes
+  function inc(id, step){ const el=get(id); const v = Number(el.value)||0; const min=Number(el.min)||0; const max=Number(el.max)||999; el.value = String(Math.max(min, Math.min(max, v+step))); }
+  if(t.includes('title bigger')||t.includes('제목 크게')) inc('titleSize', +6);
+  if(t.includes('title smaller')||t.includes('제목 작게')) inc('titleSize', -6);
+  if(t.includes('subtitle bigger')||t.includes('부제 크게')) inc('subtitleSize', +4);
+  if(t.includes('subtitle smaller')||t.includes('부제 작게')) inc('subtitleSize', -4);
+
+  // tracking
+  if(t.includes('increase spacing')||t.includes('more spacing')||t.includes('자간 늘')) inc('tracking', +1);
+  if(t.includes('decrease spacing')||t.includes('less spacing')||t.includes('자간 줄')) inc('tracking', -1);
+
+  // subtitle vertical position
+  if(t.includes('subtitle lower')||t.includes('subtitle down')||t.includes('부제 아래')) subtitleBottomOffset = Math.max(20, subtitleBottomOffset - 10);
+  if(t.includes('subtitle higher')||t.includes('subtitle up')||t.includes('부제 위'))   subtitleBottomOffset = Math.min(160, subtitleBottomOffset + 10);
+
+  // focus on/off
+  if(t.includes('liver focus on')||t.includes('간 포커스 켜')) get('focus').value = 'liver';
+  if(t.includes('focus off')||t.includes('포커스 끄')) get('focus').value = '';
+
+  // style
+  if(t.includes('style minimal')||t.includes('미니멀')) get('style').value = 'minimalZen';
+  if(t.includes('style quantum')||t.includes('임상')||t.includes('에메랄드')||t.includes('골드')) get('style').value = 'quantumClinical';
+
+  // fonts (simple contains match on dropdown labels)
+  function pickFont(selId, key){ if(!key) return; const sel=get(selId); const k=key.toLowerCase(); for(let i=0;i<sel.options.length;i++){ if(sel.options[i].text.toLowerCase().includes(k)){ sel.selectedIndex=i; break; } } }
+  const tfIdx = t.indexOf('title font '); if(tfIdx>=0){ const key = instr.slice(tfIdx+11).split(/[\n,]/)[0].trim(); pickFont('titleFont', key); }
+  const sfIdx = t.indexOf('subtitle font '); if(sfIdx>=0){ const key = instr.slice(sfIdx+14).split(/[\n,]/)[0].trim(); pickFont('subtitleFont', key); }
+}
+
+
+// --- Edit instruction helpers ---
+let subtitleBottomOffset = 70;   // bottom offset for subtitle (px)
+window.__glowBoost = 1.0;        // 1.0 = default, >1 = stronger aura
+
+function applyEdits(instr){
+  if(!instr) return;
+  const t = instr.toLowerCase();
+  const get = id=>document.getElementById(id);
+
+  // direct set: title:"..." subtitle:"..."
+  const mTitle = instr.match(/title\s*:\s*"([\s\S]*?)"/i); if(mTitle){ get('title').value = mTitle[1]; }
+  const mSub   = instr.match(/subtitle\s*:\s*"([\s\S]*?)"/i); if(mSub){ get('subtitle').value = mSub[1]; }
+
+  // sizes
+  const inc = (id, step)=>{ const el=get(id); el.value = String(Math.max(Number(el.min||0), Math.min(Number(el.max||999), Number(el.value)+step))); };
+  if(/title (bigger|larger)|제목 크게/.test(t)) inc('titleSize', +6);
+  if(/title (smaller)|제목 작게/.test(t)) inc('titleSize', -6);
+  if(/subtitle (bigger|larger)|부제 크게/.test(t)) inc('subtitleSize', +4);
+  if(/subtitle (smaller)|부제 작게/.test(t)) inc('subtitleSize', -4);
+
+  // tracking
+  if(/(increase|more) spacing|자간 늘/.test(t)) inc('tracking', +1);
+  if(/(decrease|less) spacing|자간 줄/.test(t)) inc('tracking', -1);
+
+  // subtitle vertical position
+  if(/subtitle (lower|down)|부제 아래/.test(t)) subtitleBottomOffset = Math.max(20, subtitleBottomOffset - 10);
+  if(/subtitle (higher|up)|부제 위/.test(t))   subtitleBottomOffset = Math.min(160, subtitleBottomOffset + 10);
+
+  // focus on/off
+  if(/focus.*liver.*on|간.*포커스.*켜|liver focus on/.test(t)) get('focus').value = 'liver';
+  if(/focus.*off|포커스.*끄/.test(t)) get('focus').value = '';
+
+  // style
+  if(/style.*minimal|미니멀/.test(t)) get('style').value = 'minimalZen';
+  if(/style.*quantum|임상|에메랄드|골드/.test(t)) get('style').value = 'quantumClinical';
+
+  // fonts: try to match by includes text
+  const pickFont = (selId, key)=>{
+    const sel = get(selId);
+    for(let i=0;i<sel.options.length;i++){
+      if(sel.options[i].text.toLowerCase().includes(key)) { sel.selectedIndex = i; break; }
+    }
+  };
+  const mTf = t.match(/title font\s+([a-z0-9 \-]+)|제목 폰트\s*([\w \-]+)/i);
+  if(mTf){ pickFont('titleFont', (mTf[1]||mTf[2]||'').trim()); }
+  const mSf = t.match(/subtitle font\s+([a-z0-9 \-]+)|부제 폰트\s*([\w \-]+)/i);
+  if(mSf){ pickFont('subtitleFont', (mSf[1]||mSf[2]||'').trim()); }
+
+  // glow boost
+  if(/more glow|글로우 더|광채 업/.test(t)) window.__glowBoost = Math.min(2.0, window.__glowBoost + 0.2);
+  if(/less glow|글로우 줄|광채 다운/.test(t)) window.__glowBoost = Math.max(0.4, window.__glowBoost - 0.2);
+}
+
+function drawBackground(style, hint, focus){
+  const W = cv.width, H = cv.height;
+  // base fill
+  ctx.fillStyle = '#061a17';
+  ctx.fillRect(0,0,W,H);
+
+  if(style === 'minimalZen'){
+    const g = ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0, '#0f1f1b');
+    g.addColorStop(1, '#0a1512');
+    ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+    return;
+  }
+
+  // quantumClinical: emerald–gold, plasma aurora, torus (glowBoost applied)
+  const grad = ctx.createRadialGradient(W*0.5, H*0.55, 50, W*0.5, H*0.55, 700);
+  grad.addColorStop(0, '#0d2f29');
+  grad.addColorStop(0.5, '#0b3a32');
+  grad.addColorStop(1, '#061a17');
+  ctx.fillStyle = grad; ctx.fillRect(0,0,W,H);
+
+  for (let i=0;i<3;i++){
+    const gx = W*0.5 + (i-1)*120;
+    const gy = H*0.6  + (i-1)*60;
+    const rg = ctx.createRadialGradient(gx, gy, 30, gx, gy, 320+i*40);
+    rg.addColorStop(0.0, `rgba(255,215,130,${0.18*(window.__glowBoost||1)})`);
+    rg.addColorStop(0.6, `rgba(255,200,90,${0.07*(window.__glowBoost||1)})`);
+    rg.addColorStop(1.0, 'rgba(255,200,90,0.0)');
+    ctx.fillStyle = rg;
+    ctx.beginPath(); ctx.arc(gx, gy, 400, 0, Math.PI*2); ctx.fill();
+  }
+
+  // torus rings
+  ctx.save();
+  ctx.translate(W*0.5, H*0.58);
+  ctx.strokeStyle = `rgba(255,220,140,${0.28*(window.__glowBoost||1)})`;
+  ctx.lineWidth = 2.5;
+  for (let r=190; r<=330; r+=28){
+    ctx.beginPath();
+    for (let a=0; a<=Math.PI*2; a+=0.02){
+      const wobble = 1 + 0.015*Math.sin(a*6 + r*0.03);
+      const x = Math.cos(a) * r * wobble;
+      const y = Math.sin(a) * (r*0.45) * wobble;
+      if(a===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  if(focus === 'liver'){
+    const lx = W*0.65, ly = H*0.62;
+    const glow = ctx.createRadialGradient(lx, ly, 10, lx, ly, 160);
+    glow.addColorStop(0, `rgba(80,255,200,${0.35*(window.__glowBoost||1)})`);
+    glow.addColorStop(0.5, `rgba(120,255,210,${0.18*(window.__glowBoost||1)})`);
+    glow.addColorStop(1, 'rgba(120,255,210,0.0)');
+    ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(lx, ly, 200, 0, Math.PI*2); ctx.fill();
+
+    ctx.strokeStyle = `rgba(250,235,180,${0.55*(window.__glowBoost||1)})`;
+    ctx.lineWidth = 1.8;
+    [120,155,190].forEach(r=>{
+      ctx.beginPath();
+      for(let a=0; a<=Math.PI*2; a+=0.035){
+        const x = lx + Math.cos(a)*r;
+        const y = ly + Math.sin(a)*r*0.6;
+        if(a===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.stroke();
+    });
+  }
+}
+
+function setLetterSpacing(spacing){
+  // Canvas doesn't support letter-spacing natively; manual method per char
+  return Number(spacing) || 0;
+}
+
+function drawTextBlock({text, x, y, maxWidth, align='center', fontFamily, fontSize=88, tracking=0}){
+  if(!text) return 0;
+  ctx.textAlign = align; ctx.textBaseline = 'top';
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `700 ${fontSize}px ${fontFamily}`;
+
+  // naive wrap per word for western; for KR we just slice by width
+  const isKR = /[\u3131-\uD79D]/u.test(text);
+  const words = isKR ? text.split('') : text.split(/\s+/);
+  const lines = [];
+  let line = '';
+  function widthOf(str){
+    // approximate tracking using measure per char
+    if(!tracking) return ctx.measureText(str).width;
+    let w = 0; for(const ch of str){ w += ctx.measureText(ch).width + tracking; } return w;
+  }
+  words.forEach((wrd)=>{
+    const test = line ? (isKR ? line + wrd : line + ' ' + wrd) : wrd;
+    if(widthOf(test) > maxWidth && line){ lines.push(line); line = wrd; }
+    else line = test;
+  });
+  if(line) lines.push(line);
+
+  let yy = y; const lh = Math.round(fontSize * (isKR ? 1.08 : 1.1));
+  lines.forEach(str=>{
+    if(!tracking){ ctx.fillText(str, x, yy); }
+    else {
+      // per-char with tracking
+      let xx = x;
+      if(align==='center') xx -= widthOf(str)/2; else if(align==='right') xx -= widthOf(str);
+      for(const ch of str){ ctx.fillText(ch, xx, yy); xx += ctx.measureText(ch).width + tracking; }
+    }
+    yy += lh;
+  });
+  return yy - y; // block height
+}
+
+function render(){
+  const W = cv.width, H = cv.height;
+  const title = document.getElementById('title').value.trim();
+  const subtitle = document.getElementById('subtitle').value.trim();
+  const thumbType = document.getElementById('thumbType').value;
+  const style = document.getElementById('style').value;
+  const focus = document.getElementById('focus').value || '';
+  const prompt = document.getElementById('prompt').value.trim();
+  const titleFont = document.getElementById('titleFont').value;
+  const subtitleFont = document.getElementById('subtitleFont').value;
+  const titleSize = Number(document.getElementById('titleSize').value);
+  const subtitleSize = Number(document.getElementById('subtitleSize').value);
+  const tracking = setLetterSpacing(document.getElementById('tracking').value);
+
+  // background
+  drawBackground(style, prompt, focus);
+
+  // Title top-center
+  const topMargin = 80;
+  drawTextBlock({ text: title || '', x: W/2, y: topMargin, maxWidth: W*0.82,
+    align:'center', fontFamily: titleFont, fontSize: titleSize, tracking });
+
+  // Subtitle: only if track type
+  if(thumbType === 'track' && subtitle){
+    drawTextBlock({ text: subtitle, x: W/2, y: H - subtitleBottomOffset - subtitleSize,
+      maxWidth: W*0.85, align:'center', fontFamily: subtitleFont, fontSize: subtitleSize, tracking: Math.min(tracking, 4) });
+  }
+}
+
+function downloadSelected(){
+  const wantPNG = document.getElementById('fmtPNG').checked;
+  const wantJPG = document.getElementById('fmtJPG').checked;
+  const wantWEBP = document.getElementById('fmtWEBP').checked;
+  if(!wantPNG && !wantJPG && !wantWEBP){ alert('Select at least one format.'); return; }
+  const title = document.getElementById('title').value.trim() || 'thumbnail';
+  if(wantPNG){ dl(cv.toDataURL('image/png'), title + '.png'); }
+  if(wantJPG){ dl(cv.toDataURL('image/jpeg', 0.95), title + '.jpg'); }
+  if(wantWEBP){ dl(cv.toDataURL('image/webp', 0.95), title + '.webp'); }
+}
+function dl(dataURL, filename){ const a = document.createElement('a'); a.href = dataURL; a.download = filename; a.click(); }
+
+// UI bindings
+render();
+document.getElementById('btnRender').addEventListener('click', ()=>{ render(); });
+document.getElementById('btnRegenerate').addEventListener('click', ()=>{ const instr = document.getElementById('editBox').value.trim(); applyEdits(instr); render(); });
+document.getElementById('btnDownload').addEventListener('click', downloadSelected);
+
+document.getElementById('thumbType').addEventListener('change', e=>{
+  const block = document.getElementById('subtitleBlock');
+  block.style.display = e.target.value === 'track' ? 'block' : 'none';
+});
+(function(){ const block = document.getElementById('subtitleBlock'); block.style.display = document.getElementById('thumbType').value === 'track' ? 'block' : 'none'; })();
+</script>
