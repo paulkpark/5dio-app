@@ -994,5 +994,112 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   window.lazyLoadThumbs = lazyLoadThumbs;
 })();
 </script>
+  <!-- === 5DO Level-1 Memory Cache (folders/tracks/thumbs) === -->
+<script>
+(function(){
+  const MC = window.__MEMCACHE__ = {
+    root: null,       // 루트 폴더 listing 1회 캐시
+    folders: {},      // 폴더별 listing 캐시 { "FolderPath": [...] }
+    thumbs: new Map() // 썸네일 URL -> 캐시된 url (objectURL or final url)
+  };
+
+  function deepClone(v){
+    try { return structuredClone(v); } catch(e){
+      return JSON.parse(JSON.stringify(v));
+    }
+  }
+
+  // --- 목록 캐싱: listRoot / listFolder (또는 loadFolder) 감싸기 ---
+  function wrapRoot(fn){
+    return async function(){
+      if (MC.root) return deepClone(MC.root);
+      const data = await fn.apply(this, arguments);
+      MC.root = data;
+      return deepClone(data);
+    };
+  }
+  function wrapFolder(fn){
+    return async function(path){
+      const key = String(path || "");
+      if (MC.folders[key]) return deepClone(MC.folders[key]);
+      const data = await fn.apply(this, arguments);
+      MC.folders[key] = data;
+      return deepClone(data);
+    };
+  }
+
+  if (typeof window.listRoot === 'function'){
+    window.listRoot = wrapRoot(window.listRoot);
+  }
+  if (typeof window.listFolder === 'function'){
+    window.listFolder = wrapFolder(window.listFolder);
+  } else if (typeof window.loadFolder === 'function'){
+    window.loadFolder = wrapFolder(window.loadFolder);
+  }
+
+  // --- 썸네일 캐싱: setBGWithFallback 감싸서 메모리 히트 시 즉시 표시 ---
+  (function(){
+    const orig = window.setBGWithFallback;
+    if (!orig){
+      // 폴백 로더가 없는 드물게 예외적인 경우 최소 구현
+      window.setBGWithFallback = function(el, urls, i=0){
+        if (!el || i>=urls.length){ if (el) el.setAttribute('data-loaded','fail'); return; }
+        const u = urls[i];
+        if (MC.thumbs.has(u)){
+          el.style.backgroundImage = `url("${MC.thumbs.get(u)}")`;
+          el.setAttribute('data-loaded','1');
+          return;
+        }
+        const img = new Image();
+        img.onload = function(){
+          MC.thumbs.set(u, img.src);
+          el.style.backgroundImage = `url("${img.src}")`;
+          el.setAttribute('data-loaded','1');
+        };
+        img.onerror = function(){ window.setBGWithFallback(el, urls, i+1); };
+        img.decoding = 'async';
+        img.referrerPolicy = 'no-referrer';
+        img.src = u;
+      };
+      return;
+    }
+
+    window.setBGWithFallback = function(el, urls, i=0){
+      if (!el || i>=urls.length){ if (el) el.setAttribute('data-loaded','fail'); return; }
+      const u = urls[i];
+
+      // 메모리 캐시 히트 → 즉시 페인트
+      if (MC.thumbs.has(u)){
+        el.style.backgroundImage = `url("${MC.thumbs.get(u)}")`;
+        el.setAttribute('data-loaded','1');
+        return;
+      }
+
+      // 원래 폴백 로더에 위임하면서, 성공한 최종 url을 관찰해 캐시
+      const before = el.style.backgroundImage;
+      const obs = new MutationObserver(()=>{
+        const bi = el.style.backgroundImage;
+        if (bi && bi !== before){
+          const m = bi.match(/url\(["']?(.*?)["']?\)/i);
+          if (m && m[1]) MC.thumbs.set(u, m[1]);
+          obs.disconnect();
+        }
+      });
+      try{ obs.observe(el, {attributes:true, attributeFilter:['style']}); }catch(e){}
+      orig(el, urls, i);
+    };
+  })();
+
+  // --- 수동 무효화(라이브러리 변경 시 호출) ---
+  window.clear5DOMemoryCaches = function(){
+    MC.root = null;
+    MC.folders = {};
+    MC.thumbs.clear();
+  };
+
+  // 참고: 리스트를 새로 그린 후엔 필요 시 아래 호출 (지연 로더가 있다면)
+  // window.lazyLoadThumbs && window.lazyLoadThumbs();
+})();
+</script>
 </body>
 </html>
