@@ -491,7 +491,8 @@ const player = $('#player');
 const statusThumb = $('#statusThumb');
 const statusTitle = $('#metaTitle');
 const STATE = { path:'', stack:[], currentTrack:null, foldersCache:[], tracksCache:{} };
-
+let RENDER_TICK = 0;
+  
 /* ===== Helpers ===== */
 function imgOk(url){
   return new Promise(res=>{
@@ -607,16 +608,25 @@ async function renderFavoritesStrip(){
 
 /* ===== Render strip ===== */
 async function renderStrip(){
+  const myTick = ++RENDER_TICK;         // 이 렌더 전용 토큰
   strip.innerHTML='';
+
   if(!STATE.path){
     await renderFavoritesStrip();
+    if(myTick !== RENDER_TICK) return;  // 중간에 다른 렌더가 시작되면 중단
+
     if(!STATE.foldersCache.length) STATE.foldersCache = await listRoot();
     const folders = STATE.foldersCache;
     for(const name of folders){
+      if(myTick !== RENDER_TICK) return;
+
       const card = document.createElement('div'); card.className='card folder';
       const th   = document.createElement('div'); th.className='thumb'; card.append(th);
+
       const u = await folderThumb(name);
+      if(myTick !== RENDER_TICK) return;    // 늦게 돌아온 결과 버리기
       if(u) th.style.backgroundImage=`url("${u}")`;
+
       const star = document.createElement('div'); star.className='star'; star.innerHTML=starSvg(); card.append(star);
       card.addEventListener('click',(e)=>{
         if(e.target.closest('.star')) return;
@@ -627,23 +637,30 @@ async function renderStrip(){
   }else{
     const files = await listTracks(STATE.path);
     for(const f of files){
+      if(myTick !== RENDER_TICK) return;
+
       const card = document.createElement('div'); card.className='card';
       card.setAttribute('data-file', f);
       const th   = document.createElement('div'); th.className='thumb'; card.append(th);
+
       const u = await trackThumb(STATE.path, f);
+      if(myTick !== RENDER_TICK) return;
       if(u) th.style.backgroundImage=`url("${u}")`;
+
       const star = document.createElement('div'); star.className='star'; star.innerHTML=starSvg(); card.append(star);
+
       card.addEventListener('click', async (e)=>{
         if(e.target.closest('.star')) return;
         const url = `${MEDIA_BASE}/${encodeURIComponent(STATE.path)}/${encodeURIComponent(f)}`;
         player.src = url; player.load?.(); player.play().catch(()=>{});
+
         const u2 = await trackThumb(STATE.path, f);
-        if(u2){ statusThumb.classList.remove('status-blank');
-        setStatusThumb(statusThumb, `${u2}`); }
+        if(u2){ statusThumb.classList.remove('status-blank'); setStatusThumb(statusThumb, `${u2}`); }
         statusTitle.textContent = stem(f).replace(/[_\-]+/g,' ');
         statusTitle.classList.add('playing');
         STATE.currentTrack = { name: stem(f), url };
       });
+
       star.addEventListener('click',(e)=>{
         e.stopPropagation();
         const id = trackId(STATE.path, f);
@@ -653,12 +670,12 @@ async function renderStrip(){
         saveFavs(FAVS);
         renderFavoritesStrip();
       });
+
       if(FAVS.has(trackId(STATE.path,f))) card.classList.add('fav');
       strip.appendChild(card);
     }
   }
 }
-
 /* ===== Search / Filter ===== */
 document.getElementById('searchBtn').addEventListener('click', async ()=>{
   const q = ($('#searchInput').value||'').trim().toLowerCase();
