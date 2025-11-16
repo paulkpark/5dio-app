@@ -385,6 +385,42 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const BUCKET = "media";
 const SB = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const MEDIA_BASE = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}`;
+// ===== META.JSON LOAD =====
+let TRACK_META = {};
+
+// meta.json 한 번만 로딩
+async function loadTrackMeta(){
+  try{
+    const url = `${MEDIA_BASE}/meta.json?t=${Date.now()}`;  // 캐시 방지
+    const res = await fetch(url, { cache:'no-store' });
+    if (!res.ok) {
+      console.warn("[meta] meta.json load failed", res.status);
+      return;
+    }
+    TRACK_META = await res.json();
+    console.log("[meta] meta.json loaded", TRACK_META);
+  } catch (e) {
+    console.warn("[meta] meta.json error", e);
+  }
+}
+
+// lang 에 맞는 필드 가져오기 helper
+function getLocalized(meta, base){
+  if (!meta) return "";
+  if (LANG === "ko") return meta[`${base}_ko`] || meta[`${base}_kr`] || meta[base] || "";
+  return meta[`${base}_en`] || meta[base] || meta[`${base}_ko`] || "";
+}
+
+// 트랙에 해당되는 meta 레코드 찾기
+function lookupTrackMeta(folder, fileName){
+  if (!TRACK_META) return null;
+  const s = stem(fileName);              // 예: Heart_Brain_Cohesion
+  const key1 = `${folder}/${s}`;         // Quantum_Torus_X/Heart_Brain_Cohesion
+  const key2 = `${folder}/${fileName}`;  // Quantum_Torus_X/Heart_Brain_Cohesion.mp3
+  const key3 = s;                        // Heart_Brain_Cohesion
+
+  return TRACK_META[key1] || TRACK_META[key2] || TRACK_META[key3] || null;
+}
 
 /* ===== i18n ===== */
 let LANG = (document.documentElement.lang==='en'?'en':'ko');
@@ -604,39 +640,102 @@ function starSvg(){ return '<svg viewBox="0 0 24 24" stroke="currentColor" strok
 function trackId(folder, file){ return (folder? `${folder}/${file}` : file); }
 
 async function renderFavoritesStrip(){
-  const wrap = $('#favoritesWrap'), fstrip = $('#favoritesStrip');
-  const list = [...FAVS];
-  if(list.length===0){ wrap.style.display='none'; fstrip.innerHTML=''; return; }
-  wrap.style.display=''; fstrip.innerHTML='';
+  const wrap   = $('#favoritesWrap');
+  const fstrip = $('#favoritesStrip');
+  const list   = [...FAVS];
+
+  if(list.length===0){
+    wrap.style.display='none';
+    fstrip.innerHTML='';
+    return;
+  }
+
+  wrap.style.display='';
+  fstrip.innerHTML='';
+
   for(const id of list){
-    const seg = id.split('/');
+    const seg    = id.split('/');
     const folder = seg.length>1 ? seg.slice(0,-1).join('/') : '';
     const file   = seg[seg.length-1];
-    const card = document.createElement('div'); card.className='card fav';
-    const th   = document.createElement('div'); th.className='thumb'; card.append(th);
-    const star = document.createElement('div'); star.className='star'; star.innerHTML=starSvg(); card.append(star);
+
+    const card = document.createElement('div');
+    card.className='card fav';
+
+    const th   = document.createElement('div');
+    th.className='thumb';
+    card.append(th);
+
+    const star = document.createElement('div');
+    star.className='star';
+    star.innerHTML=starSvg();
+    card.append(star);
+
     const u = await (folder ? trackThumb(folder, file) : null);
     if(u) th.style.backgroundImage=`url("${u}")`;
-    card.addEventListener('click', (e)=>{
-      if(e.target.closest('.star')) return;
+
+    // ★ 즐겨찾기 카드 클릭 시: 재생 + meta 반영
+    card.addEventListener('click', async (e)=>{
+      if(e.target.closest('.star')) return;  // 별 클릭이면 무시
+
       const url = `${MEDIA_BASE}/${encodeURIComponent(folder)}/${encodeURIComponent(file)}`;
-      player.src = url; player.load?.(); player.play().catch(()=>{});
-      (async()=>{
-        const u2 = await trackThumb(folder, file);
-        if(u2){ statusThumb.classList.remove('status-blank');
-        setStatusThumb(statusThumb, `${u2}`); }
-        statusTitle.textContent = stem(file).replace(/[_\-]+/g,' ');
-        statusTitle.classList.add('playing');
-      })();
+      player.src = url;
+      player.load?.();
+      player.play().catch(()=>{});
+
+      // 썸네일 업데이트
+      const u2 = await trackThumb(folder, file);
+      if(u2){
+        statusThumb.classList.remove('status-blank');
+        setStatusThumb(statusThumb, `${u2}`);
+      }
+
+      // 기본 제목 (파일명 기반)
+      const baseTitle = stem(file).replace(/[_\-]+/g,' ');
+
+      // meta.json 조회
+      const meta = lookupTrackMeta(folder, file);
+      let title    = baseTitle;
+      let desc     = "";
+      let composer = "";
+
+      if (meta){
+        title    = getLocalized(meta, 'title') || baseTitle;
+        desc     = getLocalized(meta, 'desc');
+        composer = meta.composer || getLocalized(meta, 'composer') || "";
+      }
+
+      // 상단 상태 바
+      statusTitle.textContent = title;
+      statusTitle.classList.add('playing');
+      if (typeof STATE !== 'undefined'){
+        STATE.currentTrack = { name: title, url };
+      }
+
+      // info 패널 업데이트
+      if (typeof infoTitle !== 'undefined' && infoTitle) infoTitle.textContent = title;
+      if (typeof infoBody !== 'undefined' && infoBody){
+        const parts = [];
+        if (desc)     parts.push(desc);
+        if (composer) parts.push(LANG==='ko' ? `작곡: ${composer}` : `Composer: ${composer}`);
+        infoBody.textContent = parts.join(' · ');
+      }
     });
+
+    // ★ 별 클릭 시 즐겨찾기 토글
     star.addEventListener('click',(e)=>{
       e.stopPropagation();
       const isFav = FAVS.has(id);
-      if(isFav){ FAVS.delete(id); card.classList.remove('fav'); }
-      else { FAVS.add(id); card.classList.add('fav'); }
+      if(isFav){
+        FAVS.delete(id);
+        card.classList.remove('fav');
+      } else {
+        FAVS.add(id);
+        card.classList.add('fav');
+      }
       saveFavs(FAVS);
       renderFavoritesStrip();
     });
+
     fstrip.appendChild(card);
   }
 }
@@ -669,46 +768,93 @@ async function renderStrip(){
       });
       strip.appendChild(card);
     }
-  }else{
+    } else {
     const files = await listTracks(STATE.path);
-    for(const f of files){
-      if(myTick !== RENDER_TICK) return;
+    for (const f of files) {
+      if (myTick !== RENDER_TICK) return;
 
-      const card = document.createElement('div'); card.className='card';
+      const card = document.createElement('div');
+      card.className = 'card';
       card.setAttribute('data-file', f);
-      const th   = document.createElement('div'); th.className='thumb'; card.append(th);
+
+      const th = document.createElement('div');
+      th.className = 'thumb';
+      card.append(th);
 
       const u = await trackThumb(STATE.path, f);
-      if(myTick !== RENDER_TICK) return;
-      if(u) th.style.backgroundImage=`url("${u}")`;
+      if (myTick !== RENDER_TICK) return;
+      if (u) th.style.backgroundImage = `url("${u}")`;
 
-      const star = document.createElement('div'); star.className='star'; star.innerHTML=starSvg(); card.append(star);
+      const star = document.createElement('div');
+      star.className = 'star';
+      star.innerHTML = starSvg();
+      card.append(star);
 
-      card.addEventListener('click', async (e)=>{
-        if(e.target.closest('.star')) return;
+      // ── 트랙 클릭 핸들러 ─────────────────────────────
+      card.addEventListener('click', async (e) => {
+        if (e.target.closest('.star')) return;   // 즐겨찾기 별 클릭이면 무시
+
         const url = `${MEDIA_BASE}/${encodeURIComponent(STATE.path)}/${encodeURIComponent(f)}`;
-        player.src = url; player.load?.(); player.play().catch(()=>{});
+        player.src = url;
+        player.load?.();
+        player.play().catch(() => {});
 
+        // 로딩 썸네일 갱신
         const u2 = await trackThumb(STATE.path, f);
-        if(u2){ statusThumb.classList.remove('status-blank'); setStatusThumb(statusThumb, `${u2}`); }
-        statusTitle.textContent = stem(f).replace(/[_\-]+/g,' ');
-        statusTitle.classList.add('playing');
-        STATE.currentTrack = { name: stem(f), url };
-    	if(infoTitle) infoTitle.textContent = niceName;
-    	if(infoBody)  infoBody.textContent  = ''; // 지금은 비워두고 나중에 meta.json 넣을 때 채움
-      });
+        if (u2) {
+          statusThumb.classList.remove('status-blank');
+          setStatusThumb(statusThumb, `${u2}`);
+        }
 
-      star.addEventListener('click',(e)=>{
+        // 기본 제목
+        const baseTitle = stem(f).replace(/[_\-]+/g, ' ');
+
+        // meta lookup
+        const meta = lookupTrackMeta(STATE.path, f);
+        let title = baseTitle;
+        let desc = "";
+        let composer = "";
+
+        if (meta) {
+          // "Quantum_Torus_X/Heart_Brain_Cohesion": { title_ko, title_en, desc_ko, ... }
+          title    = getLocalized(meta, 'title') || baseTitle;
+          desc     = getLocalized(meta, 'desc');
+          composer = meta.composer || getLocalized(meta, 'composer') || "";
+        }
+
+        // 상단 상태 텍스트
+        statusTitle.textContent = title;
+        statusTitle.classList.add('playing');
+        STATE.currentTrack = { name: title, url };
+
+        // info 패널 업데이트
+        if (infoTitle) infoTitle.textContent = title;
+        if (infoBody) {
+          const parts = [];
+          if (desc) parts.push(desc);
+          if (composer) {
+            parts.push(
+              LANG === 'ko'
+                ? `작곡: ${composer}`
+                : `Composer: ${composer}`
+            );
+          }
+          infoBody.textContent = parts.join(' · ');
+        }
+      });
+      // ───────────────────────────────────────────────
+
+      star.addEventListener('click', (e) => {
         e.stopPropagation();
         const id = trackId(STATE.path, f);
         const isFav = FAVS.has(id);
-        if(isFav){ FAVS.delete(id); card.classList.remove('fav'); }
-        else { FAVS.add(id); card.classList.add('fav'); }
+        if (isFav) { FAVS.delete(id); card.classList.remove('fav'); }
+        else       { FAVS.add(id);    card.classList.add('fav'); }
         saveFavs(FAVS);
         renderFavoritesStrip();
       });
 
-      if(FAVS.has(trackId(STATE.path,f))) card.classList.add('fav');
+      if (FAVS.has(trackId(STATE.path, f))) card.classList.add('fav');
       strip.appendChild(card);
     }
   }
@@ -1022,6 +1168,7 @@ document.getElementById('genStop').addEventListener('click', stopGen);
 
 /* ===== Boot ===== */
 document.addEventListener('DOMContentLoaded', async ()=>{
+  await loadTrackMeta();   // ★ meta.json 먼저 로딩
   applyLang();
 
   const unlock=()=>{ try{ player.play().then(()=>player.pause()).catch(()=>{}); }catch(_){} window.removeEventListener('touchend',unlock); window.removeEventListener('click',unlock); };
