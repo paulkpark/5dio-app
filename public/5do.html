@@ -562,33 +562,30 @@ const STATE = { path:'', stack:[], currentTrack:null, foldersCache:[], tracksCac
 let RENDER_TICK = 0;
   
 /* ===== Helpers ===== */
-function imgOk(url){
-  return new Promise(res=>{
-    const i=new Image();
-    i.onload=()=>res(true); i.onerror=()=>res(false);
-    i.src=url+(url.includes('?')?'&':'?')+'v='+Date.now();
-  });
-}
+
 function stem(n){ return n.replace(/\.[^.]+$/, ''); }
 
-async function folderThumb(folder){
+function folderThumb(folder){
   const base = `${MEDIA_BASE}/${encodeURIComponent(folder)}/`;
-  const names = (LANG==='en') ? ['folder_e.webp','folder_E.webp'] : ['folder.webp'];
-  for(const n of names){
-    const u = base + n;
-    if(await imgOk(u)) return u;
-  }
-  return null;
+  // 언어별 폴더 썸네일 규칙:
+  //  - 한국어 : folder.webp
+  //  - 영어   : folder_e.webp
+  const name = (LANG === 'en') ? 'folder_e.webp' : 'folder.webp';
+
+  // Supabase 이미지 변환(썸네일 사이즈) 옵션 – 필요 없으면 ?뒤는 빼도 됨
+  return `${base}${name}?width=320&quality=70&format=webp`;
 }
-async function trackThumb(folder, file){
+
+function trackThumb(folder, file){
   const base = `${MEDIA_BASE}/${encodeURIComponent(folder)}/`;
   const s = stem(file);
-  const cand = (LANG==='en') ? [`${s}_E.webp`,`${s}.webp`] : [`${s}.webp`];
-  for(const n of cand){
-    const u = base + n;
-    if(await imgOk(u)) return u;
-  }
-  return null;
+
+  // 트랙 썸네일 규칙:
+  //  - 한국어 : <stem>.webp
+  //  - 영어   : <stem>_E.webp
+  const fname = (LANG === 'en') ? `${s}_E.webp` : `${s}.webp`;
+
+  return `${base}${fname}?width=320&quality=70&format=webp`;
 }
 
 async function listRoot(){
@@ -670,9 +667,8 @@ async function renderFavoritesStrip(){
     star.innerHTML=starSvg();
     card.append(star);
 
-    const u = await (folder ? trackThumb(folder, file) : null);
-    if(u) th.style.backgroundImage=`url("${u}")`;
-
+    const u = folder ? trackThumb(folder, file) : null;
+	if (u) th.style.backgroundImage = `url("${u}")`;
     // ★ 즐겨찾기 카드 클릭 시: 재생 + meta 반영
     card.addEventListener('click', async (e)=>{
       if(e.target.closest('.star')) return;  // 별 클릭이면 무시
@@ -683,11 +679,11 @@ async function renderFavoritesStrip(){
       player.play().catch(()=>{});
 
       // 썸네일 업데이트
-      const u2 = await trackThumb(folder, file);
-      if(u2){
-        statusThumb.classList.remove('status-blank');
-        setStatusThumb(statusThumb, `${u2}`);
-      }
+      const u2 = folder ? trackThumb(folder, file) : null;
+	if (u2){
+  	statusThumb.classList.remove('status-blank');
+ 	 setStatusThumb(statusThumb, `${u2}`);
+	}
 
       // 기본 제목 (파일명 기반)
       const baseTitle = stem(file).replace(/[_\-]+/g,' ');
@@ -757,9 +753,8 @@ async function renderStrip(){
       const card = document.createElement('div'); card.className='card folder';
       const th   = document.createElement('div'); th.className='thumb'; card.append(th);
 
-      const u = await folderThumb(name);
-      if(myTick !== RENDER_TICK) return;    // 늦게 돌아온 결과 버리기
-      if(u) th.style.backgroundImage=`url("${u}")`;
+     const u = folderThumb(name);
+	if (u) th.style.backgroundImage = `url("${u}")`;
 
       const star = document.createElement('div'); star.className='star'; star.innerHTML=starSvg(); card.append(star);
       card.addEventListener('click',(e)=>{
@@ -781,9 +776,8 @@ async function renderStrip(){
       th.className = 'thumb';
       card.append(th);
 
-      const u = await trackThumb(STATE.path, f);
-      if (myTick !== RENDER_TICK) return;
-      if (u) th.style.backgroundImage = `url("${u}")`;
+      const u = trackThumb(STATE.path, f);
+	if (u) th.style.backgroundImage = `url("${u}")`;
 
       const star = document.createElement('div');
       star.className = 'star';
