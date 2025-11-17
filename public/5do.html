@@ -354,18 +354,6 @@ label.gen-label{color:#cfe9ff;font-weight:700}
           </select>
         </div>
       </div>
-
-      <div class="gen-row2">
-        <label class="gen-label" data-i18n="gen.scope">Scope</label>
-        <div class="gen-inline">
-          <label class="gen-sub" data-i18n="gen.zoom">Zoom</label>
-          <input id="oscZoom" type="range" class="gen-range" min="0.5" max="4" step="0.1" value="1" style="width:180px">
-          <label class="gen-sub" data-i18n="gen.gamma">Gamma</label>
-          <input id="oscGamma" type="range" class="gen-range" min="0.6" max="2" step="0.05" value="1" style="width:180px">
-          <label class="gen-sub" data-i18n="gen.line">Line</label>
-          <input id="oscLine" type="range" class="gen-range" min="1" max="4" step="0.5" value="2" style="width:140px">
-        </div>
-      </div>
     </div>
   </section>
 </main>
@@ -478,11 +466,6 @@ const I18N = {
     'harm_base_mid':'중간 (x2)',
     'harm_base_high':'고역 (x4)',
     'harm_octaves':'옥타브 개수',
-
-    'gen.scope':'스코프',
-    'gen.zoom':'줌',
-    'gen.gamma':'감마',
-    'gen.line':'라인 두께',
 
     'osc.color.neonBlue':'네온 블루',
     'osc.color.aqua':'아쿠아',
@@ -1068,10 +1051,7 @@ function drawOsc(){
   ctx2d.clearRect(0,0,W,H);
   if(!analyser){ cancelAnimationFrame(rafId); return; }
   const color = document.getElementById('oscColor').value;
-  const zoom  = parseFloat(document.getElementById('oscZoom').value)||1;
-  const gamma = parseFloat(document.getElementById('oscGamma').value)||1;
-  const line  = parseFloat(document.getElementById('oscLine').value)||2;
-
+ 
   const buf = new Uint8Array(1024); analyser.getByteTimeDomainData(buf);
   ctx2d.lineWidth=line; ctx2d.strokeStyle=color; ctx2d.beginPath();
   const step = Math.max(1, Math.floor(buf.length/(W/zoom))); let x=0;
@@ -1174,7 +1154,7 @@ document.getElementById('genStop').addEventListener('click', stopGen);
   });
 });
 
-['oscColor','oscZoom','oscGamma','oscLine'].forEach(id=>{
+['oscColor'].forEach(id=>{
   const el=document.getElementById(id);
   el.addEventListener('input', ()=>{});
   el.addEventListener('change', ()=>{});
