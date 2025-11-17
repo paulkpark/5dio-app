@@ -3,249 +3,262 @@
 <head>
   <meta charset="UTF-8" />
   <title>5DO meta.json Editor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body{
-      margin:0; padding:16px;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background:#050915; color:#e8f4ff;
+      background:#050910;
+      color:#e5f1ff;
+      margin:0;
+      padding:20px;
     }
-    h1{font-size:20px; margin:0 0 12px;}
-    h2{font-size:16px; margin:16px 0 8px;}
-    .layout{
-      display:flex; gap:16px; align-items:flex-start;
+    h1{
+      font-size:20px;
+      margin-bottom:4px;
+    }
+    small{color:#7f9ab8;}
+    .top-bar{
+      display:flex;
       flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      margin-bottom:16px;
     }
-    .col{
-      flex:1 1 360px;
-      min-width:320px;
-      background:#0b1220;
-      border-radius:12px;
-      padding:12px 14px;
-      box-shadow:0 0 0 1px #111b2f;
+    button{
+      background:#0f2237;
+      color:#e5f1ff;
+      border:1px solid #254466;
+      border-radius:8px;
+      padding:6px 12px;
+      cursor:pointer;
     }
-    label{
-      display:block;
+    button:hover{background:#17314c;}
+    button.danger{border-color:#773b3b;color:#ffd0d0;background:#3b1414;}
+    button.danger:hover{background:#5a2020;}
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:10px;
       font-size:13px;
-      margin:8px 0 4px;
-      color:#b7d3ff;
     }
-    input, textarea, select{
+    th, td{
+      border:1px solid #16263a;
+      padding:4px;
+      vertical-align:top;
+    }
+    th{
+      background:#0b1724;
+      position:sticky;
+      top:0;
+      z-index:2;
+    }
+    input[type="text"], textarea{
       width:100%;
       box-sizing:border-box;
-      background:#050a14;
-      border:1px solid #243659;
-      border-radius:8px;
-      padding:6px 8px;
-      color:#e8f4ff;
-      font-size:13px;
+      background:#0a141f;
+      border:1px solid #20354d;
+      color:#e5f1ff;
+      border-radius:6px;
+      padding:4px 6px;
+      font-size:12px;
     }
-    textarea{
-      min-height:80px;
-      resize:vertical;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,"Liberation Mono","Courier New", monospace;
-    }
-    .row{display:flex; gap:8px;}
-    .row > div{flex:1;}
-    button{
-      background:#1f6ff0;
-      border:none;
-      border-radius:999px;
-      padding:6px 14px;
-      color:white;
-      font-size:13px;
-      cursor:pointer;
-      margin-top:10px;
-    }
-    button.secondary{
-      background:#141b2b;
-      border:1px solid #32425f;
-    }
-    button:disabled{opacity:.4; cursor:default;}
-    .small{font-size:11px; color:#90a4c9;}
-    .badge{
+    textarea{resize:vertical; min-height:60px;}
+    .col-folder{width:120px;}
+    .col-file{width:140px;}
+    .col-actions{width:60px;text-align:center;}
+    .pill{
       display:inline-block;
-      padding:2px 8px;
+      padding:2px 6px;
       border-radius:999px;
-      background:#141f36;
       font-size:11px;
+      background:#0e2238;
+      color:#98c4ff;
+      margin-bottom:4px;
+    }
+    .flex-row{display:flex;gap:6px;align-items:center;}
+    .file-input-label{
+      border:1px dashed #37547a;
+      padding:4px 10px;
+      border-radius:8px;
+      cursor:pointer;
+      font-size:12px;
+      color:#9fb9da;
+    }
+    #loadFile{display:none;}
+    .footer-info{
+      margin-top:14px;
+      font-size:11px;
+      color:#7f9ab8;
+      line-height:1.6;
+    }
+    .badge{
+      font-size:11px;
+      padding:2px 6px;
+      border-radius:6px;
+      background:#12253a;
+      border:1px solid #254466;
       margin-left:4px;
-      color:#a4c7ff;
-    }
-    .error{
-      color:#ff6d6d;
-      font-size:12px;
-      margin-top:4px;
-      min-height:16px;
-    }
-    pre{
-      white-space:pre-wrap;
-      word-break:break-all;
-      font-size:12px;
-      margin:0;
     }
   </style>
 </head>
 <body>
-  <h1>5DO meta.json Editor <span class="badge">local tool</span></h1>
-  <p class="small">
-    1) 현재 <code>meta.json</code> 내용을 왼쪽 상단에 붙여넣고 “JSON 불러오기”를 누른 뒤<br/>
-    2) 아래 폼에 Path / 파일명 / 한·영 설명을 입력하고 “추가 / 업데이트”를 누르면 됩니다.
-  </p>
+  <h1>5DO meta.json Editor</h1>
+  <small>Supabase <code>media/meta.json</code> 생성·편집용 툴</small>
 
-  <div class="layout">
-    <!-- 원본 / 결과 JSON 영역 -->
-    <div class="col">
-      <h2>기존 meta.json (옵션)</h2>
-      <label for="jsonInput">현재 meta.json 내용을 붙여넣으세요 (없으면 비워둬도 됩니다)</label>
-      <textarea id="jsonInput" spellcheck="false">{}</textarea>
-      <button id="btnLoad" class="secondary">JSON 불러오기</button>
-      <div id="loadError" class="error"></div>
+  <div class="top-bar">
+    <button id="addRowBtn">+ 트랙 추가</button>
+    <button id="downloadBtn">meta.json 생성 &amp; 다운로드</button>
 
-      <h2 style="margin-top:16px;">결과 meta.json</h2>
-      <button id="btnDownload">meta.json 다운로드</button>
-      <p class="small">아래 내용이 실제로 저장될 JSON입니다.</p>
-      <pre id="jsonPreview">{}</pre>
-    </div>
+    <label class="file-input-label">
+      기존 meta.json 로드
+      <input type="file" id="loadFile" accept="application/json" />
+    </label>
 
-    <!-- 입력 폼 -->
-    <div class="col">
-      <h2>트랙 메타데이터 입력</h2>
-      <div class="row">
-        <div>
-          <label for="pathInput">Path / 폴더명 (예: <code>Quantum_Torus_X</code>)</label>
-          <input id="pathInput" placeholder="예: Quantum_Torus_X" />
-        </div>
-        <div>
-          <label for="baseInput">파일 베이스명 (확장자 제외, 예: <code>Brain_Heart_Cohesion</code>)</label>
-          <input id="baseInput" placeholder="예: Brain_Heart_Cohesion" />
-        </div>
-      </div>
+    <span class="badge">Key 형식: <code>Folder/FileName.mp3</code></span>
+  </div>
 
-      <label for="titleKo">제목 (한국어)</label>
-      <input id="titleKo" placeholder="예: 브레인 · 하트 코히어런스" />
+  <table>
+    <thead>
+      <tr>
+        <th class="col-folder">폴더<br><small>예: Brainwave_States</small></th>
+        <th class="col-file">파일명<br><small>예: Deep_Focus.mp3</small></th>
+        <th>
+          <span class="pill">KO</span><br/>
+          제목 / 설명 / 작곡가
+        </th>
+        <th>
+          <span class="pill">EN</span><br/>
+          Title / Description / Composer
+        </th>
+        <th class="col-actions">삭제</th>
+      </tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
 
-      <label for="titleEn">Title (English)</label>
-      <input id="titleEn" placeholder="예: Brain &amp; Heart Coherence" />
-
-      <label for="descKo">설명 (한국어)</label>
-      <textarea id="descKo" placeholder="이 트랙의 특징, 효과, 사용 TIP 등을 한국어로 적어주세요."></textarea>
-
-      <label for="descEn">Description (English)</label>
-      <textarea id="descEn" placeholder="Describe features, effects, and usage tips in English."></textarea>
-
-      <div class="row">
-        <div>
-          <label for="tagsInput">태그 (콤마로 구분)</label>
-          <input id="tagsInput" placeholder="예: 감마파, 집중력, 하트코히어런스" />
-        </div>
-        <div>
-          <label for="durationInput">길이 (선택, 예: 20:00)</label>
-          <input id="durationInput" placeholder="예: 20:00" />
-        </div>
-      </div>
-
-      <label for="effectsKo">효과 요약 (한국어, 옵션)</label>
-      <textarea id="effectsKo" placeholder="예: 집중력 향상, 감정 안정, 깊은 명상 유도"></textarea>
-
-      <label for="effectsEn">Effects (English, optional)</label>
-      <textarea id="effectsEn" placeholder="ex: improved focus, emotional balance, deep meditation"></textarea>
-
-      <button id="btnAdd">추가 / 업데이트</button>
-      <div id="formError" class="error"></div>
-      <p class="small">
-        · 실제 meta 키는 <code>Path/Base</code> 형식으로 저장됩니다. (예: <code>Quantum_Torus_X/Brain_Heart_Cohesion</code>)<br/>
-        · 같은 키를 다시 저장하면 해당 트랙의 메타데이터를 업데이트합니다.
-      </p>
-    </div>
+  <div class="footer-info">
+    • 폴더 = Supabase <code>media</code> 버킷 기준 상위 폴더 이름 (예: <code>Brainwave_States</code>)<br/>
+    • 파일명 = 확장자 포함 (예: <code>Deep_Focus.mp3</code>) – 만약 <code>.mp3</code>를 안 쓰면 자동으로 붙여줍니다.<br/>
+    • 결과 JSON 구조 예시:<br/>
+    <code>{
+      "Folder/File.mp3": {
+        "title_ko": "...",
+        "title_en": "...",
+        "desc_ko": "...",
+        "desc_en": "...",
+        "composer": "...",
+        "composer_ko": "...",
+        "composer_en": "..."
+      }
+    }</code>
   </div>
 
   <script>
-    // 내부 메모리 객체 (실제 meta.json)
-    let META = {};
+    const rowsTbody    = document.getElementById('rows');
+    const addRowBtn    = document.getElementById('addRowBtn');
+    const downloadBtn  = document.getElementById('downloadBtn');
+    const loadFileInput= document.getElementById('loadFile');
 
-    const $ = id => document.getElementById(id);
-    const jsonInput   = $('jsonInput');
-    const jsonPreview = $('jsonPreview');
-    const loadError   = $('loadError');
-    const formError   = $('formError');
+    // 한 줄 생성 (기존 nested 구조, flat 구조 모두 지원)
+    function createRow(data = {}) {
+      const ko = data.ko || {};
+      const en = data.en || {};
 
-    function refreshPreview(){
-      jsonPreview.textContent = JSON.stringify(META, null, 2);
+      const folder = data.folder || '';
+      const file   = data.file   || '';
+
+      const koTitle = data.title_ko      || ko.title      || '';
+      const koDesc  = data.desc_ko       || ko.desc       || '';
+      const koComp  = data.composer_ko   || ko.composer   || data.composer || '';
+
+      const enTitle = data.title_en      || en.title      || '';
+      const enDesc  = data.desc_en       || en.desc       || '';
+      const enComp  = data.composer_en   || en.composer   || data.composer || '';
+
+      const tr = document.createElement('tr');
+
+      tr.innerHTML = `
+        <td>
+          <input type="text" class="fld-folder" placeholder="폴더명" value="${folder}">
+        </td>
+        <td>
+          <input type="text" class="fld-file" placeholder="파일명.mp3" value="${file}">
+        </td>
+        <td>
+          <input type="text" class="fld-ko-title" placeholder="제목" value="${koTitle}">
+          <textarea class="fld-ko-desc" placeholder="설명...">${koDesc}</textarea>
+          <input type="text" class="fld-ko-composer" placeholder="작곡가" value="${koComp}">
+        </td>
+        <td>
+          <input type="text" class="fld-en-title" placeholder="Title" value="${enTitle}">
+          <textarea class="fld-en-desc" placeholder="Description...">${enDesc}</textarea>
+          <input type="text" class="fld-en-composer" placeholder="Composer" value="${enComp}">
+        </td>
+        <td class="col-actions">
+          <button class="danger btn-del">X</button>
+        </td>
+      `;
+
+      tr.querySelector('.btn-del').addEventListener('click', () => {
+        rowsTbody.removeChild(tr);
+      });
+
+      rowsTbody.appendChild(tr);
     }
 
-    // 1) 기존 meta.json 불러오기
-    $('btnLoad').addEventListener('click', () => {
-      loadError.textContent = '';
-      try{
-        const obj = JSON.parse(jsonInput.value.trim() || '{}');
-        if(typeof obj !== 'object' || Array.isArray(obj)){
-          throw new Error('meta.json 루트는 객체여야 합니다.');
+    addRowBtn.addEventListener('click', () => createRow());
+
+    // meta.json 생성 & 다운로드 (flat 구조)
+    downloadBtn.addEventListener('click', () => {
+      const meta = {};
+      const rows = rowsTbody.querySelectorAll('tr');
+
+      rows.forEach(tr => {
+        const folderInput = tr.querySelector('.fld-folder');
+        const fileInput   = tr.querySelector('.fld-file');
+        if(!folderInput || !fileInput) return;
+
+        const folder = folderInput.value.trim();
+        let   file   = fileInput.value.trim();
+        if (!folder && !file) return; // 완전 빈 행은 스킵
+
+        if (file && !file.toLowerCase().endsWith('.mp3')) {
+          file += '.mp3';
         }
-        META = obj;
-        refreshPreview();
-      }catch(err){
-        console.error(err);
-        loadError.textContent = 'JSON 파싱 오류: ' + err.message;
-      }
-    });
 
-    // 2) 폼 -> META 업데이트
-    $('btnAdd').addEventListener('click', () => {
-      formError.textContent = '';
+        const key = (folder ? folder + '/' : '') + file;
 
-      const path  = $('pathInput').value.trim();
-      const base  = $('baseInput').value.trim();
-      const tKo   = $('titleKo').value.trim();
-      const tEn   = $('titleEn').value.trim();
-      const dKo   = $('descKo').value.trim();
-      const dEn   = $('descEn').value.trim();
-      const tags  = $('tagsInput').value.trim();
-      const dur   = $('durationInput').value.trim();
-      const effKo = $('effectsKo').value.trim();
-      const effEn = $('effectsEn').value.trim();
+        const koTitle    = tr.querySelector('.fld-ko-title').value.trim();
+        const koDesc     = tr.querySelector('.fld-ko-desc').value.trim();
+        const koComposer = tr.querySelector('.fld-ko-composer').value.trim();
 
-      if(!path || !base){
-        formError.textContent = 'Path와 파일 베이스명은 필수입니다.';
-        return;
-      }
+        const enTitle    = tr.querySelector('.fld-en-title').value.trim();
+        const enDesc     = tr.querySelector('.fld-en-desc').value.trim();
+        const enComposer = tr.querySelector('.fld-en-composer').value.trim();
 
-      const key = `${path}/${base}`;
+        // 공통 composer 문자열 조합 (원하면 규칙 변경 가능)
+        let composerCombined = '';
+        if (koComposer && enComposer && koComposer !== enComposer) {
+          composerCombined = `${koComposer} / ${enComposer}`;
+        } else {
+          composerCombined = koComposer || enComposer || '';
+        }
 
-      const entry = {
-        title_ko: tKo || undefined,
-        title_en: tEn || undefined,
-        desc_ko : dKo || undefined,
-        desc_en : dEn || undefined
-      };
+        meta[key] = {
+          title_ko: koTitle,
+          title_en: enTitle,
+          desc_ko : koDesc,
+          desc_en : enDesc,
+          composer: composerCombined,
+          composer_ko: koComposer,
+          composer_en: enComposer
+        };
+      });
 
-      if(tags){
-        entry.tags = tags.split(',').map(s => s.trim()).filter(Boolean);
-      }
-      if(dur){
-        entry.duration = dur;
-      }
-      if(effKo){
-        entry.effects_ko = effKo.split('\n').map(s => s.trim()).filter(Boolean);
-      }
-      if(effEn){
-        entry.effects_en = effEn.split('\n').map(s => s.trim()).filter(Boolean);
-      }
-
-      // undefined 필드는 제거
-      Object.keys(entry).forEach(k => entry[k] === undefined && delete entry[k]);
-
-      META[key] = entry;
-      refreshPreview();
-    });
-
-    // 3) meta.json 다운로드
-    $('btnDownload').addEventListener('click', () => {
-      const blob = new Blob(
-        [JSON.stringify(META, null, 2)],
-        { type: 'application/json' }
-      );
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const json = JSON.stringify(meta, null, 2);
+      const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
       a.href = url;
       a.download = 'meta.json';
       document.body.appendChild(a);
@@ -254,8 +267,53 @@
       URL.revokeObjectURL(url);
     });
 
-    // 초기 프리뷰
-    refreshPreview();
+    // 기존 meta.json 로드해서 편집 (flat + old nested 둘 다 지원)
+    loadFileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const text = evt.target.result;
+          const obj  = JSON.parse(text);
+
+          // 기존 행 지우기
+          rowsTbody.innerHTML = '';
+
+          Object.entries(obj).forEach(([key, value]) => {
+            const parts  = key.split('/');
+            const fName  = parts.pop();
+            const folder = parts.join('/');
+
+            const v = value || {};
+            const ko = v.ko || {};
+            const en = v.en || {};
+
+            const rowData = {
+              folder,
+              file: fName,
+              title_ko: v.title_ko || ko.title || '',
+              desc_ko : v.desc_ko  || ko.desc  || '',
+              composer_ko: v.composer_ko || ko.composer || '',
+              title_en: v.title_en || en.title || '',
+              desc_en : v.desc_en  || en.desc  || '',
+              composer_en: v.composer_en || en.composer || '',
+              composer: v.composer || ''
+            };
+
+            createRow(rowData);
+          });
+        } catch (err) {
+          alert('meta.json 파싱 에러: ' + err.message);
+        }
+      };
+      reader.readAsText(file, 'utf-8');
+      // 같은 파일 다시 선택 가능하도록 리셋
+      e.target.value = '';
+    });
+
+    // 처음에 기본 행 하나 만들어 두기
+    createRow();
   </script>
 </body>
 </html>
