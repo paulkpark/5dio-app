@@ -73,11 +73,12 @@ main{padding:12px}
 #statusThumb{width:120px;height:120px;border:1px solid #14253b;border-radius:18px;background:#0b1018;background-size:cover;background-position:center;flex-shrink: 0;}
 
 /* Glow Animation for statusThumb */
-.statusThumbGlow {
+#statusThumb.playing {
   animation: thumbGlow 2.2s ease-in-out infinite alternate;
-  box-shadow: 0 0 10px rgba(57,227,255,0.35),
-              0 0 20px rgba(57,227,255,0.25),
-              0 0 32px rgba(57,227,255,0.15);
+  box-shadow:
+    0 0 8px rgba(120,200,255,0.35),
+    0 0 20px rgba(80,180,255,0.25),
+    0 0 34px rgba(40,160,255,0.18);
 }
 
 @keyframes thumbGlow {
@@ -85,7 +86,7 @@ main{padding:12px}
     box-shadow:
       0 0 6px rgba(120,200,255,0.20),
       0 0 16px rgba(80,180,255,0.14),
-      0 0 28px rgba(40,160,255,0.08);
+      0 0 26px rgba(40,160,255,0.08);
   }
   100% {
     box-shadow:
@@ -108,6 +109,31 @@ main{padding:12px}
 @keyframes cycle{0%{background-position:0%}100%{background-position:200%}}
 .status-line{color:#9bbad6;opacity:.9;font-size:13px;line-height:1.4}
 
+/* 재생 중 썸네일 Glow 효과 */
+#statusThumb.playing {
+  animation: thumbGlow 2.2s ease-in-out infinite alternate;
+  box-shadow:
+    0 0 8px rgba(120,200,255,0.35),
+    0 0 20px rgba(80,180,255,0.25),
+    0 0 34px rgba(40,160,255,0.18);
+}
+
+/* Glow 애니메이션 키프레임 */
+@keyframes thumbGlow {
+  0% {
+    box-shadow:
+      0 0 6px rgba(120,200,255,0.20),
+      0 0 16px rgba(80,180,255,0.14),
+      0 0 26px rgba(40,160,255,0.08);
+  }
+  100% {
+    box-shadow:
+      0 0 14px rgba(120,200,255,0.45),
+      0 0 28px rgba(80,180,255,0.35),
+      0 0 42px rgba(40,160,255,0.25);
+  }
+}
+	
 /* Player + nav */
 .playerbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .playerbar .controls button{background:#0d1e2f;border:1px solid var(--stroke);color:var(--txt);padding:8px 10px;border-radius:10px;box-shadow:inset 0 0 10px var(--glow)}
@@ -596,7 +622,7 @@ function applyLang(){
 const $ = (s,r=document)=>r.querySelector(s);
 const strip = $('#strip');
 const player = $('#player');
-const statusThumb = $('#statusThumb');
+const statusThumb = document.getElementById('statusThumb');
 const statusTitle = $('#metaTitle');
 const infoTitle = document.getElementById('trackInfoTitle');
 const infoBody  = document.getElementById('trackInfoBody');
@@ -706,12 +732,14 @@ async function renderFavoritesStrip(){
 
     const star = document.createElement('div');
     star.className='star';
-    star.innerHTML=starSvg();
+    star.innerHTML = starSvg();
     card.append(star);
 
-    const u = folder ? trackThumb(folder, file) : null;
-	if (u) th.style.backgroundImage = `url("${u}")`;
-    // ★ 즐겨찾기 카드 클릭 시: 재생 + meta 반영
+    // ⚠ 여기 반드시 await 필요
+    const u = folder ? await trackThumb(folder, file) : null;
+    if (u) th.style.backgroundImage = `url("${u}")`;
+
+    // ★ 즐겨찾기 카드 클릭 시: 재생 + 썸네일 + glow
     card.addEventListener('click', async (e)=>{
       if(e.target.closest('.star')) return;  // 별 클릭이면 무시
 
@@ -719,8 +747,36 @@ async function renderFavoritesStrip(){
       player.src = url;
       player.load?.();
       player.play().catch(()=>{});
-	  statusThumb.classList.add('statusThumbGlow');
-		
+
+      const u2 = await trackThumb(folder, file);
+      if (u2){
+        statusThumb.classList.remove('status-blank');
+        setStatusThumb(statusThumb, `${u2}`);
+      }
+
+      // 타이틀 & glow
+      const baseTitle = stem(file).replace(/[_\-]+/g,' ');
+      statusTitle.textContent = baseTitle;
+      statusTitle.classList.add('playing');
+
+      if (statusThumb){
+        statusThumb.classList.add('playing');   // 🔵 CSS: #statusThumb.playing {...} 와 매칭
+      }
+    });
+
+    // ★ 별 클릭(즐겨찾기 토글)
+    star.addEventListener('click',(e)=>{
+      e.stopPropagation();
+      const isFav = FAVS.has(id);
+      if(isFav){ FAVS.delete(id); card.classList.remove('fav'); }
+      else { FAVS.add(id); card.classList.add('fav'); }
+      saveFavs(FAVS);
+      renderFavoritesStrip();
+    });
+
+    fstrip.appendChild(card);
+  }
+}
       // 썸네일 업데이트
       const u2 = folder ? trackThumb(folder, file) : null;
 	if (u2){
@@ -746,6 +802,11 @@ async function renderFavoritesStrip(){
       // 상단 상태 바
       statusTitle.textContent = title;
       statusTitle.classList.add('playing');
+
+	  if (statusThumb) {
+ 	  statusThumb.classList.remove('status-blank');   // blank 클래스를 제거(있다면)
+  	  statusThumb.classList.add('playing');           // glowing ON
+	  }
       if (typeof STATE !== 'undefined'){
         STATE.currentTrack = { name: title, url };
       }
@@ -991,8 +1052,8 @@ document.querySelectorAll('.menu-text').forEach(a=>{
 });
 
 /* ===== Player controls & nav ===== */
-$('#btnPlay').addEventListener('click',()=>{ player.play(); statusTitle.classList.add('playing');statusThumb.classList.add('statusThumbGlow'); });
-$('#btnPause').addEventListener('click',()=>{ player.pause(); statusTitle.classList.remove('playing');statusThumb.classList.remove('statusThumbGlow'); });
+$('#btnPlay').addEventListener('click',()=>{ player.play(); statusTitle.classList.add('playing');if(statusThumb) statusThumb.classList.add('playing'); });
+$('#btnPause').addEventListener('click',()=>{ player.pause(); statusTitle.classList.remove('playing');if(statusThumb) statusThumb.classList.remove('playing'); });
 $('#btnLoop').addEventListener('click',()=>{ player.loop = !player.loop; alert(player.loop ? (LANG==='en'?'Loop On':'루프 켜짐') : (LANG==='en'?'Loop Off':'루프 꺼짐')); });
 $('#btnTimer').addEventListener('click',()=>{
   const m = prompt(LANG==='en'?'Sleep timer (minutes)':'수면 타이머 (분)'); 
@@ -1004,6 +1065,11 @@ $('#btnBack').addEventListener('click',()=>{ STATE.path=''; STATE.stack.pop(); r
 $('#btnHome').addEventListener('click',()=>{ STATE.path=''; STATE.stack.length=0; renderStrip(); });
 $('#btnRefresh').addEventListener('click',()=>renderStrip());
 
+player.addEventListener('ended',()=>{
+    statusTitle.classList.remove('playing');
+    if(statusThumb) statusThumb.classList.remove('playing');
+});	
+	
 /* ===== Playlist ===== */
 const USER_ID_KEY='fiveDO_user_id';
 function uid(){ return 'u'+Math.random().toString(36).slice(2)+Date.now().toString(36); }
