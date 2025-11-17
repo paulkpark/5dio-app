@@ -517,11 +517,6 @@ const I18N = {
     'harm_base_high':'High (x4)',
     'harm_octaves':'# of Octaves',
 
-    'gen.scope':'Scope',
-    'gen.zoom':'Zoom',
-    'gen.gamma':'Gamma',
-    'gen.line':'Line',
-
     'osc.color.neonBlue':'Neon Blue',
     'osc.color.aqua':'Aqua',
     'osc.color.green':'Neon Green',
@@ -1043,6 +1038,7 @@ window.openPlPanel = openPlPanel;
 /* ===== Generator (WebAudio) ===== */
 let aCtx=null, analyser=null;
 let oscNodes=[];
+let zoom = 1, gamma = 1, line = 1;   // ★ 기본값 추가
 const cvs = document.getElementById('osc'), ctx2d = cvs.getContext('2d');
 let rafId = 0;
 
