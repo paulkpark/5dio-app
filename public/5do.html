@@ -1367,5 +1367,25 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   };
 })();
 </script>
+	
+</body>
+</html>
+
+<script>
+  // PWA용 서비스 워커 등록
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => {
+          console.log('5DO service worker registered:', reg.scope);
+        })
+        .catch(err => {
+          console.warn('Service worker registration failed:', err);
+        });
+    });
+  }
+</script>
+</body>
+</html>
 </body>
 </html>
