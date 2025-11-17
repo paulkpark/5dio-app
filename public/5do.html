@@ -71,6 +71,29 @@ main{padding:12px}
 /* Library status */
 .status{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:6px 0 12px}
 #statusThumb{width:120px;height:120px;border:1px solid #14253b;border-radius:18px;background:#0b1018;background-size:cover;background-position:center;flex-shrink: 0;}
+
+/* Glow Animation for statusThumb */
+.statusThumbGlow {
+  animation: thumbGlow 2.2s ease-in-out infinite alternate;
+  box-shadow: 0 0 10px rgba(57,227,255,0.35),
+              0 0 20px rgba(57,227,255,0.25),
+              0 0 32px rgba(57,227,255,0.15);
+}
+
+@keyframes thumbGlow {
+  0% {
+    box-shadow:
+      0 0 6px rgba(120,200,255,0.20),
+      0 0 16px rgba(80,180,255,0.14),
+      0 0 28px rgba(40,160,255,0.08);
+  }
+  100% {
+    box-shadow:
+      0 0 14px rgba(120,200,255,0.45),
+      0 0 28px rgba(80,180,255,0.35),
+      0 0 42px rgba(40,160,255,0.25);
+  }
+}
 .status-blank{
   background-image:radial-gradient(60% 40% at 50% 0%, rgba(90,210,255,.08), rgba(0,0,0,0)),
                    radial-gradient(70% 60% at 50% 100%, rgba(0,120,255,.06), rgba(0,0,0,0));
@@ -696,7 +719,8 @@ async function renderFavoritesStrip(){
       player.src = url;
       player.load?.();
       player.play().catch(()=>{});
-
+	  statusThumb.classList.add('statusThumbGlow');
+		
       // 썸네일 업데이트
       const u2 = folder ? trackThumb(folder, file) : null;
 	if (u2){
@@ -967,8 +991,8 @@ document.querySelectorAll('.menu-text').forEach(a=>{
 });
 
 /* ===== Player controls & nav ===== */
-$('#btnPlay').addEventListener('click',()=>{ player.play(); statusTitle.classList.add('playing'); });
-$('#btnPause').addEventListener('click',()=>{ player.pause(); statusTitle.classList.remove('playing'); });
+$('#btnPlay').addEventListener('click',()=>{ player.play(); statusTitle.classList.add('playing');statusThumb.classList.add('statusThumbGlow'); });
+$('#btnPause').addEventListener('click',()=>{ player.pause(); statusTitle.classList.remove('playing');statusThumb.classList.remove('statusThumbGlow'); });
 $('#btnLoop').addEventListener('click',()=>{ player.loop = !player.loop; alert(player.loop ? (LANG==='en'?'Loop On':'루프 켜짐') : (LANG==='en'?'Loop Off':'루프 꺼짐')); });
 $('#btnTimer').addEventListener('click',()=>{
   const m = prompt(LANG==='en'?'Sleep timer (minutes)':'수면 타이머 (분)'); 
