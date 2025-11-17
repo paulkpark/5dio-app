@@ -70,13 +70,13 @@ main{padding:12px}
 
 /* Library status */
 .status{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:6px 0 12px}
-#statusThumb{width:64px;height:64px;border:1px solid #14253b;border-radius:12px;background:#0b1018;background-size:cover;background-position:center}
+#statusThumb{width:96px;height:96px;border:1px solid #14253b;border-radius:16px;background:#0b1018;background-size:cover;background-position:center;flex-shrink: 0;}
 .status-blank{
   background-image:radial-gradient(60% 40% at 50% 0%, rgba(90,210,255,.08), rgba(0,0,0,0)),
                    radial-gradient(70% 60% at 50% 100%, rgba(0,120,255,.06), rgba(0,0,0,0));
 }
 .status-meta{min-width:220px;max-width:min(560px,60vw)}
-.status-title{font-weight:800;margin-bottom:2px}
+.status-title{font-weight:700;margin-bottom:2px;font-size: clamp(12px, 4vw, 18px);white-space; nowrap;overflow; hidden;text-overflow: ellipsis;max-width: 100%;}
 .status-title.playing{
   background:linear-gradient(90deg,#b6ecff,#39e3ff,#7fffd4,#39e3ff,#b6ecff);
   -webkit-background-clip:text;background-clip:text;color:transparent;
