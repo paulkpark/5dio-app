@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>5DO</title>
 <link rel="manifest" href="/manifest.webmanifest">
 
@@ -10,7 +10,15 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 
 <style>
-:root{
+html, body {
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+	:root{
   --bg:#0a0f14; --panel:#0e1520; --line:#13243a; --muted:#8aa6c3; --txt:#e8f2ff;
   --blue:#9fe5ff; --blue2:#39e3ff; --stroke:#1d415f; --glow:rgba(57,227,255,.18);
   --card:#0b131e; --thumb:#0a1018; --accent:#7fd9ff;
@@ -20,7 +28,16 @@
 body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui, -apple-system, Segoe UI, Roboto, Pretendard, Noto Sans KR, sans-serif}
 a{color:inherit;text-decoration:none}
 button{cursor:pointer}
-
+/* 앱 전체 레이아웃 쉘 */
+#appShell,
+#app {                /* 실제 쓰는 ID에 맞춰서 하나만 남겨도 됨 */
+  width: 100%;
+  max-width: 520px;   /* 갤럭시 폴드에서 너무 좁게 느껴지면 540~600까지 올려봐도 됨 */
+  margin: 0 auto;     /* 화면 가운데 정렬 */
+  min-height: 100vh;
+  padding: 0 10px 12px;
+}
+	
 /* Header */
 header{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;
   padding:10px 12px;background:linear-gradient(180deg,#0a1018,#0a0f14 60%);border-bottom:1px solid #0f1b2a}
@@ -169,6 +186,7 @@ label.gen-label{color:#cfe9ff;font-weight:700}
 </style>
 </head>
 <body>
+	<div id="appShell">
 <header>
   <div class="left-pack">
     <div class="menu-container">
@@ -1385,6 +1403,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     });
   }
 </script>
+</div>
 </body>
 </html>
 </body>
