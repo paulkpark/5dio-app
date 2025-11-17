@@ -115,6 +115,19 @@ main{padding:12px}
   padding-right:4px;	
 }
 
+/* Mini Spectrum Visualizer under info panel */
+.mini-viz-wrap{
+  margin-top:8px;
+  padding-top:6px;
+  border-top:1px solid #102035;
+  height:46px;                 /* 필요하면 40~60 사이에서 조절 */
+}
+
+#miniViz{
+  width:100%;
+  height:100%;
+  display:block;
+}	
 /* Search/Filter */
 .filterbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:4px 0 10px}
 .filterbar input, .filterbar select{background:#0f1a28;border:1px solid #13263c;color:#e9f4ff;border-radius:10px;padding:8px 10px}
@@ -272,6 +285,11 @@ label.gen-label{color:#cfe9ff;font-weight:700}
       <div id="trackInfoTitle" class="track-info-title"></div>
       <div id="trackInfoBody" class="track-info-body"></div>
     </section>
+
+	  <!-- Mini Spectrum Visualizer -->
+<div id="miniVizWrap" class="mini-viz-wrap">
+  <canvas id="miniViz"></canvas>
+</div>
   </section>
   </section>
 
@@ -580,7 +598,103 @@ const infoTitle = document.getElementById('trackInfoTitle');
 const infoBody  = document.getElementById('trackInfoBody');
 const STATE = { path:'', stack:[], currentTrack:null, foldersCache:[], tracksCache:{} };
 let RENDER_TICK = 0;
-  
+
+/* ===== Mini Spectrum Visualizer (Library Player) ===== */
+
+const miniCanvas = document.getElementById('miniViz');
+const miniWrap   = document.getElementById('miniVizWrap');
+
+let miniCtx      = null;   // AudioContext
+let miniAnalyser = null;
+let miniSrc      = null;
+let miniAnimId   = null;
+let miniReady    = false;
+
+function setupMiniViz(){
+  if(miniReady) return;
+  if(!window.AudioContext) return; // 오래된 브라우저 방어
+
+  miniCtx = new (window.AudioContext || window.webkitAudioContext)();
+  miniAnalyser = miniCtx.createAnalyser();
+  miniAnalyser.fftSize = 64;            // 너무 촘촘하지 않게
+  const bufferLength = miniAnalyser.frequencyBinCount;
+
+  // <audio> 엘리먼트에서 Web Audio로 가져오기
+  miniSrc = miniCtx.createMediaElementSource(player);
+  // analyser만 물리고 destination에는 안 연결 (중복 재생 방지)
+  miniSrc.connect(miniAnalyser);
+
+  miniReady = true;
+}
+
+function startMiniViz(){
+  if(!miniCanvas || !miniWrap) return;
+
+  setupMiniViz();
+  if(!miniReady) return;
+
+  // iOS / 모바일에서 suspend 상태 방지
+  if(miniCtx.state === 'suspended'){
+    miniCtx.resume().catch(()=>{});
+  }
+
+  const ctx = miniCanvas.getContext('2d');
+  function resizeCanvas(){
+    const rect = miniCanvas.getBoundingClientRect();
+    miniCanvas.width  = rect.width * window.devicePixelRatio;
+    miniCanvas.height = rect.height * window.devicePixelRatio;
+    ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
+  }
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  const bufferLength = miniAnalyser.frequencyBinCount;
+  const dataArray = new Uint8Array(bufferLength);
+
+  function draw(){
+    miniAnimId = requestAnimationFrame(draw);
+
+    miniAnalyser.getByteFrequencyData(dataArray);
+
+    const w = miniCanvas.width / window.devicePixelRatio;
+    const h = miniCanvas.height / window.devicePixelRatio;
+
+    ctx.clearRect(0, 0, w, h);
+
+    const barCount = bufferLength;
+    const barWidth = w / barCount;
+    for(let i=0; i<barCount; i++){
+      const v = dataArray[i] / 255;
+      const barHeight = v * h * 0.9;
+
+      const x = i * barWidth;
+      const y = h - barHeight;
+
+      // 네온 블루 계열 색감
+      const g = Math.floor(150 + 80 * v);
+      const b = Math.floor(255);
+      ctx.fillStyle = `rgba(${40},${g},${b},${0.9})`;
+      ctx.fillRect(x, y, barWidth * 0.7, barHeight);
+    }
+  }
+
+  // 이전 루프 있으면 제거
+  if(miniAnimId) cancelAnimationFrame(miniAnimId);
+  draw();
+}
+
+function stopMiniViz(){
+  if(miniAnimId){
+    cancelAnimationFrame(miniAnimId);
+    miniAnimId = null;
+  }
+  if(miniCanvas){
+    const ctx = miniCanvas.getContext('2d');
+    const rect = miniCanvas.getBoundingClientRect();
+    ctx.clearRect(0, 0, rect.width, rect.height);
+  }
+}
+	
 /* ===== Helpers ===== */
 
 function stem(n){ return n.replace(/\.[^.]+$/, ''); }
@@ -873,6 +987,29 @@ async function renderStrip(){
     }
   }
 }
+
+player.addEventListener('play', ()=>{
+  // 기존 재생 관련 로직 (statusTitle, 썸네일 등)
+  // ...
+
+  // 🔵 미니 비주얼라이저 시작
+  startMiniViz();
+});
+
+player.addEventListener('pause', ()=>{
+  // 기존 일시정지 관련 로직
+  // ...
+
+  // 🔵 일시정지 시 비주얼라이저도 정지
+  stopMiniViz();
+});
+
+player.addEventListener('ended', ()=>{
+  // 기존 종료 처리
+  // ...
+
+  stopMiniViz();
+});	
 /* ===== Search / Filter ===== */
 document.getElementById('searchBtn').addEventListener('click', async ()=>{
   const q = ($('#searchInput').value||'').trim().toLowerCase();
