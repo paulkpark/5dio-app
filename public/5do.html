@@ -1224,20 +1224,87 @@ document.querySelectorAll('.qp').forEach(btn=>{
   });
 
 // ===== Dual Tone Buttons =====
-window.__dualMode__ = false;
+const dualPlayBtn = document.getElementById('dualPlay');
+const dualStopBtn = document.getElementById('dualStop');
 
-document.getElementById('dualPlay').addEventListener('click', ()=>{
-  window.__dualMode__ = true;
-  if(aCtx && aCtx.state==='running') playGen();
-  else document.getElementById('genPlay').click();
-});
+if(dualPlayBtn){
+  dualPlayBtn.addEventListener('click',(e)=>{
+    e.preventDefault();
+    startDual();
+  });
+}
 
-document.getElementById('dualStop').addEventListener('click', ()=>{
-  window.__dualMode__ = false;
-  stopGen();
-});
-	
-});
+if(dualStopBtn){
+  dualStopBtn.addEventListener('click',(e)=>{
+    e.preventDefault();
+    stopDual();
+  });
+}
+
+// ===== Dual Tone Mixer Engine =====
+let dualCtx  = null;
+let dualOsc1 = null;
+let dualOsc2 = null;
+
+function ensureDualCtx(){
+  if(!dualCtx){
+    const AC = window.AudioContext || window.webkitAudioContext;
+    dualCtx = new AC();
+  }
+}
+
+function stopDual(){
+  if(dualOsc1){
+    try{ dualOsc1.stop(); }catch(e){}
+    try{ dualOsc1.disconnect(); }catch(e){}
+    dualOsc1 = null;
+  }
+  if(dualOsc2){
+    try{ dualOsc2.stop(); }catch(e){}
+    try{ dualOsc2.disconnect(); }catch(e){}
+    dualOsc2 = null;
+  }
+}
+
+async function startDual(){
+  ensureDualCtx();
+  try{ await dualCtx.resume(); }catch(e){}
+
+  // 혹시 이전에 돌던 듀얼톤이 있으면 먼저 정지
+  stopDual();
+
+  const toneAEl = document.getElementById('toneA');
+  const toneBEl = document.getElementById('toneB');
+  const wfEl    = document.getElementById('wf');   // 기존 파형 셀렉터 재사용
+
+  const fa = parseFloat(toneAEl?.value || '0') || 0;
+  const fb = parseFloat(toneBEl?.value || '0') || 0;
+  const wf = wfEl?.value || 'sine';
+
+  if(fa <= 0 && fb <= 0){
+    alert('Tone A 또는 Tone B에 유효한 주파수를 입력해 주세요.');
+    return;
+  }
+
+  // 두 톤이 합쳐져도 너무 크지 않게 각각 0.5 gain
+  const g1 = dualCtx.createGain();
+  const g2 = dualCtx.createGain();
+  g1.gain.value = 0.5;
+  g2.gain.value = 0.5;
+
+  dualOsc1 = dualCtx.createOscillator();
+  dualOsc1.type = wf;
+  dualOsc1.frequency.value = fa > 0 ? fa : fb;   // 한쪽만 입력된 경우 대비
+  dualOsc1.connect(g1).connect(dualCtx.destination);
+
+  dualOsc2 = dualCtx.createOscillator();
+  dualOsc2.type = wf;
+  dualOsc2.frequency.value = fb > 0 ? fb : fa;
+  dualOsc2.connect(g2).connect(dualCtx.destination);
+
+  dualOsc1.start();
+  dualOsc2.start();
+}
 	
 /* ===== Boot ===== */
 document.addEventListener('DOMContentLoaded', async ()=>{
