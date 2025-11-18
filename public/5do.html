@@ -274,6 +274,7 @@ label.gen-label{color:#cfe9ff;font-weight:700}
       <div id="trackInfoBody" class="track-info-body"></div>
     </section>
  </section>
+	
 	<!-- Generator -->
   <section id="pageGenerator" class="hidden">
     <div class="osc-wrap">
@@ -354,40 +355,27 @@ label.gen-label{color:#cfe9ff;font-weight:700}
           </select>
         </div>
       </div>
+		<div id="viewGenerator" class="view">
+  <!-- 기존 Generator UI (Waveform, Frequency, Duty, Binaural, Harmonics 등) -->
+  ...
+  
+  <!-- 🔻🔻 여기부터 하단부 확장 영역 🔻🔻 -->
+
+  <!-- Quick Presets -->
+  <section class="section" id="quickPresets">
+    ... (기존 quick preset 코드 그대로) ...
+  </section>
+
+  <!-- Dual Tone Mixer -->
+  <section class="section" id="dualTone">
+    ... (기존 dual tone 코드 그대로) ...
+  </section>
+
+  <!-- 🔺🔺 여기까지 Generator 전용 🔺🔺 -->
+</div>
     </div>
   </section>
-	<!-- Quick Presets -->
-<section class="section" id="quickPresets">
-  <div class="gen-label" style="margin-bottom:6px;">Quick Presets</div>
-  <div class="gen-inline" style="flex-wrap:wrap; gap:8px;">
-    <button class="gen-chip qp" data-freq="528" data-wf="sine">528 Hz</button>
-    <button class="gen-chip qp" data-freq="432" data-wf="sine">432 Hz</button>
-    <button class="gen-chip qp" data-freq="174" data-wf="sine">174 Solfeggio</button>
-    <button class="gen-chip qp" data-freq="7.83" data-wf="sine">Schumann</button>
-    <button class="gen-chip qp" data-freq="40" data-wf="sine">Gamma 40</button>
-  </div>
-</section>
-</main>
-
-<!-- Dual Tone Mixer -->
-<section class="section" id="dualTone">
-  <label class="gen-label" style="margin-bottom:6px;">Dual-Tone Mixer</label>
-
-  <div class="gen-row2">
-    <div class="gen-sub">Tone A (Hz)</div>
-    <input id="toneA" class="gen-input" type="number" value="440" min="0" max="20000">
-  </div>
-
-  <div class="gen-row2">
-    <div class="gen-sub">Tone B (Hz)</div>
-    <input id="toneB" class="gen-input" type="number" value="444" min="0" max="20000">
-  </div>
-
-  <div class="gen-inline" style="margin-top:8px;">
-    <button id="dualPlay" class="btn">Play Dual</button>
-    <button id="dualStop" class="btn">Stop</button>
-  </div>
-</section>
+	
 		
 <!-- Modal (hamburger texts) -->
 <div class="backdrop" id="backdrop"></div>
