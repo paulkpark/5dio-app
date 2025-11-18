@@ -356,8 +356,39 @@ label.gen-label{color:#cfe9ff;font-weight:700}
       </div>
     </div>
   </section>
+	<!-- Quick Presets -->
+<section class="section" id="quickPresets">
+  <div class="gen-label" style="margin-bottom:6px;">Quick Presets</div>
+  <div class="gen-inline" style="flex-wrap:wrap; gap:8px;">
+    <button class="gen-chip qp" data-freq="528" data-wf="sine">528 Hz</button>
+    <button class="gen-chip qp" data-freq="432" data-wf="sine">432 Hz</button>
+    <button class="gen-chip qp" data-freq="174" data-wf="sine">174 Solfeggio</button>
+    <button class="gen-chip qp" data-freq="7.83" data-wf="sine">Schumann</button>
+    <button class="gen-chip qp" data-freq="40" data-wf="sine">Gamma 40</button>
+  </div>
+</section>
 </main>
 
+<!-- Dual Tone Mixer -->
+<section class="section" id="dualTone">
+  <label class="gen-label" style="margin-bottom:6px;">Dual-Tone Mixer</label>
+
+  <div class="gen-row2">
+    <div class="gen-sub">Tone A (Hz)</div>
+    <input id="toneA" class="gen-input" type="number" value="440" min="0" max="20000">
+  </div>
+
+  <div class="gen-row2">
+    <div class="gen-sub">Tone B (Hz)</div>
+    <input id="toneB" class="gen-input" type="number" value="444" min="0" max="20000">
+  </div>
+
+  <div class="gen-inline" style="margin-top:8px;">
+    <button id="dualPlay" class="btn">Play Dual</button>
+    <button id="dualStop" class="btn">Stop</button>
+  </div>
+</section>
+		
 <!-- Modal (hamburger texts) -->
 <div class="backdrop" id="backdrop"></div>
 <div class="modal" id="modal">
@@ -1108,6 +1139,21 @@ function playGen(){
   };
 
   const gens = [];
+	// ===== Dual Tone Mixer =====
+const toneA = parseFloat(document.getElementById('toneA')?.value || 0);
+const toneB = parseFloat(document.getElementById('toneB')?.value || 0);
+
+const mixerMode = window.__dualMode__ || false;
+
+if(mixerMode){
+    const oA = mkOsc(toneA);
+    const oB = mkOsc(toneB);
+
+    oA.node.connect(merger,0,0);
+    oB.node.connect(merger,0,1);
+
+    oscNodes.push(oA.osc, oB.osc);
+}
   const leftBase  = baseFreq;
   const rightBase = bina ? Math.max(0, baseFreq + diff) : baseFreq;
 
@@ -1156,6 +1202,38 @@ document.getElementById('genStop').addEventListener('click', stopGen);
   el.addEventListener('change', ()=>{});
 });
 
+// ===== Quick Presets =====
+document.querySelectorAll('.qp').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const hz = btn.dataset.freq;
+    const wf = btn.dataset.wf || 'sine';
+
+    // 파라미터 세팅
+    document.getElementById('freq').value = hz;
+    document.getElementById('freqRange').value = hz;
+    document.getElementById('wf').value = wf;
+
+    // 자동 재생
+    if(aCtx && aCtx.state==='running'){ playGen(); }
+    else { document.getElementById('genPlay').click(); }
+  });
+
+// ===== Dual Tone Buttons =====
+window.__dualMode__ = false;
+
+document.getElementById('dualPlay').addEventListener('click', ()=>{
+  window.__dualMode__ = true;
+  if(aCtx && aCtx.state==='running') playGen();
+  else document.getElementById('genPlay').click();
+});
+
+document.getElementById('dualStop').addEventListener('click', ()=>{
+  window.__dualMode__ = false;
+  stopGen();
+});
+	
+});
+	
 /* ===== Boot ===== */
 document.addEventListener('DOMContentLoaded', async ()=>{
   await loadTrackMeta();   // ★ meta.json 먼저 로딩
