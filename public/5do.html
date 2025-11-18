@@ -276,105 +276,122 @@ label.gen-label{color:#cfe9ff;font-weight:700}
  </section>
 	
 	<!-- Generator -->
-  <section id="pageGenerator" class="hidden">
-    <div class="osc-wrap">
-      <canvas id="osc"></canvas>
-      <div class="osc-toolbar" id="oscToolbar">
-       
-        <div class="osc-pop" id="oscPop">
-          <div class="osc-swatches" id="oscSwatches"></div>
-        </div>
+<section id="pageGenerator" class="hidden">
+  <div class="osc-wrap">
+    <canvas id="osc"></canvas>
+    <div class="osc-toolbar" id="oscToolbar">
+      <div class="osc-pop" id="oscPop">
+        <div class="osc-swatches" id="oscSwatches"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="gen-toolbar" style="margin-top:6px">
+    <button id="genPlay" class="btn" data-i18n="play">Play</button>
+    <button id="genStop" class="btn" data-i18n="stop">Stop</button>
+    <button id="presetSave" class="btn" data-i18n="preset_save">Save Preset</button>
+    <select id="presetLoad" class="gen-input" style="min-width:160px">
+      <option value="" data-i18n="preset_load">Load Preset…</option>
+    </select>
+    <select id="oscColor" class="gen-input" style="margin-left:auto;min-width:120px">
+      <option value="#39e3ff" data-i18n="osc.color.neonBlue">Neon Blue</option>
+      <option value="#00ffd5" data-i18n="osc.color.aqua">Aqua</option>
+      <option value="#00ff7f" data-i18n="osc.color.green">Neon Green</option>
+      <option value="#ffd166" data-i18n="osc.color.amber">Amber</option>
+      <option value="#ff5ea0" data-i18n="osc.color.magenta">Magenta</option>
+      <option value="#ffffff" data-i18n="osc.color.white">White</option>
+    </select>
+  </div>
+
+  <div class="gen-grid" style="margin-top:8px">
+    <div class="gen-row2">
+      <label class="gen-label" data-i18n="gen.waveform">Waveform</label>
+      <div class="gen-inline">
+        <select id="wf" class="gen-input">
+          <option value="sine">Sine</option>
+          <option value="square">Square</option>
+          <option value="triangle">Triangle</option>
+          <option value="sawtooth">Saw</option>
+        </select>
+        <span class="gen-chip" data-i18n="gen.binaural">Binaural</span>
+        <input type="checkbox" id="binEnable"/>
+        <label class="gen-sub" data-i18n="gen.diff">Difference (Hz)</label>
+        <input id="binDiff" class="gen-input" type="number" min="0" max="40" step="0.1" value="4"/>
       </div>
     </div>
 
-    <div class="gen-toolbar" style="margin-top:6px">
-      <button id="genPlay" class="btn" data-i18n="play">Play</button>
-      <button id="genStop" class="btn" data-i18n="stop">Stop</button>
-      <button id="presetSave" class="btn" data-i18n="preset_save">Save Preset</button>
-      <select id="presetLoad" class="gen-input" style="min-width:160px">
-        <option value="" data-i18n="preset_load">Load Preset…</option>
-      </select>
-      <select id="oscColor" class="gen-input" style="margin-left:auto;min-width:120px">
-        <option value="#39e3ff" data-i18n="osc.color.neonBlue">Neon Blue</option>
-        <option value="#00ffd5" data-i18n="osc.color.aqua">Aqua</option>
-        <option value="#00ff7f" data-i18n="osc.color.green">Neon Green</option>
-        <option value="#ffd166" data-i18n="osc.color.amber">Amber</option>
-        <option value="#ff5ea0" data-i18n="osc.color.magenta">Magenta</option>
-        <option value="#ffffff" data-i18n="osc.color.white">White</option>
-      </select>
+    <div class="gen-row2">
+      <label class="gen-label" data-i18n="gen.frequency">Frequency (Hz)</label>
+      <div class="gen-inline">
+        <input id="freq" class="gen-input" type="number" min="0" max="20000" step="0.1" value="432"/>
+        <input id="freqRange" class="gen-range" type="range" min="0" max="20000" step="1" value="432" style="flex:1">
+      </div>
     </div>
 
-    <div class="gen-grid" style="margin-top:8px">
-      <div class="gen-row2">
-        <label class="gen-label" data-i18n="gen.waveform">Waveform</label>
-        <div class="gen-inline">
-          <select id="wf" class="gen-input">
-            <option value="sine">Sine</option>
-            <option value="square">Square</option>
-            <option value="triangle">Triangle</option>
-            <option value="sawtooth">Saw</option>
-          </select>
-          <span class="gen-chip" data-i18n="gen.binaural">Binaural</span>
-          <input type="checkbox" id="binEnable"/>
-          <label class="gen-sub" data-i18n="gen.diff">Difference (Hz)</label>
-          <input id="binDiff" class="gen-input" type="number" min="0" max="40" step="0.1" value="4"/>
-        </div>
+    <div class="gen-row2">
+      <label class="gen-label" data-i18n="gen.duty">Duty Cycle</label>
+      <div class="gen-inline">
+        <input id="dutyNum" class="gen-input" type="number" min="1" max="100" step="1" value="50"/>
+        <input id="duty" class="gen-range" type="range" min="1" max="100" step="1" value="50" style="flex:1">
       </div>
+    </div>
 
-      <div class="gen-row2">
-        <label class="gen-label" data-i18n="gen.frequency">Frequency (Hz)</label>
-        <div class="gen-inline">
-          <input id="freq" class="gen-input" type="number" min="0" max="20000" step="0.1" value="432"/>
-          <input id="freqRange" class="gen-range" type="range" min="0" max="20000" step="1" value="432" style="flex:1">
-        </div>
+    <div class="gen-row2">
+      <label class="gen-label" data-i18n="harmonics_label">Harmonics</label>
+      <div class="gen-inline">
+        <label class="gen-sub" data-i18n="harmonics_enable">Enable</label>
+        <input id="harmEnable" type="checkbox">
+        <label class="gen-sub" data-i18n="harmonics_base">Base</label>
+        <select id="harmBase" class="gen-input">
+          <option value="fund" data-i18n="harm_base_fund">Fundamental</option>
+          <option value="mid"  data-i18n="harm_base_mid">Mid (x2)</option>
+          <option value="high" data-i18n="harm_base_high">High (x4)</option>
+        </select>
+        <label class="gen-sub" data-i18n="harm_octaves"># of Octaves</label>
+        <select id="harmOct" class="gen-input">
+          <option value="0">0</option><option value="1">1</option>
+          <option value="2">2</option><option value="3">3</option><option value="4">4</option>
+        </select>
       </div>
+    </div>
+  </div><!-- gen-grid 끝 -->
 
-      <div class="gen-row2">
-        <label class="gen-label" data-i18n="gen.duty">Duty Cycle</label>
-        <div class="gen-inline">
-          <input id="dutyNum" class="gen-input" type="number" min="1" max="100" step="1" value="50"/>
-          <input id="duty" class="gen-range" type="range" min="1" max="100" step="1" value="50" style="flex:1">
-        </div>
-      </div>
-
-      <div class="gen-row2">
-        <label class="gen-label" data-i18n="harmonics_label">Harmonics</label>
-        <div class="gen-inline">
-          <label class="gen-sub" data-i18n="harmonics_enable">Enable</label>
-          <input id="harmEnable" type="checkbox">
-          <label class="gen-sub" data-i18n="harmonics_base">Base</label>
-          <select id="harmBase" class="gen-input">
-            <option value="fund" data-i18n="harm_base_fund">Fundamental</option>
-            <option value="mid"  data-i18n="harm_base_mid">Mid (x2)</option>
-            <option value="high" data-i18n="harm_base_high">High (x4)</option>
-          </select>
-          <label class="gen-sub" data-i18n="harm_octaves"># of Octaves</label>
-          <select id="harmOct" class="gen-input">
-            <option value="0">0</option><option value="1">1</option>
-            <option value="2">2</option><option value="3">3</option><option value="4">4</option>
-          </select>
-        </div>
-      </div>
-		<div id="viewGenerator" class="view">
-  <!-- 기존 Generator UI (Waveform, Frequency, Duty, Binaural, Harmonics 등) -->
-  ...
-  
-  <!-- 🔻🔻 여기부터 하단부 확장 영역 🔻🔻 -->
+  <!-- 🔻 여기부터 추가된 Generator 전용 하단부 🔻 -->
 
   <!-- Quick Presets -->
   <section class="section" id="quickPresets">
-    ... (기존 quick preset 코드 그대로) ...
+    <div class="gen-label" style="margin-bottom:6px;">Quick Presets</div>
+    <div class="gen-inline" style="flex-wrap:wrap; gap:8px;">
+      <button class="gen-chip qp" data-freq="528" data-wf="sine">528 Hz</button>
+      <button class="gen-chip qp" data-freq="432" data-wf="sine">432 Hz</button>
+      <button class="gen-chip qp" data-freq="174" data-wf="sine">174 Solfeggio</button>
+      <button class="gen-chip qp" data-freq="7.83" data-wf="sine">Schumann</button>
+      <button class="gen-chip qp" data-freq="40" data-wf="sine">Gamma 40</button>
+    </div>
   </section>
 
   <!-- Dual Tone Mixer -->
   <section class="section" id="dualTone">
-    ... (기존 dual tone 코드 그대로) ...
+    <label class="gen-label" style="margin-bottom:6px;">Dual-Tone Mixer</label>
+
+    <div class="gen-row2">
+      <div class="gen-sub">Tone A (Hz)</div>
+      <input id="toneA" class="gen-input" type="number" value="440" min="0" max="20000">
+    </div>
+
+    <div class="gen-row2">
+      <div class="gen-sub">Tone B (Hz)</div>
+      <input id="toneB" class="gen-input" type="number" value="444" min="0" max="20000">
+    </div>
+
+    <div class="gen-inline" style="margin-top:8px;">
+      <button id="dualPlay" class="btn">Play Dual</button>
+      <button id="dualStop" class="btn">Stop</button>
+    </div>
   </section>
 
-  <!-- 🔺🔺 여기까지 Generator 전용 🔺🔺 -->
-</div>
-  
-  </section>
+  <!-- 🔺 여기까지 Generator 전용 🔺 -->
+</section>
 	
 		
 <!-- Modal (hamburger texts) -->
