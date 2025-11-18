@@ -1307,7 +1307,6 @@ async function startDual(){
 }
 	
 /* ===== Boot ===== */
-<script>
   document.addEventListener('DOMContentLoaded', async ()=>{
   await loadTrackMeta();   // ★ meta.json 먼저 로딩
   applyLang();
@@ -1323,10 +1322,10 @@ async function startDual(){
 
   showPage('lib');
 });
-</script>
+
 
 <!-- === WebP thumb loader (no JPG/PNG fallback) === -->
-<script>
+
 (function(){
   function buildThumbCandidates(src, lang){
     try{
@@ -1389,10 +1388,10 @@ async function startDual(){
   };
   window.lazyLoadThumbs = lazyLoadThumbs;
 })();
-</script>
+
 
 <!-- === 5DO Level-1 Memory Cache (folders/tracks/thumbs) === -->
-<script>
+
 (function(){
   const MC = window.__MEMCACHE__ = {
     root: null,
