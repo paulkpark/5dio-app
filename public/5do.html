@@ -279,7 +279,7 @@ label.gen-label{color:#cfe9ff;font-weight:700}
     <div class="osc-wrap">
       <canvas id="osc"></canvas>
       <div class="osc-toolbar" id="oscToolbar">
-        <button class="osc-color-btn" id="oscColorBtn" title="Waveform Color"></button>
+       
         <div class="osc-pop" id="oscPop">
           <div class="osc-swatches" id="oscSwatches"></div>
         </div>
@@ -1172,30 +1172,6 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 
   showPage('lib');
 });
-</script>
-
-<!-- Osc color popover wiring -->
-<script>
-(function(){
-  const $=s=>document.querySelector(s);
-  const btn = $('#oscColorBtn');
-  const pop = $('#oscPop');
-  const sw  = $('#oscSwatches');
-  const colorSel = $('#oscColor');
-  if(!btn || !pop || !sw) return;
-  const palette = ['#39e3ff','#00ffd5','#00ff7f','#9cff57','#ffd93b','#ff9f40','#ff5d8f','#c07dff','#6aa8ff','#ffffff','#d2d2d2','#0ff'];
-  if(!sw.dataset.ready){
-    sw.dataset.ready='1';
-    palette.forEach(c=>{
-      const b=document.createElement('button'); b.className='osc-swatch'; b.style.background=c;
-      b.addEventListener('click',()=>{ if(colorSel){ colorSel.value=c; colorSel.dispatchEvent(new Event('change')); } pop.classList.remove('show'); btn.style.background=c; });
-      sw.appendChild(b);
-    });
-    btn.style.background = colorSel?.value || '#39e3ff';
-  }
-  btn.addEventListener('click', (e)=>{ e.stopPropagation(); pop.classList.toggle('show'); });
-  document.addEventListener('click', (e)=>{ if(!pop.contains(e.target) && e.target!==btn){ pop.classList.remove('show'); } });
-})();
 </script>
 
 <!-- === WebP thumb loader (no JPG/PNG fallback) === -->
