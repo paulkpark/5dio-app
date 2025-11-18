@@ -4,6 +4,7 @@
   "description": "5D Oscillator · Frequency & Library Player",
   "start_url": "/5do.html",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#050910",
   "theme_color": "#050910",
   "icons": [
