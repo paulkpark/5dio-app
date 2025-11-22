@@ -138,6 +138,27 @@ main{padding:12px}
 .card .star svg{width:18px;height:18px; stroke:#8fe8ff; fill:none; filter: drop-shadow(0 0 4px rgba(110,220,255,.8))}
 .card.fav .star svg{ fill:#9fe5ff; stroke:#9fe5ff; }
 
+/* ==== MINI SPECTRUM VISUALIZER ==== */
+
+/* 타이틀을 약간 위로 */
+.status-title {
+  margin-top: -4px;
+  margin-bottom: 4px;
+}
+
+/* miniViz 는 기본 숨김 → 재생시 JS에서 표시 */
+#miniViz {
+  width: 100%;
+  height: 32px;
+  background: #050810;
+  border: 1px solid rgba(60,150,220,.45);
+  border-radius: 6px;
+  margin-top: 2px;
+  margin-bottom: 6px;
+  display: none;  /* 초기 숨김 */
+  box-shadow: 0 0 10px rgba(30,120,200,.25) inset;
+}
+
 /* Generator */
 .section{margin-top:14px;border-top:1px solid #0f1b2a;padding-top:12px}
 .gen-grid{display:grid;gap:10px}
@@ -251,6 +272,7 @@ label.gen-label{color:#cfe9ff;font-weight:700}
       <div id="statusThumb" class="status-blank"></div>
       <div class="status-meta">
         <div id="metaTitle" class="status-title"></div>
+        <canvas id="miniViz"></canvas>
         <div id="metaDesc" class="status-line"></div>
         <div id="metaComposer" class="status-line"></div>
       </div>
@@ -359,37 +381,53 @@ label.gen-label{color:#cfe9ff;font-weight:700}
   <!-- 🔻 여기부터 추가된 Generator 전용 하단부 🔻 -->
 
   <!-- Quick Presets -->
-  <section class="section" id="quickPresets">
-    <div class="gen-label" style="margin-bottom:6px;">Quick Presets</div>
-    <div class="gen-inline" style="flex-wrap:wrap; gap:8px;">
-      <button class="gen-chip qp" data-freq="528" data-wf="sine">528 Hz</button>
-      <button class="gen-chip qp" data-freq="432" data-wf="sine">432 Hz</button>
-      <button class="gen-chip qp" data-freq="174" data-wf="sine">174 Solfeggio</button>
-      <button class="gen-chip qp" data-freq="7.83" data-wf="sine">Schumann</button>
-      <button class="gen-chip qp" data-freq="40" data-wf="sine">Gamma 40</button>
-    </div>
-  </section>
+<section class="section" id="quickPresets">
+  <div class="gen-label" style="margin-bottom:6px;"
+       data-i18n="gen.quick_presets">Quick Presets</div>
+  <div class="gen-inline" style="flex-wrap:wrap; gap:8px;">
+    <button class="gen-chip qp"
+            data-freq="528" data-wf="sine"
+            data-i18n="gen.qp_528">528 Hz</button>
 
-  <!-- Dual Tone Mixer -->
-  <section class="section" id="dualTone">
-    <label class="gen-label" style="margin-bottom:6px;">Dual-Tone Mixer</label>
+    <button class="gen-chip qp"
+            data-freq="432" data-wf="sine"
+            data-i18n="gen.qp_432">432 Hz</button>
 
-    <div class="gen-row2">
-      <div class="gen-sub">Tone A (Hz)</div>
-      <input id="toneA" class="gen-input" type="number" value="440" min="0" max="20000">
-    </div>
+    <button class="gen-chip qp"
+            data-freq="174" data-wf="sine"
+            data-i18n="gen.qp_174">174 Solfeggio</button>
 
-    <div class="gen-row2">
-      <div class="gen-sub">Tone B (Hz)</div>
-      <input id="toneB" class="gen-input" type="number" value="444" min="0" max="20000">
-    </div>
+    <button class="gen-chip qp"
+            data-freq="7.83" data-wf="sine"
+            data-i18n="gen.qp_schumann">Schumann</button>
 
-    <div class="gen-inline" style="margin-top:8px;">
-      <button id="dualPlay" class="btn">Play Dual</button>
-      <button id="dualStop" class="btn">Stop</button>
-    </div>
-  </section>
+    <button class="gen-chip qp"
+            data-freq="40" data-wf="sine"
+            data-i18n="gen.qp_gamma40">Gamma 40</button>
+  </div>
+</section>
 
+<!-- Dual Tone Mixer -->
+<section class="section" id="dualTone">
+  <label class="gen-label" style="margin-bottom:6px;" data-i18n="dual.label">
+    Dual-Tone Mixer
+  </label>
+
+  <div class="gen-row2">
+    <div class="gen-sub" data-i18n="dual.toneA">Tone A (Hz)</div>
+    <input id="toneA" class="gen-input" type="number" value="432" min="0" max="20000">
+  </div>
+
+  <div class="gen-row2">
+    <div class="gen-sub" data-i18n="dual.toneB">Tone B (Hz)</div>
+    <input id="toneB" class="gen-input" type="number" value="528" min="0" max="20000">
+  </div>
+
+  <div class="gen-inline" style="margin-top:8px;">
+    <button id="dualPlay" class="btn" data-i18n="dual.play">Play Dual</button>
+    <button id="dualStop" class="btn" data-i18n="dual.stop">Stop</button>
+  </div>
+</section>
   <!-- 🔺 여기까지 Generator 전용 🔺 -->
 </section>
 	
@@ -467,6 +505,7 @@ function lookupTrackMeta(folder, fileName){
 
 /* ===== i18n ===== */
 let LANG = (document.documentElement.lang==='en'?'en':'ko');
+
 const I18N = {
   'ko': {
     'tab.library':'라이브러리',
@@ -479,22 +518,23 @@ const I18N = {
 
     'player.play':'재생',
     'player.pause':'일시정지',
-    'player.loop':'반복',
+    'player.loop':'루프',
     'player.timer':'타이머',
     'player.playlists':'플레이리스트',
 
     'gen.waveform':'파형',
     'gen.frequency':'주파수 (Hz)',
-
-    'play':'재생',
-    'stop':'정지',
-    'preset_save':'프리셋 저장',
-    'preset_load':'프리셋 불러오기…',
-
-    'gen.binaural':'바이노럴',
-    'gen.diff':'차이 (Hz)',
     'gen.duty':'듀티 사이클',
 
+    // ▼ Quick Presets 관련
+    'gen.quick_presets':'퀵 프리셋',
+    'qp.528':'528 Hz',
+    'qp.432':'432 Hz',
+    'qp.174':'174 솔페지오',
+    'qp.schumann':'슈만 공명',
+    'qp.gamma40':'감마 40',
+
+    // ▼ Harmonics 관련
     'harmonics_label':'하모닉스',
     'harmonics_enable':'활성화',
     'harmonics_base':'기준',
@@ -503,6 +543,14 @@ const I18N = {
     'harm_base_high':'고역 (x4)',
     'harm_octaves':'옥타브 개수',
 
+    // ▼ Dual-Tone Mixer 관련
+    'dual.label':'듀얼 톤 믹서',
+    'dual.toneA':'톤 A (Hz)',
+    'dual.toneB':'톤 B (Hz)',
+    'dual.play':'듀얼 재생',
+    'dual.stop':'정지',
+
+    // ▼ 오실로스코프 색상
     'osc.color.neonBlue':'네온 블루',
     'osc.color.aqua':'아쿠아',
     'osc.color.green':'네온 그린',
@@ -510,13 +558,21 @@ const I18N = {
     'osc.color.magenta':'마젠타',
     'osc.color.white':'화이트',
 
+    // ▼ 플레이리스트
     'pl.no':'플레이리스트가 없습니다. 생성해 주세요.',
     'pl.new':'새 목록',
     'pl.delete':'삭제',
     'pl.save':'저장',
     'pl.import':'가져오기',
     'pl.export':'내보내기',
-    'pl.close':'닫기'
+    'pl.close':'닫기',
+
+    // ▼ 검색/필터 UI (이미 사용중일 가능성 있음)
+    'search.placeholder':'검색어',
+    'search.mode.folder':'폴더',
+    'search.mode.track':'곡명',
+    'search.btn.search':'검색',
+    'search.btn.clear':'지우기'
   },
   'en': {
     'tab.library':'Library',
@@ -535,16 +591,17 @@ const I18N = {
 
     'gen.waveform':'Waveform',
     'gen.frequency':'Frequency (Hz)',
-
-    'play':'Play',
-    'stop':'Stop',
-    'preset_save':'Save Preset',
-    'preset_load':'Load Preset…',
-
-    'gen.binaural':'Binaural',
-    'gen.diff':'Difference (Hz)',
     'gen.duty':'Duty Cycle',
 
+    // ▼ Quick Presets
+    'gen.quick_presets':'Quick Presets',
+    'qp.528':'528 Hz',
+    'qp.432':'432 Hz',
+    'qp.174':'174 Solfeggio',
+    'qp.schumann':'Schumann',
+    'qp.gamma40':'Gamma 40',
+
+    // ▼ Harmonics
     'harmonics_label':'Harmonics',
     'harmonics_enable':'Enable',
     'harmonics_base':'Base',
@@ -553,6 +610,14 @@ const I18N = {
     'harm_base_high':'High (x4)',
     'harm_octaves':'# of Octaves',
 
+    // ▼ Dual-Tone Mixer
+    'dual.label':'Dual-Tone Mixer',
+    'dual.toneA':'Tone A (Hz)',
+    'dual.toneB':'Tone B (Hz)',
+    'dual.play':'Play Dual',
+    'dual.stop':'Stop',
+
+    // ▼ Osc colors
     'osc.color.neonBlue':'Neon Blue',
     'osc.color.aqua':'Aqua',
     'osc.color.green':'Neon Green',
@@ -560,29 +625,93 @@ const I18N = {
     'osc.color.magenta':'Magenta',
     'osc.color.white':'White',
 
+    // ▼ Playlists
     'pl.no':'No playlists. Create one.',
     'pl.new':'New List',
     'pl.delete':'Delete',
     'pl.save':'Save',
     'pl.import':'Import',
     'pl.export':'Export',
-    'pl.close':'Close'
+    'pl.close':'Close',
+
+    // ▼ Search/filter
+    'search.placeholder':'Search',
+    'search.mode.folder':'Folder',
+    'search.mode.track':'Track',
+    'search.btn.search':'Search',
+    'search.btn.clear':'Clear'
   }
 };
+
 function applyLang(){
+  // 1) data-i18n 텍스트 라벨
   document.querySelectorAll('[data-i18n]').forEach(el=>{
     const key = el.getAttribute('data-i18n');
     if(I18N[LANG] && I18N[LANG][key]) el.textContent = I18N[LANG][key];
   });
-  // Playlist header buttons
-  document.getElementById('plTitle').textContent = (LANG==='en'?'Playlists':'플레이리스트');
-  document.getElementById('plNewBtn').textContent = (LANG==='en'?'+ New':'+ 새 목록');
+
+  // 2) placeholder용
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>{
+    const key = el.getAttribute('data-i18n-placeholder');
+    const val = I18N[LANG] && I18N[LANG][key];
+    if(val) el.placeholder = val;
+  });
+
+  // 3) 플레이리스트 헤더 버튼들 (기존 로직 유지)
+  document.getElementById('plTitle').textContent     = (LANG==='en'?'Playlists':'플레이리스트');
+  document.getElementById('plNewBtn').textContent    = (LANG==='en'?'+ New':'+ 새 목록');
   document.getElementById('plImportBtn').textContent = (LANG==='en'?'Import':'가져오기');
   document.getElementById('plExportBtn').textContent = (LANG==='en'?'Export':'내보내기');
-  document.getElementById('plCloseBtn').textContent = (LANG==='en'?'Close':'닫기');
-  document.getElementById('plSaveBtn').textContent = (LANG==='en'?'Save':'저장');
-}
+  document.getElementById('plCloseBtn').textContent  = (LANG==='en'?'Close':'닫기');
+  document.getElementById('plSaveBtn').textContent   = (LANG==='en'?'Save':'저장');
 
+  // 4) 이미 재생 중인 트랙의 썸네일·메타데이터 언어 반영 (기존에 쓰던 로직 유지)
+  try{
+    const playerEl      = document.getElementById('player');
+    const statusThumbEl = document.getElementById('statusThumb');
+    if(!playerEl || !playerEl.src || !statusThumbEl) return;
+
+    const base = MEDIA_BASE + '/';
+    if(!playerEl.src.startsWith(base)) return;
+
+    const rel   = decodeURIComponent(playerEl.src.slice(base.length));
+    const parts = rel.split('/');
+    const file  = parts.pop();
+    const folder= parts.join('/');
+
+    const thumbUrl = trackThumb(folder, file);
+    if(thumbUrl){
+      statusThumbEl.classList.remove('status-blank');
+      setStatusThumb(statusThumbEl, thumbUrl);
+    }
+
+    const baseTitle = stem(file).replace(/[_\-]+/g,' ');
+    const meta      = lookupTrackMeta(folder, file);
+
+    let title    = baseTitle;
+    let desc     = "";
+    let composer = "";
+
+    if(meta){
+      title    = getLocalized(meta, 'title') || baseTitle;
+      desc     = getLocalized(meta, 'desc');
+      composer = meta.composer || getLocalized(meta, 'composer') || "";
+    }
+
+    statusTitle.textContent = title;
+    statusTitle.classList.add('playing');
+
+    if(infoTitle) infoTitle.textContent = title;
+    if(infoBody){
+      const partsTxt = [];
+      if(desc)     partsTxt.push(desc);
+      if(composer) partsTxt.push(LANG==='ko' ? `작곡: ${composer}` : `Composer: ${composer}`);
+      infoBody.textContent = partsTxt.join(' · ');
+    }
+  }catch(e){
+    console.warn('[applyLang] refresh current track failed', e);
+  }
+}
 /* ===== Shorthands & State ===== */
 const $ = (s,r=document)=>r.querySelector(s);
 const strip = $('#strip');
@@ -981,8 +1110,19 @@ document.querySelectorAll('.menu-text').forEach(a=>{
 });
 
 /* ===== Player controls & nav ===== */
-$('#btnPlay').addEventListener('click',()=>{ player.play(); statusTitle.classList.add('playing'); });
-$('#btnPause').addEventListener('click',()=>{ player.pause(); statusTitle.classList.remove('playing'); });
+$('#btnPlay').addEventListener('click',()=>{
+  player.play();
+  statusTitle.classList.add('playing');
+  const mv = document.getElementById('miniViz');
+  if(mv) mv.style.display = 'block';
+});
+
+$('#btnPause').addEventListener('click',()=>{
+  player.pause();
+  statusTitle.classList.remove('playing');
+  const mv = document.getElementById('miniViz');
+  if(mv) mv.style.display = 'none';
+});
 $('#btnLoop').addEventListener('click',()=>{ player.loop = !player.loop; alert(player.loop ? (LANG==='en'?'Loop On':'루프 켜짐') : (LANG==='en'?'Loop Off':'루프 꺼짐')); });
 $('#btnTimer').addEventListener('click',()=>{
   const m = prompt(LANG==='en'?'Sleep timer (minutes)':'수면 타이머 (분)'); 
@@ -1118,68 +1258,108 @@ function playGen(){
   const hBase= document.getElementById('harmBase').value;
   const hOct = parseInt(document.getElementById('harmOct').value||'0',10);
 
-  const baseMul = (hBase==='mid'?2:(hBase==='high'?4:1));
+  const baseMul  = (hBase==='mid'?2:(hBase==='high'?4:1));
   const baseFreq = f0 * baseMul;
 
   const merger = aCtx.createChannelMerger(2);
-  analyser = aCtx.createAnalyser(); analyser.fftSize=2048;
+  analyser = aCtx.createAnalyser();
+  analyser.fftSize = 2048;
 
   const mkOsc = (freq)=>{
     const o = aCtx.createOscillator();
     o.type = (wf==='square'?'square':(wf==='triangle'?'triangle':(wf==='sawtooth'?'sawtooth':'sine')));
     o.frequency.value = Math.max(0,freq);
     let node = o;
+
+    // 커스텀 듀티 사각파
     if(wf==='square'){
       const shaper = aCtx.createWaveShaper();
       const curve = new Float32Array(256);
       const th = (duty/100)*2-1;
-      for(let i=0;i<256;i++){ const x=i/128-1; curve[i] = (x<th)? -1 : 1; }
+      for(let i=0;i<256;i++){
+        const x=i/128-1;
+        curve[i] = (x<th)? -1 : 1;
+      }
       shaper.curve = curve;
       o.connect(shaper);
       node = shaper;
     }
-    const g = aCtx.createGain(); g.gain.value = 0.2;
+
+    const g = aCtx.createGain();
+    g.gain.value = 0.2;
     node.connect(g);
-    return {osc:o, node:g};
+    return { osc:o, node:g };
   };
 
   const gens = [];
-	// ===== Dual Tone Mixer =====
-const toneA = parseFloat(document.getElementById('toneA')?.value || 0);
-const toneB = parseFloat(document.getElementById('toneB')?.value || 0);
+  const mixerMode = (window.__dualMode__ === true);
 
-const mixerMode = window.__dualMode__ || false;
+  /* =========================
+     1) Dual-Tone 전용 모드
+     ========================= */
+  if (mixerMode){
+    const toneAEl = document.getElementById('toneA');
+    const toneBEl = document.getElementById('toneB');
+    const fA = parseFloat(toneAEl?.value || '0') || 0;
+    const fB = parseFloat(toneBEl?.value || '0') || 0;
 
-if(mixerMode){
-    const oA = mkOsc(toneA);
-    const oB = mkOsc(toneB);
+    // 둘 다 0이면 그냥 아무것도 재생하지 않음
+    if (!fA && !fB) return;
 
+    // 왼/오른 채널에 A/B 배치 (한쪽이 0이면 다른 쪽을 양쪽에 사용)
+    const leftFreq  = fA || fB;
+    const rightFreq = fB || fA || leftFreq;
+
+    const oA = mkOsc(leftFreq);
+    const oB = mkOsc(rightFreq);
+
+    // L/R 채널로 보냄
     oA.node.connect(merger,0,0);
     oB.node.connect(merger,0,1);
 
-    oscNodes.push(oA.osc, oB.osc);
-}
+    gens.push(oA, oB);
+
+    merger.connect(analyser).connect(aCtx.destination);
+    gens.forEach(g=>{
+      try{ g.osc.start(); }catch(e){}
+      oscNodes.push(g.osc);
+    });
+
+    drawOsc();
+    return;  // ★ 여기서 종료 → 메인 f0/하모닉/바이노럴은 전혀 안씀
+  }
+
+  /* =========================
+     2) 기존 단일톤 + 바이노럴 + 하모닉 모드
+     ========================= */
   const leftBase  = baseFreq;
   const rightBase = bina ? Math.max(0, baseFreq + diff) : baseFreq;
 
   const buildChannel = (base, chIndex)=>{
-    gens.push(mkOsc(base));
+    const baseGen = mkOsc(base);
+    gens.push(baseGen);
+
     if(hEn){
       for(let k=1;k<=hOct;k++){
         gens.push(mkOsc(base*Math.pow(2,k)));
       }
     }
-    gens.slice(- (hEn? (1+hOct) : 1)).forEach(g=> g.node.connect(merger,0,chIndex));
+
+    const sliceCount = (hEn ? (1+hOct) : 1);
+    gens.slice(-sliceCount).forEach(g=> g.node.connect(merger,0,chIndex));
   };
+
   buildChannel(leftBase, 0);
   buildChannel(rightBase,1);
 
   merger.connect(analyser).connect(aCtx.destination);
-  gens.forEach(g=>{ try{g.osc.start()}catch{} oscNodes.push(g.osc); });
+  gens.forEach(g=>{
+    try{ g.osc.start(); }catch(e){}
+    oscNodes.push(g.osc);
+  });
 
   drawOsc();
 }
-
 document.getElementById('genPlay').addEventListener('click', async ()=>{
   try{ if(aCtx && aCtx.state==='suspended') await aCtx.resume(); }catch{}
   playGen();
@@ -1213,31 +1393,68 @@ document.querySelectorAll('.qp').forEach(btn=>{
     const hz = btn.dataset.freq;
     const wf = btn.dataset.wf || 'sine';
 
-    // 파라미터 세팅
-    document.getElementById('freq').value = hz;
+    // 메인 파라미터 세팅
+    document.getElementById('freq').value      = hz;
     document.getElementById('freqRange').value = hz;
-    document.getElementById('wf').value = wf;
+    document.getElementById('wf').value        = wf;
 
-    // 자동 재생
-    if(aCtx && aCtx.state==='running'){ playGen(); }
-    else { document.getElementById('genPlay').click(); }
+    // 프리셋 선택 시 Dual-Tone 모드는 끔
+    window.__dualMode__ = false;
+
+    if(aCtx && aCtx.state==='running'){
+      playGen();
+    }else{
+      document.getElementById('genPlay').click();
+    }
   });
+});
 
 // ===== Dual Tone Buttons =====
 window.__dualMode__ = false;
 
-document.getElementById('dualPlay').addEventListener('click', ()=>{
-  window.__dualMode__ = true;
-  if(aCtx && aCtx.state==='running') playGen();
-  else document.getElementById('genPlay').click();
-});
+const dualPlayBtn = document.getElementById('dualPlay');
+const dualStopBtn = document.getElementById('dualStop');
 
-document.getElementById('dualStop').addEventListener('click', ()=>{
-  window.__dualMode__ = false;
-  stopGen();
-});
+if (dualPlayBtn && dualStopBtn) {
+  dualPlayBtn.addEventListener('click', () => {
+    const toneAEl   = document.getElementById('toneA');
+    const toneBEl   = document.getElementById('toneB');
+    const freqEl    = document.getElementById('freq');
+    const binEnable = document.getElementById('binEnable');
+    const binDiffEl = document.getElementById('binDiff');
+
+    const a = toneAEl ? parseFloat(toneAEl.value) || 0 : 0;
+    const b = toneBEl ? parseFloat(toneBEl.value) || 0 : 0;
+
+    // 메인 주파수를 Tone A로 설정
+    if (freqEl) freqEl.value = a.toString();
+
+    // Binaural diff = Tone B - Tone A
+    if (binDiffEl) binDiffEl.value = (b - a).toFixed(3);
+
+    // 바이노럴 ON
+    if (binEnable) binEnable.checked = true;
+
+    window.__dualMode__ = true;
+
+    // 실제 재생은 기존 genPlay 버튼에 위임
+    const genPlayBtn = document.getElementById('genPlay');
+    if (genPlayBtn) genPlayBtn.click();
+  });
+
+  dualStopBtn.addEventListener('click', () => {
+    window.__dualMode__ = false;
+    // 기존 stopGen() 또는 genStop 로직이 있으면 호출
+    if (typeof stopGen === 'function') stopGen();
+    else {
+      // fallback: 오실레이터 정지 + 상태 표시만이라도
+      const playerTitle = document.getElementById('metaTitle');
+      if (playerTitle) playerTitle.classList.remove('playing');
+    }
+  });
+}
 	
-});
+
 	
 /* ===== Boot ===== */
 document.addEventListener('DOMContentLoaded', async ()=>{
