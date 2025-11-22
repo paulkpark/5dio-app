@@ -76,7 +76,20 @@ main{padding:12px}
                    radial-gradient(70% 60% at 50% 100%, rgba(0,120,255,.06), rgba(0,0,0,0));
 }
 .status-meta{min-width:220px;max-width:min(560px,60vw)}
-.status-title{font-weight:700;margin-bottom:2px;font-size: clamp(12px, 4vw, 18px);white-space; nowrap;overflow; hidden;text-overflow: ellipsis;max-width: 100%;}
+.status-title{
+  font-weight:700;
+  margin-bottom:2px;             /* 타이틀 아래 살짝만 간격 */
+  font-size: clamp(12px, 4vw, 18px);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  max-width:100%;
+}
+
+#statusThumb.status-blank{
+  display:none;
+}
+
 .status-title.playing{
   background:linear-gradient(90deg,#b6ecff,#39e3ff,#7fffd4,#39e3ff,#b6ecff);
   -webkit-background-clip:text;background-clip:text;color:transparent;
@@ -115,6 +128,11 @@ main{padding:12px}
   padding-right:4px;	
 }
 
+/* Generator main sliders are hidden (we use popup instead) */
+#freqRange,
+#duty {
+  display: none;
+}
 
 /* Search/Filter */
 .filterbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:4px 0 10px}
@@ -138,26 +156,6 @@ main{padding:12px}
 .card .star svg{width:18px;height:18px; stroke:#8fe8ff; fill:none; filter: drop-shadow(0 0 4px rgba(110,220,255,.8))}
 .card.fav .star svg{ fill:#9fe5ff; stroke:#9fe5ff; }
 
-/* ==== MINI SPECTRUM VISUALIZER ==== */
-
-/* 타이틀을 약간 위로 */
-.status-title {
-  margin-top: -4px;
-  margin-bottom: 4px;
-}
-
-/* miniViz 는 기본 숨김 → 재생시 JS에서 표시 */
-#miniViz {
-  width: 100%;
-  height: 32px;
-  background: #050810;
-  border: 1px solid rgba(60,150,220,.45);
-  border-radius: 6px;
-  margin-top: 2px;
-  margin-bottom: 6px;
-  display: none;  /* 초기 숨김 */
-  box-shadow: 0 0 10px rgba(30,120,200,.25) inset;
-}
 
 /* Generator */
 .section{margin-top:14px;border-top:1px solid #0f1b2a;padding-top:12px}
@@ -203,6 +201,62 @@ label.gen-label{color:#cfe9ff;font-weight:700}
 .btn{background:#0d1e2f;border:1px solid #1d415f;color:#e8f2ff;padding:8px 10px;border-radius:10px;cursor:pointer}
 .btn:hover{transform:translateY(-1px)}
 .small{font-size:12px;padding:6px 8px}
+
+/* ===== Numeric Popup (Generator) ===== */
+.num-popup-backdrop{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.55);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:999;
+}
+
+.num-popup-backdrop.show{
+  display:flex;
+}
+
+.num-popup-panel{
+  width:min(360px, 90vw);
+  padding:14px 16px 12px;
+  border-radius:16px;
+  background:#050a10;
+  border:1px solid #15324a;
+  box-shadow:0 18px 40px rgba(0,0,0,.7);
+}
+
+.num-popup-title{
+  font-weight:700;
+  margin-bottom:8px;
+  color:#cfe9ff;
+  text-shadow:0 0 8px rgba(110,220,255,.9);
+}
+
+.num-popup-body{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin-bottom:10px;
+}
+
+#numPopupValue{
+  width:100%;
+}
+
+#numPopupRange{
+  width:100%;
+}
+
+.num-popup-footer{
+  display:flex;
+  justify-content:flex-end;
+}
+
+.num-popup-footer .btn.small{
+  padding:6px 10px;
+  font-size:13px;
+}
 
 /* Cleanup */
 #verBadge{display:none}
@@ -272,7 +326,6 @@ label.gen-label{color:#cfe9ff;font-weight:700}
       <div id="statusThumb" class="status-blank"></div>
       <div class="status-meta">
         <div id="metaTitle" class="status-title"></div>
-        <canvas id="miniViz"></canvas>
         <div id="metaDesc" class="status-line"></div>
         <div id="metaComposer" class="status-line"></div>
       </div>
@@ -309,11 +362,11 @@ label.gen-label{color:#cfe9ff;font-weight:700}
   </div>
 
   <div class="gen-toolbar" style="margin-top:6px">
-    <button id="genPlay" class="btn" data-i18n="play">Play</button>
-    <button id="genStop" class="btn" data-i18n="stop">Stop</button>
-    <button id="presetSave" class="btn" data-i18n="preset_save">Save Preset</button>
-    <select id="presetLoad" class="gen-input" style="min-width:160px">
-      <option value="" data-i18n="preset_load">Load Preset…</option>
+    <button id="genPlay" class="btn" data-i18n="play"></button>
+    <button id="genStop" class="btn" data-i18n="stop"></button>
+    <button id="presetSave" class="btn" data-i18n="preset_save"></button>
+  <select id="presetLoad" class="gen-input" style="min-width:160px"
+     data-i18n="preset_load">
     </select>
     <select id="oscColor" class="gen-input" style="margin-left:auto;min-width:120px">
       <option value="#39e3ff" data-i18n="osc.color.neonBlue">Neon Blue</option>
@@ -345,7 +398,8 @@ label.gen-label{color:#cfe9ff;font-weight:700}
     <div class="gen-row2">
       <label class="gen-label" data-i18n="gen.frequency">Frequency (Hz)</label>
       <div class="gen-inline">
-        <input id="freq" class="gen-input" type="number" min="0" max="20000" step="0.1" value="432"/>
+        <input id="freq" class="gen-input num-popup-field"
+       type="number" min="0" max="20000" step="0.1" value="432"/>
         <input id="freqRange" class="gen-range" type="range" min="0" max="20000" step="1" value="432" style="flex:1">
       </div>
     </div>
@@ -353,7 +407,8 @@ label.gen-label{color:#cfe9ff;font-weight:700}
     <div class="gen-row2">
       <label class="gen-label" data-i18n="gen.duty">Duty Cycle</label>
       <div class="gen-inline">
-        <input id="dutyNum" class="gen-input" type="number" min="1" max="100" step="1" value="50"/>
+        <input id="dutyNum" class="gen-input num-popup-field"
+       type="number" min="1" max="100" step="1" value="50"/>
         <input id="duty" class="gen-range" type="range" min="1" max="100" step="1" value="50" style="flex:1">
       </div>
     </div>
@@ -428,6 +483,21 @@ label.gen-label{color:#cfe9ff;font-weight:700}
     <button id="dualStop" class="btn" data-i18n="dual.stop">Stop</button>
   </div>
 </section>
+
+<!-- Numeric Popup for Generator -->
+<div id="numPopup" class="num-popup-backdrop">
+  <div class="num-popup-panel">
+    <div id="numPopupLabel" class="num-popup-title"></div>
+    <div class="num-popup-body">
+      <input id="numPopupValue" type="number" class="gen-input" />
+      <input id="numPopupRange" type="range" class="gen-range" />
+    </div>
+    <div class="num-popup-footer">
+      <button id="numPopupClose" class="btn small">✕ Close</button>
+    </div>
+  </div>
+</div>
+
   <!-- 🔺 여기까지 Generator 전용 🔺 -->
 </section>
 	
@@ -522,6 +592,11 @@ const I18N = {
     'player.timer':'타이머',
     'player.playlists':'플레이리스트',
 
+    'play': '재생',
+    'stop': '정지',
+    'preset_save': '프리셋 저장',
+    'preset_load': '프리셋 불러오기…',
+
     'gen.waveform':'파형',
     'gen.frequency':'주파수 (Hz)',
     'gen.duty':'듀티 사이클',
@@ -588,6 +663,11 @@ const I18N = {
     'player.loop':'Loop',
     'player.timer':'Timer',
     'player.playlists':'Playlists',
+
+    'play': 'Play',
+    'stop': 'Stop',
+    'preset_save': 'Save Preset',
+    'preset_load': 'Load Preset…',
 
     'gen.waveform':'Waveform',
     'gen.frequency':'Frequency (Hz)',
@@ -1472,6 +1552,113 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 
   showPage('lib');
 });
+</script>
+
+<script>
+(function(){
+  const popup      = document.getElementById('numPopup');
+  if (!popup) return;
+
+  const labelEl    = document.getElementById('numPopupLabel');
+  const valEl      = document.getElementById('numPopupValue');
+  const rangeEl    = document.getElementById('numPopupRange');
+  const closeBtn   = document.getElementById('numPopupClose');
+
+  let boundInput = null;
+  let cfg        = null;
+
+  // 팝업 설정: 주파수 / 듀티
+  const configs = {
+    freq: {
+      min: 0,
+      max: 20000,
+      step: 0.1,
+      labelKey: 'gen.frequency'
+    },
+    dutyNum: {
+      min: 1,
+      max: 100,
+      step: 1,
+      labelKey: 'gen.duty'
+    }
+  };
+
+  function getLabelText(input, config){
+    // i18n 우선
+    if (config && config.labelKey && I18N && I18N[LANG] && I18N[LANG][config.labelKey]){
+      return I18N[LANG][config.labelKey];
+    }
+    // 그다음 fallback
+    if (input.dataset.label) return input.dataset.label;
+    if (input.placeholder)  return input.placeholder;
+    return input.id;
+  }
+
+  function openPopup(input){
+    const id = input.id;
+    const c  = configs[id];
+    if (!c) return;
+    boundInput = input;
+    cfg = c;
+
+    labelEl.textContent = getLabelText(input, c);
+
+    valEl.min   = c.min;
+    valEl.max   = c.max;
+    valEl.step  = c.step;
+    rangeEl.min = c.min;
+    rangeEl.max = c.max;
+    rangeEl.step= c.step;
+
+    const current = parseFloat(input.value || c.min);
+    valEl.value   = isNaN(current) ? c.min : current;
+    rangeEl.value = valEl.value;
+
+    popup.classList.add('show');
+  }
+
+  function applyValue(v){
+    if (!boundInput) return;
+    boundInput.value = v;
+    // 기존 제너레이터 로직에 즉시 반영되도록 input/change 이벤트 둘 다 쏴줌
+    boundInput.dispatchEvent(new Event('input', { bubbles:true }));
+    boundInput.dispatchEvent(new Event('change', { bubbles:true }));
+  }
+
+  // 슬라이더/숫자 입력 시 실시간 반영
+  valEl.addEventListener('input', ()=>{
+    const v = valEl.value;
+    rangeEl.value = v;
+    applyValue(v);
+  });
+
+  rangeEl.addEventListener('input', ()=>{
+    const v = rangeEl.value;
+    valEl.value = v;
+    applyValue(v);
+  });
+
+  // 닫기 버튼 & 배경 클릭으로 모달 닫기
+  function closePopup(){
+    popup.classList.remove('show');
+    boundInput = null;
+    cfg        = null;
+  }
+
+  closeBtn.addEventListener('click', closePopup);
+  popup.addEventListener('click', (e)=>{
+    if (e.target === popup) closePopup();
+  });
+
+  // 대상 필드에 클릭 핸들러 걸기 (freq / dutyNum)
+  document.querySelectorAll('.num-popup-field').forEach(input =>{
+    input.readOnly = true;  // 직접 키보드 입력 대신 팝업 사용
+    input.addEventListener('click', (e)=>{
+      e.preventDefault();
+      openPopup(input);
+    });
+  });
+})();
 </script>
 
 <!-- === WebP thumb loader (no JPG/PNG fallback) === -->
