@@ -802,6 +802,7 @@ const infoTitle = document.getElementById('trackInfoTitle');
 const infoBody  = document.getElementById('trackInfoBody');
 const STATE = { path:'', stack:[], currentTrack:null, foldersCache:[], tracksCache:{} };
 let RENDER_TICK = 0;
+let THUMB_VER = Date.now();
 	
 /* ===== Helpers ===== */
 
@@ -809,25 +810,19 @@ function stem(n){ return n.replace(/\.[^.]+$/, ''); }
 
 function folderThumb(folder){
   const base = `${MEDIA_BASE}/${encodeURIComponent(folder)}/`;
-  // 언어별 폴더 썸네일 규칙:
-  //  - 한국어 : folder.webp
-  //  - 영어   : folder_e.webp
   const name = (LANG === 'en') ? 'folder_e.webp' : 'folder.webp';
 
-  // Supabase 이미지 변환(썸네일 사이즈) 옵션 – 필요 없으면 ?뒤는 빼도 됨
-  return `${base}${name}?width=320&quality=70&format=webp`;
+  // 🔹 THUMB_VER 을 붙여서 강제 캐시 무효화
+  return `${base}${name}?width=320&quality=70&format=webp&v=${THUMB_VER}`;
 }
 
 function trackThumb(folder, file){
   const base = `${MEDIA_BASE}/${encodeURIComponent(folder)}/`;
   const s = stem(file);
-
-  // 트랙 썸네일 규칙:
-  //  - 한국어 : <stem>.webp
-  //  - 영어   : <stem>_E.webp
   const fname = (LANG === 'en') ? `${s}_E.webp` : `${s}.webp`;
 
-  return `${base}${fname}?width=320&quality=70&format=webp`;
+  // 🔹 여기에도 동일하게 버전 파라미터 추가
+  return `${base}${fname}?width=320&quality=70&format=webp&v=${THUMB_VER}`;
 }
 
 async function listRoot(){
@@ -1212,8 +1207,35 @@ $('#btnTimer').addEventListener('click',()=>{
 
 $('#btnBack').addEventListener('click',()=>{ STATE.path=''; STATE.stack.pop(); renderStrip(); });
 $('#btnHome').addEventListener('click',()=>{ STATE.path=''; STATE.stack.length=0; renderStrip(); });
-$('#btnRefresh').addEventListener('click',()=>renderStrip());
+$('#btnRefresh').addEventListener('click', async ()=>{
+  // 1) 앱 내부 메모리 캐시 비우기 (폴더/트랙 캐시)
+  if (window.clear5DOMemoryCaches) {
+    window.clear5DOMemoryCaches();  // 너가 예전에 추가해 둔 helper
+  }
+  STATE.tracksCache  = {};
+  STATE.foldersCache = [];
 
+  // 2) 썸네일 캐시 버전 갱신 → 모든 썸네일 URL이 새로워짐
+  THUMB_VER = Date.now();
+
+  // 3) meta.json 도 다시 로딩 (트랙 설명/타이틀 갱신용)
+  await loadTrackMeta();
+
+  // 4) PWA 서비스워커 캐시도 싹 비우기 (가능한 경우)
+  if ('caches' in window) {
+    try {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+      console.log('[refresh] caches cleared', keys);
+    } catch(e) {
+      console.warn('[refresh] cache clear failed', e);
+    }
+  }
+
+  // 5) 리스트/썸네일 다시 렌더링
+  statusBlank();     // 상태 영역도 초기화하고 싶으면 추가
+  renderStrip();
+});
 /* ===== Playlist ===== */
 const USER_ID_KEY='fiveDO_user_id';
 function uid(){ return 'u'+Math.random().toString(36).slice(2)+Date.now().toString(36); }
