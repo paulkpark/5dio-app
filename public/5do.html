@@ -723,6 +723,24 @@ const I18N = {
   }
 };
 
+// 언어에 따라 로딩 썸네일 이미지 경로를 돌려주는 함수
+function getLoadingThumbUrl() {
+  // 🔧 실제 사용하는 파일 경로/이름으로 수정해줘
+  return (LANG === 'ko')
+    ? MEDIA_BASE + '/_system/loading_ko.webp'
+    : MEDIA_BASE + '/_system/loading_en.webp';
+}
+
+// 로딩 썸네일을 현재 LANG에 맞게 다시 세팅
+function refreshLoadingThumbForLang() {
+  const statusThumbEl = document.getElementById('statusThumb');
+  if (!statusThumbEl) return;
+
+  const url = getLoadingThumbUrl();
+  statusThumbEl.classList.remove('status-blank');
+  setStatusThumb(statusThumbEl, url);
+}
+	
 function applyLang(){
   // 1) data-i18n 텍스트 라벨
   document.querySelectorAll('[data-i18n]').forEach(el=>{
@@ -745,15 +763,31 @@ function applyLang(){
   document.getElementById('plCloseBtn').textContent  = (LANG==='en'?'Close':'닫기');
   document.getElementById('plSaveBtn').textContent   = (LANG==='en'?'Save':'저장');
 
-  // 4) 이미 재생 중인 트랙의 썸네일·메타데이터 언어 반영 (기존에 쓰던 로직 유지)
+  // 4) 이미 재생 중인 트랙의 썸네일·메타데이터 언어 반영
   try{
     const playerEl      = document.getElementById('player');
     const statusThumbEl = document.getElementById('statusThumb');
-    if(!playerEl || !playerEl.src || !statusThumbEl) return;
+
+    // statusThumb 자체가 없으면 더 할 게 없으니 종료
+    if (!statusThumbEl) return;
+
+    // ❗ 트랙이 선택되지 않은 상태(= 로딩 썸네일만 보이는 상태)
+    // -> 여기서 로딩 썸네일을 LANG에 맞게 다시 세팅
+    if (!playerEl || !playerEl.src) {
+      refreshLoadingThumbForLang();
+      return;
+    }
 
     const base = MEDIA_BASE + '/';
-    if(!playerEl.src.startsWith(base)) return;
 
+    // src는 있는데 우리 미디어 경로가 아니면 (예: 외부/초기 상태)
+    // -> 이것도 로딩 상태처럼 처리
+    if (!playerEl.src.startsWith(base)) {
+      refreshLoadingThumbForLang();
+      return;
+    }
+
+    // 여기부터는 "실제 트랙"이 재생 중인 상태
     const rel   = decodeURIComponent(playerEl.src.slice(base.length));
     const parts = rel.split('/');
     const file  = parts.pop();
