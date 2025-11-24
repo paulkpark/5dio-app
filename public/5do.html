@@ -166,6 +166,19 @@ main{padding:12px}
 @media (max-width:640px){.gen-row2{grid-template-columns:1fr}}
 .gen-row2.inline-h{grid-template-columns:140px 1fr}
 .gen-inline{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+/* 두 개의 gen-row2 블럭을 한 줄에 배치 (Frequency+Duty, ToneA+ToneB 용) */
+.gen-row2-pair{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+
+/* 모바일에서도 2컬럼 유지 */
+@media (max-width:640px){
+  .gen-row2-pair{
+    grid-template-columns:1fr 1fr;
+  }
+}
 .gen-inline .gen-input{min-width:80px}
 .gen-chip{padding:6px 10px;border:1px solid var(--stroke);border-radius:10px;background:#0d1e2f;color:var(--txt);font-size:12px}
 .gen-input, .gen-range, select{background:#0f1a28;border:1px solid #13263c;color:#e9f4ff;border-radius:10px}
@@ -396,23 +409,27 @@ label.gen-label{color:#cfe9ff;font-weight:700}
       </div>
     </div>
 
-   <div class="gen-row2 inline-h">
-  <label class="gen-label" data-i18n="gen.frequency">Frequency (Hz)</label>
-  <div class="gen-inline">
-    <input id="freq" class="gen-input num-popup-field"
-           type="number" min="0" max="20000" step="0.1" value="432"/>
-    <input id="freqRange" class="gen-range" type="range" min="0" max="20000" step="1" value="432" style="flex:1">
-  </div>
-</div>
+ <div class="gen-row2-pair">
+    <div class="gen-row2 inline-h">
+      <label class="gen-label" data-i18n="gen.frequency">Frequency (Hz)</label>
+      <div class="gen-inline">
+        <input id="freq" class="gen-input num-popup-field"
+               type="number" min="0" max="20000" step="0.1" value="432"/>
+        <input id="freqRange" class="gen-range" type="range"
+               min="0" max="20000" step="1" value="432" style="flex:1">
+      </div>
+    </div>
 
-<div class="gen-row2 inline-h">
-  <label class="gen-label" data-i18n="gen.duty">Duty Cycle</label>
-  <div class="gen-inline">
-    <input id="dutyNum" class="gen-input num-popup-field"
-           type="number" min="1" max="100" step="1" value="50"/>
-    <input id="duty" class="gen-range" type="range" min="1" max="100" step="1" value="50" style="flex:1">
+    <div class="gen-row2 inline-h">
+      <label class="gen-label" data-i18n="gen.duty">Duty Cycle</label>
+      <div class="gen-inline">
+        <input id="dutyNum" class="gen-input num-popup-field"
+               type="number" min="1" max="100" step="1" value="50"/>
+        <input id="duty" class="gen-range" type="range"
+               min="1" max="100" step="1" value="50" style="flex:1">
+      </div>
+    </div>
   </div>
-</div>
 
     <div class="gen-row2">
       <label class="gen-label" data-i18n="harmonics_label">Harmonics</label>
@@ -468,25 +485,25 @@ label.gen-label{color:#cfe9ff;font-weight:700}
     Dual-Tone Mixer
   </label>
 
-  <div class="gen-row2 inline-h">
-    <div class="gen-sub" data-i18n="dual.toneA">Tone A (Hz)</div>
-    <div class="gen-inline">
-      <input id="toneA"
-             class="gen-input num-popup-field"
-             type="number"
-             value="432"
-             min="0" max="20000" step="0.1">
+  <div class="gen-row2-pair">
+    <div class="gen-row2 inline-h">
+      <label class="gen-sub" data-i18n="dual.toneA">톤 A (Hz)</label>
+      <div class="gen-inline">
+        <input id="toneA"
+               class="gen-input num-popup-field"
+               type="number" min="0" max="20000" step="0.1"
+               value="432">
+      </div>
     </div>
-  </div>
 
-  <div class="gen-row2 inline-h">
-    <div class="gen-sub" data-i18n="dual.toneB">Tone B (Hz)</div>
-    <div class="gen-inline">
-      <input id="toneB"
-             class="gen-input num-popup-field"
-             type="number"
-             value="528"
-             min="0" max="20000" step="0.1">
+    <div class="gen-row2 inline-h">
+      <label class="gen-sub" data-i18n="dual.toneB">톤 B (Hz)</label>
+      <div class="gen-inline">
+        <input id="toneB"
+               class="gen-input num-popup-field"
+               type="number" min="0" max="20000" step="0.1"
+               value="528">
+      </div>
     </div>
   </div>
 
