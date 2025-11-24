@@ -164,6 +164,7 @@ main{padding:12px}
 .gen-toolbar .btn{padding:8px 12px;border-radius:10px;border:1px solid var(--stroke);background:#0d1e2f;box-shadow:inset 0 0 10px var(--glow)}
 .gen-row2{display:grid;grid-template-columns:140px 1fr;gap:10px;align-items:center}
 @media (max-width:640px){.gen-row2{grid-template-columns:1fr}}
+.gen-row2.inline-h{grid-template-columns:140px 1fr}
 .gen-inline{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .gen-inline .gen-input{min-width:80px}
 .gen-chip{padding:6px 10px;border:1px solid var(--stroke);border-radius:10px;background:#0d1e2f;color:var(--txt);font-size:12px}
@@ -395,23 +396,23 @@ label.gen-label{color:#cfe9ff;font-weight:700}
       </div>
     </div>
 
-    <div class="gen-row2">
-      <label class="gen-label" data-i18n="gen.frequency">Frequency (Hz)</label>
-      <div class="gen-inline">
-        <input id="freq" class="gen-input num-popup-field"
-       type="number" min="0" max="20000" step="0.1" value="432"/>
-        <input id="freqRange" class="gen-range" type="range" min="0" max="20000" step="1" value="432" style="flex:1">
-      </div>
-    </div>
+   <div class="gen-row2 inline-h">
+  <label class="gen-label" data-i18n="gen.frequency">Frequency (Hz)</label>
+  <div class="gen-inline">
+    <input id="freq" class="gen-input num-popup-field"
+           type="number" min="0" max="20000" step="0.1" value="432"/>
+    <input id="freqRange" class="gen-range" type="range" min="0" max="20000" step="1" value="432" style="flex:1">
+  </div>
+</div>
 
-    <div class="gen-row2">
-      <label class="gen-label" data-i18n="gen.duty">Duty Cycle</label>
-      <div class="gen-inline">
-        <input id="dutyNum" class="gen-input num-popup-field"
-       type="number" min="1" max="100" step="1" value="50"/>
-        <input id="duty" class="gen-range" type="range" min="1" max="100" step="1" value="50" style="flex:1">
-      </div>
-    </div>
+<div class="gen-row2 inline-h">
+  <label class="gen-label" data-i18n="gen.duty">Duty Cycle</label>
+  <div class="gen-inline">
+    <input id="dutyNum" class="gen-input num-popup-field"
+           type="number" min="1" max="100" step="1" value="50"/>
+    <input id="duty" class="gen-range" type="range" min="1" max="100" step="1" value="50" style="flex:1">
+  </div>
+</div>
 
     <div class="gen-row2">
       <label class="gen-label" data-i18n="harmonics_label">Harmonics</label>
@@ -462,20 +463,45 @@ label.gen-label{color:#cfe9ff;font-weight:700}
   </div>
 </section>
 
-<!-- Dual Tone Mixer -->
 <section class="section" id="dualTone">
   <label class="gen-label" style="margin-bottom:6px;" data-i18n="dual.label">
     Dual-Tone Mixer
   </label>
 
-  <div class="gen-row2">
+  <div class="gen-row2 inline-h">
     <div class="gen-sub" data-i18n="dual.toneA">Tone A (Hz)</div>
-    <input id="toneA" class="gen-input" type="number" value="432" min="0" max="20000">
+    <div class="gen-inline">
+      <input id="toneA"
+             class="gen-input num-popup-field"
+             type="number"
+             value="432"
+             min="0" max="20000" step="0.1">
+    </div>
   </div>
 
-  <div class="gen-row2">
+  <div class="gen-row2 inline-h">
     <div class="gen-sub" data-i18n="dual.toneB">Tone B (Hz)</div>
-    <input id="toneB" class="gen-input" type="number" value="528" min="0" max="20000">
+    <div class="gen-inline">
+      <input id="toneB"
+             class="gen-input num-popup-field"
+             type="number"
+             value="528"
+             min="0" max="20000" step="0.1">
+    </div>
+  </div>
+
+  <!-- Numeric Popup for Generator -->
+  <div id="numPopup" class="num-popup-backdrop">
+    <div class="num-popup-panel">
+      <div id="numPopupLabel" class="num-popup-title"></div>
+      <div class="num-popup-body">
+        <input id="numPopupValue" type="number" class="gen-input" />
+        <input id="numPopupRange" type="range" class="gen-range" />
+      </div>
+      <div class="num-popup-footer">
+        <button id="numPopupClose" class="btn small">✕ Close</button>
+      </div>
+    </div>
   </div>
 
   <div class="gen-inline" style="margin-top:8px;">
@@ -483,26 +509,6 @@ label.gen-label{color:#cfe9ff;font-weight:700}
     <button id="dualStop" class="btn" data-i18n="dual.stop">Stop</button>
   </div>
 </section>
-
-<!-- Numeric Popup for Generator -->
-<div id="numPopup" class="num-popup-backdrop">
-  <div class="num-popup-panel">
-    <div id="numPopupLabel" class="num-popup-title"></div>
-    <div class="num-popup-body">
-      <input id="numPopupValue" type="number" class="gen-input" />
-      <input id="numPopupRange" type="range" class="gen-range" />
-    </div>
-    <div class="num-popup-footer">
-      <button id="numPopupClose" class="btn small">✕ Close</button>
-    </div>
-  </div>
-</div>
-
-  <!-- 🔺 여기까지 Generator 전용 🔺 -->
-</section>
-	
-		
-<!-- Modal (hamburger texts) -->
 <div class="backdrop" id="backdrop"></div>
 <div class="modal" id="modal">
   <div class="mhead">
@@ -1623,21 +1629,33 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   let boundInput = null;
   let cfg        = null;
 
-  // 팝업 설정: 주파수 / 듀티
-  const configs = {
-    freq: {
-      min: 0,
-      max: 20000,
-      step: 0.1,
-      labelKey: 'gen.frequency'
-    },
-    dutyNum: {
-      min: 1,
-      max: 100,
-      step: 1,
-      labelKey: 'gen.duty'
-    }
-  };
+ // 팝업 설정: 주파수 / 듀티 / 듀얼 톤
+const configs = {
+  freq: {
+    min: 0,
+    max: 20000,
+    step: 0.1,
+    labelKey: 'gen.frequency'
+  },
+  dutyNum: {
+    min: 1,
+    max: 100,
+    step: 1,
+    labelKey: 'gen.duty'
+  },
+  toneA: {
+    min: 0,
+    max: 20000,
+    step: 0.1,
+    labelKey: 'dual.toneA'
+  },
+  toneB: {
+    min: 0,
+    max: 20000,
+    step: 0.1,
+    labelKey: 'dual.toneB'
+  }
+};
 
   function getLabelText(input, config){
     // i18n 우선
