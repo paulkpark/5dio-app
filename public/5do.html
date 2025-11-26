@@ -526,22 +526,6 @@ label.gen-label{color:#cfe9ff;font-weight:700}
     <button id="dualStop" class="btn" data-i18n="dual.stop">Stop</button>
   </div>
 </section>
-
-  <!-- 🔻 Generator 하단 광고 배너 🔻 -->
-  <section class="section" id="adBanner">
-    <div class="gen-label" style="margin-bottom:6px;">5D Healing Center</div>
-
-    <a id="adBannerLink" class="ad-banner-wrap" href="#" target="_blank" rel="noopener noreferrer">
-      <img id="adBannerImg"
-           class="ad-banner-img"
-           src=""
-           alt="5D Healing Banner">
-    </a>
-
-    <div class="ad-banner-dots" id="adBannerDots"></div>
-  </section>
-  <!-- 🔺 Generator 하단 광고 배너 끝 🔺 -->
-	
 <div class="backdrop" id="backdrop"></div>
 <div class="modal" id="modal">
   <div class="mhead">
@@ -575,9 +559,6 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const BUCKET = "media";
 const SB = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const MEDIA_BASE = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}`;
-// 🔹 GitHub Pages에 올려둔 배너/네비 이미지 베이스 경로
-const GITHUB_ASSET_BASE = 'https://paulkpark.github.io/5dio-app/assets';
-	
 // ===== META.JSON LOAD =====
 let TRACK_META = {};
 
@@ -1632,120 +1613,7 @@ if (dualPlayBtn && dualStopBtn) {
   });
 }
 	
-/* ===== Generator 하단 광고 배너 ===== */
-#adBanner{
-  margin-top:16px;
-  padding-top:12px;
-  border-top:1px solid #0f1b2a;
-}
 
-.ad-banner-wrap{
-  position:relative;
-  border-radius:12px;
-  overflow:hidden;
-  border:1px solid #102035;
-  background:#050a10;
-}
-
-.ad-banner-img{
-  display:block;
-  width:100%;
-  height:auto;
-}
-
-/* 작은 점(슬라이드 인디케이터) */
-.ad-banner-dots{
-  display:flex;
-  justify-content:center;
-  gap:6px;
-  margin-top:6px;
-}
-
-.ad-dot{
-  width:7px;
-  height:7px;
-  border-radius:50%;
-  background:#253447;
-  cursor:pointer;
-}
-
-.ad-dot.active{
-  background:#39e3ff;
-}	
-
-/* ===== Generator 하단 광고 배너 (GitHub Pages 이미지) ===== */
-(function initAdBanner(){
-  const imgEl   = document.getElementById('adBannerImg');
-  const linkEl  = document.getElementById('adBannerLink');
-  const dotsBox = document.getElementById('adBannerDots');
-  if (!imgEl || !linkEl || !dotsBox) return;
-
-  // 🔹 배너 설정: 이미지 src 는 GitHub Pages, 링크는 각 사이트
-  const BANNERS = [
-    {
-      // 배너 1: Quantum Torus X
-      src:  GITHUB_ASSET_BASE + '/banners/qtx-banner.webp',
-      href: 'https://https://5dshop.co.kr/?idx=483', // 실제 카테고리 URL로 교체
-      alt:  'Quantum Torus X'
-    },
-    {
-      // 배너 2: Quantum Torus Pendant → 네비게이션 페이지로
-      src:  GITHUB_ASSET_BASE + '/banners/qtp-banner.webp',
-      href: '/nav/qtp-nav.html',        // 네가 만든 내비 페이지 경로
-      alt:  'Quantum Torus Pendant'
-    },
-    {
-      // 배너 3: 5D Healing Center
-      src:  GITHUB_ASSET_BASE + '/banners/5dhc-banner.webp',
-      href: 'https://5dhealingcenter.co.kr',
-      alt:  '5D Healing Center'
-    }
-  ];
-
-  let current = 0;
-  let timerId = null;
-
-  // 점(슬라이드 인디케이터) 만들기
-  dotsBox.innerHTML = '';
-  BANNERS.forEach((_, idx)=>{
-    const dot = document.createElement('div');
-    dot.className = 'ad-dot' + (idx===0 ? ' active' : '');
-    dot.dataset.idx = idx;
-    dot.addEventListener('click', ()=>{
-      setBanner(idx);
-      restartTimer();
-    });
-    dotsBox.appendChild(dot);
-  });
-
-  function setBanner(idx){
-    const b = BANNERS[idx];
-    if (!b) return;
-    current = idx;
-    imgEl.src = b.src;
-    imgEl.alt = b.alt || '';
-    linkEl.href = b.href;
-
-    // active 점 갱신
-    dotsBox.querySelectorAll('.ad-dot').forEach((d, i)=>{
-      d.classList.toggle('active', i === idx);
-    });
-  }
-
-  function nextBanner(){
-    const next = (current + 1) % BANNERS.length;
-    setBanner(next);
-  }
-
-  function restartTimer(){
-    if (timerId) clearInterval(timerId);
-    timerId = setInterval(nextBanner, 7000);  // 7초마다 교체
-  }
-
-  // 초기 표기 + 타이머 시작
-  setBanner(0);
-  restartTimer();
-})();	
 	
 /* ===== Boot ===== */
 document.addEventListener('DOMContentLoaded', async ()=>{
