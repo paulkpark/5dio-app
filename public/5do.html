@@ -1094,28 +1094,35 @@ async function renderStrip(){
   strip.innerHTML='';
 
   if(!STATE.path){
-    await renderFavoritesStrip();
-    if(myTick !== RENDER_TICK) return;  // 중간에 다른 렌더가 시작되면 중단
+  await renderFavoritesStrip();
+  if(myTick !== RENDER_TICK) return;
 
-    if(!STATE.foldersCache.length) STATE.foldersCache = await listRoot();
-    const folders = STATE.foldersCache;
-    for(const name of folders){
-      if(myTick !== RENDER_TICK) return;
+  if(!STATE.foldersCache.length) STATE.foldersCache = await listRoot();
+  const folders = STATE.foldersCache;
+  for(const name of folders){
+    if(myTick !== RENDER_TICK) return;
 
-      const card = document.createElement('div'); card.className='card folder';
-      const th   = document.createElement('div'); th.className='thumb'; card.append(th);
+    const card = document.createElement('div'); 
+    card.className = 'card folder';
 
-     const u = folderThumb(name);
-	if (u) th.style.backgroundImage = `url("${u}")`;
+    const th   = document.createElement('div'); 
+    th.className = 'thumb'; 
+    card.append(th);
 
-      const star = document.createElement('div'); star.className='star'; star.innerHTML=starSvg(); card.append(star);
-      card.addEventListener('click',(e)=>{
-        if(e.target.closest('.star')) return;
-        STATE.stack.push(''); STATE.path=name; statusBlank(); renderStrip();
-      });
-      strip.appendChild(card);
-    }
-    } else {
+    const u = folderThumb(name);
+    if (u) th.style.backgroundImage = `url("${u}")`;
+
+    // 💡 폴더 카드에는 즐겨찾기 별을 표시하지 않는다
+    card.addEventListener('click', () => {
+      STATE.stack.push('');
+      STATE.path = name;
+      statusBlank();
+      renderStrip();
+    });
+
+    strip.appendChild(card);
+  }
+} else {
     const files = await listTracks(STATE.path);
     for (const f of files) {
       if (myTick !== RENDER_TICK) return;
