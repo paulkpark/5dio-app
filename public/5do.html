@@ -1155,7 +1155,6 @@ async function renderStrip(){
     strip.appendChild(card);
   }
 } else {
-    } else {
   const files = await listTracks(STATE.path);
   for (const f of files) {
     if (myTick !== RENDER_TICK) return;
