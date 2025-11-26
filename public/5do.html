@@ -1391,7 +1391,14 @@ async function syncPlaylists(){
 }
 let PL_STATE=null;
 const plPanel = document.getElementById('plPanel'), plBody=document.getElementById('plBody');
-function openPlPanel(){ plPanel.style.display='block'; renderPL(); }
+function openPlPanel(){
+  // 💡 항상 라이브러리 탭을 배경으로 사용
+  if (typeof showPage === 'function') {
+    showPage('lib');
+  }
+  plPanel.style.display = 'block';
+  renderPL();
+}
 function closePlPanel(){ plPanel.style.display='none'; }
 function renderPL(){
   plBody.innerHTML='';
