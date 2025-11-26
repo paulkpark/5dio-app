@@ -137,7 +137,10 @@ main{padding:12px}
 /* Search/Filter */
 .filterbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:4px 0 10px}
 .filterbar input, .filterbar select{background:#0f1a28;border:1px solid #13263c;color:#e9f4ff;border-radius:10px;padding:8px 10px}
-
+#favOnlyBtn.active {
+  background:#39e3ff;
+  color:#050910;
+}
 /* Thumbs */
 #favoritesWrap{margin:10px 0 2px 0; display:none;}
 #favoritesTitle{color:#cfe9ff;font-weight:800;margin:4px 0 8px 2px}
@@ -368,6 +371,9 @@ label.gen-label{color:#cfe9ff;font-weight:700}
       </select>
       <button id="searchBtn" class="btn small">검색</button>
       <button id="searchClear" class="btn small">지우기</button>
+	  <button id="favOnlyBtn" class="btn small" data-i18n="filter.favOnly">
+    ★ 즐겨찾기만
+  </button>	
     </div>
 
     <div id="favoritesWrap">
@@ -1013,6 +1019,7 @@ const FAV_KEY='fiveDO_favs';
 function loadFavs(){ try{ return new Set(JSON.parse(localStorage.getItem(FAV_KEY)||'[]')); }catch{ return new Set(); } }
 function saveFavs(set){ localStorage.setItem(FAV_KEY, JSON.stringify([...set])); }
 const FAVS = loadFavs();
+let FAVORITES_ONLY = false;	
 function starSvg(){ return '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7"><path d="M12 3l3 6 6 .9-4.5 4.4 1 6.2-5.5-3-5.5 3 1-6.2L3 9.9 9 9z"/></svg>'; }
 function trackId(folder, file){ return (folder? `${folder}/${file}` : file); }
 
@@ -1157,6 +1164,12 @@ async function renderStrip(){
     for (const f of files) {
       if (myTick !== RENDER_TICK) return;
 
+		 // 🔹 "Favorites만 보기"가 켜져 있으면, FAVS에 없는 트랙은 건너뜀
+    if (FAVORITES_ONLY) {
+      const id = trackId(STATE.path, f);
+      if (!FAVS.has(id)) continue;
+    }
+
       const card = document.createElement('div');
       card.className = 'card';
       card.setAttribute('data-file', f);
@@ -1289,7 +1302,19 @@ document.getElementById('searchBtn').addEventListener('click', async ()=>{
 document.getElementById('searchClear').addEventListener('click', ()=>{
   $('#searchInput').value=''; renderStrip();
 });
+// 🔹 "Favorites만 보기" 필터 버튼
+const favOnlyBtn = document.getElementById('favOnlyBtn');
+if (favOnlyBtn) {
+  favOnlyBtn.addEventListener('click', () => {
+    FAVORITES_ONLY = !FAVORITES_ONLY;
 
+    // 버튼 활성화 스타일 토글
+    favOnlyBtn.classList.toggle('active', FAVORITES_ONLY);
+
+    // 목록 다시 그리기
+    renderStrip();
+  });
+}
 /* ===== Tabs / Language / Menu ===== */
 function showPage(which){
   if(which==='lib'){ $('#pageLibrary').classList.remove('hidden'); $('#pageGenerator').classList.add('hidden');
