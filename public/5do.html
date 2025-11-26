@@ -272,6 +272,56 @@ label.gen-label{color:#cfe9ff;font-weight:700}
   font-size:13px;
 }
 
+/* ==== Generator 하단 광고 배너 ==== */
+.ad-banner-wrap{
+  margin-top:20px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+}
+
+.ad-banner-box{
+  position:relative;
+  width:100%;
+  max-width:960px;
+  border-radius:14px;
+  overflow:hidden;
+  cursor:pointer;
+  box-shadow:0 0 18px rgba(0,0,0,0.7);
+}
+
+.ad-banner-box img{
+  display:block;
+  width:100%;
+  height:auto;
+  object-fit:cover;
+}
+
+/* 페이저 점 */
+.ad-banner-dots{
+  margin-top:8px;
+  display:flex;
+  gap:6px;
+  justify-content:center;
+  align-items:center;
+}
+
+.ad-dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,0.5);
+  background:transparent;
+  padding:0;
+  outline:none;
+}
+
+.ad-dot.active{
+  background:rgba(0,255,255,0.95);
+  border-color:rgba(0,255,255,0.95);
+}
+	
 /* Cleanup */
 #verBadge{display:none}
 </style>
@@ -525,6 +575,23 @@ label.gen-label{color:#cfe9ff;font-weight:700}
     <button id="dualPlay" class="btn" data-i18n="dual.play">Play Dual</button>
     <button id="dualStop" class="btn" data-i18n="dual.stop">Stop</button>
   </div>
+
+  <!-- 🔻 Generator 하단 광고 배너 🔻 -->
+  <div class="ad-banner-wrap">
+    <a id="adBannerLink" class="ad-banner-box"
+       href="#" target="_blank" rel="noopener noreferrer">
+      <img id="adBannerImage"
+           src="assets/banners/qtx-banner.webp"
+           alt="5D Shop Banner">
+    </a>
+    <div class="ad-banner-dots">
+      <button class="ad-dot active" data-ad-idx="0"></button>
+      <button class="ad-dot" data-ad-idx="1"></button>
+      <button class="ad-dot" data-ad-idx="2"></button>
+    </div>
+  </div>
+  <!-- 🔺 Generator 하단 광고 배너 끝 🔺 -->
+	
 </section>
 <div class="backdrop" id="backdrop"></div>
 <div class="modal" id="modal">
@@ -1613,7 +1680,66 @@ if (dualPlayBtn && dualStopBtn) {
   });
 }
 	
+/* ===== Generator 하단 광고 배너 슬라이더 ===== */
+(function(){
+  const imgEl  = document.getElementById('adBannerImage');
+  const linkEl = document.getElementById('adBannerLink');
+  const dots   = document.querySelectorAll('.ad-dot');
 
+  if(!imgEl || !linkEl || !dots.length) return;
+
+  // GitHub repo 기준 상대 경로 사용
+  const banners = [
+    {
+      // 배너 1: Quantum Torus X (예: 전체 카테고리나 대표 상품)
+      src: 'assets/banners/qtx-banner.webp',
+      href:'https://5dshop.co.kr/?idx=483',
+      alt:'Quantum Torus X'
+    },
+    {
+      // 배너 2: Quantum Torus Pendant 내비게이션 페이지
+      src: 'assets/banners/qtp-banner.webp',
+      href:'nav/qtp-nav.html',   // 👉 아래에서 만들 내비페이지 경로
+      alt:'Quantum Torus Pendant Navigation'
+    },
+    {
+      // 배너 3: 5D 힐링센터
+      src: 'assets/banners/5dhc-banner.webp',
+      href:'https://5dshop.co.kr/83?idx=2',   // 👉 실제 센터 URL로 교체
+      alt:'5D Healing Center'
+    }
+  ];
+
+  let current = 0;
+
+  function showBanner(idx){
+    current = (idx + banners.length) % banners.length;
+    const b = banners[current];
+    imgEl.src = b.src;
+    imgEl.alt = b.alt || '';
+    linkEl.href = b.href;
+
+    dots.forEach((d,i)=>{
+      d.classList.toggle('active', i===current);
+    });
+  }
+
+  // 점 클릭 시 해당 배너로
+  dots.forEach(d=>{
+    d.addEventListener('click', ()=>{
+      const idx = parseInt(d.dataset.adIdx || '0',10);
+      showBanner(idx);
+    });
+  });
+
+  // 7초마다 자동 순환
+  setInterval(()=>{
+    showBanner(current+1);
+  }, 7000);
+
+  // 초기 표시
+  showBanner(0);
+})();
 	
 /* ===== Boot ===== */
 document.addEventListener('DOMContentLoaded', async ()=>{
