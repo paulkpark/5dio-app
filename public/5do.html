@@ -137,10 +137,7 @@ main{padding:12px}
 /* Search/Filter */
 .filterbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:4px 0 10px}
 .filterbar input, .filterbar select{background:#0f1a28;border:1px solid #13263c;color:#e9f4ff;border-radius:10px;padding:8px 10px}
-#favOnlyBtn.active {
-  background:#39e3ff;
-  color:#050910;
-}
+
 /* Thumbs */
 #favoritesWrap{margin:10px 0 2px 0; display:none;}
 #favoritesTitle{color:#cfe9ff;font-weight:800;margin:4px 0 8px 2px}
@@ -371,9 +368,6 @@ label.gen-label{color:#cfe9ff;font-weight:700}
       </select>
       <button id="searchBtn" class="btn small">검색</button>
       <button id="searchClear" class="btn small">지우기</button>
-	  <button id="favOnlyBtn" class="btn small" data-i18n="filter.favOnly">
-    ★ 즐겨찾기만
-  </button>	
     </div>
 
     <div id="favoritesWrap">
@@ -439,23 +433,22 @@ label.gen-label{color:#cfe9ff;font-weight:700}
     </select>
   </div>
 
-  <div class="gen-row2">
-  <label class="gen-label" data-i18n="gen.waveform">Waveform</label>
-  <div class="gen-inline">
-    <select id="wf" class="gen-input">
-      <!-- 🔹 여기 “기본 텍스트”는 영어로 두는 게 안전 -->
-      <option value="sine"     data-i18n="gen.wave.sine">Sine</option>
-      <option value="square"   data-i18n="gen.wave.square">Square</option>
-      <option value="triangle" data-i18n="gen.wave.triangle">Triangle</option>
-      <option value="sawtooth" data-i18n="gen.wave.saw">Saw</option>
-    </select>
-
-    <span class="gen-chip" data-i18n="gen.binaural">Binaural</span>
-    <input type="checkbox" id="binEnable"/>
-    <label class="gen-sub" data-i18n="gen.diff">Gap(Hz)</label>
-    <input id="binDiff" class="gen-input" type="number" min="0" max="40" step="0.1" value="4"/>
-  </div>
-</div>
+  <div class="gen-grid" style="margin-top:8px">
+    <div class="gen-row2">
+      <label class="gen-label" data-i18n="gen.waveform">Waveform</label>
+      <div class="gen-inline">
+        <select id="wf" class="gen-input">
+          <option value="sine">Sine</option>
+          <option value="square">Square</option>
+          <option value="triangle">Triangle</option>
+          <option value="sawtooth">Saw</option>
+        </select>
+        <span class="gen-chip" data-i18n="gen.binaural">Binaural</span>
+        <input type="checkbox" id="binEnable"/>
+        <label class="gen-sub" data-i18n="gen.diff">Difference (Hz)</label>
+        <input id="binDiff" class="gen-input" type="number" min="0" max="40" step="0.1" value="4"/>
+      </div>
+    </div>
 
  <div class="gen-row2-pair">
     <div class="gen-row2 inline-h">
@@ -686,17 +679,8 @@ const I18N = {
     'preset_load': '프리셋 불러오기…',
 
     'gen.waveform':'파형',
-    'gen.frequency':'주파수(Hz)',
+    'gen.frequency':'주파수 (Hz)',
     'gen.duty':'동작 비율',
-
-	"gen.wave.sine":     "사인파",
-    "gen.wave.square":   "사각파",
-    "gen.wave.triangle": "삼각파",
-    "gen.wave.saw":      "톱니파",
-
-    // Binaural / Difference
-    "gen.binaural": "바이노럴",
-    "gen.diff":     "차이 (Hz)",  
 
     // ▼ Quick Presets 관련
     'gen.quick_presets':'퀵 프리셋',
@@ -767,17 +751,8 @@ const I18N = {
     'preset_load': 'Load Preset…',
 
     'gen.waveform':'Waveform',
-    'gen.frequency':'Freq.(Hz)',
+    'gen.frequency':'Frequency (Hz)',
     'gen.duty':'Duty Cycle',
-
-	"gen.wave.sine":     "Sine",
-    "gen.wave.square":   "Square",
-    "gen.wave.triangle": "Triangle",
-    "gen.wave.saw":      "Saw",
-
-    // Binaural / Difference
-    "gen.binaural": "Binaural",
-    "gen.diff":     "Difference (Hz)",
 
     // ▼ Quick Presets
     'gen.quick_presets':'Quick Presets',
@@ -851,19 +826,10 @@ function refreshLoadingThumbForLang() {
 }
 
 function applyLang(){
-  const dict = I18N[LANG] || {};
-
+  // 1) data-i18n 텍스트 라벨
   document.querySelectorAll('[data-i18n]').forEach(el=>{
     const key = el.getAttribute('data-i18n');
-    const txt = dict[key];
-    if (!txt) return;
-
-    if (el.tagName === 'OPTION') {
-      // 드롭다운 항목은 innerHTML로 갱신
-      el.innerHTML = txt;
-    } else {
-      el.textContent = txt;
-    }
+    if(I18N[LANG] && I18N[LANG][key]) el.textContent = I18N[LANG][key];
   });
 
   // 2) placeholder용
@@ -1019,7 +985,6 @@ const FAV_KEY='fiveDO_favs';
 function loadFavs(){ try{ return new Set(JSON.parse(localStorage.getItem(FAV_KEY)||'[]')); }catch{ return new Set(); } }
 function saveFavs(set){ localStorage.setItem(FAV_KEY, JSON.stringify([...set])); }
 const FAVS = loadFavs();
-let FAVORITES_ONLY = false;	
 function starSvg(){ return '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7"><path d="M12 3l3 6 6 .9-4.5 4.4 1 6.2-5.5-3-5.5 3 1-6.2L3 9.9 9 9z"/></svg>'; }
 function trackId(folder, file){ return (folder? `${folder}/${file}` : file); }
 
@@ -1128,47 +1093,32 @@ async function renderStrip(){
   const myTick = ++RENDER_TICK;         // 이 렌더 전용 토큰
   strip.innerHTML='';
 
- if(!STATE.path){
-  await renderFavoritesStrip();
-  if(myTick !== RENDER_TICK) return;
+  if(!STATE.path){
+    await renderFavoritesStrip();
+    if(myTick !== RENDER_TICK) return;  // 중간에 다른 렌더가 시작되면 중단
 
-  if(!STATE.foldersCache.length) STATE.foldersCache = await listRoot();
-  const folders = STATE.foldersCache;
-  for(const name of folders){
-    if(myTick !== RENDER_TICK) return;
+    if(!STATE.foldersCache.length) STATE.foldersCache = await listRoot();
+    const folders = STATE.foldersCache;
+    for(const name of folders){
+      if(myTick !== RENDER_TICK) return;
 
-    const card = document.createElement('div'); 
-    card.className = 'card folder';
+      const card = document.createElement('div'); card.className='card folder';
+      const th   = document.createElement('div'); th.className='thumb'; card.append(th);
 
-    const th   = document.createElement('div'); 
-    th.className = 'thumb'; 
-    card.append(th);
+     const u = folderThumb(name);
+	if (u) th.style.backgroundImage = `url("${u}")`;
 
-    const u = folderThumb(name);
-    if (u) th.style.backgroundImage = `url("${u}")`;
-
-    // 💡 폴더 카드에는 즐겨찾기 별을 표시하지 않는다
-    card.addEventListener('click', () => {
-      STATE.stack.push('');
-      STATE.path = name;
-      statusBlank();
-      renderStrip();
-    });
-
-    strip.appendChild(card);
-  }
-} else {
-  // ... 트랙 카드 렌더링 (여기는 별 그대로 유지) ...
-}
+      const star = document.createElement('div'); star.className='star'; star.innerHTML=starSvg(); card.append(star);
+      card.addEventListener('click',(e)=>{
+        if(e.target.closest('.star')) return;
+        STATE.stack.push(''); STATE.path=name; statusBlank(); renderStrip();
+      });
+      strip.appendChild(card);
+    }
+    } else {
     const files = await listTracks(STATE.path);
     for (const f of files) {
       if (myTick !== RENDER_TICK) return;
-
-		 // 🔹 "Favorites만 보기"가 켜져 있으면, FAVS에 없는 트랙은 건너뜀
-    if (FAVORITES_ONLY) {
-      const id = trackId(STATE.path, f);
-      if (!FAVS.has(id)) continue;
-    }
 
       const card = document.createElement('div');
       card.className = 'card';
@@ -1302,19 +1252,7 @@ document.getElementById('searchBtn').addEventListener('click', async ()=>{
 document.getElementById('searchClear').addEventListener('click', ()=>{
   $('#searchInput').value=''; renderStrip();
 });
-// 🔹 "Favorites만 보기" 필터 버튼
-const favOnlyBtn = document.getElementById('favOnlyBtn');
-if (favOnlyBtn) {
-  favOnlyBtn.addEventListener('click', () => {
-    FAVORITES_ONLY = !FAVORITES_ONLY;
 
-    // 버튼 활성화 스타일 토글
-    favOnlyBtn.classList.toggle('active', FAVORITES_ONLY);
-
-    // 목록 다시 그리기
-    renderStrip();
-  });
-}
 /* ===== Tabs / Language / Menu ===== */
 function showPage(which){
   if(which==='lib'){ $('#pageLibrary').classList.remove('hidden'); $('#pageGenerator').classList.add('hidden');
@@ -1453,14 +1391,7 @@ async function syncPlaylists(){
 }
 let PL_STATE=null;
 const plPanel = document.getElementById('plPanel'), plBody=document.getElementById('plBody');
-function openPlPanel(){
-  // 🔹 플레이리스트 패널 열 때는 항상 라이브러리 화면을 배경으로
-  if (typeof showPage === 'function') {
-    showPage('lib');
-  }
-  plPanel.style.display = 'block';
-  renderPL();
-}
+function openPlPanel(){ plPanel.style.display='block'; renderPL(); }
 function closePlPanel(){ plPanel.style.display='none'; }
 function renderPL(){
   plBody.innerHTML='';
