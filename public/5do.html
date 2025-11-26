@@ -437,15 +437,16 @@ label.gen-label{color:#cfe9ff;font-weight:700}
     <div class="gen-row2">
       <label class="gen-label" data-i18n="gen.waveform">Waveform</label>
       <div class="gen-inline">
-        <select id="wf" class="gen-input">
-          <option value="sine">Sine</option>
-          <option value="square">Square</option>
-          <option value="triangle">Triangle</option>
-          <option value="sawtooth">Saw</option>
-        </select>
-        <span class="gen-chip" data-i18n="gen.binaural">Binaural</span>
-        <input type="checkbox" id="binEnable"/>
-        <label class="gen-sub" data-i18n="gen.diff">Difference (Hz)</label>
+       <select id="wf" class="gen-input">
+  		<option value="sine"     data-i18n="gen.wave.sine">Sine</option>
+  		<option value="square"   data-i18n="gen.wave.square">Square</option>
+  		<option value="triangle" data-i18n="gen.wave.triangle">Triangle</option>
+ 		 <option value="sawtooth" data-i18n="gen.wave.saw">Saw</option>
+	</select>
+
+		<span class="gen-chip" data-i18n="gen.binaural">Binaural</span>
+		<input type="checkbox" id="binEnable"/>
+		<label class="gen-sub" data-i18n="gen.diff">Difference (Hz)</label>
         <input id="binDiff" class="gen-input" type="number" min="0" max="40" step="0.1" value="4"/>
       </div>
     </div>
@@ -681,6 +682,16 @@ const I18N = {
     'gen.waveform':'파형',
     'gen.frequency':'주파수 (Hz)',
     'gen.duty':'동작 비율',
+
+	// Generator – waveform options
+    "gen.wave.sine":     "사인",
+    "gen.wave.square":   "사각",
+    "gen.wave.triangle": "삼각",
+    "gen.wave.saw":      "톱니",
+
+    // Generator – binaural, difference
+    "gen.binaural": "바이노럴",
+    "gen.diff":     "차이 (Hz)",
 
     // ▼ Quick Presets 관련
     'gen.quick_presets':'퀵 프리셋',
