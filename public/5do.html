@@ -364,45 +364,14 @@ label.gen-label{color:#cfe9ff;font-weight:700}
       </button>
     </div>
 
-<!-- 검색/필터 -->
 <div class="filterbar">
-  <!-- 🔹 placeholder는 i18n-placeholder 로 제어 -->
-  <input
-    id="searchInput"
-    type="text"
-    placeholder=""
-    data-i18n-placeholder="search.placeholder"
-  />
-
+  <input id="searchInput" type="text" placeholder="검색어…" />
   <select id="searchMode">
-    <option value="folder" data-i18n="search.mode.folder">폴더</option>
-    <option value="track"  data-i18n="search.mode.track">곡명</option>
+    <option value="folder">폴더</option>
+    <option value="track">곡명</option>
   </select>
-
-  <button
-    id="searchBtn"
-    class="btn small"
-    data-i18n="search.btn.search"
-  >
-    검색
-  </button>
-
-  <button
-    id="searchClear"
-    class="btn small"
-    data-i18n="search.btn.clear"
-  >
-    지우기
-  </button>
-
-  <!-- 🔹 즐겨찾기 필터 버튼도 i18n 연결 -->
-  <button
-    id="favOnlyBtn"
-    class="btn small"
-    data-i18n="filter.favOnly"
-  >
-    ★ 즐겨찾기만
-  </button>
+  <button id="searchBtn" class="btn small">검색</button>
+  <button id="searchClear" class="btn small">지우기</button>
 </div>
 
   <!-- 🔹 즐겨찾기만 보기 토글 버튼 -->
