@@ -435,20 +435,22 @@ label.gen-label{color:#cfe9ff;font-weight:700}
 
   <div class="gen-grid" style="margin-top:8px">
     <div class="gen-row2">
-      <label class="gen-label" data-i18n="gen.waveform">Waveform</label>
-      <div class="gen-inline">
-        <select id="wf" class="gen-input">
-          <option value="sine">Sine</option>
-          <option value="square">Square</option>
-          <option value="triangle">Triangle</option>
-          <option value="sawtooth">Saw</option>
-        </select>
-        <span class="gen-chip" data-i18n="gen.binaural">Binaural</span>
-        <input type="checkbox" id="binEnable"/>
-        <label class="gen-sub" data-i18n="gen.diff">Gap(Hz)</label>
-        <input id="binDiff" class="gen-input" type="number" min="0" max="40" step="0.1" value="4"/>
-      </div>
-    </div>
+  <label class="gen-label" data-i18n="gen.waveform">Waveform</label>
+  <div class="gen-inline">
+    <select id="wf" class="gen-input">
+      <!-- 🔹 여기 “기본 텍스트”는 영어로 두는 게 안전 -->
+      <option value="sine"     data-i18n="gen.wave.sine">Sine</option>
+      <option value="square"   data-i18n="gen.wave.square">Square</option>
+      <option value="triangle" data-i18n="gen.wave.triangle">Triangle</option>
+      <option value="sawtooth" data-i18n="gen.wave.saw">Saw</option>
+    </select>
+
+    <span class="gen-chip" data-i18n="gen.binaural">Binaural</span>
+    <input type="checkbox" id="binEnable"/>
+    <label class="gen-sub" data-i18n="gen.diff">Difference (Hz)</label>
+    <input id="binDiff" class="gen-input" type="number" min="0" max="40" step="0.1" value="4"/>
+  </div>
+</div>
 
  <div class="gen-row2-pair">
     <div class="gen-row2 inline-h">
@@ -682,6 +684,15 @@ const I18N = {
     'gen.frequency':'주파수 (Hz)',
     'gen.duty':'동작 비율',
 
+	"gen.wave.sine":     "사인파",
+    "gen.wave.square":   "사각파",
+    "gen.wave.triangle": "삼각파",
+    "gen.wave.saw":      "톱니파",
+
+    // Binaural / Difference
+    "gen.binaural": "바이노럴",
+    "gen.diff":     "차이(Hz)",  
+
     // ▼ Quick Presets 관련
     'gen.quick_presets':'퀵 프리셋',
     'qp.528':'528 Hz',
@@ -697,7 +708,7 @@ const I18N = {
     'harm_base_fund':'기본 주파수',
     'harm_base_mid':'중간 (x2)',
     'harm_base_high':'고역 (x4)',
-    'harm_octaves':'옥타브 개수',
+    'harm_octaves':'옥타브 수',
 
     // ▼ Dual-Tone Mixer 관련
     'dual.label':'듀얼 톤 믹서',
@@ -754,6 +765,15 @@ const I18N = {
     'gen.frequency':'Freq.(Hz)',
     'gen.duty':'Duty Cycle',
 
+	 "gen.wave.sine":     "Sine",
+    "gen.wave.square":   "Square",
+    "gen.wave.triangle": "Triangle",
+    "gen.wave.saw":      "Saw",
+
+    // Binaural / Difference
+    "gen.binaural": "Binaural",
+    "gen.diff":     "Gap(Hz)",
+
     // ▼ Quick Presets
     'gen.quick_presets':'Quick Presets',
     'qp.528':'528 Hz',
@@ -769,7 +789,7 @@ const I18N = {
     'harm_base_fund':'Fundamental',
     'harm_base_mid':'Mid (x2)',
     'harm_base_high':'High (x4)',
-    'harm_octaves':'# of Octaves',
+    'harm_octaves':'Octaves',
 
     // ▼ Dual-Tone Mixer
     'dual.label':'Dual-Tone Mixer',
