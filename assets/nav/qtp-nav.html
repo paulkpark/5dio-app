@@ -29,33 +29,33 @@
       height:auto;
     }
 
-    /* 모든 펜던트에 공통으로 쓰이는 클릭 핫스팟 */
-    .pendant-hotspot{
-      position:absolute;
-      top:50%;                 /* 세로 가운데쯤 (이미지 구조에 따라 조정 가능) */
-      transform:translate(-50%,-50%);
-      width:8%;                /* 1500px 기준 직경 약 90px 정도 */
-      aspect-ratio:1/1;
-      border-radius:50%;
-      background:rgba(255,255,255,0); /* 투명 */
-      cursor:pointer;
-    }
+   /* 모든 펜던트에 공통으로 쓰이는 클릭 핫스팟 */
+.pendant-hotspot{
+  position:absolute;
+  top:42%;                 /* 토러스 중심 높이 쯤 */
+  transform:translate(-50%,-50%);
+  width:12%;               /* 1500px 기준 직경 약 180px */
+  aspect-ratio:1/1;
+  border-radius:50%;
+  background:rgba(255,255,255,0); /* 투명 */
+  cursor:pointer;
+}
 
-    /* 데스크톱에서만 hover 시 아주 살짝 링 표시하고 싶으면 */
-    @media (hover:hover){
-      .pendant-hotspot:hover{
-        box-shadow:0 0 0 2px rgba(0,255,255,0.5);
-      }
-    }
+/* 데스크톱에서만 hover 시 살짝 링 표시 */
+@media (hover:hover){
+  .pendant-hotspot:hover{
+    box-shadow:0 0 0 2px rgba(0,255,255,0.5);
+  }
+}
 
     /* 각 펜던트의 가로 위치(왼쪽 기준 %) – 1500x250 배너 기준 대략 값 */
-    .hot-1{ left:10%; }
-    .hot-2{ left:20%; }
-    .hot-3{ left:30%; }
-    .hot-4{ left:40%; }
-    .hot-5{ left:50%; }
-    .hot-6{ left:60%; }
-    .hot-7{ left:70%; }
+.hot-1{ left:12%; }  /* Ultra  */
+.hot-2{ left:25%; }  /* Flow   */
+.hot-3{ left:38%; }  /* DNA    */
+.hot-4{ left:51%; }  /* Heal   */
+.hot-5{ left:64%; }  /* Halo   */
+.hot-6{ left:77%; }  /* Lift   */
+.hot-7{ left:90%; }  /* Shield */
   </style>
 </head>
 <body>
