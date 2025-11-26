@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Quantum Torus Pendant Navigation</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <style>
+    body{
+      margin:0;
+      background:#050910;
+      display:flex;
+      justify-content:center;
+      align-items:flex-start;
+      min-height:100vh;
+      padding:16px 8px 32px;
+    }
+
+    /* 배너 이미지를 전체로 보여주는 래퍼 */
+    .pendant-nav{
+      position:relative;
+      max-width:1500px;  /* qtp-nav 원본 폭 기준 */
+      width:100%;
+    }
+
+    .pendant-nav img{
+      display:block;
+      width:100%;
+      height:auto;
+    }
+
+    /* 모든 펜던트에 공통으로 쓰이는 클릭 핫스팟 */
+    .pendant-hotspot{
+      position:absolute;
+      top:50%;                 /* 세로 가운데쯤 (이미지 구조에 따라 조정 가능) */
+      transform:translate(-50%,-50%);
+      width:6%;                /* 1500px 기준 직경 약 90px 정도 */
+      aspect-ratio:1/1;
+      border-radius:50%;
+      background:rgba(255,255,255,0); /* 투명 */
+      cursor:pointer;
+    }
+
+    /* 데스크톱에서만 hover 시 아주 살짝 링 표시하고 싶으면 */
+    @media (hover:hover){
+      .pendant-hotspot:hover{
+        box-shadow:0 0 0 2px rgba(0,255,255,0.5);
+      }
+    }
+
+    /* 각 펜던트의 가로 위치(왼쪽 기준 %) – 1500x250 배너 기준 대략 값 */
+    .hot-1{ left:43%; }
+    .hot-2{ left:52%; }
+    .hot-3{ left:61%; }
+    .hot-4{ left:70%; }
+    .hot-5{ left:79%; }
+    .hot-6{ left:88%; }
+    .hot-7{ left:97%; }
+  </style>
+</head>
+<body>
+
+  <div class="pendant-nav">
+    <!-- 내비게이션용 전체 이미지 -->
+    <img src="../assets/nav/qtp-nav.webp"
+         alt="Quantum Torus Pendant Navigation">
+
+    <!-- 각 펜던트에 대한 클릭 영역 (상품 URL은 실제 링크로 교체) -->
+    <a class="pendant-hotspot hot-1"
+       href="https://https://5dshop.co.kr/?idx=482"
+       target="_blank" rel="noopener noreferrer"
+       aria-label="Quantum Torus Pendant 1"></a>
+
+    <a class="pendant-hotspot hot-2"
+       href="https://https://5dshop.co.kr/?idx=467"
+       target="_blank" rel="noopener noreferrer"
+       aria-label="Quantum Torus Pendant 2"></a>
+
+    <a class="pendant-hotspot hot-3"
+       href="https://https://5dshop.co.kr/?idx=463"
+       target="_blank" rel="noopener noreferrer"
+       aria-label="Quantum Torus Pendant 3"></a>
+
+    <a class="pendant-hotspot hot-4"
+       href="https://https://5dshop.co.kr/?idx=464"
+       target="_blank" rel="noopener noreferrer"
+       aria-label="Quantum Torus Pendant 4"></a>
+
+    <a class="pendant-hotspot hot-5"
+       href="https://https://5dshop.co.kr/?idx=481"
+       target="_blank" rel="noopener noreferrer"
+       aria-label="Quantum Torus Pendant 5"></a>
+
+    <a class="pendant-hotspot hot-6"
+       href="https://5dshop.co.kr/?idx=465"
+       target="_blank" rel="noopener noreferrer"
+       aria-label="Quantum Torus Pendant 6"></a>
+
+    <a class="pendant-hotspot hot-7"
+       href="https://https://5dshop.co.kr/?idx=477"
+       target="_blank" rel="noopener noreferrer"
+       aria-label="Quantum Torus Pendant 7"></a>
+  </div>
+
+</body>
+</html>
