@@ -433,22 +433,23 @@ label.gen-label{color:#cfe9ff;font-weight:700}
     </select>
   </div>
 
-  <div class="gen-grid" style="margin-top:8px">
-    <div class="gen-row2">
-      <label class="gen-label" data-i18n="gen.waveform">Waveform</label>
-      <div class="gen-inline">
-        <select id="wf" class="gen-input">
-          <option value="sine">Sine</option>
-          <option value="square">Square</option>
-          <option value="triangle">Triangle</option>
-          <option value="sawtooth">Saw</option>
-        </select>
-        <span class="gen-chip" data-i18n="gen.binaural">Binaural</span>
-        <input type="checkbox" id="binEnable"/>
-        <label class="gen-sub" data-i18n="gen.diff">Difference (Hz)</label>
-        <input id="binDiff" class="gen-input" type="number" min="0" max="40" step="0.1" value="4"/>
-      </div>
-    </div>
+  <div class="gen-row2">
+  <label class="gen-label" data-i18n="gen.waveform">Waveform</label>
+  <div class="gen-inline">
+    <select id="wf" class="gen-input">
+      <!-- 🔹 여기 “기본 텍스트”는 영어로 두는 게 안전 -->
+      <option value="sine"     data-i18n="gen.wave.sine">Sine</option>
+      <option value="square"   data-i18n="gen.wave.square">Square</option>
+      <option value="triangle" data-i18n="gen.wave.triangle">Triangle</option>
+      <option value="sawtooth" data-i18n="gen.wave.saw">Saw</option>
+    </select>
+
+    <span class="gen-chip" data-i18n="gen.binaural">Binaural</span>
+    <input type="checkbox" id="binEnable"/>
+    <label class="gen-sub" data-i18n="gen.diff">Gap(Hz)</label>
+    <input id="binDiff" class="gen-input" type="number" min="0" max="40" step="0.1" value="4"/>
+  </div>
+</div>
 
  <div class="gen-row2-pair">
     <div class="gen-row2 inline-h">
@@ -679,8 +680,17 @@ const I18N = {
     'preset_load': '프리셋 불러오기…',
 
     'gen.waveform':'파형',
-    'gen.frequency':'주파수 (Hz)',
+    'gen.frequency':'주파수(Hz)',
     'gen.duty':'동작 비율',
+
+	"gen.wave.sine":     "사인파",
+    "gen.wave.square":   "사각파",
+    "gen.wave.triangle": "삼각파",
+    "gen.wave.saw":      "톱니파",
+
+    // Binaural / Difference
+    "gen.binaural": "바이노럴",
+    "gen.diff":     "차이 (Hz)",  
 
     // ▼ Quick Presets 관련
     'gen.quick_presets':'퀵 프리셋',
@@ -751,8 +761,17 @@ const I18N = {
     'preset_load': 'Load Preset…',
 
     'gen.waveform':'Waveform',
-    'gen.frequency':'Frequency (Hz)',
+    'gen.frequency':'Freq.(Hz)',
     'gen.duty':'Duty Cycle',
+
+	"gen.wave.sine":     "Sine",
+    "gen.wave.square":   "Square",
+    "gen.wave.triangle": "Triangle",
+    "gen.wave.saw":      "Saw",
+
+    // Binaural / Difference
+    "gen.binaural": "Binaural",
+    "gen.diff":     "Difference (Hz)",
 
     // ▼ Quick Presets
     'gen.quick_presets':'Quick Presets',
@@ -826,10 +845,19 @@ function refreshLoadingThumbForLang() {
 }
 
 function applyLang(){
-  // 1) data-i18n 텍스트 라벨
+  const dict = I18N[LANG] || {};
+
   document.querySelectorAll('[data-i18n]').forEach(el=>{
     const key = el.getAttribute('data-i18n');
-    if(I18N[LANG] && I18N[LANG][key]) el.textContent = I18N[LANG][key];
+    const txt = dict[key];
+    if (!txt) return;
+
+    if (el.tagName === 'OPTION') {
+      // 드롭다운 항목은 innerHTML로 갱신
+      el.innerHTML = txt;
+    } else {
+      el.textContent = txt;
+    }
   });
 
   // 2) placeholder용
@@ -1093,29 +1121,38 @@ async function renderStrip(){
   const myTick = ++RENDER_TICK;         // 이 렌더 전용 토큰
   strip.innerHTML='';
 
-  if(!STATE.path){
-    await renderFavoritesStrip();
-    if(myTick !== RENDER_TICK) return;  // 중간에 다른 렌더가 시작되면 중단
+ if(!STATE.path){
+  await renderFavoritesStrip();
+  if(myTick !== RENDER_TICK) return;
 
-    if(!STATE.foldersCache.length) STATE.foldersCache = await listRoot();
-    const folders = STATE.foldersCache;
-    for(const name of folders){
-      if(myTick !== RENDER_TICK) return;
+  if(!STATE.foldersCache.length) STATE.foldersCache = await listRoot();
+  const folders = STATE.foldersCache;
+  for(const name of folders){
+    if(myTick !== RENDER_TICK) return;
 
-      const card = document.createElement('div'); card.className='card folder';
-      const th   = document.createElement('div'); th.className='thumb'; card.append(th);
+    const card = document.createElement('div'); 
+    card.className = 'card folder';
 
-     const u = folderThumb(name);
-	if (u) th.style.backgroundImage = `url("${u}")`;
+    const th   = document.createElement('div'); 
+    th.className = 'thumb'; 
+    card.append(th);
 
-      const star = document.createElement('div'); star.className='star'; star.innerHTML=starSvg(); card.append(star);
-      card.addEventListener('click',(e)=>{
-        if(e.target.closest('.star')) return;
-        STATE.stack.push(''); STATE.path=name; statusBlank(); renderStrip();
-      });
-      strip.appendChild(card);
-    }
-    } else {
+    const u = folderThumb(name);
+    if (u) th.style.backgroundImage = `url("${u}")`;
+
+    // 💡 폴더 카드에는 즐겨찾기 별을 표시하지 않는다
+    card.addEventListener('click', () => {
+      STATE.stack.push('');
+      STATE.path = name;
+      statusBlank();
+      renderStrip();
+    });
+
+    strip.appendChild(card);
+  }
+} else {
+  // ... 트랙 카드 렌더링 (여기는 별 그대로 유지) ...
+}
     const files = await listTracks(STATE.path);
     for (const f of files) {
       if (myTick !== RENDER_TICK) return;
@@ -1391,7 +1428,14 @@ async function syncPlaylists(){
 }
 let PL_STATE=null;
 const plPanel = document.getElementById('plPanel'), plBody=document.getElementById('plBody');
-function openPlPanel(){ plPanel.style.display='block'; renderPL(); }
+function openPlPanel(){
+  // 🔹 플레이리스트 패널 열 때는 항상 라이브러리 화면을 배경으로
+  if (typeof showPage === 'function') {
+    showPage('lib');
+  }
+  plPanel.style.display = 'block';
+  renderPL();
+}
 function closePlPanel(){ plPanel.style.display='none'; }
 function renderPL(){
   plBody.innerHTML='';
