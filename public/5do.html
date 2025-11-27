@@ -402,7 +402,14 @@ label.gen-label{color:#cfe9ff;font-weight:700}
       <audio id="player" controls playsinline style="width:min(520px, 100%);"></audio>
     </div>
     
-  <!-- Playlist Panel -->
+  
+    <!-- Track Info Panel (선곡 설명 영역) -->
+    <section id="trackInfoPanel" class="track-info-panel">
+      <div id="trackInfoTitle" class="track-info-title"></div>
+      <div id="trackInfoBody" class="track-info-body"></div>
+    </section>
+ 
+<!-- Playlist Panel -->
    <div id="plPanel" role="dialog" aria-modal="true" aria-labelledby="plTitle">
    <div id="plHead">
     <div id="plTitle" style="color:#cfe9ff;font-weight:800">Playlists</div>
@@ -419,16 +426,13 @@ label.gen-label{color:#cfe9ff;font-weight:700}
     <button id="plSaveBtn" class="btn">Save</button>
   </div>
 
-    <!-- Track Info Panel (선곡 설명 영역) -->
-    <section id="trackInfoPanel" class="track-info-panel">
-      <div id="trackInfoTitle" class="track-info-title"></div>
-      <div id="trackInfoBody" class="track-info-body"></div>
-    </section>
- </section>
+   </section>
 	
-	<!-- Generator -->
-<section id="pageGenerator" class="hidden">
-  <div class="osc-wrap">
+
+
+    <!-- Generator -->
+    <section id="pageGenerator" class="hidden">
+    <div class="osc-wrap">
     <canvas id="osc"></canvas>
     <div class="osc-toolbar" id="oscToolbar">
       <div class="osc-pop" id="oscPop">
