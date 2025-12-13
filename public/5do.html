@@ -220,6 +220,100 @@ label.gen-label{color:#cfe9ff;font-weight:700}
 .btn:hover{transform:translateY(-1px)}
 .small{font-size:12px;padding:6px 8px}
 
+/* ===== Playlist Controls (UX) ===== */
+.pl-controls{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 10px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  backdrop-filter: blur(6px);
+}
+
+.pl-spacer{ flex:1; }
+
+.pl-icbtn{
+  position:relative;
+  width:38px;
+  height:38px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.04);
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  transition: transform .08s ease, background .15s ease, border-color .15s ease, opacity .15s ease;
+  user-select:none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pl-icbtn:hover{
+  background: rgba(255,255,255,.08);
+  border-color: rgba(255,255,255,.18);
+}
+
+.pl-icbtn:active{ transform: scale(.98); }
+.pl-icbtn[disabled]{ opacity:.45; cursor:not-allowed; }
+
+.pl-ic{
+  width:20px; height:20px;
+  fill: rgba(255,255,255,.85);
+}
+
+.pl-icbtn.is-on{
+  background: rgba(255,255,255,.14);
+  border-color: rgba(255,255,255,.30);
+}
+
+.pl-icbtn.is-on .pl-ic{ fill: rgba(255,255,255,1); }
+
+.pl-badge{
+  position:absolute;
+  right:6px; top:6px;
+  min-width:16px; height:16px;
+  padding:0 4px;
+  border-radius:999px;
+  font-size:11px;
+  line-height:16px;
+  text-align:center;
+  background: rgba(255,255,255,.85);
+  color:#000;
+  display:none;
+}
+
+/* 표시될 때 */
+.pl-icbtn.is-loop-all .pl-badge{ display:inline-block; }
+.pl-icbtn.is-loop-all .pl-badge{ content:"∞"; }
+
+.pl-toast{
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  padding:10px 12px;
+  border-radius: 12px;
+  background: rgba(0,0,0,.65);
+  border: 1px solid rgba(255,255,255,.16);
+  color: rgba(255,255,255,.92);
+  font-size: 13px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease;
+  z-index: 99999;
+}
+
+.pl-toast.show{
+  opacity: 1;
+  transform: translateX(-50%) translateY(-4px);
+}
+
+/* ===== Playlist items highlight ===== */
+.pl-item.is-playing{
+  outline: 1px solid rgba(255,255,255,.22);
+  background: rgba(255,255,255,.06);
+}
+
 /* ===== Numeric Popup (Generator) ===== */
 .num-popup-backdrop{
   position:fixed;
@@ -426,6 +520,39 @@ label.gen-label{color:#cfe9ff;font-weight:700}
   <div id="plFoot">
     <button id="plSaveBtn" class="btn">Save</button>
   </div>
+  <div class="pl-controls" id="plControls">
+  <button id="plPlayAllBtn" class="pl-icbtn" title="Play playlist">
+    <svg viewBox="0 0 24 24" class="pl-ic"><path d="M8 5v14l11-7z"/></svg>
+  </button>
+
+  <button id="plPrevBtn" class="pl-icbtn" title="Previous">
+    <svg viewBox="0 0 24 24" class="pl-ic"><path d="M6 6h2v12H6zM20 6v12l-10-6z"/></svg>
+  </button>
+
+  <button id="plNextBtn" class="pl-icbtn" title="Next">
+    <svg viewBox="0 0 24 24" class="pl-ic"><path d="M16 6h2v12h-2zM4 18V6l10 6z"/></svg>
+  </button>
+
+  <button id="plShuffleBtn" class="pl-icbtn" title="Shuffle">
+    <svg viewBox="0 0 24 24" class="pl-ic">
+      <path d="M16 3h5v5h-2V6.41l-3.59 3.59-1.41-1.41L17.59 5H16V3zM3 7h5.5c1.38 0 2.71.55 3.69 1.53l1.28 1.28-1.41 1.41-1.28-1.28A3.25 3.25 0 0 0 8.5 9H3V7zm0 10h5.5c.86 0 1.69-.34 2.3-.95l7.29-7.29 1.41 1.41-7.29 7.29A5.25 5.25 0 0 1 8.5 19H3v-2zm18-1v-2h-2v3h3v-2h-1zm-2.41-2.59L19 13.59V16h-2v-5h5v2h-2.41z"/>
+    </svg>
+  </button>
+
+  <button id="plLoopBtn" class="pl-icbtn" title="Loop">
+    <svg viewBox="0 0 24 24" class="pl-ic">
+      <path d="M17 17h-2v-2h4v-4h2v6h-6v-0zM7 7h2v2H5v4H3V7h4zm0 10h10v2H7a4 4 0 0 1-4-4v-3h2v3a2 2 0 0 0 2 2zm10-10H7V5h10a4 4 0 0 1 4 4v3h-2V9a2 2 0 0 0-2-2z"/>
+    </svg>
+    <span class="pl-badge" id="plLoopBadge">1</span>
+  </button>
+
+  <span class="pl-spacer"></span>
+
+  <!-- 기존 버튼들(새목록/내보내기/가져오기/저장/닫기)은 너 UI에 맞게 옆에 두면 됨 -->
+</div>
+
+<div id="plToast" class="pl-toast" aria-live="polite">
+</div>
 
    </section>
 	
@@ -1441,6 +1568,7 @@ $('#btnRefresh').addEventListener('click', async ()=>{
   statusBlank();     // 상태 영역도 초기화하고 싶으면 추가
   renderStrip();
 });
+
 /* ===== Playlist ===== */
 const USER_ID_KEY='fiveDO_user_id';
 function uid(){ return 'u'+Math.random().toString(36).slice(2)+Date.now().toString(36); }
@@ -1532,6 +1660,157 @@ ensurePLState();
 const plPanel = document.getElementById('plPanel'),
       plBody  = document.getElementById('plBody');
 
+/* ===== Queue / Mode / Loop (3번) ===== */
+let PL_MODE = 'order';      // 'order' | 'shuffle'
+let PL_LOOP = 'off';        // 'off' | 'all'
+let PL_QUEUE = [];          // [{title,url,path,file}]
+let PL_INDEX = -1;
+let PL_ACTIVE_LIST_ID = null;
+
+function shuffleArray(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+function plToast(msg){
+  const el = document.getElementById('plToast');
+  if(!el) return;
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(plToast._t);
+  plToast._t = setTimeout(()=> el.classList.remove('show'), 900);
+}
+
+function updatePLControlsUI(){
+  const sh = document.getElementById('plShuffleBtn');
+  const lp = document.getElementById('plLoopBtn');
+  const bd = document.getElementById('plLoopBadge');
+  const prev = document.getElementById('plPrevBtn');
+  const next = document.getElementById('plNextBtn');
+
+  if(sh){
+    sh.classList.toggle('is-on', PL_MODE === 'shuffle');
+  }
+  if(lp){
+    lp.classList.toggle('is-on', PL_LOOP === 'all');
+    lp.classList.toggle('is-loop-all', PL_LOOP === 'all');
+    if(bd){
+      bd.style.display = (PL_LOOP === 'all') ? 'inline-block' : 'none';
+      bd.textContent = (PL_LOOP === 'all') ? '∞' : '1';
+    }
+  }
+  const hasQ = PL_QUEUE.length > 0;
+  if(prev) prev.disabled = !hasQ;
+  if(next) next.disabled = !hasQ;
+}
+
+function highlightPlayingItem(){
+  const curUrl = PL_QUEUE[PL_INDEX]?.url || CURRENT_TRACK?.url || '';
+  document.querySelectorAll('#plBody .pl-item').forEach(el=>{
+    const u = el.getAttribute('data-url');
+    el.classList.toggle('is-playing', !!curUrl && u === curUrl);
+  });
+}
+
+function setQueueFromListId(listId, startIndex=0){
+  ensurePLState();
+  const list = PL_STATE.lists.find(x => x.id === listId);
+  if(!list || !Array.isArray(list.items) || list.items.length===0) return false;
+
+  PL_ACTIVE_LIST_ID = listId;
+
+  let base = list.items.map(it => ({
+    title: it.title || it.file || it.url || 'Untitled',
+    url: it.url,
+    path: it.path || '',
+    file: it.file || ''
+  })).filter(x => !!x.url);
+
+  if(base.length===0) return false;
+
+  if(PL_MODE === 'shuffle'){
+    const cur = base[startIndex] || base[0];
+    base = shuffleArray(base);
+    PL_QUEUE = base;
+    PL_INDEX = PL_QUEUE.findIndex(x => x.url === cur.url);
+    if(PL_INDEX < 0) PL_INDEX = 0;
+  }else{
+    PL_QUEUE = base;
+    PL_INDEX = Math.max(0, Math.min(startIndex, PL_QUEUE.length-1));
+  }
+
+  updatePLControlsUI();
+  highlightPlayingItem();
+  return true;
+}
+
+function playFromQueue(index){
+  if(!PL_QUEUE.length) return;
+  const idx = Math.max(0, Math.min(index, PL_QUEUE.length-1));
+  const t = PL_QUEUE[idx];
+  if(!t?.url) return;
+
+  PL_INDEX = idx;
+
+  player.src = t.url;
+  player.load?.();
+  player.play().catch(()=>{});
+
+  statusTitle.textContent = t.title || 'Untitled';
+  statusTitle.classList.add('playing');
+
+  STATE.currentTrack = { name: t.title, url: t.url };
+  CURRENT_TRACK = { title: t.title, url: t.url, path: t.path, file: t.file };
+
+  // 썸네일 갱신(가능한 경우)
+  (async()=>{
+    try{
+      if(t.path && t.file){
+        const u2 = await trackThumb(t.path, t.file);
+        if(u2){
+          statusThumb.classList.remove('status-blank');
+          setStatusThumb(statusThumb, `${u2}`);
+        }
+      }
+    }catch(err){
+      console.warn('playlist thumb update failed', err);
+    }
+  })();
+
+  updatePLControlsUI();
+  highlightPlayingItem();
+}
+
+function nextInQueue(){
+  if(!PL_QUEUE.length) return;
+  let next = PL_INDEX + 1;
+  if(next >= PL_QUEUE.length){
+    if(PL_LOOP === 'all') next = 0;
+    else return;
+  }
+  playFromQueue(next);
+}
+
+function prevInQueue(){
+  if(!PL_QUEUE.length) return;
+  let prev = PL_INDEX - 1;
+  if(prev < 0){
+    if(PL_LOOP === 'all') prev = PL_QUEUE.length - 1;
+    else prev = 0;
+  }
+  playFromQueue(prev);
+}
+
+// 자동 다음곡 (3번)
+player.addEventListener('ended', () => {
+  if(!PL_QUEUE.length) return;
+  nextInQueue();
+});
+
 function openPlPanel(){
   // ✅ 항상 라이브러리 탭을 배경으로 사용
   if (typeof showPage === 'function') showPage('lib');
@@ -1591,6 +1870,11 @@ function renderPL(){
     del.addEventListener('click', (e) => {
       e.stopPropagation();
       PL_STATE.lists.splice(i, 1);
+      // 리스트 삭제되면 큐가 그 리스트였을 수도 있음
+      if(PL_ACTIVE_LIST_ID && pl.id === PL_ACTIVE_LIST_ID){
+        PL_QUEUE = []; PL_INDEX = -1; PL_ACTIVE_LIST_ID = null;
+        updatePLControlsUI();
+      }
       renderPL();
     });
 
@@ -1626,6 +1910,10 @@ function renderPL(){
       item.setAttribute('data-path', it.path || '');
       item.setAttribute('data-file', it.file || '');
 
+      // (4번) 소속 재생목록 id + 인덱스 추가
+      item.setAttribute('data-plid', pl.id || '');
+      item.setAttribute('data-idx', String(j));
+
       const label = document.createElement('div');
       label.className = 'pl-item-label';
       label.style.flex = '1';
@@ -1641,6 +1929,18 @@ function renderPL(){
       delBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         pl.items.splice(j, 1);
+
+        // 큐가 이 리스트라면, URL 기준으로 큐도 재구성(안전)
+        if(PL_ACTIVE_LIST_ID && (pl.id === PL_ACTIVE_LIST_ID)){
+          const curUrl = PL_QUEUE[PL_INDEX]?.url;
+          setQueueFromListId(PL_ACTIVE_LIST_ID, 0);
+          if(curUrl){
+            const ni = PL_QUEUE.findIndex(x=>x.url===curUrl);
+            PL_INDEX = (ni>=0)? ni : Math.min(PL_INDEX, PL_QUEUE.length-1);
+          }
+          updatePLControlsUI();
+        }
+
         renderPL();
       });
 
@@ -1648,6 +1948,10 @@ function renderPL(){
       plBody.appendChild(item);
     });
   });
+
+  // 렌더 후 하이라이트 갱신
+  highlightPlayingItem();
+  updatePLControlsUI();
 }
 
 /* ===== Playlist events (stable with dynamic DOM) =====
@@ -1760,40 +2064,66 @@ plPanel.addEventListener('click', async (e) => {
     return;
   }
 
-  // ---- Click playlist item -> play ----
+  // ===== (5번) 컨트롤 버튼 핸들링: 존재할 때만 동작 =====
+  if (e.target.closest('#plShuffleBtn')) {
+    PL_MODE = (PL_MODE === 'order') ? 'shuffle' : 'order';
+    updatePLControlsUI();
+    plToast(PL_MODE === 'shuffle'
+      ? (LANG==='en'?'Shuffle On':'랜덤 재생 켜짐')
+      : (LANG==='en'?'Shuffle Off':'랜덤 재생 꺼짐')
+    );
+
+    // 큐가 이미 있으면 현재곡 유지하면서 재구성
+    if (PL_ACTIVE_LIST_ID && PL_QUEUE.length) {
+      const curUrl = PL_QUEUE[PL_INDEX]?.url;
+      const list = PL_STATE.lists.find(x=>x.id===PL_ACTIVE_LIST_ID);
+      const startIndex = list?.items?.findIndex(it=>it.url===curUrl) ?? 0;
+      setQueueFromListId(PL_ACTIVE_LIST_ID, Math.max(0,startIndex));
+      playFromQueue(PL_INDEX);
+    }
+    return;
+  }
+
+  if (e.target.closest('#plLoopBtn')) {
+    PL_LOOP = (PL_LOOP === 'off') ? 'all' : 'off';
+    updatePLControlsUI();
+    plToast(PL_LOOP === 'all'
+      ? (LANG==='en'?'Loop All':'전체 반복')
+      : (LANG==='en'?'Loop Off':'반복 해제')
+    );
+    return;
+  }
+
+  if (e.target.closest('#plPrevBtn')) { prevInQueue(); return; }
+  if (e.target.closest('#plNextBtn')) { nextInQueue(); return; }
+
+  if (e.target.closest('#plPlayAllBtn')) {
+    ensurePLState();
+    const targetId = PL_ACTIVE_LIST_ID || PL_STATE.lists?.[0]?.id;
+    if(!targetId){
+      plToast(LANG==='en'?'No playlist':'재생목록 없음');
+      return;
+    }
+    const ok = setQueueFromListId(targetId, 0);
+    if(!ok){ plToast(LANG==='en'?'No tracks':'곡 없음'); return; }
+    playFromQueue(PL_INDEX);
+    return;
+  }
+
+  // ---- Click playlist item -> play (큐 기반) ----
   const itemEl = e.target.closest('.pl-item');
   if (itemEl) {
     // 삭제 버튼이면 재생 금지
     if (e.target.closest('.pl-item-del')) return;
 
-    const url   = itemEl.getAttribute('data-url');
-    const title = itemEl.getAttribute('data-title') || 'Untitled';
-    const path  = itemEl.getAttribute('data-path')  || '';
-    const file  = itemEl.getAttribute('data-file')  || '';
-    if(!url) return;
+    const listId = itemEl.getAttribute('data-plid') || '';
+    const idx = parseInt(itemEl.getAttribute('data-idx') || '0', 10) || 0;
 
-    player.src = url;
-    player.load?.();
-    player.play().catch(()=>{});
+    const ok = setQueueFromListId(listId, idx);
+    if(!ok) return;
 
-    statusTitle.textContent = title;
-    statusTitle.classList.add('playing');
-
-    STATE.currentTrack = { name: title, url };
-    CURRENT_TRACK = { title, url, path, file };
-
-    // 썸네일 갱신(가능한 경우)
-    try{
-      if(path && file){
-        const u2 = await trackThumb(path, file);
-        if(u2){
-          statusThumb.classList.remove('status-blank');
-          setStatusThumb(statusThumb, `${u2}`);
-        }
-      }
-    }catch(err){
-      console.warn('playlist thumb update failed', err);
-    }
+    playFromQueue(PL_INDEX);
+    return;
   }
 });
 /* ===== Generator (WebAudio) ===== */
