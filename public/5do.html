@@ -415,6 +415,7 @@ label.gen-label{color:#cfe9ff;font-weight:700}
     <div id="plTitle" style="color:#cfe9ff;font-weight:800">Playlists</div>
     <div>
       <button id="plNewBtn" class="btn small">+ New</button>
+      <button id="plAddCurrentBtn" class="pl-btn">Add Current Track</button>	
       <button id="plImportBtn" class="btn small">Import</button>
       <button id="plExportBtn" class="btn small">Export</button>
       <button id="plCloseBtn" class="btn small">Close</button>
@@ -1060,6 +1061,12 @@ async function renderFavoritesStrip(){
       if(e.target.closest('.star')) return;  // 별 클릭이면 무시
 
       const url = `${MEDIA_BASE}/${encodeURIComponent(folder)}/${encodeURIComponent(file)}`;
+
+function setCurrentTrack(track) {
+  CURRENT_TRACK = track;
+  // 원하면 상태영역에도 제목 표시를 통일
+  // statusTitle.textContent = track.title || track.name || '';
+}
       player.src = url;
       player.load?.();
       player.play().catch(()=>{});
@@ -1120,6 +1127,28 @@ async function renderFavoritesStrip(){
 
     fstrip.appendChild(card);
   }
+}
+
+// ===== Track selection & play =====
+function setCurrentTrack(track) {
+  CURRENT_TRACK = track;
+}
+
+function loadAndPlayTrack(track) {
+  setCurrentTrack(track);
+
+  const url = track.url || track.src || track.path;
+  if (!url) {
+    console.warn('No playable url in track', track);
+    return;
+  }
+
+  player.src = url;
+  player.play();
+
+  statusTitle.classList.add('playing');
+  const mv = document.getElementById('miniViz');
+  if (mv) mv.style.display = 'block';
 }
 
 /* ===== Render strip ===== */
@@ -1218,6 +1247,7 @@ async function renderStrip(){
         statusTitle.textContent = title;
         statusTitle.classList.add('playing');
         STATE.currentTrack = { name: title, url };
+	CURRENT_TRACK = { title, url, path: STATE.path, file: f };  // ✅ B안용 기준점
 
         // info 패널 업데이트
         if (infoTitle) infoTitle.textContent = title;
@@ -1416,16 +1446,34 @@ const USER_ID_KEY='fiveDO_user_id';
 function uid(){ return 'u'+Math.random().toString(36).slice(2)+Date.now().toString(36); }
 function getUserId(){ let x=localStorage.getItem(USER_ID_KEY); if(!x){ x=uid(); localStorage.setItem(USER_ID_KEY,x); } return x; }
 const USER_ID = getUserId();
+
 const PL_KEY='fiveDO_playlists';
 const PL_CLOUD_PATH = `playlists/${USER_ID}.json`;
+
 function nowISO(){ return new Date().toISOString(); }
 function newPLState(){ return {version:1,updatedAt:nowISO(),lists:[]}; }
-function loadPLLocal(){ try{ return JSON.parse(localStorage.getItem(PL_KEY)||''); }catch{ return null; } }
-function savePLLocal(obj){ try{ obj.updatedAt=nowISO(); localStorage.setItem(PL_KEY, JSON.stringify(obj)); }catch{} }
+
+function loadPLLocal(){
+  try{
+    const raw = localStorage.getItem(PL_KEY);
+    if(!raw) return null;
+    return JSON.parse(raw);
+  }catch{ return null; }
+}
+function savePLLocal(obj){
+  try{
+    obj.updatedAt = nowISO();
+    localStorage.setItem(PL_KEY, JSON.stringify(obj));
+  }catch{}
+}
+
 async function loadPLCloud(){
   const url = `${MEDIA_BASE}/${PL_CLOUD_PATH}`;
-  try{ const res = await fetch(url+'?t='+Date.now(), {cache:'no-store'}); if(!res.ok) return null; return await res.json(); }
-  catch{ return null; }
+  try{
+    const res = await fetch(url+'?t='+Date.now(), {cache:'no-store'});
+    if(!res.ok) return null;
+    return await res.json();
+  }catch{ return null; }
 }
 async function savePLCloud(obj){
   try{
@@ -1433,76 +1481,321 @@ async function savePLCloud(obj){
       .upload(PL_CLOUD_PATH, new Blob([JSON.stringify(obj)], {type:'application/json'}), { upsert:true });
     if(error) throw error;
     return true;
-  }catch(e){ console.warn('[playlist] cloud save failed', e); return false; }
+  }catch(e){
+    console.warn('[playlist] cloud save failed', e);
+    return false;
+  }
 }
+
 async function syncPlaylists(){
   let local = loadPLLocal();
   let cloud = await loadPLCloud();
+
   if(!local && !cloud){
-    local = newPLState(); savePLLocal(local); await savePLCloud(local); return local;
+    local = newPLState();
+    savePLLocal(local);
+    await savePLCloud(local);
+    return local;
   }
-  if(local && !cloud){ await savePLCloud(local); return local; }
-  if(!local && cloud){ savePLLocal(cloud); return cloud; }
+  if(local && !cloud){
+    await savePLCloud(local);
+    return local;
+  }
+  if(!local && cloud){
+    savePLLocal(cloud);
+    return cloud;
+  }
+
   const L = new Date(local.updatedAt||0).getTime();
   const C = new Date(cloud.updatedAt||0).getTime();
-  const base = (C>L)? cloud : local;
-  savePLLocal(base); if(C<L) await savePLCloud(base);
+  const base = (C > L) ? cloud : local;
+
+  savePLLocal(base);
+  if(C < L) await savePLCloud(base);
   return base;
 }
+
 let PL_STATE = null;
+let CURRENT_TRACK = null;
+
+function ensurePLState(){
+  if(!PL_STATE || typeof PL_STATE !== 'object') PL_STATE = newPLState();
+  if(!Array.isArray(PL_STATE.lists)) PL_STATE.lists = [];
+  if(!PL_STATE.updatedAt) PL_STATE.updatedAt = nowISO();
+  if(!PL_STATE.version) PL_STATE.version = 1;
+  return PL_STATE;
+}
+
+// 최소 기본값
+ensurePLState();
 
 const plPanel = document.getElementById('plPanel'),
       plBody  = document.getElementById('plBody');
 
-function openPlPanel() {
+function openPlPanel(){
   // ✅ 항상 라이브러리 탭을 배경으로 사용
-  if (typeof showPage === 'function') {
-    showPage('lib');   // 라이브러리 화면으로 전환
-  }
+  if (typeof showPage === 'function') showPage('lib');
 
   plPanel.style.display = 'block';
+  ensurePLState();
   renderPL();
+
+  // (선택) 백그라운드 동기화: 늦게 도착해도 UI 갱신
+  syncPlaylists().then((state)=>{
+    PL_STATE = state;
+    ensurePLState();
+    renderPL();
+  }).catch(()=>{});
 }
 
-function closePlPanel() {
+function closePlPanel(){
   plPanel.style.display = 'none';
 }
 
+/* ===== Render playlists + items ===== */
 function renderPL(){
-  plBody.innerHTML='';
-  const lists = (PL_STATE?.lists)||[];
-  if(lists.length===0){
-    const row=document.createElement('div'); row.className='pl-row';
-    row.textContent=(LANG==='en'? I18N.en['pl.no'] : I18N.ko['pl.no']);
+  ensurePLState();
+  plBody.innerHTML = '';
+
+  const lists = PL_STATE.lists || [];
+  if(lists.length === 0){
+    const row = document.createElement('div');
+    row.className = 'pl-row';
+    row.textContent = (LANG === 'en' ? I18N.en['pl.no'] : I18N.ko['pl.no']);
     plBody.appendChild(row);
     return;
   }
-  lists.forEach((pl,i)=>{
-    const row=document.createElement('div'); row.className='pl-row';
-    const name=document.createElement('input'); name.className='gen-input'; name.value=pl.name||('List '+(i+1));
-    const cnt=document.createElement('div'); cnt.style.opacity=.7; cnt.textContent=`${pl.items?.length||0} ${LANG==='en'?'tracks':'곡'}`;
-    const left=document.createElement('div'); left.style.display='flex'; left.style.gap='10px'; left.append(name,cnt);
-    const del=document.createElement('button'); del.className='btn small'; del.textContent=(LANG==='en'?I18N.en['pl.delete']:I18N.ko['pl.delete']);
-    del.addEventListener('click',()=>{ PL_STATE.lists.splice(i,1); renderPL(); });
-    row.append(left,del);
-    name.addEventListener('input',()=>{ pl.name=name.value; });
+
+  lists.forEach((pl, i) => {
+    // ---- Playlist header row ----
+    const row = document.createElement('div');
+    row.className = 'pl-row';
+
+    const name = document.createElement('input');
+    name.className = 'gen-input';
+    name.value = pl.name || ('List ' + (i + 1));
+    name.addEventListener('input', () => { pl.name = name.value; });
+
+    const cnt = document.createElement('div');
+    cnt.style.opacity = .7;
+    cnt.textContent = `${(pl.items?.length || 0)} ${LANG === 'en' ? 'tracks' : '곡'}`;
+
+    const left = document.createElement('div');
+    left.style.display = 'flex';
+    left.style.gap = '10px';
+    left.append(name, cnt);
+
+    const del = document.createElement('button');
+    del.className = 'btn small';
+    del.textContent = (LANG === 'en' ? I18N.en['pl.delete'] : I18N.ko['pl.delete']);
+    del.addEventListener('click', (e) => {
+      e.stopPropagation();
+      PL_STATE.lists.splice(i, 1);
+      renderPL();
+    });
+
+    row.append(left, del);
     plBody.appendChild(row);
+
+    // ---- Items section ----
+    if(!Array.isArray(pl.items)) pl.items = [];
+
+    if(pl.items.length === 0){
+      const empty = document.createElement('div');
+      empty.className = 'pl-item pl-item-empty';
+      empty.style.opacity = .6;
+      empty.style.padding = '8px 10px';
+      empty.textContent = (LANG === 'en' ? 'No tracks' : '곡 없음');
+      plBody.appendChild(empty);
+      return;
+    }
+
+    pl.items.forEach((it, j) => {
+      const item = document.createElement('div');
+      item.className = 'pl-item';
+      item.style.display = 'flex';
+      item.style.alignItems = 'center';
+      item.style.justifyContent = 'space-between';
+      item.style.gap = '10px';
+      item.style.padding = '8px 10px';
+      item.style.cursor = 'pointer';
+
+      // 클릭 재생용 데이터
+      item.setAttribute('data-url', it.url || '');
+      item.setAttribute('data-title', it.title || '');
+      item.setAttribute('data-path', it.path || '');
+      item.setAttribute('data-file', it.file || '');
+
+      const label = document.createElement('div');
+      label.className = 'pl-item-label';
+      label.style.flex = '1';
+      label.style.minWidth = '0';
+      label.style.overflow = 'hidden';
+      label.style.textOverflow = 'ellipsis';
+      label.style.whiteSpace = 'nowrap';
+      label.textContent = it.title || it.file || it.url || 'Untitled';
+
+      const delBtn = document.createElement('button');
+      delBtn.className = 'btn small pl-item-del';
+      delBtn.textContent = (LANG === 'en' ? 'Remove' : '삭제');
+      delBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        pl.items.splice(j, 1);
+        renderPL();
+      });
+
+      item.append(label, delBtn);
+      plBody.appendChild(item);
+    });
   });
 }
-document.getElementById('plNewBtn').addEventListener('click',()=>{ PL_STATE.lists.push({id:'pl_'+Date.now(),name:(LANG==='en'?I18N.en['pl.new']:I18N.ko['pl.new']),items:[]}); renderPL(); });
-document.getElementById('plExportBtn').addEventListener('click',()=>{
-  const blob=new Blob([JSON.stringify(PL_STATE,null,2)],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='playlists.json'; a.click();
-});
-document.getElementById('plImportBtn').addEventListener('click',()=>{
-  const inp=document.createElement('input'); inp.type='file'; inp.accept='application/json';
-  inp.onchange=async()=>{ const f=inp.files[0]; if(!f) return; try{ const text=await f.text(); const json=JSON.parse(text); if(json?.lists){ PL_STATE=json; renderPL(); } }catch(e){ console.warn('import failed', e); } };
-  inp.click();
-});
-document.getElementById('plSaveBtn').addEventListener('click', async ()=>{ savePLLocal(PL_STATE); await savePLCloud(PL_STATE); closePlPanel(); });
-document.getElementById('plCloseBtn').addEventListener('click', closePlPanel);
-window.openPlPanel = openPlPanel;
 
+/* ===== Playlist events (stable with dynamic DOM) =====
+   - 버튼/아이템이 innerHTML로 바뀌어도 항상 동작하도록 "이벤트 위임" 사용
+*/
+plPanel.addEventListener('click', async (e) => {
+  // ---- New list ----
+  if (e.target.closest('#plNewBtn')) {
+    ensurePLState();
+    PL_STATE.lists.push({
+      id: 'pl_' + Date.now(),
+      name: (LANG==='en' ? I18N.en['pl.new'] : I18N.ko['pl.new']),
+      items: []
+    });
+    renderPL();
+    return;
+  }
+
+  // ---- Close ----
+  if (e.target.closest('#plCloseBtn')) {
+    closePlPanel();
+    return;
+  }
+
+  // ---- Save ----
+  if (e.target.closest('#plSaveBtn')) {
+    ensurePLState();
+    savePLLocal(PL_STATE);
+    await savePLCloud(PL_STATE);
+    closePlPanel();
+    return;
+  }
+
+  // ---- Export ----
+  if (e.target.closest('#plExportBtn')) {
+    ensurePLState();
+    const blob = new Blob([JSON.stringify(PL_STATE, null, 2)], { type:'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'playlists.json';
+    a.click();
+    return;
+  }
+
+  // ---- Import ----
+  if (e.target.closest('#plImportBtn')) {
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = 'application/json';
+    inp.onchange = async () => {
+      const f = inp.files?.[0];
+      if(!f) return;
+      try{
+        const text = await f.text();
+        const json = JSON.parse(text);
+
+        ensurePLState();
+        if (json && Array.isArray(json.lists)) {
+          // ✅ 재할당(PL_STATE=json) 금지: lists만 교체
+          PL_STATE.lists = json.lists;
+          PL_STATE.updatedAt = nowISO();
+          renderPL();
+        }
+      }catch(err){
+        console.warn('import failed', err);
+      }
+    };
+    inp.click();
+    return;
+  }
+
+  // ---- Add current track ----
+  if (e.target.closest('#plAddCurrentBtn')) {
+    if (!CURRENT_TRACK) {
+      alert(LANG === 'en'
+        ? 'Please select or play a track first.'
+        : '먼저 라이브러리에서 곡을 선택하거나 재생하세요.'
+      );
+      return;
+    }
+
+    ensurePLState();
+    if (!PL_STATE.lists.length) {
+      alert(LANG === 'en'
+        ? 'No playlist found. Please create one first.'
+        : '재생목록이 없습니다. 먼저 새 재생목록을 만드세요.'
+      );
+      return;
+    }
+
+    const msg = PL_STATE.lists.map((pl, i) => `${i+1}. ${pl.name}`).join('\n');
+    const n = prompt((LANG==='en' ? 'Add to which playlist?\n' : '어느 재생목록에 추가할까요?\n') + msg);
+    const idx = parseInt(n, 10) - 1;
+    if (isNaN(idx) || idx < 0 || idx >= PL_STATE.lists.length) return;
+
+    const pl = PL_STATE.lists[idx];
+    if(!Array.isArray(pl.items)) pl.items = [];
+
+    const ref = {
+      id: 't_' + (CURRENT_TRACK.path || '') + '_' + (CURRENT_TRACK.file || Date.now()),
+      title: CURRENT_TRACK.title || 'Untitled',
+      url: CURRENT_TRACK.url,
+      path: CURRENT_TRACK.path || '',
+      file: CURRENT_TRACK.file || ''
+    };
+
+    if (pl.items.some(it => it.url === ref.url)) return;
+    pl.items.push(ref);
+    renderPL();
+    return;
+  }
+
+  // ---- Click playlist item -> play ----
+  const itemEl = e.target.closest('.pl-item');
+  if (itemEl) {
+    // 삭제 버튼이면 재생 금지
+    if (e.target.closest('.pl-item-del')) return;
+
+    const url   = itemEl.getAttribute('data-url');
+    const title = itemEl.getAttribute('data-title') || 'Untitled';
+    const path  = itemEl.getAttribute('data-path')  || '';
+    const file  = itemEl.getAttribute('data-file')  || '';
+    if(!url) return;
+
+    player.src = url;
+    player.load?.();
+    player.play().catch(()=>{});
+
+    statusTitle.textContent = title;
+    statusTitle.classList.add('playing');
+
+    STATE.currentTrack = { name: title, url };
+    CURRENT_TRACK = { title, url, path, file };
+
+    // 썸네일 갱신(가능한 경우)
+    try{
+      if(path && file){
+        const u2 = await trackThumb(path, file);
+        if(u2){
+          statusThumb.classList.remove('status-blank');
+          setStatusThumb(statusThumb, `${u2}`);
+        }
+      }
+    }catch(err){
+      console.warn('playlist thumb update failed', err);
+    }
+  }
+});
 /* ===== Generator (WebAudio) ===== */
 let aCtx=null, analyser=null;
 let oscNodes=[];
