@@ -509,7 +509,7 @@ label.gen-label{color:#cfe9ff;font-weight:700}
     <div id="plTitle" style="color:#cfe9ff;font-weight:800">Playlists</div>
     <div>
       <button id="plNewBtn" class="btn small">+ New</button>
-      <button id="plAddCurrentBtn" class="pl-btn">Add Current Track</button>	
+      <button id="plAddCurrentBtn" class="btn small" data-i18n="pl.addCurrent">Add Current Track</button>
       <button id="plImportBtn" class="btn small">Import</button>
       <button id="plExportBtn" class="btn small">Export</button>
       <button id="plCloseBtn" class="btn small">Close</button>
@@ -872,6 +872,8 @@ const I18N = {
     'pl.import':'가져오기',
     'pl.export':'내보내기',
     'pl.close':'닫기',
+    'pl.addCurrent':'현재 트랙 추가',
+    'pl.removeTrack':'삭제',
 
     // ▼ 검색/필터 UI (이미 사용중일 가능성 있음)
     'search.placeholder':'검색어',
@@ -954,6 +956,8 @@ const I18N = {
     'pl.import':'Import',
     'pl.export':'Export',
     'pl.close':'Close',
+    'pl.addCurrent':'Add Current Track',
+    'pl.removeTrack':'Remove',
 
     // ▼ Search/filter
     'search.placeholder':'Search',
@@ -1066,8 +1070,17 @@ function applyLang(){
     }
   }catch(e){
     console.warn('[applyLang] refresh current track failed', e);
-  }
+
+  // 5) 플레이리스트 패널이 열려 있으면 → 리스트/곡 삭제 버튼 포함 전체 재렌더
+  if (typeof renderPL === 'function') {
+    const plPanelEl = document.getElementById('plPanel');
+    if (plPanelEl && plPanelEl.style.display !== 'none') {
+      renderPL();
+    }
+   }
+ }
 }
+
 /* ===== Shorthands & State ===== */
 const $ = (s,r=document)=>r.querySelector(s);
 const strip = $('#strip');
@@ -1812,6 +1825,7 @@ player.addEventListener('ended', () => {
 });
 
 function openPlPanel(){
+  if (typeof applyLang === 'function') applyLang();
   // ✅ 항상 라이브러리 탭을 배경으로 사용
   if (typeof showPage === 'function') showPage('lib');
 
@@ -1866,7 +1880,8 @@ function renderPL(){
 
     const del = document.createElement('button');
     del.className = 'btn small';
-    del.textContent = (LANG === 'en' ? I18N.en['pl.delete'] : I18N.ko['pl.delete']);
+    del.setAttribute('data-i18n', 'pl.delete');
+    del.textContent = I18N[LANG]['pl.delete'] || (LANG==='en'?'Delete':'삭제');
     del.addEventListener('click', (e) => {
       e.stopPropagation();
       PL_STATE.lists.splice(i, 1);
@@ -1924,28 +1939,36 @@ function renderPL(){
       label.textContent = it.title || it.file || it.url || 'Untitled';
 
       const delBtn = document.createElement('button');
-      delBtn.className = 'btn small pl-item-del';
-      delBtn.textContent = (LANG === 'en' ? 'Remove' : '삭제');
-      delBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        pl.items.splice(j, 1);
+delBtn.className = 'btn small pl-item-del';
 
-        // 큐가 이 리스트라면, URL 기준으로 큐도 재구성(안전)
-        if(PL_ACTIVE_LIST_ID && (pl.id === PL_ACTIVE_LIST_ID)){
-          const curUrl = PL_QUEUE[PL_INDEX]?.url;
-          setQueueFromListId(PL_ACTIVE_LIST_ID, 0);
-          if(curUrl){
-            const ni = PL_QUEUE.findIndex(x=>x.url===curUrl);
-            PL_INDEX = (ni>=0)? ni : Math.min(PL_INDEX, PL_QUEUE.length-1);
-          }
-          updatePLControlsUI();
-        }
+// ✅ 2번안 핵심: data-i18n 키 부여 (applyLang이 토글 때 자동 갱신)
+delBtn.setAttribute('data-i18n', 'pl.removeTrack');
 
-        renderPL();
-      });
+// ✅ 초기 렌더 시점 텍스트(토글은 applyLang이 처리)
+delBtn.textContent = (I18N[LANG] && I18N[LANG]['pl.removeTrack'])
+  ? I18N[LANG]['pl.removeTrack']
+  : (LANG === 'en' ? 'Remove' : '삭제');
 
-      item.append(label, delBtn);
-      plBody.appendChild(item);
+delBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  pl.items.splice(j, 1);
+
+  // 큐가 이 리스트라면, URL 기준으로 큐도 재구성(안전)
+  if(PL_ACTIVE_LIST_ID && (pl.id === PL_ACTIVE_LIST_ID)){
+    const curUrl = PL_QUEUE[PL_INDEX]?.url;
+    setQueueFromListId(PL_ACTIVE_LIST_ID, 0);
+    if(curUrl){
+      const ni = PL_QUEUE.findIndex(x=>x.url===curUrl);
+      PL_INDEX = (ni>=0)? ni : Math.min(PL_INDEX, PL_QUEUE.length-1);
+    }
+    updatePLControlsUI();
+  }
+
+  renderPL();
+});
+
+item.append(label, delBtn);
+plBody.appendChild(item);
     });
   });
 
