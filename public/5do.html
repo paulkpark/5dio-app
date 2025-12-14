@@ -457,17 +457,20 @@ label.gen-label{color:#cfe9ff;font-weight:700}
       </button>
     </div>
 
-    <!-- 검색/필터 -->
-    <div class="filterbar">
-      <input id="searchInput" type="text" placeholder="검색어…" />
-      <select id="searchMode">
-        <option value="folder">폴더</option>
-        <option value="track">곡명</option>
-      </select>
-      <button id="searchBtn" class="btn small">검색</button>
-      <button id="searchClear" class="btn small">지우기</button>
-      <button id="favOnlyBtn" class="btn small" data-i18n="filter.favOnly">
-    </div>
+   <!-- 검색/필터 -->
+<div class="filterbar">
+  <input id="searchInput" type="text" data-i18n-placeholder="search.placeholder" placeholder="검색어…" />
+
+  <select id="searchMode">
+    <option value="folder" data-i18n="search.mode.folder">폴더</option>
+    <option value="track"  data-i18n="search.mode.track">곡명</option>
+  </select>
+
+  <button id="searchBtn" class="btn small" data-i18n="search.btn.search">검색</button>
+  <button id="searchClear" class="btn small" data-i18n="search.btn.clear">지우기</button>
+
+  <button id="favOnlyBtn" class="btn small" data-i18n="filter.favOnly">★ 즐겨찾기만</button>
+</div>
 
     <div id="favoritesWrap">
       <div id="favoritesTitle">★ Favorites</div>
@@ -969,32 +972,69 @@ const I18N = {
   }
 };
 
+// ================================
+// Loading thumb + i18n applyLang (fixed full block)
+// ================================
+
 // 언어에 따라 로딩 썸네일 이미지 경로를 돌려주는 함수
 function getLoadingThumbUrl() {
-  // 🔧 실제 사용하는 파일 경로/이름으로 맞춰줌
   // ko: loading.webp, en: loading_E.webp
   return (LANG === 'en')
     ? MEDIA_BASE + '/_system/loading_E.webp'
     : MEDIA_BASE + '/_system/loading.webp';
 }
 
-// 로딩 썸네일을 현재 LANG에 맞게 다시 세팅
-function refreshLoadingThumbForLang() {
-  const statusThumbEl = document.getElementById('statusThumb');
-  if (!statusThumbEl) return;
+// statusThumb 엘리먼트에 썸네일을 적용하는 helper
+function setStatusThumb(el, url){
+  if(!el) return;
 
-  const url = getLoadingThumbUrl();
-  statusThumbEl.classList.remove('status-blank');
-  // 디버깅용 로그
+  el.style.backgroundImage = `url("${url}")`;
+  el.style.backgroundSize = 'cover';
+  el.style.backgroundPosition = 'center';
+  el.style.backgroundRepeat = 'no-repeat';
+}
+
+/**
+ * 로딩 썸네일을 현재 LANG에 맞게 다시 세팅
+ * - force=true: 캐시 버스트로 무조건 갱신
+ * - ONLY_WHEN_BLANK=true면 status-blank 상태에서만 적용 (원하면 true로 변경)
+ */
+const ONLY_WHEN_BLANK = true;
+
+function refreshLoadingThumbForLang(force=true) {
+  const el = document.getElementById('statusThumb');
+  if (!el) return;
+
+  if (ONLY_WHEN_BLANK && !el.classList.contains('status-blank')) {
+    // 로딩 상태가 아닐 때는 건드리지 않음
+    return;
+  }
+
+  let url = getLoadingThumbUrl();
+
+  // 캐시 문제 방지: 토글 때마다 URL이 달라지게
+  if (force) {
+    const sep = url.includes('?') ? '&' : '?';
+    url = url + sep + 'lang=' + encodeURIComponent(LANG) + '&v=' + Date.now();
+  }
+
   console.log('[refreshLoadingThumbForLang]', LANG, url);
-  setStatusThumb(statusThumbEl, url);
+
+  // 혹시 동일값 스킵/렌더 지연 방지
+  el.style.backgroundImage = 'none';
+  requestAnimationFrame(() => setStatusThumb(el, url));
 }
 
 function applyLang(){
   // 1) data-i18n 텍스트 라벨
   document.querySelectorAll('[data-i18n]').forEach(el=>{
     const key = el.getAttribute('data-i18n');
-    if(I18N[LANG] && I18N[LANG][key]) el.textContent = I18N[LANG][key];
+    const val = I18N[LANG] && I18N[LANG][key];
+    if(!val) return;
+
+    const tag = el.tagName;
+    if(tag === 'INPUT' || tag === 'TEXTAREA') el.value = val;
+    else el.textContent = val;  // BUTTON, OPTION, DIV, SPAN...
   });
 
   // 2) placeholder용
@@ -1005,82 +1045,92 @@ function applyLang(){
   });
 
   // 3) 플레이리스트 헤더 버튼들 (기존 로직 유지)
-  document.getElementById('plTitle').textContent     = (LANG==='en'?'Playlists':'플레이리스트');
-  document.getElementById('plNewBtn').textContent    = (LANG==='en'?'+ New':'+ 새 목록');
-  document.getElementById('plImportBtn').textContent = (LANG==='en'?'Import':'가져오기');
-  document.getElementById('plExportBtn').textContent = (LANG==='en'?'Export':'내보내기');
-  document.getElementById('plCloseBtn').textContent  = (LANG==='en'?'Close':'닫기');
-  document.getElementById('plSaveBtn').textContent   = (LANG==='en'?'Save':'저장');
+  const plTitle   = document.getElementById('plTitle');
+  const plNewBtn  = document.getElementById('plNewBtn');
+  const plImport  = document.getElementById('plImportBtn');
+  const plExport  = document.getElementById('plExportBtn');
+  const plClose   = document.getElementById('plCloseBtn');
+  const plSave    = document.getElementById('plSaveBtn');
+
+  if (plTitle)  plTitle.textContent  = (LANG==='en'?'Playlists':'플레이리스트');
+  if (plNewBtn) plNewBtn.textContent = (LANG==='en'?'+ New':'+ 새 목록');
+  if (plImport) plImport.textContent = (LANG==='en'?'Import':'가져오기');
+  if (plExport) plExport.textContent = (LANG==='en'?'Export':'내보내기');
+  if (plClose)  plClose.textContent  = (LANG==='en'?'Close':'닫기');
+  if (plSave)   plSave.textContent   = (LANG==='en'?'Save':'저장');
 
   // 4) 이미 재생 중인 트랙의 썸네일·메타데이터 언어 반영
   try{
     const playerEl      = document.getElementById('player');
     const statusThumbEl = document.getElementById('statusThumb');
 
-    if (!statusThumbEl) return;
+    // player/src가 없으면 로딩 썸네일 쪽에서 처리하면 되므로 여기서는 종료
+    if (!playerEl || !playerEl.src || !statusThumbEl) {
+      // nothing
+    } else {
+      const base = MEDIA_BASE + '/';
 
-    // 트랙이 아예 없으면 → 로딩 썸네일만 언어에 맞게 갱신
-    if (!playerEl || !playerEl.src) {
-      refreshLoadingThumbForLang();
-      return;
-    }
+      // src가 우리 미디어 경로가 아니면 로딩처럼 취급 (로딩 썸네일에서 처리)
+      if (playerEl.src.startsWith(base)) {
+        // 여기부터는 실제 트랙 썸네일
+        const rel   = decodeURIComponent(playerEl.src.slice(base.length));
+        const parts = rel.split('/');
+        const file  = parts.pop();
+        const folder= parts.join('/');
 
-    const base = MEDIA_BASE + '/';
+        // 트랙 썸네일 적용 (비로딩 상태)
+        const thumbUrl = trackThumb(folder, file);
+        if(thumbUrl){
+          statusThumbEl.classList.remove('status-blank');
+          setStatusThumb(statusThumbEl, thumbUrl);
+        }
 
-    // src가 우리 미디어 경로가 아니면 → 로딩 상태로 보고 처리
-    if (!playerEl.src.startsWith(base)) {
-      refreshLoadingThumbForLang();
-      return;
-    }
+        // meta
+        const baseTitle = stem(file).replace(/[_\-]+/g,' ');
+        const meta      = lookupTrackMeta(folder, file);
 
-    // 여기부터는 실제 트랙 썸네일
-    const rel   = decodeURIComponent(playerEl.src.slice(base.length));
-    const parts = rel.split('/');
-    const file  = parts.pop();
-    const folder= parts.join('/');
+        let title    = baseTitle;
+        let desc     = "";
+        let composer = "";
 
-    const thumbUrl = trackThumb(folder, file);
-    if(thumbUrl){
-      statusThumbEl.classList.remove('status-blank');
-      setStatusThumb(statusThumbEl, thumbUrl);
-    }
+        if(meta){
+          title    = getLocalized(meta, 'title') || baseTitle;
+          desc     = getLocalized(meta, 'desc');
+          composer = meta.composer || getLocalized(meta, 'composer') || "";
+        }
 
-    const baseTitle = stem(file).replace(/[_\-]+/g,' ');
-    const meta      = lookupTrackMeta(folder, file);
+        // 상단 상태 텍스트
+        if (typeof statusTitle !== 'undefined' && statusTitle) {
+          statusTitle.textContent = title;
+          statusTitle.classList.add('playing');
+        }
 
-    let title    = baseTitle;
-    let desc     = "";
-    let composer = "";
-
-    if(meta){
-      title    = getLocalized(meta, 'title') || baseTitle;
-      desc     = getLocalized(meta, 'desc');
-      composer = meta.composer || getLocalized(meta, 'composer') || "";
-    }
-
-    statusTitle.textContent = title;
-    statusTitle.classList.add('playing');
-
-    if(infoTitle) infoTitle.textContent = title;
-    if(infoBody){
-      const partsTxt = [];
-      if(desc)     partsTxt.push(desc);
-      if(composer) partsTxt.push(LANG==='ko' ? `작곡: ${composer}` : `Composer: ${composer}`);
-      infoBody.textContent = partsTxt.join(' · ');
+        // info 패널 업데이트
+        if (typeof infoTitle !== 'undefined' && infoTitle) infoTitle.textContent = title;
+        if (typeof infoBody !== 'undefined' && infoBody) {
+          const partsTxt = [];
+          if(desc) partsTxt.push(desc);
+          if(composer) partsTxt.push(LANG==='ko' ? `작곡: ${composer}` : `Composer: ${composer}`);
+          infoBody.textContent = partsTxt.join(' · ');
+        }
+      }
     }
   }catch(e){
     console.warn('[applyLang] refresh current track failed', e);
+  }
 
-  // 5) 플레이리스트 패널이 열려 있으면 → 리스트/곡 삭제 버튼 포함 전체 재렌더
+  // ✅ (핵심) 언어 토글 시 로딩 썸네일도 항상 갱신 시도
+  // - 로딩 상태에서만 바꾸고 싶으면 ONLY_WHEN_BLANK=true로 바꾸면 됨
+  refreshLoadingThumbForLang(true);
+
+  // ✅ 5) 플레이리스트 패널이 열려 있으면 → 리스트/곡 삭제 버튼 포함 전체 재렌더
   if (typeof renderPL === 'function') {
     const plPanelEl = document.getElementById('plPanel');
     if (plPanelEl && plPanelEl.style.display !== 'none') {
       renderPL();
     }
-   }
- }
+  }
 }
-
 /* ===== Shorthands & State ===== */
 const $ = (s,r=document)=>r.querySelector(s);
 const strip = $('#strip');
