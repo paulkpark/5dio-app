@@ -501,6 +501,9 @@ label.gen-label{color:#cfe9ff;font-weight:700}
 
 /* Cleanup */
 #verBadge{display:none}
+
+/* Visualizer removed */
+#libOsc{display:none !important;}
 </style>
 </head>
 <body>
@@ -1494,98 +1497,26 @@ function prettyName(name){
 let libCtx=null, libAnalyser=null, libSrc=null, libRaf=0, libData=null;
 
 function ensureLibAnalyser(){
-  if(libCtx && libAnalyser && libSrc) return true;
-  try{
-    libCtx = libCtx || new (window.AudioContext||window.webkitAudioContext)();
-    libAnalyser = libCtx.createAnalyser();
-    libAnalyser.fftSize = 1024;
-
-    // 주의: createMediaElementSource는 한 번만 생성 가능
-    libSrc = libCtx.createMediaElementSource(player);
-    libSrc.connect(libAnalyser);
-    libAnalyser.connect(libCtx.destination);
-    return true;
-  }catch(e){
-    console.warn('[libViz] init failed', e);
-    return false;
-  }
+  // Visualizer removed for background-play stability.
+  return false;
 }
 
 
 function drawLibSpectrum(){
-  const cvs = document.getElementById('libOsc');
-  if(!cvs || !libAnalyser) return;
-
-  const dpr = window.devicePixelRatio || 1;
-  const rect = cvs.getBoundingClientRect();
-  const Wcss = Math.max(1, rect.width);
-  const Hcss = Math.max(1, rect.height);
-
-  const W = Math.floor(Wcss * dpr);
-  const H = Math.floor(Hcss * dpr);
-  if(cvs.width !== W) cvs.width = W;
-  if(cvs.height !== H) cvs.height = H;
-
-  const ctx = cvs.getContext('2d');
-  ctx.clearRect(0,0,W,H);
-
-  // spectrum data
-  const bins = libAnalyser.frequencyBinCount;
-  if(!libData || libData.length !== bins) libData = new Uint8Array(bins);
-  libAnalyser.getByteFrequencyData(libData);
-
-  // === Vertical EQ bars with 7 vertical chakra zones (left->right) ===
-  // Zones are vertical stripes; each bar uses the stripe's chakra color.
-  const CHAKRA = ['#ff0000','#ff7f00','#ffff00','#00ff00','#0000ff','#4b0082','#8f00ff']; // R,O,Y,G,B,I,V
-  const ZONES = 7;
-  const BAR_COUNT = 64;
-
-  // background
-  ctx.fillStyle = '#000000';
-  ctx.fillRect(0,0,W,H);
-
-  // draw EQ bars
-  const barW = W / BAR_COUNT;
-  const gap = 2 * dpr;
-  const step = Math.max(1, Math.floor(bins / BAR_COUNT));
-
-  for(let i=0; i<BAR_COUNT; i++){
-    const v = libData[i*step] / 255;          // 0..1
-    const h = Math.max(0, Math.min(H, v * H));
-    const x0 = i * barW + gap;
-    const w  = Math.max(1*dpr, barW - gap*2);
-
-    // choose chakra zone color by x position
-    const z = Math.min(ZONES-1, Math.floor((i / BAR_COUNT) * ZONES));
-    ctx.fillStyle = CHAKRA[z];
-
-    // vertical bar (standard EQ): grows upward from bottom
-    ctx.fillRect(x0, H - h, w, h);
-  }
-
-  // optional baseline
-  ctx.fillStyle = 'rgba(255,255,255,0.10)';
-  ctx.fillRect(0, H-1*dpr, W, 1*dpr);
-
-  libRaf = requestAnimationFrame(drawLibSpectrum);
+  // no-op (visualizer removed)
+  return;
 }
 
 
 
 function startLibViz(){
-  cancelAnimationFrame(libRaf);
-  if(!ensureLibAnalyser()) return;
-  try{ if(libCtx && libCtx.state==='suspended') libCtx.resume(); }catch{}
-  drawLibSpectrum();
+  // no-op (visualizer removed)
+  return;
 }
 
 function stopLibViz(){
-  cancelAnimationFrame(libRaf);
-  const cvs = document.getElementById('libOsc');
-  if(cvs){
-    const ctx=cvs.getContext('2d');
-    if(ctx){ ctx.fillStyle='#000'; ctx.fillRect(0,0,cvs.width,cvs.height); }
-  }
+  // no-op (visualizer removed)
+  return;
 }
 
 // ===== Track selection (browse -> player) =====
@@ -1853,6 +1784,28 @@ $('#langBtn').addEventListener('click',()=>{
           if(desc) parts.push(desc);
           if(composer) parts.push(LANG==='ko'?`작곡: ${composer}`:`Composer: ${composer}`);
           infoBody.textContent = parts.join(' · ');
+      // ✅ 플레이어 화면: 선택된 트랙 썸네일도 현재 LANG에 맞게 즉시 교체 (name_E.webp)
+      if (STATE.currentTrack && STATE.currentTrack.folder && STATE.currentTrack.file){
+        const f = STATE.currentTrack.file;
+        const folder = STATE.currentTrack.folder;
+        const el = document.getElementById('statusThumb');
+        if (el){
+          const primary = trackThumb(folder, f); // uses LANG
+          const alt = (LANG === 'en')
+            ? primary.replace(/_E\.webp/i, '.webp')
+            : primary.replace(/\.webp/i, '_E.webp');
+          const img = new Image();
+          img.onload = ()=>{ el.classList.remove('status-blank'); setStatusThumb(el, primary); };
+          img.onerror = ()=>{
+            const img2 = new Image();
+            img2.onload = ()=>{ el.classList.remove('status-blank'); setStatusThumb(el, alt); };
+            img2.onerror = ()=>{};
+            img2.src = alt;
+          };
+          img.src = primary;
+        }
+      }
+
         }
       }
     }catch(e){}
@@ -1891,7 +1844,7 @@ document.querySelectorAll('.menu-text').forEach(a=>{
 async function ensurePlaybackReady(){
   // Make sure analyser graph exists and AudioContext is running
   ensureLibAnalyser();
-  try{ if(libCtx && libCtx.state==='suspended') await libCtx.resume(); }catch(e){}
+  try{ if(libCtx && libCtx.state==='suspended') await libCtx && libCtx.resume(); }catch(e){}
 }
 
 async function requestPlay(){
@@ -1996,8 +1949,53 @@ $('#btnRefresh').addEventListener('click', async ()=>{
   }
 
   // 5) 리스트/썸네일 다시 렌더링
-  statusBlank();     // 상태 영역도 초기화하고 싶으면 추가
-  renderStrip();
+  if (STATE.uiMode === 'player' && STATE.currentTrack && STATE.currentTrack.folder && STATE.currentTrack.file){
+    // 플레이어 화면 유지: 현재 트랙 메타/썸네일만 갱신
+    const folder = STATE.currentTrack.folder;
+    const file   = STATE.currentTrack.file;
+    const meta = lookupTrackMeta(folder, file);
+
+    // thumb
+    const el = document.getElementById('statusThumb');
+    if (el){
+      const primary = trackThumb(folder, file);
+      const alt = (LANG === 'en')
+        ? primary.replace(/_E\.webp/i, '.webp')
+        : primary.replace(/\.webp/i, '_E.webp');
+      const img = new Image();
+      img.onload = ()=>{ el.classList.remove('status-blank'); setStatusThumb(el, primary); };
+      img.onerror = ()=>{
+        const img2 = new Image();
+        img2.onload = ()=>{ el.classList.remove('status-blank'); setStatusThumb(el, alt); };
+        img2.onerror = ()=>{};
+        img2.src = alt;
+      };
+      img.src = primary;
+    }
+
+    // meta text
+    const baseTitle = prettyName(stem(file));
+    const title = (meta ? (getLocalized(meta,'title') || baseTitle) : baseTitle);
+    const desc  = meta ? (getLocalized(meta,'desc') || '') : '';
+    const composer = meta ? (meta.composer || getLocalized(meta,'composer') || '') : '';
+
+    statusTitle.textContent = title;
+    statusTitle.classList.add('playing');
+    document.getElementById('metaDesc').textContent = desc || '';
+    document.getElementById('metaComposer').textContent = composer ? (LANG==='ko'?`작곡: ${composer}`:`Composer: ${composer}`) : '';
+
+    if(infoTitle) infoTitle.textContent = title;
+    if(infoBody){
+      const parts = [];
+      if(desc) parts.push(desc);
+      if(composer) parts.push(LANG==='ko'?`작곡: ${composer}`:`Composer: ${composer}`);
+      infoBody.textContent = parts.join(' · ');
+    }
+  } else {
+    // 라이브러리 화면: 상태 초기화 + 재렌더
+    statusBlank();     // 상태 영역도 초기화하고 싶으면 추가
+    renderStrip();
+  }
 });
 
 /* ===== Playlist ===== */
