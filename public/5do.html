@@ -161,6 +161,94 @@ main{padding:12px}
 .card.fav .star svg{ fill:#9fe5ff; stroke:#9fe5ff; }
 
 
+
+
+/* ===== Library Vertical List UI (folders/tracks) ===== */
+#libBrowseView{display:block}
+#libPlayerView{display:block}
+#libPlayerView.hidden{display:none!important}
+
+/* strip becomes vertical list in browse mode */
+.strip.vstrip{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  overflow:visible;
+  padding:6px 0;
+}
+
+/* Folder banner row */
+.v-item{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:12px;
+  border-radius:14px;
+  background:var(--card);
+  border:1px solid #102035;
+  cursor:pointer;
+}
+.v-item:hover{transform:translateY(-1px)}
+.v-thumb{
+  width:132px;
+  height:132px;
+  border-radius:12px;
+  background:var(--thumb);
+  background-size:cover;
+  background-position:center;
+  flex:0 0 auto;
+  border:1px solid rgba(255,255,255,.06);
+}
+.v-meta{min-width:0; display:flex; flex-direction:column; gap:4px}
+.v-title{
+  font-weight:800;
+  color:#cfe9ff;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.v-sub{
+  color:#9bbad6;
+  font-size:12.5px;
+  line-height:1.35;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+
+/* Track row layout */
+.v-item.track .v-thumb{ width:84px; height:84px; }
+.v-item.track{ position:relative; padding-right:44px; }
+.v-item.track .star{
+  position:absolute; right:10px; top:50%; transform:translateY(-50%);
+  width:34px; height:34px; border-radius:12px;
+}
+
+/* Player view hero */
+#libPlayerView .status{margin-top:6px}
+#libPlayerView #statusThumb{
+  width:min(320px, 86vw);
+  height:min(320px, 86vw);
+  border-radius:22px;
+}
+#libPlayerView .status{flex-direction:column; align-items:center; text-align:center}
+#libPlayerView .status-meta{max-width:520px; width:100%}
+#libPlayerView #metaDesc{display:none}
+#libPlayerView .playerbar{justify-content:center}
+#libPlayerView .controls{display:flex; flex-wrap:wrap; justify-content:center; gap:8px}
+
+/* Library player oscilloscope */
+.lib-osc-wrap{margin-top:10px}
+#libOsc{
+  display:block;
+  width:100%;
+  height:150px;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:12px;
+  background:#02070d;
+}
+
 /* Generator */
 .section{margin-top:14px;border-top:1px solid #0f1b2a;padding-top:12px}
 .gen-grid{display:grid;gap:10px}
@@ -472,12 +560,17 @@ label.gen-label{color:#cfe9ff;font-weight:700}
   <button id="favOnlyBtn" class="btn small" data-i18n="filter.favOnly">★ 즐겨찾기만</button>
 </div>
 
-    <div id="favoritesWrap">
+    <div id="libBrowseView">
+<div id="favoritesWrap">
       <div id="favoritesTitle">★ Favorites</div>
       <div id="favoritesStrip"></div>
     </div>
 
-    <div class="strip" id="strip"></div>
+    <div class="strip vstrip" id="strip"></div>
+</div>
+
+<div id="libPlayerView" class="hidden">
+
 
     <div class="status">
       <div id="statusThumb" class="status-blank"></div>
@@ -501,11 +594,20 @@ label.gen-label{color:#cfe9ff;font-weight:700}
     
   
     <!-- Track Info Panel (선곡 설명 영역) -->
-    <section id="trackInfoPanel" class="track-info-panel">
+    
+    <!-- Library Player Oscilloscope -->
+    <div class="lib-osc-wrap">
+      <canvas id="libOsc"></canvas>
+    </div>
+
+<section id="trackInfoPanel" class="track-info-panel">
       <div id="trackInfoTitle" class="track-info-title"></div>
       <div id="trackInfoBody" class="track-info-body"></div>
     </section>
  
+
+</div>
+
 <!-- Playlist Panel -->
    <div id="plPanel" role="dialog" aria-modal="true" aria-labelledby="plTitle">
    <div id="plHead">
@@ -1135,6 +1237,8 @@ function applyLang(){
 const $ = (s,r=document)=>r.querySelector(s);
 const strip = $('#strip');
 const player = $('#player');
+// allow WebAudio analyser to read Supabase-hosted audio
+player.crossOrigin = 'anonymous';
 const statusThumb = $('#statusThumb');
 const statusTitle = $('#metaTitle');
 const infoTitle = document.getElementById('trackInfoTitle');
@@ -1147,8 +1251,23 @@ let THUMB_VER = Date.now();
 
 function stem(n){ return n.replace(/\.[^.]+$/, ''); }
 
+
+function encFolderPath(folder){
+  if(!folder) return '';
+  return folder.split('/').filter(Boolean).map(encodeURIComponent).join('/');
+}
+function mediaObjectUrl(folder, file){
+  const f = encFolderPath(folder);
+  return f ? `${MEDIA_BASE}/${f}/${encodeURIComponent(file)}` : `${MEDIA_BASE}/${encodeURIComponent(file)}`;
+}
+function mediaFolderBase(folder){
+  const f = encFolderPath(folder);
+  return f ? `${MEDIA_BASE}/${f}/` : `${MEDIA_BASE}/`;
+}
+
+
 function folderThumb(folder){
-  const base = `${MEDIA_BASE}/${encodeURIComponent(folder)}/`;
+  const base = mediaFolderBase(folder);
   const name = (LANG === 'en') ? 'folder_e.webp' : 'folder.webp';
 
   // 🔹 THUMB_VER 을 붙여서 강제 캐시 무효화
@@ -1156,7 +1275,7 @@ function folderThumb(folder){
 }
 
 function trackThumb(folder, file){
-  const base = `${MEDIA_BASE}/${encodeURIComponent(folder)}/`;
+  const base = mediaFolderBase(folder);
   const s = stem(file);
   const fname = (LANG === 'en') ? `${s}_E.webp` : `${s}.webp`;
 
@@ -1250,7 +1369,7 @@ async function renderFavoritesStrip(){
     card.addEventListener('click', async (e)=>{
       if(e.target.closest('.star')) return;  // 별 클릭이면 무시
 
-      const url = `${MEDIA_BASE}/${encodeURIComponent(folder)}/${encodeURIComponent(file)}`;
+      const url = mediaObjectUrl(folder, file);
 
 function setCurrentTrack(track) {
   CURRENT_TRACK = track;
@@ -1259,7 +1378,8 @@ function setCurrentTrack(track) {
 }
       player.src = url;
       player.load?.();
-      player.play().catch(()=>{});
+      setLibMode('player');
+      stopLibViz();
 
       // 썸네일 업데이트
       const u2 = folder ? trackThumb(folder, file) : null;
@@ -1334,7 +1454,7 @@ function loadAndPlayTrack(track) {
   }
 
   player.src = url;
-  player.play();
+  player.load?.();
 
   statusTitle.classList.add('playing');
   const mv = document.getElementById('miniViz');
@@ -1342,135 +1462,293 @@ function loadAndPlayTrack(track) {
 }
 
 /* ===== Render strip ===== */
+
+// ===== Library UI mode (folders / tracks / player) =====
+const libBrowseView = document.getElementById('libBrowseView');
+const libPlayerView = document.getElementById('libPlayerView');
+
+function setLibMode(mode){
+  STATE.uiMode = mode; // 'folders' | 'tracks' | 'player'
+  if(!libBrowseView || !libPlayerView) return;
+
+  if(mode === 'player'){
+    libBrowseView.classList.add('hidden');
+    libPlayerView.classList.remove('hidden');
+  }else{
+    libBrowseView.classList.remove('hidden');
+    libPlayerView.classList.add('hidden');
+  }
+
+  // Back 버튼 UX: player에서 뒤로=트랙목록, tracks에서 뒤로=폴더목록
+  const backBtn = document.getElementById('btnBack');
+  if(backBtn){
+    backBtn.title = (mode==='player') ? 'Back to list' : 'Back';
+  }
+}
+
+function prettyName(name){
+  return (name||'').replace(/[_\-]+/g,' ').trim();
+}
+
+// ===== Library Audio Visualizer (for MP3 player) =====
+let libCtx=null, libAnalyser=null, libSrc=null, libRaf=0, libData=null;
+
+function ensureLibAnalyser(){
+  if(libCtx && libAnalyser && libSrc) return true;
+  try{
+    libCtx = libCtx || new (window.AudioContext||window.webkitAudioContext)();
+    libAnalyser = libCtx.createAnalyser();
+    libAnalyser.fftSize = 1024;
+
+    // 주의: createMediaElementSource는 한 번만 생성 가능
+    libSrc = libCtx.createMediaElementSource(player);
+    libSrc.connect(libAnalyser);
+    libAnalyser.connect(libCtx.destination);
+    return true;
+  }catch(e){
+    console.warn('[libViz] init failed', e);
+    return false;
+  }
+}
+
+
+function drawLibSpectrum(){
+  const cvs = document.getElementById('libOsc');
+  if(!cvs || !libAnalyser) return;
+
+  const dpr = window.devicePixelRatio || 1;
+  const rect = cvs.getBoundingClientRect();
+  const Wcss = Math.max(1, rect.width);
+  const Hcss = Math.max(1, rect.height);
+
+  const W = Math.floor(Wcss * dpr);
+  const H = Math.floor(Hcss * dpr);
+  if(cvs.width !== W) cvs.width = W;
+  if(cvs.height !== H) cvs.height = H;
+
+  const ctx = cvs.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+
+  // spectrum data
+  const bins = libAnalyser.frequencyBinCount;
+  if(!libData || libData.length !== bins) libData = new Uint8Array(bins);
+  libAnalyser.getByteFrequencyData(libData);
+
+  // === Vertical EQ bars with 7 vertical chakra zones (left->right) ===
+  // Zones are vertical stripes; each bar uses the stripe's chakra color.
+  const CHAKRA = ['#ff0000','#ff7f00','#ffff00','#00ff00','#0000ff','#4b0082','#8f00ff']; // R,O,Y,G,B,I,V
+  const ZONES = 7;
+  const BAR_COUNT = 64;
+
+  // background
+  ctx.fillStyle = '#000000';
+  ctx.fillRect(0,0,W,H);
+
+  // draw EQ bars
+  const barW = W / BAR_COUNT;
+  const gap = 2 * dpr;
+  const step = Math.max(1, Math.floor(bins / BAR_COUNT));
+
+  for(let i=0; i<BAR_COUNT; i++){
+    const v = libData[i*step] / 255;          // 0..1
+    const h = Math.max(0, Math.min(H, v * H));
+    const x0 = i * barW + gap;
+    const w  = Math.max(1*dpr, barW - gap*2);
+
+    // choose chakra zone color by x position
+    const z = Math.min(ZONES-1, Math.floor((i / BAR_COUNT) * ZONES));
+    ctx.fillStyle = CHAKRA[z];
+
+    // vertical bar (standard EQ): grows upward from bottom
+    ctx.fillRect(x0, H - h, w, h);
+  }
+
+  // optional baseline
+  ctx.fillStyle = 'rgba(255,255,255,0.10)';
+  ctx.fillRect(0, H-1*dpr, W, 1*dpr);
+
+  libRaf = requestAnimationFrame(drawLibSpectrum);
+}
+
+
+
+function startLibViz(){
+  cancelAnimationFrame(libRaf);
+  if(!ensureLibAnalyser()) return;
+  try{ if(libCtx && libCtx.state==='suspended') libCtx.resume(); }catch{}
+  drawLibSpectrum();
+}
+
+function stopLibViz(){
+  cancelAnimationFrame(libRaf);
+  const cvs = document.getElementById('libOsc');
+  if(cvs){
+    const ctx=cvs.getContext('2d');
+    if(ctx){ ctx.fillStyle='#000'; ctx.fillRect(0,0,cvs.width,cvs.height); }
+  }
+}
+
+// ===== Track selection (browse -> player) =====
+function playSelectedTrack(folder, file){
+  const url = mediaObjectUrl(folder, file);
+  player.src = url;
+  player.load?.();
+
+  // UI: player view로 전환
+  setLibMode('player');
+
+  // thumb
+  const u2 = trackThumb(folder, file);
+  if(u2){
+    statusThumb.classList.remove('status-blank');
+    setStatusThumb(statusThumb, u2);
+  }
+
+  // meta
+  const baseTitle = prettyName(stem(file));
+  const meta = lookupTrackMeta(folder, file);
+
+  let title = baseTitle;
+  let desc = "";
+  let composer = "";
+
+  if(meta){
+    title    = getLocalized(meta, 'title') || baseTitle;
+    desc     = getLocalized(meta, 'desc');
+    composer = meta.composer || getLocalized(meta, 'composer') || "";
+  }
+
+  statusTitle.textContent = title;
+  statusTitle.classList.add('playing');
+  document.getElementById('metaDesc').textContent = desc || '';
+  document.getElementById('metaComposer').textContent = composer ? (LANG==='ko'?`작곡: ${composer}`:`Composer: ${composer}`) : '';
+
+  if(infoTitle) infoTitle.textContent = title;
+  if(infoBody){
+    const parts = [];
+    if(desc) parts.push(desc);
+    if(composer) parts.push(LANG==='ko'?`작곡: ${composer}`:`Composer: ${composer}`);
+    infoBody.textContent = parts.join(' · ');
+  }
+
+  STATE.currentTrack = { name: title, url, folder, file };
+
+  // NOTE: do NOT autoplay; wait for user to press Play
+  stopLibViz();
+}
+
 async function renderStrip(){
-  const myTick = ++RENDER_TICK;         // 이 렌더 전용 토큰
+  const myTick = ++RENDER_TICK;
   strip.innerHTML='';
 
+  // 폴더 루트
   if(!STATE.path){
-  await renderFavoritesStrip();
-  if(myTick !== RENDER_TICK) return;
+    setLibMode('folders');
 
-  if(!STATE.foldersCache.length) STATE.foldersCache = await listRoot();
-  const folders = STATE.foldersCache;
-  for(const name of folders){
+    await renderFavoritesStrip();
     if(myTick !== RENDER_TICK) return;
 
-    const card = document.createElement('div'); 
-    card.className = 'card folder';
+    if(!STATE.foldersCache.length) STATE.foldersCache = await listRoot();
 
-    const th   = document.createElement('div'); 
-    th.className = 'thumb'; 
-    card.append(th);
+    for(const name of STATE.foldersCache){
+      if(myTick !== RENDER_TICK) return;
 
-    const u = folderThumb(name);
-    if (u) th.style.backgroundImage = `url("${u}")`;
+      const row = document.createElement('div');
+      row.className = 'v-item folder';
 
-    // 💡 폴더 카드에는 즐겨찾기 별을 표시하지 않는다
-    card.addEventListener('click', () => {
-      STATE.stack.push('');
-      STATE.path = name;
-      statusBlank();
-      renderStrip();
-    });
+      const th = document.createElement('div');
+      th.className = 'v-thumb';
+      th.style.backgroundImage = `url("${folderThumb(name)}")`;
 
-    strip.appendChild(card);
+      const meta = document.createElement('div');
+      meta.className = 'v-meta';
+
+      const title = document.createElement('div');
+      title.className = 'v-title';
+      title.textContent = prettyName(name);
+
+      const sub = document.createElement('div');
+      sub.className = 'v-sub';
+      sub.textContent = (LANG==='ko') ? '카테고리 열기' : 'Open category';
+
+      meta.append(title, sub);
+      row.append(th, meta);
+
+      row.addEventListener('click', ()=>{
+        STATE.path = name;
+        statusBlank();
+        renderStrip();
+      });
+
+      strip.appendChild(row);
+    }
+    return;
   }
-} else {
-    const files = await listTracks(STATE.path);
-    for (const f of files) {
-      if (myTick !== RENDER_TICK) return;
 
-      if (FAVORITES_ONLY) {
+  // 폴더 내부(트랙 리스트)
+  setLibMode('tracks');
+
+  const files = await listTracks(STATE.path);
+  for(const f of files){
+    if(myTick !== RENDER_TICK) return;
+
+    if (FAVORITES_ONLY) {
       const id = trackId(STATE.path, f);
       if (!FAVS.has(id)) continue;
     }
 
-      const card = document.createElement('div');
-      card.className = 'card';
-      card.setAttribute('data-file', f);
+    const row = document.createElement('div');
+    row.className = 'v-item track' + (FAVS.has(trackId(STATE.path, f)) ? ' fav' : '');
 
-      const th = document.createElement('div');
-      th.className = 'thumb';
-      card.append(th);
+    const th = document.createElement('div');
+    th.className = 'v-thumb';
+    th.style.backgroundImage = `url("${trackThumb(STATE.path, f)}")`;
 
-      const u = trackThumb(STATE.path, f);
-	if (u) th.style.backgroundImage = `url("${u}")`;
+    const metaBox = document.createElement('div');
+    metaBox.className = 'v-meta';
 
-      const star = document.createElement('div');
-      star.className = 'star';
-      star.innerHTML = starSvg();
-      card.append(star);
+    const baseTitle = prettyName(stem(f));
+    const meta = lookupTrackMeta(STATE.path, f);
 
-      // ── 트랙 클릭 핸들러 ─────────────────────────────
-      card.addEventListener('click', async (e) => {
-        if (e.target.closest('.star')) return;   // 즐겨찾기 별 클릭이면 무시
+    const title = document.createElement('div');
+    title.className = 'v-title';
+    title.textContent = (meta ? (getLocalized(meta,'title') || baseTitle) : baseTitle);
 
-        const url = `${MEDIA_BASE}/${encodeURIComponent(STATE.path)}/${encodeURIComponent(f)}`;
-        player.src = url;
-        player.load?.();
-        player.play().catch(() => {});
+    const sub = document.createElement('div');
+    sub.className = 'v-sub';
+    const desc = meta ? (getLocalized(meta,'desc') || '') : '';
+    const composer = meta ? (meta.composer || getLocalized(meta,'composer') || '') : '';
+    const composerTxt = composer ? (LANG==='ko'?`작곡: ${composer}`:`Composer: ${composer}`) : '';
+    sub.textContent = [desc, composerTxt].filter(Boolean).join(' · ');
 
-        // 로딩 썸네일 갱신
-        const u2 = await trackThumb(STATE.path, f);
-        if (u2) {
-          statusThumb.classList.remove('status-blank');
-          setStatusThumb(statusThumb, `${u2}`);
-        }
+    metaBox.append(title, sub);
 
-        // 기본 제목
-        const baseTitle = stem(f).replace(/[_\-]+/g, ' ');
+    const star = document.createElement('div');
+    star.className = 'star';
+    star.innerHTML = starSvg();
 
-        // meta lookup
-        const meta = lookupTrackMeta(STATE.path, f);
-        let title = baseTitle;
-        let desc = "";
-        let composer = "";
+    // row click = play
+    row.addEventListener('click', (e)=>{
+      if(e.target.closest('.star')) return;
+      playSelectedTrack(STATE.path, f);
+    });
 
-        if (meta) {
-          // "Quantum_Torus_X/Heart_Brain_Cohesion": { title_ko, title_en, desc_ko, ... }
-          title    = getLocalized(meta, 'title') || baseTitle;
-          desc     = getLocalized(meta, 'desc');
-          composer = meta.composer || getLocalized(meta, 'composer') || "";
-        }
+    // star click = fav toggle
+    star.addEventListener('click',(e)=>{
+      e.stopPropagation();
+      const id = trackId(STATE.path, f);
+      const isFav = FAVS.has(id);
+      if(isFav){ FAVS.delete(id); row.classList.remove('fav'); }
+      else { FAVS.add(id); row.classList.add('fav'); }
+      saveFavs(FAVS);
+      renderFavoritesStrip();
+    });
 
-        // 상단 상태 텍스트
-        statusTitle.textContent = title;
-        statusTitle.classList.add('playing');
-        STATE.currentTrack = { name: title, url };
-	CURRENT_TRACK = { title, url, path: STATE.path, file: f };  // ✅ B안용 기준점
-
-        // info 패널 업데이트
-        if (infoTitle) infoTitle.textContent = title;
-        if (infoBody) {
-          const parts = [];
-          if (desc) parts.push(desc);
-          if (composer) {
-            parts.push(
-              LANG === 'ko'
-                ? `작곡: ${composer}`
-                : `Composer: ${composer}`
-            );
-          }
-          infoBody.textContent = parts.join(' · ');
-        }
-      });
-      // ───────────────────────────────────────────────
-
-      star.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const id = trackId(STATE.path, f);
-        const isFav = FAVS.has(id);
-        if (isFav) { FAVS.delete(id); card.classList.remove('fav'); }
-        else       { FAVS.add(id);    card.classList.add('fav'); }
-        saveFavs(FAVS);
-        renderFavoritesStrip();
-      });
-
-      if (FAVS.has(trackId(STATE.path, f))) card.classList.add('fav');
-      strip.appendChild(card);
-    }
+    row.append(th, metaBox, star);
+    strip.appendChild(row);
   }
 }
+
 
 /* ===== Search / Filter ===== */
 document.getElementById('searchBtn').addEventListener('click', async ()=>{
@@ -1501,7 +1779,7 @@ document.getElementById('searchBtn').addEventListener('click', async ()=>{
           card.addEventListener('click', async ()=>{
             STATE.path = folder;
             const url = `${MEDIA_BASE}/${encodeURIComponent(folder)}/${encodeURIComponent(f)}`;
-            player.src = url; player.load?.(); player.play().catch(()=>{});
+            player.src = url; player.load?.();
             const u2 = await trackThumb(folder, f);
             if(u2){ statusThumb.classList.remove('status-blank');
             setStatusThumb(statusThumb, `${u2}`); }
@@ -1548,8 +1826,37 @@ $('#tabGenerator').addEventListener('click',()=>showPage('gen'));
 $('#langBtn').addEventListener('click',()=>{
   LANG = (LANG==='en'?'ko':'en');
   applyLang();
-  renderStrip();
-  if(!STATE.currentTrack) statusBlank();
+
+  // ✅ 언어 토글은 현재 화면을 유지한다.
+  // - 플레이어 화면에서는 라이브러리 스트립을 재렌더하면 모드가 folders/tracks로 바뀌어버리므로 금지.
+  // - 폴더/트랙 리스트 화면에서만 재렌더.
+  if(STATE.uiMode !== 'player'){
+    renderStrip();
+    if(!STATE.currentTrack) statusBlank();
+  }else{
+    // 플레이어 화면에서는 현재 트랙 메타 텍스트만 갱신 (applyLang이 대부분 처리)
+    // 필요 시: infoPanel / metaTitle 같은 텍스트가 비어있다면 보강
+    try{
+      if(STATE.currentTrack && STATE.currentTrack.folder && STATE.currentTrack.file){
+        const meta = lookupTrackMeta(STATE.currentTrack.folder, STATE.currentTrack.file);
+        const baseTitle = (STATE.currentTrack.file||'').replace(/\.[^/.]+$/,'');
+        const title = meta ? (getLocalized(meta,'title') || baseTitle) : (STATE.currentTrack.name || baseTitle);
+        const desc  = meta ? (getLocalized(meta,'desc')  || '') : '';
+        const composer = meta ? (meta.composer || getLocalized(meta,'composer') || '') : '';
+        const titleEl = document.getElementById('metaTitle');
+        const compEl  = document.getElementById('metaComposer');
+        if(titleEl) titleEl.textContent = title;
+        if(compEl)  compEl.textContent  = composer ? (LANG==='ko'?`작곡: ${composer}`:`Composer: ${composer}`) : '';
+        if(infoTitle) infoTitle.textContent = title;
+        if(infoBody){
+          const parts = [];
+          if(desc) parts.push(desc);
+          if(composer) parts.push(LANG==='ko'?`작곡: ${composer}`:`Composer: ${composer}`);
+          infoBody.textContent = parts.join(' · ');
+        }
+      }
+    }catch(e){}
+  }
 });
 
 const menuBtn = $('#menuBtn'), menuDrop = $('#menuDrop'), backdrop=$('#backdrop'), modal=$('#modal');
@@ -1580,15 +1887,59 @@ document.querySelectorAll('.menu-text').forEach(a=>{
 });
 
 /* ===== Player controls & nav ===== */
-$('#btnPlay').addEventListener('click',()=>{
-  player.play();
+/* ===== Playback helpers (single source of truth) ===== */
+async function ensurePlaybackReady(){
+  // Make sure analyser graph exists and AudioContext is running
+  ensureLibAnalyser();
+  try{ if(libCtx && libCtx.state==='suspended') await libCtx.resume(); }catch(e){}
+}
+
+async function requestPlay(){
+  await ensurePlaybackReady();
+  try{
+    await player.play();
+  }catch(e){
+    console.warn('[play] failed', e);
+  }
+}
+
+function onPlaybackStarted(){
   statusTitle.classList.add('playing');
+  startLibViz();
   const mv = document.getElementById('miniViz');
   if(mv) mv.style.display = 'block';
+}
+
+function onPlaybackStopped(){
+  statusTitle.classList.remove('playing');
+  stopLibViz();
+  const mv = document.getElementById('miniViz');
+  if(mv) mv.style.display = 'none';
+}
+
+// Any play action (UI button, native controls, strip play, etc.) should drive viz.
+player.addEventListener('play', async ()=>{
+  // Some browsers start <audio> before AudioContext is resumed; ensure it here too.
+  try{ await ensurePlaybackReady(); }catch(e){}
+  onPlaybackStarted();
+});
+player.addEventListener('pause', ()=>{ onPlaybackStopped(); });
+player.addEventListener('ended', ()=>{ onPlaybackStopped(); });
+
+$('#btnPlay').addEventListener('click', async ()=>{
+  // Manual start: only play when user taps Play
+  if(player.paused){
+    await requestPlay();
+    // 'play' event will start viz
+  }else{
+    player.pause();
+    // 'pause' event will stop viz
+  }
 });
 
 $('#btnPause').addEventListener('click',()=>{
   player.pause();
+  stopLibViz();
   statusTitle.classList.remove('playing');
   const mv = document.getElementById('miniViz');
   if(mv) mv.style.display = 'none';
@@ -1600,8 +1951,25 @@ $('#btnTimer').addEventListener('click',()=>{
   setTimeout(()=>{ player.pause(); statusTitle.classList.remove('playing'); }, t*60000);
 });
 
-$('#btnBack').addEventListener('click',()=>{ STATE.path=''; STATE.stack.pop(); renderStrip(); });
-$('#btnHome').addEventListener('click',()=>{ STATE.path=''; STATE.stack.length=0; renderStrip(); });
+$('#btnBack').addEventListener('click',()=>{
+  if(STATE.uiMode==='player'){
+    setLibMode('tracks');
+    // 플레이어는 유지하되, 리스트로 돌아가면 시각화는 꺼도 됨(원하면 유지)
+    stopLibViz();
+    return;
+  }
+  if(STATE.path){
+    STATE.path='';
+    renderStrip();
+    return;
+  }
+});
+$('#btnHome').addEventListener('click',()=>{
+  STATE.path='';
+  setLibMode('folders');
+  stopLibViz();
+  renderStrip();
+});
 $('#btnRefresh').addEventListener('click', async ()=>{
   // 1) 앱 내부 메모리 캐시 비우기 (폴더/트랙 캐시)
   if (window.clear5DOMemoryCaches) {
