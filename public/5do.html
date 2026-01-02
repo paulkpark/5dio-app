@@ -680,10 +680,18 @@ label.gen-label{color:#cfe9ff;font-weight:700}
   <div class="gen-toolbar" style="margin-top:6px">
     <button id="genPlay" class="btn" data-i18n="play"></button>
     <button id="genStop" class="btn" data-i18n="stop"></button>
+
     <button id="presetSave" class="btn" data-i18n="preset_save"></button>
-  <select id="presetLoad" class="gen-input" style="min-width:160px"
-     data-i18n="preset_load">
+    <button id="presetOverwrite" class="btn" data-i18n="preset_overwrite" title=""></button>
+    <button id="presetRename" class="btn" data-i18n="preset_rename" title=""></button>
+    <button id="presetDelete" class="btn" data-i18n="preset_delete" title=""></button>
+
+    <select id="presetLoad" class="gen-input" style="min-width:200px">
+      <option value="" disabled selected data-i18n="preset_load"></option>
     </select>
+
+    <button id="presetExport" class="btn" data-i18n="preset_export"></button>
+    <button id="presetImport" class="btn" data-i18n="preset_import"></button>
     <select id="oscColor" class="gen-input" style="margin-left:auto;min-width:120px">
       <option value="#39e3ff" data-i18n="osc.color.neonBlue">Neon Blue</option>
       <option value="#00ffd5" data-i18n="osc.color.aqua">Aqua</option>
@@ -926,6 +934,11 @@ const I18N = {
     'stop': '정지',
     'preset_save': '프리셋 저장',
     'preset_load': '프리셋 불러오기…',
+    'preset_overwrite': '덮어쓰기',
+    'preset_rename': '이름변경',
+    'preset_delete': '삭제',
+    'preset_export': '내보내기',
+    'preset_import': '가져오기',
 
     'gen.waveform':'파형',
     'gen.frequency':'주파수 (Hz)',
@@ -1010,6 +1023,11 @@ const I18N = {
     'stop': 'Stop',
     'preset_save': 'Save Preset',
     'preset_load': 'Load Preset…',
+    'preset_overwrite': 'Overwrite',
+    'preset_rename': 'Rename',
+    'preset_delete': 'Delete',
+    'preset_export': 'Export',
+    'preset_import': 'Import',
 
     'gen.waveform':'Waveform',
     'gen.frequency':'Freq.(Hz)',
@@ -2719,6 +2737,350 @@ document.getElementById('genPlay').addEventListener('click', async ()=>{
   playGen();
 });
 document.getElementById('genStop').addEventListener('click', stopGen);
+
+/* ===== Generator Presets (SAVE/LOAD/MANAGE) ===== */
+const GEN_PRESET_KEY = 'fiveDO_gen_presets_v1';
+
+function loadGenPresets(){
+  try{
+    const raw = localStorage.getItem(GEN_PRESET_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  }catch(e){
+    console.warn('[gen preset] load failed', e);
+    return [];
+  }
+}
+function saveGenPresets(arr){
+  try{
+    localStorage.setItem(GEN_PRESET_KEY, JSON.stringify(arr));
+  }catch(e){
+    console.warn('[gen preset] save failed', e);
+  }
+}
+
+function captureGenParams(){
+  const num = (id, fb=0) => {
+    const el = document.getElementById(id);
+    const v = el ? parseFloat(el.value) : fb;
+    return Number.isFinite(v) ? v : fb;
+  };
+  const str = (id, fb='') => {
+    const el = document.getElementById(id);
+    return el ? (el.value ?? fb) : fb;
+  };
+  const bool = (id) => {
+    const el = document.getElementById(id);
+    return !!(el && el.checked);
+  };
+
+  return {
+    wf: str('wf','sine'),
+    freq: num('freq', 432),
+    duty: num('dutyNum', 50),
+    binaural: bool('binEnable'),
+    diff: num('binDiff', 4),
+    harmEnable: bool('harmEnable'),
+    harmBase: str('harmBase','fund'),
+    harmOct: num('harmOct', 1),
+    oscColor: str('oscColor', '#39e3ff')
+  };
+}
+
+function applyGenParams(p){
+  if(!p) return;
+
+  const setVal = (id, v) => {
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.value = v;
+    el.dispatchEvent(new Event('input', {bubbles:true}));
+    el.dispatchEvent(new Event('change', {bubbles:true}));
+  };
+  const setCheck = (id, v) => {
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.checked = !!v;
+    el.dispatchEvent(new Event('change', {bubbles:true}));
+  };
+
+  setVal('wf', p.wf ?? 'sine');
+
+  // freq / range sync
+  setVal('freq', p.freq ?? 432);
+  setVal('freqRange', p.freq ?? 432);
+
+  // duty / num sync
+  setVal('dutyNum', p.duty ?? 50);
+  setVal('duty', p.duty ?? 50);
+
+  setCheck('binEnable', !!p.binaural);
+  setVal('binDiff', p.diff ?? 4);
+
+  setCheck('harmEnable', !!p.harmEnable);
+  setVal('harmBase', p.harmBase ?? 'fund');
+  setVal('harmOct', p.harmOct ?? 1);
+
+  if(p.oscColor) setVal('oscColor', p.oscColor);
+
+  // playing? reflect immediately
+  try{
+    if(typeof aCtx !== 'undefined' && aCtx && aCtx.state === 'running'){
+      playGen();
+    }
+  }catch(e){}
+}
+
+function refreshPresetSelect(keepSelected=true){
+  const sel = document.getElementById('presetLoad');
+  if(!sel) return;
+
+  const cur = keepSelected ? sel.value : '';
+  const presets = loadGenPresets();
+
+  sel.innerHTML = '';
+
+  // placeholder
+  const ph = document.createElement('option');
+  ph.value = '';
+  ph.disabled = true;
+  ph.selected = !cur;
+  ph.setAttribute('data-i18n', 'preset_load');
+  ph.textContent = (I18N?.[LANG]?.['preset_load']) || (LANG==='en' ? 'Load Preset…' : '프리셋 불러오기…');
+  sel.appendChild(ph);
+
+  presets.forEach(p=>{
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = p.name || p.id;
+    sel.appendChild(opt);
+  });
+
+  // restore selection if possible
+  if(cur && presets.some(x=>x.id===cur)) sel.value = cur;
+}
+
+function getSelectedPresetId(){
+  const sel = document.getElementById('presetLoad');
+  if(!sel) return '';
+  const v = sel.value || '';
+  // if placeholder selected, v will be ''
+  return v;
+}
+
+function downloadJson(filename, obj){
+  const blob = new Blob([JSON.stringify(obj, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+}
+
+function pickJsonFile(onLoad){
+  const inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = 'application/json';
+  inp.onchange = async () => {
+    const f = inp.files && inp.files[0];
+    if(!f) return;
+    try{
+      const txt = await f.text();
+      const json = JSON.parse(txt);
+      onLoad && onLoad(json);
+    }catch(e){
+      console.warn('[gen preset] import failed', e);
+      alert(LANG==='en' ? 'Import failed.' : '가져오기에 실패했습니다.');
+    }
+  };
+  inp.click();
+}
+
+// 초기 구성
+refreshPresetSelect(false);
+
+// 저장(새 프리셋)
+const presetSaveBtn = document.getElementById('presetSave');
+if(presetSaveBtn){
+  presetSaveBtn.addEventListener('click', ()=>{
+    const presets = loadGenPresets();
+    const name = prompt(LANG==='en' ? 'Preset name?' : '프리셋 이름을 입력하세요.');
+    if(!name) return;
+
+    const params = captureGenParams();
+    const id = 'gp_' + Date.now();
+
+    presets.push({ id, name, params, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+    saveGenPresets(presets);
+    refreshPresetSelect(true);
+
+    const sel = document.getElementById('presetLoad');
+    if(sel) sel.value = id;
+
+    alert(LANG==='en' ? 'Preset saved.' : '프리셋이 저장되었습니다.');
+  });
+}else{
+  console.warn('[gen preset] #presetSave not found');
+}
+
+// 불러오기(선택)
+const presetLoadSel = document.getElementById('presetLoad');
+if(presetLoadSel){
+  presetLoadSel.addEventListener('change', ()=>{
+    const id = getSelectedPresetId();
+    if(!id) return;
+
+    const presets = loadGenPresets();
+    const hit = presets.find(x=>x.id===id);
+    if(!hit) return;
+
+    applyGenParams(hit.params);
+  });
+}else{
+  console.warn('[gen preset] #presetLoad not found');
+}
+
+// 덮어쓰기
+const presetOverwriteBtn = document.getElementById('presetOverwrite');
+if(presetOverwriteBtn){
+  presetOverwriteBtn.addEventListener('click', ()=>{
+    const id = getSelectedPresetId();
+    if(!id){
+      alert(LANG==='en' ? 'Select a preset to overwrite.' : '덮어쓸 프리셋을 선택하세요.');
+      return;
+    }
+    const presets = loadGenPresets();
+    const idx = presets.findIndex(x=>x.id===id);
+    if(idx<0) return;
+
+    const ok = confirm(LANG==='en'
+      ? `Overwrite "${presets[idx].name}" with current settings?`
+      : `"${presets[idx].name}" 프리셋을 현재 설정으로 덮어쓸까요?`
+    );
+    if(!ok) return;
+
+    presets[idx].params = captureGenParams();
+    presets[idx].updatedAt = new Date().toISOString();
+    saveGenPresets(presets);
+    refreshPresetSelect(true);
+
+    alert(LANG==='en' ? 'Preset updated.' : '프리셋이 업데이트되었습니다.');
+  });
+}
+
+// 이름변경
+const presetRenameBtn = document.getElementById('presetRename');
+if(presetRenameBtn){
+  presetRenameBtn.addEventListener('click', ()=>{
+    const id = getSelectedPresetId();
+    if(!id){
+      alert(LANG==='en' ? 'Select a preset to rename.' : '이름을 바꿀 프리셋을 선택하세요.');
+      return;
+    }
+    const presets = loadGenPresets();
+    const idx = presets.findIndex(x=>x.id===id);
+    if(idx<0) return;
+
+    const next = prompt(
+      LANG==='en' ? 'New preset name?' : '새 프리셋 이름은?',
+      presets[idx].name || ''
+    );
+    if(!next) return;
+
+    presets[idx].name = next;
+    presets[idx].updatedAt = new Date().toISOString();
+    saveGenPresets(presets);
+    refreshPresetSelect(true);
+  });
+}
+
+// 삭제
+const presetDeleteBtn = document.getElementById('presetDelete');
+if(presetDeleteBtn){
+  presetDeleteBtn.addEventListener('click', ()=>{
+    const id = getSelectedPresetId();
+    if(!id){
+      alert(LANG==='en' ? 'Select a preset to delete.' : '삭제할 프리셋을 선택하세요.');
+      return;
+    }
+    const presets = loadGenPresets();
+    const idx = presets.findIndex(x=>x.id===id);
+    if(idx<0) return;
+
+    const ok = confirm(LANG==='en'
+      ? `Delete "${presets[idx].name}"?`
+      : `"${presets[idx].name}" 프리셋을 삭제할까요?`
+    );
+    if(!ok) return;
+
+    presets.splice(idx,1);
+    saveGenPresets(presets);
+    refreshPresetSelect(false);
+  });
+}
+
+// 내보내기
+const presetExportBtn = document.getElementById('presetExport');
+if(presetExportBtn){
+  presetExportBtn.addEventListener('click', ()=>{
+    const presets = loadGenPresets();
+    downloadJson('gen_presets.json', {version:1, exportedAt:new Date().toISOString(), presets});
+  });
+}
+
+// 가져오기
+const presetImportBtn = document.getElementById('presetImport');
+if(presetImportBtn){
+  presetImportBtn.addEventListener('click', ()=>{
+    pickJsonFile((json)=>{
+      const incoming = Array.isArray(json?.presets) ? json.presets : (Array.isArray(json) ? json : null);
+      if(!incoming){
+        alert(LANG==='en' ? 'No presets found in file.' : '파일에서 프리셋을 찾지 못했습니다.');
+        return;
+      }
+
+      const modeReplace = confirm(
+        LANG==='en'
+          ? 'Replace existing presets?\nOK = Replace, Cancel = Merge'
+          : '기존 프리셋을 덮어쓸까요?\n확인 = 덮어쓰기, 취소 = 병합'
+      );
+
+      let presets = loadGenPresets();
+
+      if(modeReplace){
+        // replace
+        presets = incoming.map(p=>{
+          const id = p.id || ('gp_' + Date.now() + '_' + Math.random().toString(36).slice(2));
+          return { ...p, id, updatedAt: p.updatedAt || new Date().toISOString() };
+        });
+      }else{
+        // merge by id, if conflict create new id
+        const exists = new Set(presets.map(p=>p.id));
+        incoming.forEach(p=>{
+          let id = p.id || ('gp_' + Date.now() + '_' + Math.random().toString(36).slice(2));
+          if(exists.has(id)){
+            id = 'gp_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+          }
+          exists.add(id);
+          presets.push({ ...p, id, updatedAt: p.updatedAt || new Date().toISOString() });
+        });
+      }
+
+      saveGenPresets(presets);
+      refreshPresetSelect(false);
+      alert(LANG==='en' ? 'Presets imported.' : '프리셋을 가져왔습니다.');
+    });
+  });
+}
+
+/* 언어 토글 시 presetLoad placeholder도 갱신 */
+(function(){
+  const _applyLang = window.applyLang;
+  window.applyLang = function(){
+    try{ _applyLang && _applyLang(); }catch(e){}
+    try{ refreshPresetSelect(true); }catch(e){}
+  };
+})();
 
 /* live param updates */
 ['freq','freqRange','wf','binEnable','binDiff','duty','dutyNum','harmEnable','harmBase','harmOct']
