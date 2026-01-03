@@ -1742,7 +1742,17 @@ async function renderStrip(){
 
     if(!STATE.foldersCache.length) STATE.foldersCache = await listRoot();
 
-    for(const name of STATE.foldersCache){
+    // ✅ 시스템/숨김 폴더는 라이브러리에 표시하지 않음 (예: _system)
+    const visibleFolders = (STATE.foldersCache || []).filter(name => {
+      if(!name) return false;
+      const n = String(name).trim();
+      if(!n) return false;
+      if(n === '_system' || n.toLowerCase() === 'system') return false;
+      if(n.startsWith('_')) return false;
+      return true;
+    });
+
+    for(const name of visibleFolders){
       if(myTick !== RENDER_TICK) return;
 
       const row = document.createElement('div');
@@ -3939,21 +3949,62 @@ const configs = {
     return;
   }
 
-  // Developer-curated library.
-  // ✅ 썸네일 자동 생성: 동일한 배경 정의를 작은 타일에 그대로 적용(브라우저가 자동 downscale)
-  const BACKDROP_LIBRARY = [
-    { id:'cosmic_blue',   name:{ko:'코스믹 블루',  en:'Cosmic Blue'},   kind:'gradient',
-      value:'radial-gradient(1200px circle at 20% 20%, rgba(60,140,255,.55), rgba(5,10,25,1) 55%, rgba(0,0,0,1))' },
-    { id:'nebula_purple', name:{ko:'네뷸라 퍼플',  en:'Nebula Purple'}, kind:'gradient',
-      value:'radial-gradient(900px circle at 70% 30%, rgba(190,90,255,.55), rgba(10,6,22,1) 55%, rgba(0,0,0,1))' },
-    { id:'aurora_green',  name:{ko:'오로라 그린',  en:'Aurora Green'},  kind:'gradient',
-      value:'radial-gradient(1000px circle at 60% 10%, rgba(90,255,200,.35), rgba(8,18,20,1) 55%, rgba(0,0,0,1))' },
+  // Backdrop library (DB-driven; public read)
+// ✅ 썸네일 자동 생성: 동일한 배경 정의를 작은 타일에 그대로 적용(브라우저가 자동 downscale)
+//
+// 운영 방식:
+// - 이미지 파일: {BUCKET}/_system/backdrops/<file>
+// - 메타데이터: public.backdrops 테이블 (enabled=true만 노출)
+//
+// DB 로딩 실패 시 최소 fallback 그라데이션 사용
+let BACKDROP_LIBRARY = [];
 
-    // 이미지 백드롭을 쓰려면 아래 예시처럼 파일을 올리고 주석을 해제:
-    // 파일 위치: /_system/backdrops/space_01.webp
-    // { id:'space_01', name:{ko:'스페이스 01', en:'Space 01'}, kind:'image', file:'space_01.webp' },
-    // { id:'forest_01',name:{ko:'포레스트 01',en:'Forest 01'},kind:'image', file:'forest_01.webp' },
-  ];
+const FALLBACK_BACKDROPS = [
+  { id:'cosmic_blue',   name:{ko:'코스믹 블루',  en:'Cosmic Blue'},   kind:'gradient',
+    value:'radial-gradient(1200px circle at 20% 20%, rgba(60,140,255,.55), rgba(5,10,25,1) 55%, rgba(0,0,0,1))' },
+  { id:'nebula_purple', name:{ko:'네뷸라 퍼플',  en:'Nebula Purple'}, kind:'gradient',
+    value:'radial-gradient(900px circle at 75% 35%, rgba(168,85,247,.55), rgba(10,5,20,1) 60%, rgba(0,0,0,1))' },
+  { id:'earth_dark',    name:{ko:'어스 다크',    en:'Earth Dark'},    kind:'gradient',
+    value:'linear-gradient(120deg, rgba(5,12,24,1), rgba(0,0,0,1))' }
+];
+
+async function fetchBackdropsFromDB(){
+  try{
+    if(!window.SB || typeof SB.from !== 'function') return null;
+    const { data, error } = await SB
+      .from('backdrops')
+      .select('id,file,name_ko,name_en,tags,sort,updated_at')
+      .order('sort', { ascending: true })
+      .order('updated_at', { ascending: false });
+
+    if(error) throw error;
+
+    const items = (data||[]).map(x=>({
+      id: x.id,
+      kind: 'image',
+      file: x.file,
+      name: { ko: x.name_ko, en: x.name_en },
+      tags: x.tags || []
+    }));
+
+    return items.length ? items : null;
+  }catch(e){
+    console.warn('[backdrop] DB fetch failed', e);
+    return null;
+  }
+}
+
+let _BD_LIB_PROMISE = null;
+async function ensureBackdropLibrary(){
+  if(_BD_LIB_PROMISE) return _BD_LIB_PROMISE;
+  _BD_LIB_PROMISE = (async ()=>{
+    const db = await fetchBackdropsFromDB();
+    BACKDROP_LIBRARY = db || FALLBACK_BACKDROPS.slice();
+    return BACKDROP_LIBRARY;
+  })();
+  return _BD_LIB_PROMISE;
+}
+
 
   function bdLabel(item){
     return (LANG === 'ko') ? (item.name?.ko || item.id) : (item.name?.en || item.id);
@@ -3967,6 +4018,17 @@ const configs = {
       const base = MEDIA_BASE + '/_system/backdrops/';
       backdropLayer.style.backgroundImage = 'url("' + (base + item.file) + '")';
     }
+
+  // Load library once (non-blocking) and apply saved backdrop immediately if possible
+  ensureBackdropLibrary().then(()=>{
+    const saved = localStorage.getItem(BD_ID_KEY);
+    const item = (saved && BACKDROP_LIBRARY.find(x=>x.id===saved)) || BACKDROP_LIBRARY[0];
+    if(item){
+      setBackdropCss(item);
+      // store back the resolved id (in case saved was missing)
+      try{ localStorage.setItem(BD_ID_KEY, item.id); }catch(_e){}
+    }
+  }).catch(()=>{});
   }
 
   function renderBackdropGrid(selectedId){
@@ -4025,9 +4087,12 @@ const configs = {
     localStorage.setItem(UI_OP_KEY, String(x));
   }
 
-  function openBackdropPanel(){
+  async function openBackdropPanel(){
     panel.style.display = 'flex';
-    renderBackdropGrid(localStorage.getItem(BD_ID_KEY) || BACKDROP_LIBRARY[0].id);
+    await ensureBackdropLibrary();
+    const firstId = (BACKDROP_LIBRARY[0] && BACKDROP_LIBRARY[0].id) ? BACKDROP_LIBRARY[0].id : null;
+    const sel = localStorage.getItem(BD_ID_KEY) || firstId;
+    if(sel) renderBackdropGrid(sel);
   }
   function closeBackdropPanel(){
     panel.style.display = 'none';
