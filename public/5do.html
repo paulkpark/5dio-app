@@ -254,6 +254,9 @@ main{padding:12px}
 .gen-grid{display:grid;gap:10px}
 .gen-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .gen-toolbar .btn{padding:8px 12px;border-radius:10px;border:1px solid var(--stroke);background:#0d1e2f;box-shadow:inset 0 0 10px var(--glow)}
+.btn-icon{padding:8px 10px;min-width:42px;display:inline-flex;align-items:center;justify-content:center}
+.btn-icon .star{font-size:16px;line-height:1;opacity:.55}
+.btn-icon.active .star{opacity:1}
 .gen-row2{display:grid;grid-template-columns:140px 1fr;gap:10px;align-items:center}
 @media (max-width:640px){.gen-row2{grid-template-columns:1fr}}
 .gen-row2.inline-h{grid-template-columns:90px 1fr}
@@ -686,6 +689,10 @@ label.gen-label{color:#cfe9ff;font-weight:700}
     <button id="presetRename" class="btn" data-i18n="preset_rename" title=""></button>
     <button id="presetDelete" class="btn" data-i18n="preset_delete" title=""></button>
 
+    <button id="presetQuickToggle" class="btn btn-icon" title="" aria-label="Quick Preset">
+      <span class="star">★</span>
+    </button>
+
     <select id="presetLoad" class="gen-input" style="min-width:200px">
       <option value="" disabled selected data-i18n="preset_load"></option>
     </select>
@@ -767,29 +774,8 @@ label.gen-label{color:#cfe9ff;font-weight:700}
 
   <!-- Quick Presets -->
 <section class="section" id="quickPresets">
-  <div class="gen-label" style="margin-bottom:6px;"
-       data-i18n="gen.quick_presets">Quick Presets</div>
-  <div class="gen-inline" style="flex-wrap:wrap; gap:8px;">
-    <button class="gen-chip qp"
-            data-freq="528" data-wf="sine"
-            data-i18n="gen.qp_528">528 Hz</button>
-
-    <button class="gen-chip qp"
-            data-freq="432" data-wf="sine"
-            data-i18n="gen.qp_432">432 Hz</button>
-
-    <button class="gen-chip qp"
-            data-freq="174" data-wf="sine"
-            data-i18n="gen.qp_174">174 Solfeggio</button>
-
-    <button class="gen-chip qp"
-            data-freq="7.83" data-wf="sine"
-            data-i18n="gen.qp_schumann">Schumann</button>
-
-    <button class="gen-chip qp"
-            data-freq="40" data-wf="sine"
-            data-i18n="gen.qp_gamma40">Gamma 40</button>
-  </div>
+  <div class="gen-label" style="margin-bottom:6px;" data-i18n="gen.quick_presets">Quick Presets</div>
+  <div id="quickPresetChips" class="gen-inline" style="flex-wrap:wrap; gap:8px;"></div>
 </section>
 
 <section class="section" id="dualTone">
@@ -2738,8 +2724,11 @@ document.getElementById('genPlay').addEventListener('click', async ()=>{
 });
 document.getElementById('genStop').addEventListener('click', stopGen);
 
-/* ===== Generator Presets (SAVE/LOAD/MANAGE) ===== */
+/* ===== Generator Presets (SAVE/LOAD/MANAGE + QUICK PRESETS) ===== */
 const GEN_PRESET_KEY = 'fiveDO_gen_presets_v1';
+
+function _isObj(x){ return x && typeof x === 'object'; }
+function _isoNow(){ return new Date().toISOString(); }
 
 function loadGenPresets(){
   try{
@@ -2757,6 +2746,23 @@ function saveGenPresets(arr){
   }catch(e){
     console.warn('[gen preset] save failed', e);
   }
+}
+
+function ensurePresetShape(p){
+  if(!_isObj(p)) return null;
+  if(!p.id) p.id = 'gp_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
+  if(!p.name) p.name = p.id;
+  if(!_isObj(p.params)) p.params = {};
+  if(typeof p.isQuick !== 'boolean') p.isQuick = false;
+  if(!p.createdAt) p.createdAt = _isoNow();
+  if(!p.updatedAt) p.updatedAt = p.createdAt;
+  return p;
+}
+
+function getPresetDisplayName(p){
+  // if a preset provides a nameKey (e.g., built-in quick presets), show localized label
+  if(p && p.nameKey && I18N && I18N[LANG] && I18N[LANG][p.nameKey]) return I18N[LANG][p.nameKey];
+  return (p && p.name) ? p.name : 'Preset';
 }
 
 function captureGenParams(){
@@ -2806,11 +2812,11 @@ function applyGenParams(p){
 
   setVal('wf', p.wf ?? 'sine');
 
-  // freq / range sync
+  // freq / freqRange sync
   setVal('freq', p.freq ?? 432);
   setVal('freqRange', p.freq ?? 432);
 
-  // duty / num sync
+  // duty / dutyNum sync
   setVal('dutyNum', p.duty ?? 50);
   setVal('duty', p.duty ?? 50);
 
@@ -2823,7 +2829,7 @@ function applyGenParams(p){
 
   if(p.oscColor) setVal('oscColor', p.oscColor);
 
-  // playing? reflect immediately
+  // if generator is currently running, reflect immediately
   try{
     if(typeof aCtx !== 'undefined' && aCtx && aCtx.state === 'running'){
       playGen();
@@ -2831,12 +2837,50 @@ function applyGenParams(p){
   }catch(e){}
 }
 
+/* --- Built-in quick presets bootstrap (migrate hardcoded chips to editable presets) --- */
+function ensureBuiltinQuickPresets(){
+  const presets = loadGenPresets().map(ensurePresetShape).filter(Boolean);
+
+  const builtins = [
+    { id:'qp_528',    nameKey:'qp.528',      params:{ wf:'sine', freq:528, duty:50, binaural:false, diff:4, harmEnable:false, harmBase:'fund', harmOct:1 }, isQuick:true, builtIn:true },
+    { id:'qp_432',    nameKey:'qp.432',      params:{ wf:'sine', freq:432, duty:50, binaural:false, diff:4, harmEnable:false, harmBase:'fund', harmOct:1 }, isQuick:true, builtIn:true },
+    { id:'qp_174',    nameKey:'qp.174',      params:{ wf:'sine', freq:174, duty:50, binaural:false, diff:4, harmEnable:false, harmBase:'fund', harmOct:1 }, isQuick:true, builtIn:true },
+    { id:'qp_sch',    nameKey:'qp.schumann', params:{ wf:'sine', freq:7.83, duty:50, binaural:false, diff:4, harmEnable:false, harmBase:'fund', harmOct:1 }, isQuick:true, builtIn:true },
+    { id:'qp_g40',    nameKey:'qp.gamma40',  params:{ wf:'sine', freq:40, duty:50, binaural:false, diff:4, harmEnable:false, harmBase:'fund', harmOct:1 }, isQuick:true, builtIn:true },
+  ];
+
+  let changed = false;
+  for(const b of builtins){
+    const hit = presets.find(x => x.id === b.id);
+    if(!hit){
+      presets.push(ensurePresetShape({
+        id: b.id,
+        name: b.nameKey,      // fallback (if not localized)
+        nameKey: b.nameKey,
+        params: b.params,
+        isQuick: true,
+        builtIn: true,
+        createdAt: _isoNow(),
+        updatedAt: _isoNow()
+      }));
+      changed = true;
+    }else{
+      // If it exists but missing nameKey/isQuick, patch it (don't overwrite user edits)
+      if(!hit.nameKey) { hit.nameKey = b.nameKey; changed = true; }
+      if(typeof hit.isQuick !== 'boolean') { hit.isQuick = true; changed = true; }
+    }
+  }
+
+  if(changed) saveGenPresets(presets);
+}
+
+/* --- UI: preset select + quick chips --- */
 function refreshPresetSelect(keepSelected=true){
   const sel = document.getElementById('presetLoad');
   if(!sel) return;
 
   const cur = keepSelected ? sel.value : '';
-  const presets = loadGenPresets();
+  const presets = loadGenPresets().map(ensurePresetShape).filter(Boolean);
 
   sel.innerHTML = '';
 
@@ -2849,73 +2893,126 @@ function refreshPresetSelect(keepSelected=true){
   ph.textContent = (I18N?.[LANG]?.['preset_load']) || (LANG==='en' ? 'Load Preset…' : '프리셋 불러오기…');
   sel.appendChild(ph);
 
+  // presets (★ marker for quick)
   presets.forEach(p=>{
     const opt = document.createElement('option');
     opt.value = p.id;
-    opt.textContent = p.name || p.id;
+    const nm = getPresetDisplayName(p);
+    opt.textContent = (p.isQuick ? '★ ' : '') + nm;
     sel.appendChild(opt);
   });
 
-  // restore selection if possible
-  if(cur && presets.some(x=>x.id===cur)) sel.value = cur;
+  // restore selection
+  if(cur){
+    sel.value = cur;
+    if(sel.value !== cur) sel.value = ''; // if missing
+  }
+}
+
+function renderQuickPresetChips(){
+  const box = document.getElementById('quickPresetChips');
+  if(!box) return;
+
+  const presets = loadGenPresets().map(ensurePresetShape).filter(Boolean).filter(p=>p.isQuick);
+  box.innerHTML = '';
+
+  if(presets.length === 0){
+    const hint = document.createElement('div');
+    hint.style.opacity = .7;
+    hint.style.fontSize = '12px';
+    hint.textContent = (LANG==='en')
+      ? 'No Quick Presets yet. Use ★ to add.'
+      : '퀵 프리셋이 없습니다. ★ 버튼으로 추가하세요.';
+    box.appendChild(hint);
+    return;
+  }
+
+  presets.forEach(p=>{
+    const btn = document.createElement('button');
+    btn.className = 'gen-chip qp';
+    btn.type = 'button';
+    btn.setAttribute('data-preset-id', p.id);
+    btn.textContent = getPresetDisplayName(p);
+    box.appendChild(btn);
+  });
 }
 
 function getSelectedPresetId(){
   const sel = document.getElementById('presetLoad');
-  if(!sel) return '';
-  const v = sel.value || '';
-  // if placeholder selected, v will be ''
-  return v;
+  return sel ? sel.value : '';
 }
 
-function downloadJson(filename, obj){
-  const blob = new Blob([JSON.stringify(obj, null, 2)], {type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
-  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+function updateQuickToggleUI(){
+  const btn = document.getElementById('presetQuickToggle');
+  if(!btn) return;
+
+  const id = getSelectedPresetId();
+  const presets = loadGenPresets().map(ensurePresetShape).filter(Boolean);
+  const hit = presets.find(x=>x.id===id);
+
+  const on = !!(hit && hit.isQuick);
+  btn.classList.toggle('active', on);
+
+  // title (i18n-lite)
+  btn.title = (LANG==='en')
+    ? (on ? 'Remove from Quick Presets' : 'Add to Quick Presets')
+    : (on ? '퀵 프리셋에서 제거' : '퀵 프리셋에 추가');
 }
 
-function pickJsonFile(onLoad){
-  const inp = document.createElement('input');
-  inp.type = 'file';
-  inp.accept = 'application/json';
-  inp.onchange = async () => {
-    const f = inp.files && inp.files[0];
-    if(!f) return;
-    try{
-      const txt = await f.text();
-      const json = JSON.parse(txt);
-      onLoad && onLoad(json);
-    }catch(e){
-      console.warn('[gen preset] import failed', e);
-      alert(LANG==='en' ? 'Import failed.' : '가져오기에 실패했습니다.');
-    }
-  };
-  inp.click();
-}
-
-// 초기 구성
+/* --- Init (bootstrap built-ins, render UI once) --- */
+ensureBuiltinQuickPresets();
 refreshPresetSelect(false);
+renderQuickPresetChips();
+updateQuickToggleUI();
 
-// 저장(새 프리셋)
+/* --- Events --- */
+// Load preset (select)
+const presetLoadSel = document.getElementById('presetLoad');
+if(presetLoadSel){
+  presetLoadSel.addEventListener('change', ()=>{
+    const id = presetLoadSel.value;
+    if(!id) return;
+
+    const presets = loadGenPresets().map(ensurePresetShape).filter(Boolean);
+    const hit = presets.find(x=>x.id===id);
+    if(!hit) return;
+
+    applyGenParams(hit.params);
+    updateQuickToggleUI();
+  });
+}
+
+// Save new preset
 const presetSaveBtn = document.getElementById('presetSave');
 if(presetSaveBtn){
   presetSaveBtn.addEventListener('click', ()=>{
-    const presets = loadGenPresets();
+    const presets = loadGenPresets().map(ensurePresetShape).filter(Boolean);
+
     const name = prompt(LANG==='en' ? 'Preset name?' : '프리셋 이름을 입력하세요.');
     if(!name) return;
 
     const params = captureGenParams();
     const id = 'gp_' + Date.now();
 
-    presets.push({ id, name, params, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+    // optional: quick?
+    const makeQuick = confirm(
+      LANG==='en' ? 'Add this preset to Quick Presets (★)?' : '이 프리셋을 퀵 프리셋(★)에 추가할까요?'
+    );
+
+    presets.push(ensurePresetShape({
+      id, name,
+      params,
+      isQuick: !!makeQuick,
+      createdAt: _isoNow(),
+      updatedAt: _isoNow()
+    }));
+
     saveGenPresets(presets);
     refreshPresetSelect(true);
+    renderQuickPresetChips();
 
-    const sel = document.getElementById('presetLoad');
-    if(sel) sel.value = id;
+    if(presetLoadSel) presetLoadSel.value = id;
+    updateQuickToggleUI();
 
     alert(LANG==='en' ? 'Preset saved.' : '프리셋이 저장되었습니다.');
   });
@@ -2923,24 +3020,7 @@ if(presetSaveBtn){
   console.warn('[gen preset] #presetSave not found');
 }
 
-// 불러오기(선택)
-const presetLoadSel = document.getElementById('presetLoad');
-if(presetLoadSel){
-  presetLoadSel.addEventListener('change', ()=>{
-    const id = getSelectedPresetId();
-    if(!id) return;
-
-    const presets = loadGenPresets();
-    const hit = presets.find(x=>x.id===id);
-    if(!hit) return;
-
-    applyGenParams(hit.params);
-  });
-}else{
-  console.warn('[gen preset] #presetLoad not found');
-}
-
-// 덮어쓰기
+// Overwrite selected preset with current params
 const presetOverwriteBtn = document.getElementById('presetOverwrite');
 if(presetOverwriteBtn){
   presetOverwriteBtn.addEventListener('click', ()=>{
@@ -2949,26 +3029,23 @@ if(presetOverwriteBtn){
       alert(LANG==='en' ? 'Select a preset to overwrite.' : '덮어쓸 프리셋을 선택하세요.');
       return;
     }
-    const presets = loadGenPresets();
+    const presets = loadGenPresets().map(ensurePresetShape).filter(Boolean);
     const idx = presets.findIndex(x=>x.id===id);
     if(idx<0) return;
 
-    const ok = confirm(LANG==='en'
-      ? `Overwrite "${presets[idx].name}" with current settings?`
-      : `"${presets[idx].name}" 프리셋을 현재 설정으로 덮어쓸까요?`
-    );
-    if(!ok) return;
-
     presets[idx].params = captureGenParams();
-    presets[idx].updatedAt = new Date().toISOString();
+    presets[idx].updatedAt = _isoNow();
     saveGenPresets(presets);
-    refreshPresetSelect(true);
 
-    alert(LANG==='en' ? 'Preset updated.' : '프리셋이 업데이트되었습니다.');
+    refreshPresetSelect(true);
+    renderQuickPresetChips();
+    updateQuickToggleUI();
+
+    alert(LANG==='en' ? 'Overwritten.' : '덮어썼습니다.');
   });
 }
 
-// 이름변경
+// Rename selected preset
 const presetRenameBtn = document.getElementById('presetRename');
 if(presetRenameBtn){
   presetRenameBtn.addEventListener('click', ()=>{
@@ -2977,24 +3054,27 @@ if(presetRenameBtn){
       alert(LANG==='en' ? 'Select a preset to rename.' : '이름을 바꿀 프리셋을 선택하세요.');
       return;
     }
-    const presets = loadGenPresets();
+    const presets = loadGenPresets().map(ensurePresetShape).filter(Boolean);
     const idx = presets.findIndex(x=>x.id===id);
     if(idx<0) return;
 
-    const next = prompt(
-      LANG==='en' ? 'New preset name?' : '새 프리셋 이름은?',
-      presets[idx].name || ''
-    );
+    const curName = getPresetDisplayName(presets[idx]);
+    const next = prompt(LANG==='en' ? 'New name:' : '새 이름:', curName);
     if(!next) return;
 
     presets[idx].name = next;
-    presets[idx].updatedAt = new Date().toISOString();
+    // user-edited name overrides localization key
+    delete presets[idx].nameKey;
+    presets[idx].updatedAt = _isoNow();
     saveGenPresets(presets);
+
     refreshPresetSelect(true);
+    renderQuickPresetChips();
+    updateQuickToggleUI();
   });
 }
 
-// 삭제
+// Delete selected preset
 const presetDeleteBtn = document.getElementById('presetDelete');
 if(presetDeleteBtn){
   presetDeleteBtn.addEventListener('click', ()=>{
@@ -3003,75 +3083,143 @@ if(presetDeleteBtn){
       alert(LANG==='en' ? 'Select a preset to delete.' : '삭제할 프리셋을 선택하세요.');
       return;
     }
-    const presets = loadGenPresets();
+
+    const ok = confirm(LANG==='en' ? 'Delete this preset?' : '이 프리셋을 삭제할까요?');
+    if(!ok) return;
+
+    const presets = loadGenPresets().map(ensurePresetShape).filter(Boolean).filter(x=>x.id!==id);
+    saveGenPresets(presets);
+
+    refreshPresetSelect(false);
+    renderQuickPresetChips();
+    updateQuickToggleUI();
+  });
+}
+
+// Toggle quick (★) for selected preset
+const presetQuickBtn = document.getElementById('presetQuickToggle');
+if(presetQuickBtn){
+  presetQuickBtn.addEventListener('click', ()=>{
+    const id = getSelectedPresetId();
+    if(!id){
+      alert(LANG==='en' ? 'Select a preset first.' : '먼저 프리셋을 선택하세요.');
+      return;
+    }
+    const presets = loadGenPresets().map(ensurePresetShape).filter(Boolean);
     const idx = presets.findIndex(x=>x.id===id);
     if(idx<0) return;
 
-    const ok = confirm(LANG==='en'
-      ? `Delete "${presets[idx].name}"?`
-      : `"${presets[idx].name}" 프리셋을 삭제할까요?`
-    );
-    if(!ok) return;
-
-    presets.splice(idx,1);
+    presets[idx].isQuick = !presets[idx].isQuick;
+    presets[idx].updatedAt = _isoNow();
     saveGenPresets(presets);
-    refreshPresetSelect(false);
+
+    refreshPresetSelect(true);
+    renderQuickPresetChips();
+    updateQuickToggleUI();
   });
 }
 
-// 내보내기
+// Click quick chip -> load/apply preset + select it
+const quickBox = document.getElementById('quickPresetChips');
+if(quickBox){
+  quickBox.addEventListener('click', (e)=>{
+    const btn = e.target.closest('button[data-preset-id]');
+    if(!btn) return;
+    const id = btn.getAttribute('data-preset-id');
+    if(!id) return;
+
+    const presets = loadGenPresets().map(ensurePresetShape).filter(Boolean);
+    const hit = presets.find(x=>x.id===id);
+    if(!hit) return;
+
+    // set select to this preset (so it becomes editable immediately)
+    if(presetLoadSel){
+      presetLoadSel.value = id;
+    }
+    applyGenParams(hit.params);
+    updateQuickToggleUI();
+  });
+}
+
+// Export presets
 const presetExportBtn = document.getElementById('presetExport');
 if(presetExportBtn){
   presetExportBtn.addEventListener('click', ()=>{
-    const presets = loadGenPresets();
-    downloadJson('gen_presets.json', {version:1, exportedAt:new Date().toISOString(), presets});
+    const presets = loadGenPresets().map(ensurePresetShape).filter(Boolean);
+    const blob = new Blob([JSON.stringify(presets, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'gen_presets.json';
+    a.click();
   });
 }
 
-// 가져오기
+// Import presets (merge or replace)
 const presetImportBtn = document.getElementById('presetImport');
 if(presetImportBtn){
   presetImportBtn.addEventListener('click', ()=>{
-    pickJsonFile((json)=>{
-      const incoming = Array.isArray(json?.presets) ? json.presets : (Array.isArray(json) ? json : null);
-      if(!incoming){
-        alert(LANG==='en' ? 'No presets found in file.' : '파일에서 프리셋을 찾지 못했습니다.');
-        return;
-      }
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = 'application/json';
+    inp.onchange = async ()=>{
+      const f = inp.files?.[0];
+      if(!f) return;
+      try{
+        const text = await f.text();
+        const json = JSON.parse(text);
+        if(!Array.isArray(json)){
+          alert(LANG==='en' ? 'Invalid preset file.' : '프리셋 파일 형식이 올바르지 않습니다.');
+          return;
+        }
 
-      const modeReplace = confirm(
-        LANG==='en'
-          ? 'Replace existing presets?\nOK = Replace, Cancel = Merge'
-          : '기존 프리셋을 덮어쓸까요?\n확인 = 덮어쓰기, 취소 = 병합'
-      );
+        const mode = prompt(
+          (LANG==='en'
+            ? 'Type "r" to replace, "m" to merge:'
+            : '"r" 입력: 교체, "m" 입력: 병합'
+          ),
+          'm'
+        );
 
-      let presets = loadGenPresets();
+        const incoming = json.map(ensurePresetShape).filter(Boolean);
 
-      if(modeReplace){
-        // replace
-        presets = incoming.map(p=>{
-          const id = p.id || ('gp_' + Date.now() + '_' + Math.random().toString(36).slice(2));
-          return { ...p, id, updatedAt: p.updatedAt || new Date().toISOString() };
-        });
-      }else{
-        // merge by id, if conflict create new id
-        const exists = new Set(presets.map(p=>p.id));
-        incoming.forEach(p=>{
-          let id = p.id || ('gp_' + Date.now() + '_' + Math.random().toString(36).slice(2));
-          if(exists.has(id)){
-            id = 'gp_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+        if(mode && mode.toLowerCase().startsWith('r')){
+          saveGenPresets(incoming);
+        }else{
+          const cur = loadGenPresets().map(ensurePresetShape).filter(Boolean);
+          const map = new Map(cur.map(p=>[p.id,p]));
+          for(const p of incoming){
+            map.set(p.id, p);
           }
-          exists.add(id);
-          presets.push({ ...p, id, updatedAt: p.updatedAt || new Date().toISOString() });
-        });
-      }
+          saveGenPresets(Array.from(map.values()));
+        }
 
-      saveGenPresets(presets);
-      refreshPresetSelect(false);
-      alert(LANG==='en' ? 'Presets imported.' : '프리셋을 가져왔습니다.');
-    });
+        ensureBuiltinQuickPresets(); // keep core quick presets available
+        refreshPresetSelect(false);
+        renderQuickPresetChips();
+        updateQuickToggleUI();
+
+        alert(LANG==='en' ? 'Presets imported.' : '프리셋을 가져왔습니다.');
+      }catch(err){
+        console.warn('[preset import] failed', err);
+        alert(LANG==='en' ? 'Import failed.' : '가져오기 실패');
+      }
+    };
+    inp.click();
   });
 }
+
+/* 언어 토글 시 presetLoad placeholder/quick chips/★툴팁도 갱신 */
+(function(){
+  const _applyLang = window.applyLang;
+  window.applyLang = function(){
+    try{ _applyLang && _applyLang(); }catch(e){}
+    try{
+      refreshPresetSelect(true);
+      renderQuickPresetChips();
+      updateQuickToggleUI();
+    }catch(e){}
+  };
+})();
 
 /* 언어 토글 시 presetLoad placeholder도 갱신 */
 (function(){
