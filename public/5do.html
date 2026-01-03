@@ -1,14 +1,13 @@
 <!DOCTYPE html>
+
 <html lang="ko">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover" name="viewport"/>
 <title>5DO</title>
-<link rel="manifest" href="/manifest.webmanifest">
-
+<link href="/manifest.webmanifest" rel="manifest"/>
 <!-- Supabase UMD -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-
 <style>
 html, body {
   width: 100%;
@@ -688,348 +687,280 @@ header{
 </style>
 </head>
 <body>
-	<div id="backdropLayer" aria-hidden="true"></div>
-	<div id="backdropDim" aria-hidden="true"></div>
-	<div id="appShell">
+<div aria-hidden="true" id="backdropLayer"></div>
+<div aria-hidden="true" id="backdropDim"></div>
+<div id="appShell">
 <header>
-  <div class="left-pack">
-    <div class="menu-container">
-      <div id="menuBtn" class="hamburger"><span></span></div>
-      <div id="menuDrop" class="dropdown">
-        <a href="https://5dshop.co.kr" target="_blank" rel="noopener" data-i18n="menu.shop">Shop</a>
-        <a href="#" class="menu-text" data-txt="faq" data-i18n="menu.faq">FAQ</a>
-        <a href="#" class="menu-text" data-txt="manual" data-i18n="menu.manual">Manual</a>
-        <a href="#" class="menu-text" data-txt="contact" data-i18n="menu.contact">Contact</a>
-        <a href="#" class="menu-text" data-txt="about" data-i18n="menu.about">About</a>
-        <a href="#" id="menuBackdrop" data-i18n="menu.backdrop">Backdrop</a>
-      </div>
-    </div>
-    <div class="app-title">5DO</div>
-  </div>
-
-  <div class="center-tabs">
-    <button id="tabLibrary" class="tab active" data-i18n="tab.library">Library</button>
-    <button id="tabGenerator" class="tab" data-i18n="tab.generator">Generator</button>
-  </div>
-
-  <div class="right-pack">
+<div class="left-pack">
+<div class="menu-container">
+<div class="hamburger" id="menuBtn"><span></span></div>
+<div class="dropdown" id="menuDrop">
+<a data-i18n="menu.shop" href="https://5dshop.co.kr" rel="noopener" target="_blank">Shop</a>
+<a class="menu-text" data-i18n="menu.faq" data-txt="faq" href="#">FAQ</a>
+<a class="menu-text" data-i18n="menu.manual" data-txt="manual" href="#">Manual</a>
+<a class="menu-text" data-i18n="menu.contact" data-txt="contact" href="#">Contact</a>
+<a class="menu-text" data-i18n="menu.about" data-txt="about" href="#">About</a>
+<a data-i18n="menu.backdrop" href="#" id="menuBackdrop">Backdrop</a>
+</div>
+</div>
+<div class="app-title">5DO</div>
+</div>
+<div class="center-tabs">
+<button class="tab active" data-i18n="tab.library" id="tabLibrary">Library</button>
+<button class="tab" data-i18n="tab.generator" id="tabGenerator">Generator</button>
+</div>
+<div class="right-pack">
 <button id="langBtn">KR/EN</button>
-  </div>
+</div>
 </header>
-
 <main>
-  <!-- Library -->
-  <section id="pageLibrary">
-    <div class="nav-row">
-      <button id="btnBack" class="nav-btn" title="Back" aria-label="Back">
-        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7" fill="none"><path d="M15 6l-6 6 6 6"/></svg>
-      </button>
-      <button id="btnHome" class="nav-btn" title="Home" aria-label="Home">
-        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7" fill="none"><path d="M3 12l9-8 9 8"/><path d="M9 21V9h6v12"/></svg>
-      </button>
-      <button id="btnRefresh" class="nav-btn" title="Refresh" aria-label="Refresh">
-        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7" fill="none"><path d="M21 12a9 9 0 1 0-2.64 6.36"/><path d="M21 12v-6h-6"/></svg>
-      </button>
-    </div>
-
-   <!-- 검색/필터 -->
+<!-- Library -->
+<section id="pageLibrary">
+<div class="nav-row">
+<button aria-label="Back" class="nav-btn" id="btnBack" title="Back">
+<svg fill="none" stroke="currentColor" stroke-width="1.7" viewbox="0 0 24 24"><path d="M15 6l-6 6 6 6"></path></svg>
+</button>
+<button aria-label="Home" class="nav-btn" id="btnHome" title="Home">
+<svg fill="none" stroke="currentColor" stroke-width="1.7" viewbox="0 0 24 24"><path d="M3 12l9-8 9 8"></path><path d="M9 21V9h6v12"></path></svg>
+</button>
+<button aria-label="Refresh" class="nav-btn" id="btnRefresh" title="Refresh">
+<svg fill="none" stroke="currentColor" stroke-width="1.7" viewbox="0 0 24 24"><path d="M21 12a9 9 0 1 0-2.64 6.36"></path><path d="M21 12v-6h-6"></path></svg>
+</button>
+</div>
+<!-- 검색/필터 -->
 <div class="filterbar">
-  <input id="searchInput" type="text" data-i18n-placeholder="search.placeholder" placeholder="검색어…" />
-
-  <select id="searchMode">
-    <option value="folder" data-i18n="search.mode.folder">폴더</option>
-    <option value="track"  data-i18n="search.mode.track">곡명</option>
-  </select>
-
-  <button id="searchBtn" class="btn small" data-i18n="search.btn.search">검색</button>
-  <button id="searchClear" class="btn small" data-i18n="search.btn.clear">지우기</button>
-
-  <button id="favOnlyBtn" class="btn small" data-i18n="filter.favOnly">★ 즐겨찾기만</button>
+<input data-i18n-placeholder="search.placeholder" id="searchInput" placeholder="검색어…" type="text"/>
+<select id="searchMode">
+<option data-i18n="search.mode.folder" value="folder">폴더</option>
+<option data-i18n="search.mode.track" value="track">곡명</option>
+</select>
+<button class="btn small" data-i18n="search.btn.search" id="searchBtn">검색</button>
+<button class="btn small" data-i18n="search.btn.clear" id="searchClear">지우기</button>
+<button class="btn small" data-i18n="filter.favOnly" id="favOnlyBtn">★ 즐겨찾기만</button>
 </div>
-
-    <div id="libBrowseView">
+<div id="libBrowseView">
 <div id="favoritesWrap">
-      <div id="favoritesTitle">★ Favorites</div>
-      <div id="favoritesStrip"></div>
-    </div>
-
-    <div class="strip vstrip" id="strip"></div>
+<div id="favoritesTitle">★ Favorites</div>
+<div id="favoritesStrip"></div>
 </div>
-
-<div id="libPlayerView" class="hidden">
-
-
-    <div class="status">
-      <div id="statusThumb" class="status-blank"></div>
-      <div class="status-meta">
-        <div id="metaTitle" class="status-title"></div>
-        <div id="metaDesc" class="status-line"></div>
-        <div id="metaComposer" class="status-line"></div>
-      </div>
-    </div>
-
-    <div class="playerbar">
-      <div class="controls">
-        <button id="btnPlay" data-i18n="player.play">Play</button>
-        <button id="btnPause" data-i18n="player.pause">Pause</button>
-        <button id="btnLoop" data-i18n="player.loop">Loop</button>
-        <button id="btnTimer" data-i18n="player.timer">Timer</button>
-        <button id="btnPlaylist" data-i18n="player.playlists" onclick="openPlPanel()">Playlists</button>
-      </div>
-      <audio id="player" controls playsinline style="width:min(520px, 100%);"></audio>
-    </div>
-    
-  
-    <!-- Track Info Panel (선곡 설명 영역) -->
-    
-    <!-- Library Player Oscilloscope -->
-    <div class="lib-osc-wrap">
-      <canvas id="libOsc"></canvas>
-    </div>
-
-<section id="trackInfoPanel" class="track-info-panel">
-      <div id="trackInfoTitle" class="track-info-title"></div>
-      <div id="trackInfoBody" class="track-info-body"></div>
-    </section>
- 
-
+<div class="strip vstrip" id="strip"></div>
 </div>
-
-<!-- Playlist Panel -->
-   <div id="plPanel" role="dialog" aria-modal="true" aria-labelledby="plTitle">
-   <div id="plHead">
-    <div id="plTitle" style="color:#cfe9ff;font-weight:800">Playlists</div>
-    <div>
-      <button id="plNewBtn" class="btn small">+ New</button>
-      <button id="plAddCurrentBtn" class="btn small" data-i18n="pl.addCurrent">Add Current Track</button>
-      <button id="plImportBtn" class="btn small">Import</button>
-      <button id="plExportBtn" class="btn small">Export</button>
-      <button id="plCloseBtn" class="btn small">Close</button>
-    </div>
-   </div>
- 
- <div id="plBody"></div>
-  <div id="plFoot">
-    <button id="plSaveBtn" class="btn">Save</button>
-  </div>
-  <div class="pl-controls" id="plControls">
-  <button id="plPlayAllBtn" class="pl-icbtn" title="Play playlist">
-    <svg viewBox="0 0 24 24" class="pl-ic"><path d="M8 5v14l11-7z"/></svg>
-  </button>
-
-  <button id="plPrevBtn" class="pl-icbtn" title="Previous">
-    <svg viewBox="0 0 24 24" class="pl-ic"><path d="M6 6h2v12H6zM20 6v12l-10-6z"/></svg>
-  </button>
-
-  <button id="plNextBtn" class="pl-icbtn" title="Next">
-    <svg viewBox="0 0 24 24" class="pl-ic"><path d="M16 6h2v12h-2zM4 18V6l10 6z"/></svg>
-  </button>
-
-  <button id="plShuffleBtn" class="pl-icbtn" title="Shuffle">
-    <svg viewBox="0 0 24 24" class="pl-ic">
-      <path d="M16 3h5v5h-2V6.41l-3.59 3.59-1.41-1.41L17.59 5H16V3zM3 7h5.5c1.38 0 2.71.55 3.69 1.53l1.28 1.28-1.41 1.41-1.28-1.28A3.25 3.25 0 0 0 8.5 9H3V7zm0 10h5.5c.86 0 1.69-.34 2.3-.95l7.29-7.29 1.41 1.41-7.29 7.29A5.25 5.25 0 0 1 8.5 19H3v-2zm18-1v-2h-2v3h3v-2h-1zm-2.41-2.59L19 13.59V16h-2v-5h5v2h-2.41z"/>
-    </svg>
-  </button>
-
-  <button id="plLoopBtn" class="pl-icbtn" title="Loop">
-    <svg viewBox="0 0 24 24" class="pl-ic">
-      <path d="M17 17h-2v-2h4v-4h2v6h-6v-0zM7 7h2v2H5v4H3V7h4zm0 10h10v2H7a4 4 0 0 1-4-4v-3h2v3a2 2 0 0 0 2 2zm10-10H7V5h10a4 4 0 0 1 4 4v3h-2V9a2 2 0 0 0-2-2z"/>
-    </svg>
-    <span class="pl-badge" id="plLoopBadge">1</span>
-  </button>
-
-  <span class="pl-spacer"></span>
-
-  <!-- 기존 버튼들(새목록/내보내기/가져오기/저장/닫기)은 너 UI에 맞게 옆에 두면 됨 -->
+<div class="hidden" id="libPlayerView">
+<div class="status">
+<div class="status-blank" id="statusThumb"></div>
+<div class="status-meta">
+<div class="status-title" id="metaTitle"></div>
+<div class="status-line" id="metaDesc"></div>
+<div class="status-line" id="metaComposer"></div>
 </div>
-
-<div id="plToast" class="pl-toast" aria-live="polite">
 </div>
-
-   </section>
-	
-
-
-    <!-- Generator -->
-    <section id="pageGenerator" class="hidden">
-    <div class="osc-wrap">
-    <canvas id="osc"></canvas>
-    <div class="osc-toolbar" id="oscToolbar">
-      <div class="osc-pop" id="oscPop">
-        <div class="osc-swatches" id="oscSwatches"></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="gen-toolbar" style="margin-top:6px">
-    <button id="genPlay" class="btn" data-i18n="play"></button>
-    <button id="genStop" class="btn" data-i18n="stop"></button>
-
-    <button id="presetSave" class="btn" data-i18n="preset_save"></button>
-    <button id="presetOverwrite" class="btn" data-i18n="preset_overwrite" title=""></button>
-    <button id="presetRename" class="btn" data-i18n="preset_rename" title=""></button>
-    <button id="presetDelete" class="btn" data-i18n="preset_delete" title=""></button>
-
-    <button id="presetQuickToggle" class="btn btn-icon" title="" aria-label="Quick Preset">
-      <span class="star">★</span>
-    </button>
-
-    <select id="presetLoad" class="gen-input" style="min-width:200px">
-      <option value="" disabled selected data-i18n="preset_load"></option>
-    </select>
-
-    <button id="presetExport" class="btn" data-i18n="preset_export"></button>
-    <button id="presetImport" class="btn" data-i18n="preset_import"></button>
-    <select id="oscColor" class="gen-input" style="margin-left:auto;min-width:120px">
-      <option value="#39e3ff" data-i18n="osc.color.neonBlue">Neon Blue</option>
-      <option value="#00ffd5" data-i18n="osc.color.aqua">Aqua</option>
-      <option value="#00ff7f" data-i18n="osc.color.green">Neon Green</option>
-      <option value="#ffd166" data-i18n="osc.color.amber">Amber</option>
-      <option value="#ff5ea0" data-i18n="osc.color.magenta">Magenta</option>
-      <option value="#ffffff" data-i18n="osc.color.white">White</option>
-    </select>
-  </div>
-
-  <div class="gen-grid" style="margin-top:8px">
-    <div class="gen-row2">
-  <label class="gen-label" data-i18n="gen.waveform">Waveform</label>
-  <div class="gen-inline">
-    <select id="wf" class="gen-input">
-      <!-- 🔹 여기 “기본 텍스트”는 영어로 두는 게 안전 -->
-      <option value="sine"     data-i18n="gen.wave.sine">Sine</option>
-      <option value="square"   data-i18n="gen.wave.square">Square</option>
-      <option value="triangle" data-i18n="gen.wave.triangle">Triangle</option>
-      <option value="sawtooth" data-i18n="gen.wave.saw">Saw</option>
-    </select>
-
-    <span class="gen-chip" data-i18n="gen.binaural">Binaural</span>
-    <input type="checkbox" id="binEnable"/>
-    <label class="gen-sub" data-i18n="gen.diff">Difference (Hz)</label>
-    <input id="binDiff" class="gen-input" type="number" min="0" max="40" step="0.1" value="4"/>
-  </div>
+<div class="playerbar">
+<div class="controls">
+<button data-i18n="player.play" id="btnPlay">Play</button>
+<button data-i18n="player.pause" id="btnPause">Pause</button>
+<button data-i18n="player.loop" id="btnLoop">Loop</button>
+<button data-i18n="player.timer" id="btnTimer">Timer</button>
+<button data-i18n="player.playlists" id="btnPlaylist" onclick="openPlPanel()">Playlists</button>
 </div>
-
- <div class="gen-row2-pair">
-    <div class="gen-row2 inline-h">
-      <label class="gen-label" data-i18n="gen.frequency">Frequency (Hz)</label>
-      <div class="gen-inline">
-        <input id="freq" class="gen-input num-popup-field"
-               type="number" min="0" max="20000" step="0.1" value="432"/>
-        <input id="freqRange" class="gen-range" type="range"
-               min="0" max="20000" step="1" value="432" style="flex:1">
-      </div>
-    </div>
-
-    <div class="gen-row2 inline-h">
-      <label class="gen-label" data-i18n="gen.duty">Duty Cycle</label>
-      <div class="gen-inline">
-        <input id="dutyNum" class="gen-input num-popup-field"
-               type="number" min="1" max="100" step="1" value="50"/>
-        <input id="duty" class="gen-range" type="range"
-               min="1" max="100" step="1" value="50" style="flex:1">
-      </div>
-    </div>
-  </div>
-
-    <div class="gen-row2">
-      <label class="gen-label" data-i18n="harmonics_label">Harmonics</label>
-      <div class="gen-inline">
-        <label class="gen-sub" data-i18n="harmonics_enable">Enable</label>
-        <input id="harmEnable" type="checkbox">
-        <label class="gen-sub" data-i18n="harmonics_base">Base</label>
-        <select id="harmBase" class="gen-input">
-          <option value="fund" data-i18n="harm_base_fund">Fundamental</option>
-          <option value="mid"  data-i18n="harm_base_mid">Mid (x2)</option>
-          <option value="high" data-i18n="harm_base_high">High (x4)</option>
-        </select>
-        <label class="gen-sub" data-i18n="harm_octaves"># of Octaves</label>
-        <select id="harmOct" class="gen-input">
-          <option value="0">0</option><option value="1">1</option>
-          <option value="2">2</option><option value="3">3</option><option value="4">4</option>
-        </select>
-      </div>
-    </div>
-  </div><!-- gen-grid 끝 -->
-
-  <!-- 🔻 여기부터 추가된 Generator 전용 하단부 🔻 -->
-
-  <!-- Quick Presets -->
-<section class="section" id="quickPresets">
-  <div class="gen-label" style="margin-bottom:6px;" data-i18n="gen.quick_presets">Quick Presets</div>
-  <div id="quickPresetChips" class="gen-inline" style="flex-wrap:wrap; gap:8px;"></div>
+<audio controls="" id="player" playsinline="" style="width:min(520px, 100%);"></audio>
+</div>
+<!-- Track Info Panel (선곡 설명 영역) -->
+<!-- Library Player Oscilloscope -->
+<div class="lib-osc-wrap">
+<canvas id="libOsc"></canvas>
+</div>
+<section class="track-info-panel" id="trackInfoPanel">
+<div class="track-info-title" id="trackInfoTitle"></div>
+<div class="track-info-body" id="trackInfoBody"></div>
 </section>
-
+</div>
+<!-- Playlist Panel -->
+<div aria-labelledby="plTitle" aria-modal="true" id="plPanel" role="dialog">
+<div id="plHead">
+<div id="plTitle" style="color:#cfe9ff;font-weight:800">Playlists</div>
+<div>
+<button class="btn small" id="plNewBtn">+ New</button>
+<button class="btn small" data-i18n="pl.addCurrent" id="plAddCurrentBtn">Add Current Track</button>
+<button class="btn small" id="plImportBtn">Import</button>
+<button class="btn small" id="plExportBtn">Export</button>
+<button class="btn small" id="plCloseBtn">Close</button>
+</div>
+</div>
+<div id="plBody"></div>
+<div id="plFoot">
+<button class="btn" id="plSaveBtn">Save</button>
+</div>
+<div class="pl-controls" id="plControls">
+<button class="pl-icbtn" id="plPlayAllBtn" title="Play playlist">
+<svg class="pl-ic" viewbox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+</button>
+<button class="pl-icbtn" id="plPrevBtn" title="Previous">
+<svg class="pl-ic" viewbox="0 0 24 24"><path d="M6 6h2v12H6zM20 6v12l-10-6z"></path></svg>
+</button>
+<button class="pl-icbtn" id="plNextBtn" title="Next">
+<svg class="pl-ic" viewbox="0 0 24 24"><path d="M16 6h2v12h-2zM4 18V6l10 6z"></path></svg>
+</button>
+<button class="pl-icbtn" id="plShuffleBtn" title="Shuffle">
+<svg class="pl-ic" viewbox="0 0 24 24">
+<path d="M16 3h5v5h-2V6.41l-3.59 3.59-1.41-1.41L17.59 5H16V3zM3 7h5.5c1.38 0 2.71.55 3.69 1.53l1.28 1.28-1.41 1.41-1.28-1.28A3.25 3.25 0 0 0 8.5 9H3V7zm0 10h5.5c.86 0 1.69-.34 2.3-.95l7.29-7.29 1.41 1.41-7.29 7.29A5.25 5.25 0 0 1 8.5 19H3v-2zm18-1v-2h-2v3h3v-2h-1zm-2.41-2.59L19 13.59V16h-2v-5h5v2h-2.41z"></path>
+</svg>
+</button>
+<button class="pl-icbtn" id="plLoopBtn" title="Loop">
+<svg class="pl-ic" viewbox="0 0 24 24">
+<path d="M17 17h-2v-2h4v-4h2v6h-6v-0zM7 7h2v2H5v4H3V7h4zm0 10h10v2H7a4 4 0 0 1-4-4v-3h2v3a2 2 0 0 0 2 2zm10-10H7V5h10a4 4 0 0 1 4 4v3h-2V9a2 2 0 0 0-2-2z"></path>
+</svg>
+<span class="pl-badge" id="plLoopBadge">1</span>
+</button>
+<span class="pl-spacer"></span>
+<!-- 기존 버튼들(새목록/내보내기/가져오기/저장/닫기)은 너 UI에 맞게 옆에 두면 됨 -->
+</div>
+<div aria-live="polite" class="pl-toast" id="plToast">
+</div>
+</div></section>
+<!-- Generator -->
+<section class="hidden" id="pageGenerator">
+<div class="osc-wrap">
+<canvas id="osc"></canvas>
+<div class="osc-toolbar" id="oscToolbar">
+<div class="osc-pop" id="oscPop">
+<div class="osc-swatches" id="oscSwatches"></div>
+</div>
+</div>
+</div>
+<div class="gen-toolbar" style="margin-top:6px">
+<button class="btn" data-i18n="play" id="genPlay"></button>
+<button class="btn" data-i18n="stop" id="genStop"></button>
+<button class="btn" data-i18n="preset_save" id="presetSave"></button>
+<button class="btn" data-i18n="preset_overwrite" id="presetOverwrite" title=""></button>
+<button class="btn" data-i18n="preset_rename" id="presetRename" title=""></button>
+<button class="btn" data-i18n="preset_delete" id="presetDelete" title=""></button>
+<button aria-label="Quick Preset" class="btn btn-icon" id="presetQuickToggle" title="">
+<span class="star">★</span>
+</button>
+<select class="gen-input" id="presetLoad" style="min-width:200px">
+<option data-i18n="preset_load" disabled="" selected="" value=""></option>
+</select>
+<button class="btn" data-i18n="preset_export" id="presetExport"></button>
+<button class="btn" data-i18n="preset_import" id="presetImport"></button>
+<select class="gen-input" id="oscColor" style="margin-left:auto;min-width:120px">
+<option data-i18n="osc.color.neonBlue" value="#39e3ff">Neon Blue</option>
+<option data-i18n="osc.color.aqua" value="#00ffd5">Aqua</option>
+<option data-i18n="osc.color.green" value="#00ff7f">Neon Green</option>
+<option data-i18n="osc.color.amber" value="#ffd166">Amber</option>
+<option data-i18n="osc.color.magenta" value="#ff5ea0">Magenta</option>
+<option data-i18n="osc.color.white" value="#ffffff">White</option>
+</select>
+</div>
+<div class="gen-grid" style="margin-top:8px">
+<div class="gen-row2">
+<label class="gen-label" data-i18n="gen.waveform">Waveform</label>
+<div class="gen-inline">
+<select class="gen-input" id="wf">
+<!-- 🔹 여기 “기본 텍스트”는 영어로 두는 게 안전 -->
+<option data-i18n="gen.wave.sine" value="sine">Sine</option>
+<option data-i18n="gen.wave.square" value="square">Square</option>
+<option data-i18n="gen.wave.triangle" value="triangle">Triangle</option>
+<option data-i18n="gen.wave.saw" value="sawtooth">Saw</option>
+</select>
+<span class="gen-chip" data-i18n="gen.binaural">Binaural</span>
+<input id="binEnable" type="checkbox"/>
+<label class="gen-sub" data-i18n="gen.diff">Difference (Hz)</label>
+<input class="gen-input" id="binDiff" max="40" min="0" step="0.1" type="number" value="4"/>
+</div>
+</div>
+<div class="gen-row2-pair">
+<div class="gen-row2 inline-h">
+<label class="gen-label" data-i18n="gen.frequency">Frequency (Hz)</label>
+<div class="gen-inline">
+<input class="gen-input num-popup-field" id="freq" max="20000" min="0" step="0.1" type="number" value="432"/>
+<input class="gen-range" id="freqRange" max="20000" min="0" step="1" style="flex:1" type="range" value="432"/>
+</div>
+</div>
+<div class="gen-row2 inline-h">
+<label class="gen-label" data-i18n="gen.duty">Duty Cycle</label>
+<div class="gen-inline">
+<input class="gen-input num-popup-field" id="dutyNum" max="100" min="1" step="1" type="number" value="50">
+<input class="gen-range" id="duty" max="100" min="1" step="1" style="flex:1" type="range" value="50"/>
+</input></div>
+</div>
+</div>
+<div class="gen-row2">
+<label class="gen-label" data-i18n="harmonics_label">Harmonics</label>
+<div class="gen-inline">
+<label class="gen-sub" data-i18n="harmonics_enable">Enable</label>
+<input id="harmEnable" type="checkbox"/>
+<label class="gen-sub" data-i18n="harmonics_base">Base</label>
+<select class="gen-input" id="harmBase">
+<option data-i18n="harm_base_fund" value="fund">Fundamental</option>
+<option data-i18n="harm_base_mid" value="mid">Mid (x2)</option>
+<option data-i18n="harm_base_high" value="high">High (x4)</option>
+</select>
+<label class="gen-sub" data-i18n="harm_octaves"># of Octaves</label>
+<select class="gen-input" id="harmOct">
+<option value="0">0</option><option value="1">1</option>
+<option value="2">2</option><option value="3">3</option><option value="4">4</option>
+</select>
+</div>
+</div>
+</div><!-- gen-grid 끝 -->
+<!-- 🔻 여기부터 추가된 Generator 전용 하단부 🔻 -->
+<!-- Quick Presets -->
+<section class="section" id="quickPresets">
+<div class="gen-label" data-i18n="gen.quick_presets" style="margin-bottom:6px;">Quick Presets</div>
+<div class="gen-inline" id="quickPresetChips" style="flex-wrap:wrap; gap:8px;"></div>
+</section>
 <section class="section" id="dualTone">
-  <label class="gen-label" style="margin-bottom:6px;" data-i18n="dual.label">
+<label class="gen-label" data-i18n="dual.label" style="margin-bottom:6px;">
     Dual-Tone Mixer
   </label>
-
-  <div class="gen-row2-pair">
-    <div class="gen-row2 inline-h">
-      <label class="gen-sub" data-i18n="dual.toneA">톤 A (Hz)</label>
-      <div class="gen-inline">
-        <input id="toneA"
-               class="gen-input num-popup-field"
-               type="number" min="0" max="20000" step="0.1"
-               value="432">
-      </div>
-    </div>
-
-    <div class="gen-row2 inline-h">
-      <label class="gen-sub" data-i18n="dual.toneB">톤 B (Hz)</label>
-      <div class="gen-inline">
-        <input id="toneB"
-               class="gen-input num-popup-field"
-               type="number" min="0" max="20000" step="0.1"
-               value="528">
-      </div>
-    </div>
-  </div>
-
-  <!-- Numeric Popup for Generator -->
-  <div id="numPopup" class="num-popup-backdrop">
-    <div class="num-popup-panel">
-      <div id="numPopupLabel" class="num-popup-title"></div>
-      <div class="num-popup-body">
-        <input id="numPopupValue" type="number" class="gen-input" />
-        <input id="numPopupRange" type="range" class="gen-range" />
-      </div>
-      <div class="num-popup-footer">
-        <button id="numPopupClose" class="btn small">✕ Close</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="gen-inline" style="margin-top:8px;">
-    <button id="dualPlay" class="btn" data-i18n="dual.play">Play Dual</button>
-    <button id="dualStop" class="btn" data-i18n="dual.stop">Stop</button>
-  </div>
+<div class="gen-row2-pair">
+<div class="gen-row2 inline-h">
+<label class="gen-sub" data-i18n="dual.toneA">톤 A (Hz)</label>
+<div class="gen-inline">
+<input class="gen-input num-popup-field" id="toneA" max="20000" min="0" step="0.1" type="number" value="432"/>
+</div>
+</div>
+<div class="gen-row2 inline-h">
+<label class="gen-sub" data-i18n="dual.toneB">톤 B (Hz)</label>
+<div class="gen-inline">
+<input class="gen-input num-popup-field" id="toneB" max="20000" min="0" step="0.1" type="number" value="528"/>
+</div>
+</div>
+</div>
+<!-- Numeric Popup for Generator -->
+<div class="num-popup-backdrop" id="numPopup">
+<div class="num-popup-panel">
+<div class="num-popup-title" id="numPopupLabel"></div>
+<div class="num-popup-body">
+<input class="gen-input" id="numPopupValue" type="number">
+<input class="gen-range" id="numPopupRange" type="range">
+</input></input></div>
+<div class="num-popup-footer">
+<button class="btn small" id="numPopupClose">✕ Close</button>
+</div>
+</div>
+</div>
+<div class="gen-inline" style="margin-top:8px;">
+<button class="btn" data-i18n="dual.play" id="dualPlay">Play Dual</button>
+<button class="btn" data-i18n="dual.stop" id="dualStop">Stop</button>
+</div>
 </section>
-
- <section class="section" id="adBanner">
-
-  <a id="adBannerLink" class="ad-banner-wrap" href="#" target="_blank" rel="noopener noreferrer">
-    <img id="adBannerImg"
-         class="ad-banner-img"
-         src=""
-         alt="Banner">
-  </a>
-
-  <div class="ad-banner-dots" id="adBannerDots"></div>
+<section class="section" id="adBanner">
+<a class="ad-banner-wrap" href="#" id="adBannerLink" rel="noopener noreferrer" target="_blank">
+<img alt="Banner" class="ad-banner-img" id="adBannerImg" src=""/>
+</a>
+<div class="ad-banner-dots" id="adBannerDots"></div>
 </section>
-  <!-- 🔺 Generator 하단 광고 배너 끝 🔺 -->
-	
+<!-- 🔺 Generator 하단 광고 배너 끝 🔺 -->
 <div class="backdrop" id="backdrop"></div>
 <div class="legacy-modal" id="modal">
-  <div class="mhead">
-    <div id="modalTitle" style="font-weight:800;color:#cfe9ff">Info</div>
-    <button id="modalClose" class="btn small">Close</button>
-  </div>
-  <div id="modalBody"></div>
+<div class="mhead">
+<div id="modalTitle" style="font-weight:800;color:#cfe9ff">Info</div>
+<button class="btn small" id="modalClose">Close</button>
 </div>
-
+<div id="modalBody"></div>
 </div>
-
+</section></main></div>
 <script>
 /* ===== Supabase Config ===== */
 const SUPABASE_URL = "https://xdjgumqdwedgzwqturcx.supabase.co";
@@ -3616,7 +3547,6 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   showPage('lib');
 });
 </script>
-
 <script>
 (function(){
   const popup      = document.getElementById('numPopup');
@@ -3735,7 +3665,6 @@ const configs = {
   });
 })();
 </script>
-
 <!-- === WebP thumb loader (no JPG/PNG fallback) === -->
 <script>
 (function(){
@@ -3801,7 +3730,6 @@ const configs = {
   window.lazyLoadThumbs = lazyLoadThumbs;
 })();
 </script>
-
 <!-- === 5DO Level-1 Memory Cache (folders/tracks/thumbs) === -->
 <script>
 (function(){
@@ -3900,10 +3828,75 @@ const configs = {
   };
 })();
 </script>
-	
+
+<script>
+(function(){
+  function $(s,r=document){ return r.querySelector(s); }
+
+  function ensureModal(){
+    const backdrop = $('#backdrop');
+    const modal = $('#modal');
+    const titleEl = $('#modalTitle');
+    const bodyEl = $('#modalBody');
+    const closeBtn = $('#modalClose');
+    if(!backdrop || !modal || !titleEl || !bodyEl) return null;
+
+    function showModal(title, body){
+      titleEl.textContent = title || 'Info';
+      bodyEl.textContent  = body  || '';
+      // force on-top
+      backdrop.style.zIndex = '9998';
+      modal.style.zIndex = '9999';
+      backdrop.style.display = 'block';
+      modal.style.display = 'block';
+    }
+    function hideModal(){
+      backdrop.style.display='none';
+      modal.style.display='none';
+    }
+    if(!backdrop.__bound){
+      backdrop.addEventListener('click', hideModal);
+      backdrop.__bound = true;
+    }
+    if(closeBtn && !closeBtn.__bound){
+      closeBtn.addEventListener('click', hideModal);
+      closeBtn.__bound = true;
+    }
+    return {showModal, hideModal};
+  }
+
+  async function openText(key, label){
+    const m = ensureModal();
+    if(!m) return;
+    // Close dropdown and backdrop panel if open
+    try{ const menuDrop = $('#menuDrop'); if(menuDrop) menuDrop.style.display='none'; }catch(_){}
+    try{ const bd = $('#backdropPanel'); if(bd) bd.style.display='none'; }catch(_){}
+
+    try{
+      const res = await fetch(`texts/${key}.txt?v=` + Date.now(), {cache:'no-store'});
+      const txt = await res.text();
+      m.showModal(label || 'Info', txt);
+    }catch(err){
+      console.warn('[menu modal] openText failed', err);
+      m.showModal('Error', 'Failed to load.');
+    }
+  }
+
+  document.addEventListener('click', (e)=>{
+    const a = e.target.closest('#menuDrop a.menu-text');
+    if(!a) return;
+    e.preventDefault();
+    const key = a.getAttribute('data-txt');
+    const label = a.textContent || 'Info';
+    if(!key) return;
+    openText(key, label);
+  }, true); // capture to be robust
+
+})();
+</script>
+
 </body>
 </html>
-
 <script>
   // PWA용 서비스 워커 등록
   if ('serviceWorker' in navigator) {
@@ -3918,42 +3911,36 @@ const configs = {
     });
   }
 </script>
-</div>
-</body>
-</html>
+
+
 
 <!-- Backdrop Settings Panel -->
-<div id="backdropPanel" class="bd-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="bdTitle">
-  <div class="modal-card">
-    <div class="modal-head">
-      <div id="bdTitle" class="modal-title" data-i18n="bd.title">Backdrop</div>
-      <button id="bdCloseBtn" class="icon-btn" title="Close" aria-label="Close">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-          <path d="M18 6L6 18M6 6l12 12"/>
-        </svg>
-      </button>
-    </div>
-
-    <div class="bd-controls">
-      <div class="bd-row">
-        <div class="bd-label" data-i18n="bd.backdrop_opacity">Backdrop Opacity</div>
-        <input id="bdOpacity" type="range" min="0.15" max="1" step="0.01" />
-        <div id="bdOpacityVal" class="bd-val">1.00</div>
-      </div>
-
-      <div class="bd-row">
-        <div class="bd-label" data-i18n="bd.ui_opacity">UI Opacity</div>
-        <input id="uiOpacity" type="range" min="0.35" max="1" step="0.01" />
-        <div id="uiOpacityVal" class="bd-val">0.92</div>
-      </div>
-    </div>
-
-    <div class="bd-grid-title" data-i18n="bd.choose">Choose a backdrop</div>
-    <div id="bdGrid" class="bd-grid" aria-label="Backdrop library"></div>
-  </div>
+<div aria-labelledby="bdTitle" aria-modal="true" class="bd-modal" id="backdropPanel" role="dialog" style="display:none">
+<div class="modal-card">
+<div class="modal-head">
+<div class="modal-title" data-i18n="bd.title" id="bdTitle">Backdrop</div>
+<button aria-label="Close" class="icon-btn" id="bdCloseBtn" title="Close">
+<svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2" viewbox="0 0 24 24">
+<path d="M18 6L6 18M6 6l12 12"></path>
+</svg>
+</button>
 </div>
-
-
+<div class="bd-controls">
+<div class="bd-row">
+<div class="bd-label" data-i18n="bd.backdrop_opacity">Backdrop Opacity</div>
+<input id="bdOpacity" max="1" min="0.15" step="0.01" type="range">
+<div class="bd-val" id="bdOpacityVal">1.00</div>
+</input></div>
+<div class="bd-row">
+<div class="bd-label" data-i18n="bd.ui_opacity">UI Opacity</div>
+<input id="uiOpacity" max="1" min="0.35" step="0.01" type="range">
+<div class="bd-val" id="uiOpacityVal">0.92</div>
+</input></div>
+</div>
+<div class="bd-grid-title" data-i18n="bd.choose">Choose a backdrop</div>
+<div aria-label="Backdrop library" class="bd-grid" id="bdGrid"></div>
+</div>
+</div>
 <script>
 /* ===== Backdrops (Library + Opacity Controls) ===== */
 (function(){
@@ -4127,6 +4114,69 @@ const configs = {
   };
 })();
 </script>
+<script>
+/* ===== Hotfix: hamburger info modals (FAQ/Manual/Contact/About) =====
+   - In some builds, glass/backdrop changes can interfere with the old direct bindings.
+   - This delegation ensures menu items always open the legacy Info modal.
+*/
+(function(){
+  const $ = (sel)=>document.querySelector(sel);
+  const menuDrop = $('#menuDrop');
+  const backdrop = $('#backdrop');
+  const modal    = $('#modal');
+  const titleEl  = $('#modalTitle');
+  const bodyEl   = $('#modalBody');
+  const closeBtn = $('#modalClose');
 
-</body>
-</html>
+  if(!menuDrop || !backdrop || !modal || !titleEl || !bodyEl){
+    console.warn('[menu modal hotfix] missing elements', {menuDrop, backdrop, modal, titleEl, bodyEl});
+    return;
+  }
+
+  function showModal(title, body){
+    titleEl.textContent = title || 'Info';
+    bodyEl.textContent  = body  || '';
+    backdrop.style.display='block';
+    modal.style.display='block';
+  }
+  function hideModal(){
+    backdrop.style.display='none';
+    modal.style.display='none';
+  }
+
+  backdrop.addEventListener('click', hideModal);
+  if(closeBtn) closeBtn.addEventListener('click', hideModal);
+
+  async function openText(key, label){
+    // Close any other panels (e.g., backdrop panel) safely
+    try{
+      const bd = document.getElementById('backdropPanel');
+      if(bd) bd.style.display = 'none';
+    }catch(_){}
+
+    try{
+      const path = `texts/${key}.txt`;
+      const res = await fetch(path + '?v=' + Date.now());
+      const txt = await res.text();
+      showModal(label || 'Info', txt);
+    }catch(err){
+      showModal('Error', 'Failed to load.');
+      console.warn('[menu modal hotfix] load failed', err);
+    }
+  }
+
+  // Delegated click (robust even if menu rebuilt)
+  menuDrop.addEventListener('click', (e)=>{
+    const a = e.target.closest('a.menu-text');
+    if(!a) return;
+    e.preventDefault();
+    try{ menuDrop.style.display='none'; }catch(_){}
+    const key = a.dataset.txt;
+    const label = a.textContent || 'Info';
+    if(!key) return;
+    openText(key, label);
+  });
+})();
+</script>
+
+
