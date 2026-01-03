@@ -650,6 +650,41 @@ label.gen-label{color:#cfe9ff;font-weight:700}
   box-shadow: 0 0 0 3px rgba(120, 200, 255, .18);
 }
 
+/* ===== Glass top UI (use backdrop under header/menu/tabs/lang) =====
+   목적: 최상단 메뉴/로고/탭/언어토글/드롭다운도 백드롭이 비치도록 통일감 부여
+   주의: 텍스트/아이콘은 흐려지지 않게(컨테이너 opacity 금지) 배경만 반투명 처리
+*/
+header{
+  background: rgba(10, 15, 20, 0.52) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(120, 200, 255, 0.12) !important;
+}
+
+.tab{
+  background: rgba(13, 30, 47, 0.46) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.tab.active{
+  background: rgba(15, 35, 54, 0.58) !important;
+}
+
+#langBtn{
+  background: rgba(13, 30, 47, 0.46) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Hamburger dropdown */
+.dropdown{
+  background: rgba(11, 20, 32, 0.62) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(120, 200, 255, 0.16) !important;
+}
+.dropdown a:hover{ background: rgba(255,255,255,0.06) !important; }
+
 </style>
 </head>
 <body>
