@@ -295,7 +295,7 @@ label.gen-label{color:#cfe9ff;font-weight:700}
 
 /* Modal */
 .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;z-index:90}
-.modal{position:fixed;inset:auto 10px 10px 10px;top:8%;max-width:760px;max-height:80vh;
+.legacy-modal{position:fixed;inset:auto 10px 10px 10px;top:8%;max-width:760px;max-height:80vh;
   background:#0e1520;border:1px solid #18304c;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.4);display:none;z-index:101;padding:16px}
 .mhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 #modalBody{white-space:pre-wrap;line-height:1.55;color:#d7e8ff;max-height:60vh;overflow:auto}
@@ -556,17 +556,21 @@ label.gen-label{color:#cfe9ff;font-weight:700}
 .icon-btn:active{ transform: translateY(1px); }
 
 /* ===== Backdrop modal ===== */
-.modal{
+.bd-modal{
   position: fixed;
   inset: 0;
   z-index: 9999;
   background: rgba(0,0,0,.55);
   backdrop-filter: blur(6px);
-  display:flex;
+  display:none;
   align-items:center;
   justify-content:center;
   padding: 18px;
 }
+.bd-modal.show{
+  display:flex;
+}
+
 .modal-card{
   width: min(920px, 96vw);
   max-height: min(86vh, 860px);
@@ -662,7 +666,7 @@ label.gen-label{color:#cfe9ff;font-weight:700}
         <a href="#" class="menu-text" data-txt="manual" data-i18n="menu.manual">Manual</a>
         <a href="#" class="menu-text" data-txt="contact" data-i18n="menu.contact">Contact</a>
         <a href="#" class="menu-text" data-txt="about" data-i18n="menu.about">About</a>
-        <a href="#" id="backdropBtn" data-i18n="menu.backdrop">Backdrop</a>
+        <a href="#" id="menuBackdrop" data-i18n="menu.backdrop">Backdrop</a>
       </div>
     </div>
     <div class="app-title">5DO</div>
@@ -981,7 +985,7 @@ label.gen-label{color:#cfe9ff;font-weight:700}
   <!-- 🔺 Generator 하단 광고 배너 끝 🔺 -->
 	
 <div class="backdrop" id="backdrop"></div>
-<div class="modal" id="modal">
+<div class="legacy-modal" id="modal">
   <div class="mhead">
     <div id="modalTitle" style="font-weight:800;color:#cfe9ff">Info</div>
     <button id="modalClose" class="btn small">Close</button>
@@ -1049,7 +1053,7 @@ const I18N = {
     'menu.faq':'FAQ',
     'menu.manual':'매뉴얼',
     'menu.contact':'연락처',
-    'menu.about':'소개',
+    'menu.about':'소개','menu.about':'소개',
     'menu.backdrop':'백드롭',
 
     'player.play':'재생',
@@ -1147,7 +1151,7 @@ const I18N = {
     'menu.faq':'FAQ',
     'menu.manual':'Manual',
     'menu.contact':'Contact',
-    'menu.about':'About',
+    'menu.about':'About','menu.about':'About',
     'menu.backdrop':'Backdrop',
 
     'player.play':'Play',
@@ -1742,17 +1746,7 @@ async function renderStrip(){
 
     if(!STATE.foldersCache.length) STATE.foldersCache = await listRoot();
 
-    // ✅ 시스템/숨김 폴더는 라이브러리에 표시하지 않음 (예: _system)
-    const visibleFolders = (STATE.foldersCache || []).filter(name => {
-      if(!name) return false;
-      const n = String(name).trim();
-      if(!n) return false;
-      if(n === '_system' || n.toLowerCase() === 'system') return false;
-      if(n.startsWith('_')) return false;
-      return true;
-    });
-
-    for(const name of visibleFolders){
+    for(const name of STATE.foldersCache){
       if(myTick !== RENDER_TICK) return;
 
       const row = document.createElement('div');
@@ -2009,16 +2003,15 @@ document.querySelectorAll('.menu-text').forEach(a=>{
     }
   });
 });
-
-// Backdrop panel from hamburger menu
-const backdropMenuLink = document.getElementById('backdropBtn');
-if (backdropMenuLink) {
-  backdropMenuLink.addEventListener('click', (e) => {
+const menuBackdropLink = document.getElementById('menuBackdrop');
+if(menuBackdropLink){
+  menuBackdropLink.addEventListener('click', (e)=>{
     e.preventDefault();
-    menuDrop.style.display = 'none';
-    // openBackdropPanel is bound later by backdrop module via the same #backdropBtn listener
+    try{ menuDrop.style.display='none'; }catch(_){}
+    if (typeof window.openBackdropPanel === 'function') window.openBackdropPanel();
   });
 }
+
 
 /* ===== Player controls & nav ===== */
 /* ===== Playback helpers (single source of truth) ===== */
@@ -3895,7 +3888,7 @@ const configs = {
 </html>
 
 <!-- Backdrop Settings Panel -->
-<div id="backdropPanel" class="modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="bdTitle">
+<div id="backdropPanel" class="bd-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="bdTitle">
   <div class="modal-card">
     <div class="modal-head">
       <div id="bdTitle" class="modal-title" data-i18n="bd.title">Backdrop</div>
@@ -3937,7 +3930,7 @@ const configs = {
   const backdropDim   = document.getElementById('backdropDim');
   const panel         = document.getElementById('backdropPanel');
   const grid          = document.getElementById('bdGrid');
-  const btnOpen       = document.getElementById('backdropBtn');
+  const btnOpen       = document.getElementById('menuBackdrop');
   const btnClose      = document.getElementById('bdCloseBtn');
   const bdOpacityEl   = document.getElementById('bdOpacity');
   const bdOpacityVal  = document.getElementById('bdOpacityVal');
@@ -3949,62 +3942,21 @@ const configs = {
     return;
   }
 
-  // Backdrop library (DB-driven; public read)
-// ✅ 썸네일 자동 생성: 동일한 배경 정의를 작은 타일에 그대로 적용(브라우저가 자동 downscale)
-//
-// 운영 방식:
-// - 이미지 파일: {BUCKET}/_system/backdrops/<file>
-// - 메타데이터: public.backdrops 테이블 (enabled=true만 노출)
-//
-// DB 로딩 실패 시 최소 fallback 그라데이션 사용
-let BACKDROP_LIBRARY = [];
+  // Developer-curated library.
+  // ✅ 썸네일 자동 생성: 동일한 배경 정의를 작은 타일에 그대로 적용(브라우저가 자동 downscale)
+  const BACKDROP_LIBRARY = [
+    { id:'cosmic_blue',   name:{ko:'코스믹 블루',  en:'Cosmic Blue'},   kind:'gradient',
+      value:'radial-gradient(1200px circle at 20% 20%, rgba(60,140,255,.55), rgba(5,10,25,1) 55%, rgba(0,0,0,1))' },
+    { id:'nebula_purple', name:{ko:'네뷸라 퍼플',  en:'Nebula Purple'}, kind:'gradient',
+      value:'radial-gradient(900px circle at 70% 30%, rgba(190,90,255,.55), rgba(10,6,22,1) 55%, rgba(0,0,0,1))' },
+    { id:'aurora_green',  name:{ko:'오로라 그린',  en:'Aurora Green'},  kind:'gradient',
+      value:'radial-gradient(1000px circle at 60% 10%, rgba(90,255,200,.35), rgba(8,18,20,1) 55%, rgba(0,0,0,1))' },
 
-const FALLBACK_BACKDROPS = [
-  { id:'cosmic_blue',   name:{ko:'코스믹 블루',  en:'Cosmic Blue'},   kind:'gradient',
-    value:'radial-gradient(1200px circle at 20% 20%, rgba(60,140,255,.55), rgba(5,10,25,1) 55%, rgba(0,0,0,1))' },
-  { id:'nebula_purple', name:{ko:'네뷸라 퍼플',  en:'Nebula Purple'}, kind:'gradient',
-    value:'radial-gradient(900px circle at 75% 35%, rgba(168,85,247,.55), rgba(10,5,20,1) 60%, rgba(0,0,0,1))' },
-  { id:'earth_dark',    name:{ko:'어스 다크',    en:'Earth Dark'},    kind:'gradient',
-    value:'linear-gradient(120deg, rgba(5,12,24,1), rgba(0,0,0,1))' }
-];
-
-async function fetchBackdropsFromDB(){
-  try{
-    if(!window.SB || typeof SB.from !== 'function') return null;
-    const { data, error } = await SB
-      .from('backdrops')
-      .select('id,file,name_ko,name_en,tags,sort,updated_at')
-      .order('sort', { ascending: true })
-      .order('updated_at', { ascending: false });
-
-    if(error) throw error;
-
-    const items = (data||[]).map(x=>({
-      id: x.id,
-      kind: 'image',
-      file: x.file,
-      name: { ko: x.name_ko, en: x.name_en },
-      tags: x.tags || []
-    }));
-
-    return items.length ? items : null;
-  }catch(e){
-    console.warn('[backdrop] DB fetch failed', e);
-    return null;
-  }
-}
-
-let _BD_LIB_PROMISE = null;
-async function ensureBackdropLibrary(){
-  if(_BD_LIB_PROMISE) return _BD_LIB_PROMISE;
-  _BD_LIB_PROMISE = (async ()=>{
-    const db = await fetchBackdropsFromDB();
-    BACKDROP_LIBRARY = db || FALLBACK_BACKDROPS.slice();
-    return BACKDROP_LIBRARY;
-  })();
-  return _BD_LIB_PROMISE;
-}
-
+    // 이미지 백드롭을 쓰려면 아래 예시처럼 파일을 올리고 주석을 해제:
+    // 파일 위치: /_system/backdrops/space_01.webp
+    // { id:'space_01', name:{ko:'스페이스 01', en:'Space 01'}, kind:'image', file:'space_01.webp' },
+    // { id:'forest_01',name:{ko:'포레스트 01',en:'Forest 01'},kind:'image', file:'forest_01.webp' },
+  ];
 
   function bdLabel(item){
     return (LANG === 'ko') ? (item.name?.ko || item.id) : (item.name?.en || item.id);
@@ -4018,17 +3970,6 @@ async function ensureBackdropLibrary(){
       const base = MEDIA_BASE + '/_system/backdrops/';
       backdropLayer.style.backgroundImage = 'url("' + (base + item.file) + '")';
     }
-
-  // Load library once (non-blocking) and apply saved backdrop immediately if possible
-  ensureBackdropLibrary().then(()=>{
-    const saved = localStorage.getItem(BD_ID_KEY);
-    const item = (saved && BACKDROP_LIBRARY.find(x=>x.id===saved)) || BACKDROP_LIBRARY[0];
-    if(item){
-      setBackdropCss(item);
-      // store back the resolved id (in case saved was missing)
-      try{ localStorage.setItem(BD_ID_KEY, item.id); }catch(_e){}
-    }
-  }).catch(()=>{});
   }
 
   function renderBackdropGrid(selectedId){
@@ -4087,19 +4028,16 @@ async function ensureBackdropLibrary(){
     localStorage.setItem(UI_OP_KEY, String(x));
   }
 
-  async function openBackdropPanel(){
+  function openBackdropPanel(){
     panel.style.display = 'flex';
-    await ensureBackdropLibrary();
-    const firstId = (BACKDROP_LIBRARY[0] && BACKDROP_LIBRARY[0].id) ? BACKDROP_LIBRARY[0].id : null;
-    const sel = localStorage.getItem(BD_ID_KEY) || firstId;
-    if(sel) renderBackdropGrid(sel);
+    renderBackdropGrid(localStorage.getItem(BD_ID_KEY) || BACKDROP_LIBRARY[0].id);
   }
   function closeBackdropPanel(){
     panel.style.display = 'none';
   }
 
   // Open/Close bindings
-  if(btnOpen) btnOpen.addEventListener('click', (e)=>{ try{ e.preventDefault(); }catch(_e){} openBackdropPanel(); });
+  if(btnOpen) btnOpen.addEventListener('click', openBackdropPanel);
   if(btnClose) btnClose.addEventListener('click', closeBackdropPanel);
   panel.addEventListener('click', (e)=>{ if(e.target === panel) closeBackdropPanel(); });
   window.addEventListener('keydown', (e)=>{
