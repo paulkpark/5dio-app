@@ -507,9 +507,150 @@ label.gen-label{color:#cfe9ff;font-weight:700}
 
 /* Visualizer removed */
 #libOsc{display:none !important;}
+
+/* ===== Backdrop layers ===== */
+#backdropLayer, #backdropDim{
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+#backdropLayer{
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  will-change: opacity, background-image;
+  transition: opacity .25s ease, background-image .25s ease;
+}
+#backdropDim{
+  background: rgba(0,0,0,0.18);
+  z-index: 1;
+  transition: opacity .25s ease;
+}
+
+/* App shell sits above backdrops */
+#appShell{
+  position: relative;
+  z-index: 2;
+  min-height: 100vh;
+  background: rgba(10, 10, 10, var(--uiOpacity, 0.92));
+  transition: background .25s ease;
+}
+
+/* Icon button (header) */
+.icon-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  color: #fff;
+  cursor: pointer;
+  padding: 0;
+}
+.icon-btn svg{ width: 20px; height: 20px; }
+.icon-btn:hover{ background: rgba(255,255,255,.1); }
+.icon-btn:active{ transform: translateY(1px); }
+
+/* ===== Backdrop modal ===== */
+.modal{
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(6px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding: 18px;
+}
+.modal-card{
+  width: min(920px, 96vw);
+  max-height: min(86vh, 860px);
+  overflow: auto;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(18,18,18,.92);
+  box-shadow: 0 20px 60px rgba(0,0,0,.55);
+}
+.modal-head{
+  position: sticky;
+  top: 0;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid rgba(255,255,255,.10);
+  background: rgba(18,18,18,.92);
+  backdrop-filter: blur(8px);
+  z-index: 2;
+}
+.modal-title{ font-weight: 700; font-size: 16px; letter-spacing:.2px; }
+
+.bd-controls{ padding: 12px 14px 0; }
+.bd-row{
+  display:grid;
+  grid-template-columns: 140px 1fr 56px;
+  gap: 10px;
+  align-items:center;
+  padding: 8px 0;
+}
+.bd-label{ opacity:.9; font-size: 13px; }
+.bd-row input[type="range"]{ width: 100%; }
+.bd-val{ text-align:right; opacity:.85; font-variant-numeric: tabular-nums; }
+
+.bd-grid-title{
+  padding: 10px 14px 8px;
+  opacity: .9;
+  font-size: 13px;
+}
+.bd-grid{
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  padding: 0 14px 16px;
+}
+.bd-tile{
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 14px;
+  overflow:hidden;
+  background: rgba(255,255,255,.06);
+  cursor: pointer;
+  min-height: 108px;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+  position: relative;
+  padding: 0;
+}
+.bd-thumb{
+  position:absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: saturate(1.05);
+}
+.bd-caption{
+  position: relative;
+  padding: 8px 10px;
+  font-size: 12px;
+  text-align:left;
+  background: linear-gradient(to top, rgba(0,0,0,.68), rgba(0,0,0,0));
+}
+.bd-selected{
+  outline: 2px solid rgba(120, 200, 255, .95);
+  box-shadow: 0 0 0 3px rgba(120, 200, 255, .18);
+}
+
 </style>
 </head>
 <body>
+	<div id="backdropLayer" aria-hidden="true"></div>
+	<div id="backdropDim" aria-hidden="true"></div>
 	<div id="appShell">
 <header>
   <div class="left-pack">
@@ -521,6 +662,7 @@ label.gen-label{color:#cfe9ff;font-weight:700}
         <a href="#" class="menu-text" data-txt="manual" data-i18n="menu.manual">Manual</a>
         <a href="#" class="menu-text" data-txt="contact" data-i18n="menu.contact">Contact</a>
         <a href="#" class="menu-text" data-txt="about" data-i18n="menu.about">About</a>
+        <a href="#" id="backdropBtn" data-i18n="menu.backdrop">Backdrop</a>
       </div>
     </div>
     <div class="app-title">5DO</div>
@@ -532,7 +674,7 @@ label.gen-label{color:#cfe9ff;font-weight:700}
   </div>
 
   <div class="right-pack">
-    <button id="langBtn">KR/EN</button>
+<button id="langBtn">KR/EN</button>
   </div>
 </header>
 
@@ -908,6 +1050,7 @@ const I18N = {
     'menu.manual':'매뉴얼',
     'menu.contact':'연락처',
     'menu.about':'소개',
+    'menu.backdrop':'백드롭',
 
     'player.play':'재생',
     'player.pause':'일시정지',
@@ -988,7 +1131,14 @@ const I18N = {
     'search.mode.track':'곡명',
     'search.btn.search':'검색',
     'search.btn.clear':'지우기',
-    'filter.favOnly': '★ 즐겨찾기만'
+    'filter.favOnly': '★ 즐겨찾기만',
+
+    // ▼ Backdrops
+    'bd.title':'백드롭',
+    'bd.choose':'백드롭 선택',
+    'bd.backdrop_opacity':'백드롭 투명도',
+    'bd.ui_opacity':'앱 레이어 투명도'
+
   },
   'en': {
     'tab.library':'Library',
@@ -998,6 +1148,7 @@ const I18N = {
     'menu.manual':'Manual',
     'menu.contact':'Contact',
     'menu.about':'About',
+    'menu.backdrop':'Backdrop',
 
     'player.play':'Play',
     'player.pause':'Pause',
@@ -1077,7 +1228,13 @@ const I18N = {
     'search.mode.track':'Track',
     'search.btn.search':'Search',
     'search.btn.clear':'Clear',
-    'filter.favOnly': '★ Favorites Only'
+    'filter.favOnly': '★ Favorites Only',
+
+    // ▼ Backdrops
+    'bd.title':'Backdrop',
+    'bd.choose':'Choose a backdrop',
+    'bd.backdrop_opacity':'Backdrop Opacity',
+    'bd.ui_opacity':'UI Opacity'
   }
 };
 
@@ -1842,6 +1999,16 @@ document.querySelectorAll('.menu-text').forEach(a=>{
     }
   });
 });
+
+// Backdrop panel from hamburger menu
+const backdropMenuLink = document.getElementById('backdropBtn');
+if (backdropMenuLink) {
+  backdropMenuLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    menuDrop.style.display = 'none';
+    // openBackdropPanel is bound later by backdrop module via the same #backdropBtn listener
+  });
+}
 
 /* ===== Player controls & nav ===== */
 /* ===== Playback helpers (single source of truth) ===== */
@@ -3716,5 +3883,196 @@ const configs = {
 </div>
 </body>
 </html>
+
+<!-- Backdrop Settings Panel -->
+<div id="backdropPanel" class="modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="bdTitle">
+  <div class="modal-card">
+    <div class="modal-head">
+      <div id="bdTitle" class="modal-title" data-i18n="bd.title">Backdrop</div>
+      <button id="bdCloseBtn" class="icon-btn" title="Close" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="bd-controls">
+      <div class="bd-row">
+        <div class="bd-label" data-i18n="bd.backdrop_opacity">Backdrop Opacity</div>
+        <input id="bdOpacity" type="range" min="0.15" max="1" step="0.01" />
+        <div id="bdOpacityVal" class="bd-val">1.00</div>
+      </div>
+
+      <div class="bd-row">
+        <div class="bd-label" data-i18n="bd.ui_opacity">UI Opacity</div>
+        <input id="uiOpacity" type="range" min="0.35" max="1" step="0.01" />
+        <div id="uiOpacityVal" class="bd-val">0.92</div>
+      </div>
+    </div>
+
+    <div class="bd-grid-title" data-i18n="bd.choose">Choose a backdrop</div>
+    <div id="bdGrid" class="bd-grid" aria-label="Backdrop library"></div>
+  </div>
+</div>
+
+
+<script>
+/* ===== Backdrops (Library + Opacity Controls) ===== */
+(function(){
+  const BD_ID_KEY  = 'fiveDO_backdrop_id';
+  const BD_OP_KEY  = 'fiveDO_backdrop_opacity';
+  const UI_OP_KEY  = 'fiveDO_ui_opacity';
+
+  const backdropLayer = document.getElementById('backdropLayer');
+  const backdropDim   = document.getElementById('backdropDim');
+  const panel         = document.getElementById('backdropPanel');
+  const grid          = document.getElementById('bdGrid');
+  const btnOpen       = document.getElementById('backdropBtn');
+  const btnClose      = document.getElementById('bdCloseBtn');
+  const bdOpacityEl   = document.getElementById('bdOpacity');
+  const bdOpacityVal  = document.getElementById('bdOpacityVal');
+  const uiOpacityEl   = document.getElementById('uiOpacity');
+  const uiOpacityVal  = document.getElementById('uiOpacityVal');
+
+  if(!backdropLayer || !panel || !grid){
+    console.warn('[backdrop] required elements missing');
+    return;
+  }
+
+  // Developer-curated library.
+  // ✅ 썸네일 자동 생성: 동일한 배경 정의를 작은 타일에 그대로 적용(브라우저가 자동 downscale)
+  const BACKDROP_LIBRARY = [
+    { id:'cosmic_blue',   name:{ko:'코스믹 블루',  en:'Cosmic Blue'},   kind:'gradient',
+      value:'radial-gradient(1200px circle at 20% 20%, rgba(60,140,255,.55), rgba(5,10,25,1) 55%, rgba(0,0,0,1))' },
+    { id:'nebula_purple', name:{ko:'네뷸라 퍼플',  en:'Nebula Purple'}, kind:'gradient',
+      value:'radial-gradient(900px circle at 70% 30%, rgba(190,90,255,.55), rgba(10,6,22,1) 55%, rgba(0,0,0,1))' },
+    { id:'aurora_green',  name:{ko:'오로라 그린',  en:'Aurora Green'},  kind:'gradient',
+      value:'radial-gradient(1000px circle at 60% 10%, rgba(90,255,200,.35), rgba(8,18,20,1) 55%, rgba(0,0,0,1))' },
+
+    // 이미지 백드롭을 쓰려면 아래 예시처럼 파일을 올리고 주석을 해제:
+    // 파일 위치: /_system/backdrops/space_01.webp
+    // { id:'space_01', name:{ko:'스페이스 01', en:'Space 01'}, kind:'image', file:'space_01.webp' },
+    // { id:'forest_01',name:{ko:'포레스트 01',en:'Forest 01'},kind:'image', file:'forest_01.webp' },
+  ];
+
+  function bdLabel(item){
+    return (LANG === 'ko') ? (item.name?.ko || item.id) : (item.name?.en || item.id);
+  }
+
+  function setBackdropCss(item){
+    if(!item) return;
+    if(item.kind === 'gradient'){
+      backdropLayer.style.backgroundImage = item.value;
+    }else{
+      const base = MEDIA_BASE + '/_system/backdrops/';
+      backdropLayer.style.backgroundImage = 'url("' + (base + item.file) + '")';
+    }
+  }
+
+  function renderBackdropGrid(selectedId){
+    grid.innerHTML = '';
+    BACKDROP_LIBRARY.forEach(item=>{
+      const tile = document.createElement('button');
+      tile.type = 'button';
+      tile.className = 'bd-tile' + (item.id === selectedId ? ' bd-selected' : '');
+      tile.title = bdLabel(item);
+
+      const thumb = document.createElement('div');
+      thumb.className = 'bd-thumb';
+
+      // ✅ 자동 썸네일: 동일 배경을 그대로 사용
+      if(item.kind === 'gradient'){
+        thumb.style.backgroundImage = item.value;
+      }else{
+        const base = MEDIA_BASE + '/_system/backdrops/';
+        thumb.style.backgroundImage = 'url("' + (base + item.file) + '")';
+      }
+
+      const cap = document.createElement('div');
+      cap.className = 'bd-caption';
+      cap.textContent = bdLabel(item);
+
+      tile.append(thumb, cap);
+
+      tile.addEventListener('click', ()=>{
+        applyBackdrop(item.id);
+        closeBackdropPanel();
+      });
+
+      grid.appendChild(tile);
+    });
+  }
+
+  function applyBackdrop(id){
+    const item = BACKDROP_LIBRARY.find(x=>x.id===id) || BACKDROP_LIBRARY[0];
+    if(!item) return;
+    setBackdropCss(item);
+    localStorage.setItem(BD_ID_KEY, item.id);
+    renderBackdropGrid(item.id);
+  }
+
+  function setBackdropOpacity(v){
+    const x = Math.max(0.15, Math.min(1.0, Number(v) || 1));
+    backdropLayer.style.opacity = String(x);
+    if(bdOpacityVal) bdOpacityVal.textContent = x.toFixed(2);
+    localStorage.setItem(BD_OP_KEY, String(x));
+  }
+
+  function setUiOpacity(v){
+    const x = Math.max(0.35, Math.min(1.0, Number(v) || 0.92));
+    document.documentElement.style.setProperty('--uiOpacity', String(x));
+    if(uiOpacityVal) uiOpacityVal.textContent = x.toFixed(2);
+    localStorage.setItem(UI_OP_KEY, String(x));
+  }
+
+  function openBackdropPanel(){
+    panel.style.display = 'flex';
+    renderBackdropGrid(localStorage.getItem(BD_ID_KEY) || BACKDROP_LIBRARY[0].id);
+  }
+  function closeBackdropPanel(){
+    panel.style.display = 'none';
+  }
+
+  // Open/Close bindings
+  if(btnOpen) btnOpen.addEventListener('click', (e)=>{ try{ e.preventDefault(); }catch(_e){} openBackdropPanel(); });
+  if(btnClose) btnClose.addEventListener('click', closeBackdropPanel);
+  panel.addEventListener('click', (e)=>{ if(e.target === panel) closeBackdropPanel(); });
+  window.addEventListener('keydown', (e)=>{
+    if(panel.style.display !== 'none' && e.key === 'Escape') closeBackdropPanel();
+  });
+
+  // Init sliders (load saved)
+  const initBdOp = parseFloat(localStorage.getItem(BD_OP_KEY) || '1');
+  const initUiOp = parseFloat(localStorage.getItem(UI_OP_KEY) || '0.92');
+
+  if(bdOpacityEl){
+    bdOpacityEl.value = String(isFinite(initBdOp) ? initBdOp : 1);
+    bdOpacityEl.addEventListener('input', ()=>setBackdropOpacity(bdOpacityEl.value));
+  }
+  if(uiOpacityEl){
+    uiOpacityEl.value = String(isFinite(initUiOp) ? initUiOp : 0.92);
+    uiOpacityEl.addEventListener('input', ()=>setUiOpacity(uiOpacityEl.value));
+  }
+
+  // Apply initial values
+  setBackdropOpacity(isFinite(initBdOp) ? initBdOp : 1);
+  setUiOpacity(isFinite(initUiOp) ? initUiOp : 0.92);
+  if(backdropDim) backdropDim.style.opacity = '1';
+
+  const initId = localStorage.getItem(BD_ID_KEY) || BACKDROP_LIBRARY[0].id;
+  applyBackdrop(initId);
+
+  // Re-render backdrop captions when language toggles
+  const _applyLang = window.applyLang;
+  window.applyLang = function(){
+    try{ _applyLang && _applyLang(); }catch(e){}
+    try{
+      if(btnOpen) btnOpen.title = (LANG==='en' ? 'Backdrop' : '백드롭');
+      renderBackdropGrid(localStorage.getItem(BD_ID_KEY) || BACKDROP_LIBRARY[0].id);
+    }catch(e){}
+  };
+})();
+</script>
+
 </body>
 </html>
