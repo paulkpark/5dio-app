@@ -1950,25 +1950,66 @@ menuBtn.addEventListener('click',()=>{
 });
 backdrop.addEventListener('click',()=>{ backdrop.style.display='none'; modal.style.display='none'; });
 $('#modalClose').addEventListener('click',()=>{ backdrop.style.display='none'; modal.style.display='none'; });
-document.querySelectorAll('.menu-text').forEach(a=>{
-  a.addEventListener('click', async (e)=>{
-    e.preventDefault();
-    menuDrop.style.display='none';
-    const key = a.dataset.txt;
-    const path = `texts/${key}.txt`;
+// ---- Info/FAQ/Manual/Contact/About modal loader (works on GitHub Pages + local server) ----
+window.TEXTS_REMOTE_BASE = window.TEXTS_REMOTE_BASE || ''; // (optional) e.g. 'https://<your-domain>/texts'
+async function fetchMenuText(key){
+  const cleanKey = String(key||'').replace(/[^a-z0-9_\-]/gi,'');
+  if(!cleanKey) throw new Error('invalid key');
+  const bust = 'v=' + Date.now();
+
+  // Candidate URLs (try in order)
+  const candidates = [];
+  if(location.protocol === 'file:' && window.TEXTS_REMOTE_BASE){
+    candidates.push(window.TEXTS_REMOTE_BASE.replace(/\/$/,'') + '/' + cleanKey + '.txt');
+  }
+  candidates.push(`texts/${cleanKey}.txt`);
+  candidates.push(`./texts/${cleanKey}.txt`);
+  candidates.push(`/${cleanKey}.txt`);           // legacy fallback
+  candidates.push(`/texts/${cleanKey}.txt`);     // root fallback
+
+  let lastErr = null;
+  for(const u of candidates){
     try{
-      const res = await fetch(path+'?v='+Date.now());
-      const txt = await res.text();
-      $('#modalTitle').textContent = (a.textContent||'Info');
+      const sep = u.includes('?') ? '&' : '?';
+      const res = await fetch(u + sep + bust, { cache:'no-store' });
+      if(!res.ok) { lastErr = new Error('HTTP ' + res.status); continue; }
+      return await res.text();
+    }catch(e){
+      lastErr = e;
+    }
+  }
+  throw lastErr || new Error('Failed to fetch text');
+}
+
+// Use event delegation so rebuilt menus still work
+if(!window.__MENU_TEXT_DELEGATED__){
+  window.__MENU_TEXT_DELEGATED__ = true;
+  menuDrop.addEventListener('click', async (e)=>{
+    const a = e.target.closest('a.menu-text');
+    if(!a) return;
+    e.preventDefault();
+    try{ menuDrop.style.display='none'; }catch(_){}
+    const key = a.dataset.txt;
+    const label = a.textContent || 'Info';
+    try{
+      const txt = await fetchMenuText(key);
+      $('#modalTitle').textContent = label;
       $('#modalBody').textContent = txt;
       backdrop.style.display='block'; modal.style.display='block';
     }catch(err){
-      $('#modalTitle').textContent = 'Error';
-      $('#modalBody').textContent = 'Failed to load.';
+      console.warn('[menu modal] load failed', err);
+      $('#modalTitle').textContent = (LANG==='en' ? 'Error' : '오류');
+      // If user opened via file://, this is the usual root cause
+      const hint = (location.protocol==='file:')
+        ? (LANG==='en'
+            ? 'Failed to load. If you opened this HTML via file://, please run a local web server (e.g. VSCode Live Server) or set TEXTS_REMOTE_BASE.'
+            : '불러오기에 실패했습니다. file:// 로 열었다면 로컬 웹서버(VSCode Live Server 등)로 실행하거나 TEXTS_REMOTE_BASE 를 설정하세요.')
+        : (LANG==='en' ? 'Failed to load.' : '불러오기에 실패했습니다.');
+      $('#modalBody').textContent = hint;
       backdrop.style.display='block'; modal.style.display='block';
     }
   });
-});
+}
 const menuBackdropLink = document.getElementById('menuBackdrop');
 if(menuBackdropLink){
   menuBackdropLink.addEventListener('click', (e)=>{
@@ -3897,286 +3938,3 @@ const configs = {
 
 </body>
 </html>
-<script>
-  // PWA용 서비스 워커 등록
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js')
-        .then(reg => {
-          console.log('5DO service worker registered:', reg.scope);
-        })
-        .catch(err => {
-          console.warn('Service worker registration failed:', err);
-        });
-    });
-  }
-</script>
-
-
-
-<!-- Backdrop Settings Panel -->
-<div aria-labelledby="bdTitle" aria-modal="true" class="bd-modal" id="backdropPanel" role="dialog" style="display:none">
-<div class="modal-card">
-<div class="modal-head">
-<div class="modal-title" data-i18n="bd.title" id="bdTitle">Backdrop</div>
-<button aria-label="Close" class="icon-btn" id="bdCloseBtn" title="Close">
-<svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2" viewbox="0 0 24 24">
-<path d="M18 6L6 18M6 6l12 12"></path>
-</svg>
-</button>
-</div>
-<div class="bd-controls">
-<div class="bd-row">
-<div class="bd-label" data-i18n="bd.backdrop_opacity">Backdrop Opacity</div>
-<input id="bdOpacity" max="1" min="0.15" step="0.01" type="range">
-<div class="bd-val" id="bdOpacityVal">1.00</div>
-</input></div>
-<div class="bd-row">
-<div class="bd-label" data-i18n="bd.ui_opacity">UI Opacity</div>
-<input id="uiOpacity" max="1" min="0.35" step="0.01" type="range">
-<div class="bd-val" id="uiOpacityVal">0.92</div>
-</input></div>
-</div>
-<div class="bd-grid-title" data-i18n="bd.choose">Choose a backdrop</div>
-<div aria-label="Backdrop library" class="bd-grid" id="bdGrid"></div>
-</div>
-</div>
-<script>
-/* ===== Backdrops (Library + Opacity Controls) ===== */
-(function(){
-  const BD_ID_KEY  = 'fiveDO_backdrop_id';
-  const BD_OP_KEY  = 'fiveDO_backdrop_opacity';
-  const UI_OP_KEY  = 'fiveDO_ui_opacity';
-
-  const backdropLayer = document.getElementById('backdropLayer');
-  const backdropDim   = document.getElementById('backdropDim');
-  const panel         = document.getElementById('backdropPanel');
-  const grid          = document.getElementById('bdGrid');
-  const btnOpen       = document.getElementById('menuBackdrop');
-  const btnClose      = document.getElementById('bdCloseBtn');
-  const bdOpacityEl   = document.getElementById('bdOpacity');
-  const bdOpacityVal  = document.getElementById('bdOpacityVal');
-  const uiOpacityEl   = document.getElementById('uiOpacity');
-  const uiOpacityVal  = document.getElementById('uiOpacityVal');
-
-  if(!backdropLayer || !panel || !grid){
-    console.warn('[backdrop] required elements missing');
-    return;
-  }
-
-  // Developer-curated library.
-  // ✅ 썸네일 자동 생성: 동일한 배경 정의를 작은 타일에 그대로 적용(브라우저가 자동 downscale)
-  const BACKDROP_LIBRARY = [
-    { id:'cosmic_blue',   name:{ko:'코스믹 블루',  en:'Cosmic Blue'},   kind:'gradient',
-      value:'radial-gradient(1200px circle at 20% 20%, rgba(60,140,255,.55), rgba(5,10,25,1) 55%, rgba(0,0,0,1))' },
-    { id:'nebula_purple', name:{ko:'네뷸라 퍼플',  en:'Nebula Purple'}, kind:'gradient',
-      value:'radial-gradient(900px circle at 70% 30%, rgba(190,90,255,.55), rgba(10,6,22,1) 55%, rgba(0,0,0,1))' },
-    { id:'aurora_green',  name:{ko:'오로라 그린',  en:'Aurora Green'},  kind:'gradient',
-      value:'radial-gradient(1000px circle at 60% 10%, rgba(90,255,200,.35), rgba(8,18,20,1) 55%, rgba(0,0,0,1))' },
-
-    { id:'deep_space',    name:{ko:'딥 스페이스',  en:'Deep Space'},    kind:'gradient',
-      value:'radial-gradient(1200px circle at 50% 0%, rgba(60,80,160,.45), rgba(5,7,15,1) 60%, rgba(0,0,0,1))' },
-    { id:'nebula_violet', name:{ko:'네뷸라 바이올렛', en:'Nebula Violet'}, kind:'gradient',
-      value:'linear-gradient(135deg, rgba(42,8,69,1), rgba(100,65,165,1))' },
-    { id:'quantum_teal',  name:{ko:'퀀텀 틸',      en:'Quantum Teal'},  kind:'gradient',
-      value:'linear-gradient(135deg, rgba(15,32,39,1), rgba(32,58,67,1), rgba(44,83,100,1))' },
-    { id:'solar_gold',    name:{ko:'솔라 골드',    en:'Solar Gold'},    kind:'gradient',
-      value:'radial-gradient(1100px circle at 50% 40%, rgba(255,200,60,.25), rgba(20,14,0,1) 60%, rgba(0,0,0,1))' },
-    { id:'plasma_red',    name:{ko:'플라즈마 레드', en:'Plasma Red'},    kind:'gradient',
-      value:'linear-gradient(135deg, rgba(60,15,18,1), rgba(142,14,0,1))' },
-    { id:'ether_gray',    name:{ko:'에테르 그레이', en:'Ether Gray'},    kind:'gradient',
-      value:'linear-gradient(135deg, rgba(35,37,38,1), rgba(65,67,69,1))' },
-    { id:'starlight_blue',name:{ko:'스타라이트 블루', en:'Starlight Blue'}, kind:'gradient',
-      value:'radial-gradient(1000px circle at 50% 0%, rgba(40,120,255,.35), rgba(8,18,40,1) 60%, rgba(0,0,0,1))' },
-
-
-    // 이미지 백드롭을 쓰려면 아래 예시처럼 파일을 올리고 주석을 해제:
-    // 파일 위치: /_system/backdrops/space_01.webp
-    // { id:'space_01', name:{ko:'스페이스 01', en:'Space 01'}, kind:'image', file:'space_01.webp' },
-    // { id:'forest_01',name:{ko:'포레스트 01',en:'Forest 01'},kind:'image', file:'forest_01.webp' },
-  ];
-
-  function bdLabel(item){
-    return (LANG === 'ko') ? (item.name?.ko || item.id) : (item.name?.en || item.id);
-  }
-
-  function setBackdropCss(item){
-    if(!item) return;
-    if(item.kind === 'gradient'){
-      backdropLayer.style.backgroundImage = item.value;
-    }else{
-      const base = MEDIA_BASE + '/_system/backdrops/';
-      backdropLayer.style.backgroundImage = 'url("' + (base + item.file) + '")';
-    }
-  }
-
-  function renderBackdropGrid(selectedId){
-    grid.innerHTML = '';
-    BACKDROP_LIBRARY.forEach(item=>{
-      const tile = document.createElement('button');
-      tile.type = 'button';
-      tile.className = 'bd-tile' + (item.id === selectedId ? ' bd-selected' : '');
-      tile.title = bdLabel(item);
-
-      const thumb = document.createElement('div');
-      thumb.className = 'bd-thumb';
-
-      // ✅ 자동 썸네일: 동일 배경을 그대로 사용
-      if(item.kind === 'gradient'){
-        thumb.style.backgroundImage = item.value;
-      }else{
-        const base = MEDIA_BASE + '/_system/backdrops/';
-        thumb.style.backgroundImage = 'url("' + (base + item.file) + '")';
-      }
-
-      const cap = document.createElement('div');
-      cap.className = 'bd-caption';
-      cap.textContent = bdLabel(item);
-
-      tile.append(thumb, cap);
-
-      tile.addEventListener('click', ()=>{
-        applyBackdrop(item.id);
-        closeBackdropPanel();
-      });
-
-      grid.appendChild(tile);
-    });
-  }
-
-  function applyBackdrop(id){
-    const item = BACKDROP_LIBRARY.find(x=>x.id===id) || BACKDROP_LIBRARY[0];
-    if(!item) return;
-    setBackdropCss(item);
-    localStorage.setItem(BD_ID_KEY, item.id);
-    renderBackdropGrid(item.id);
-  }
-
-  function setBackdropOpacity(v){
-    const x = Math.max(0.15, Math.min(1.0, Number(v) || 1));
-    backdropLayer.style.opacity = String(x);
-    if(bdOpacityVal) bdOpacityVal.textContent = x.toFixed(2);
-    localStorage.setItem(BD_OP_KEY, String(x));
-  }
-
-  function setUiOpacity(v){
-    const x = Math.max(0.35, Math.min(1.0, Number(v) || 0.92));
-    document.documentElement.style.setProperty('--uiOpacity', String(x));
-    if(uiOpacityVal) uiOpacityVal.textContent = x.toFixed(2);
-    localStorage.setItem(UI_OP_KEY, String(x));
-  }
-
-  function openBackdropPanel(){
-    panel.style.display = 'flex';
-    renderBackdropGrid(localStorage.getItem(BD_ID_KEY) || BACKDROP_LIBRARY[0].id);
-  }
-  function closeBackdropPanel(){
-    panel.style.display = 'none';
-  }
-
-  // Open/Close bindings
-  if(btnOpen) btnOpen.addEventListener('click', openBackdropPanel);
-  if(btnClose) btnClose.addEventListener('click', closeBackdropPanel);
-  panel.addEventListener('click', (e)=>{ if(e.target === panel) closeBackdropPanel(); });
-  window.addEventListener('keydown', (e)=>{
-    if(panel.style.display !== 'none' && e.key === 'Escape') closeBackdropPanel();
-  });
-
-  // Init sliders (load saved)
-  const initBdOp = parseFloat(localStorage.getItem(BD_OP_KEY) || '1');
-  const initUiOp = parseFloat(localStorage.getItem(UI_OP_KEY) || '0.92');
-
-  if(bdOpacityEl){
-    bdOpacityEl.value = String(isFinite(initBdOp) ? initBdOp : 1);
-    bdOpacityEl.addEventListener('input', ()=>setBackdropOpacity(bdOpacityEl.value));
-  }
-  if(uiOpacityEl){
-    uiOpacityEl.value = String(isFinite(initUiOp) ? initUiOp : 0.92);
-    uiOpacityEl.addEventListener('input', ()=>setUiOpacity(uiOpacityEl.value));
-  }
-
-  // Apply initial values
-  setBackdropOpacity(isFinite(initBdOp) ? initBdOp : 1);
-  setUiOpacity(isFinite(initUiOp) ? initUiOp : 0.92);
-  if(backdropDim) backdropDim.style.opacity = '1';
-
-  const initId = localStorage.getItem(BD_ID_KEY) || BACKDROP_LIBRARY[0].id;
-  applyBackdrop(initId);
-
-  // Re-render backdrop captions when language toggles
-  const _applyLang = window.applyLang;
-  window.applyLang = function(){
-    try{ _applyLang && _applyLang(); }catch(e){}
-    try{
-      if(btnOpen) btnOpen.title = (LANG==='en' ? 'Backdrop' : '백드롭');
-      renderBackdropGrid(localStorage.getItem(BD_ID_KEY) || BACKDROP_LIBRARY[0].id);
-    }catch(e){}
-  };
-})();
-</script>
-<script>
-/* ===== Hotfix: hamburger info modals (FAQ/Manual/Contact/About) =====
-   - In some builds, glass/backdrop changes can interfere with the old direct bindings.
-   - This delegation ensures menu items always open the legacy Info modal.
-*/
-(function(){
-  const $ = (sel)=>document.querySelector(sel);
-  const menuDrop = $('#menuDrop');
-  const backdrop = $('#backdrop');
-  const modal    = $('#modal');
-  const titleEl  = $('#modalTitle');
-  const bodyEl   = $('#modalBody');
-  const closeBtn = $('#modalClose');
-
-  if(!menuDrop || !backdrop || !modal || !titleEl || !bodyEl){
-    console.warn('[menu modal hotfix] missing elements', {menuDrop, backdrop, modal, titleEl, bodyEl});
-    return;
-  }
-
-  function showModal(title, body){
-    titleEl.textContent = title || 'Info';
-    bodyEl.textContent  = body  || '';
-    backdrop.style.display='block';
-    modal.style.display='block';
-  }
-  function hideModal(){
-    backdrop.style.display='none';
-    modal.style.display='none';
-  }
-
-  backdrop.addEventListener('click', hideModal);
-  if(closeBtn) closeBtn.addEventListener('click', hideModal);
-
-  async function openText(key, label){
-    // Close any other panels (e.g., backdrop panel) safely
-    try{
-      const bd = document.getElementById('backdropPanel');
-      if(bd) bd.style.display = 'none';
-    }catch(_){}
-
-    try{
-      const path = `texts/${key}.txt`;
-      const res = await fetch(path + '?v=' + Date.now());
-      const txt = await res.text();
-      showModal(label || 'Info', txt);
-    }catch(err){
-      showModal('Error', 'Failed to load.');
-      console.warn('[menu modal hotfix] load failed', err);
-    }
-  }
-
-  // Delegated click (robust even if menu rebuilt)
-  menuDrop.addEventListener('click', (e)=>{
-    const a = e.target.closest('a.menu-text');
-    if(!a) return;
-    e.preventDefault();
-    try{ menuDrop.style.display='none'; }catch(_){}
-    const key = a.dataset.txt;
-    const label = a.textContent || 'Info';
-    if(!key) return;
-    openText(key, label);
-  });
-})();
-</script>
-
-
