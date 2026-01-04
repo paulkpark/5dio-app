@@ -1036,6 +1036,32 @@ header{
 </div>
 
 <script>
+
+/* ===== FIX: ensure text modal is outside tab containers ===== */
+(function ensureGlobalTextModal(){
+  const move = ()=>{
+    const bd = document.getElementById('backdrop');
+    const md = document.getElementById('modal');
+    if(!bd || !md) return;
+
+    // If placed inside a hidden tab container, reparent to <body> so it works on all tabs
+    if(bd.parentElement !== document.body) document.body.appendChild(bd);
+    if(md.parentElement !== document.body) document.body.appendChild(md);
+
+    // Force top layering
+    bd.style.position = 'fixed';
+    bd.style.inset = '0';
+    bd.style.zIndex = '9998';
+    md.style.position = 'fixed';
+    md.style.zIndex = '9999';
+  };
+
+  if(document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', move, {once:true});
+  } else {
+    move();
+  }
+})();
 /* ===== Supabase Config ===== */
 const SUPABASE_URL = "https://xdjgumqdwedgzwqturcx.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU";
