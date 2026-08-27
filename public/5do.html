@@ -4823,13 +4823,23 @@ const configs = {
         });
 
       // When a new SW takes control, reload once to pick up the new assets.
-      // Guarded so we don't loop — the sessionStorage key resets on next launch.
+      //
+      // The guard is a cooldown, not a once-per-session latch. A permanent
+      // sessionStorage flag meant only the FIRST update in a session ever
+      // reloaded; every later one was ignored, and sessions live a long time in
+      // an installed PWA. That left pages running new HTML against JS still
+      // served cache-first from the old bundle — which shows up as a feature
+      // appearing but its i18n strings silently falling back, since applyLang
+      // leaves the markup alone for keys the stale dictionary lacks.
+      // Real updates are minutes apart, so a few seconds is enough to stop a
+      // reload loop while letting every genuine update through.
       let _reloaded = false;
       navigator.serviceWorker.addEventListener('controllerchange', () => {
         if (_reloaded) return;
-        if (sessionStorage.getItem('_swReloaded') === '1') return;
+        const last = Number(sessionStorage.getItem('_swReloadedAt') || 0);
+        if (Date.now() - last < 10000) return;
         _reloaded = true;
-        sessionStorage.setItem('_swReloaded', '1');
+        sessionStorage.setItem('_swReloadedAt', String(Date.now()));
         console.log('[SW] new controller — reloading for fresh assets');
         location.reload();
       });

@@ -366,4 +366,7 @@ function applyLang() {
   }
   // Re-render the trial banner so its text follows the language toggle.
   if (typeof window.refreshTrialUI === 'function') { try { window.refreshTrialUI(); } catch (_) {} }
+  // The carrier readout is composed in JS, not marked up with data-i18n, so the
+  // sweep above cannot reach it.
+  if (typeof window._updateCarrierReadout === 'function') { try { window._updateCarrierReadout(); } catch (_) {} }
 }
