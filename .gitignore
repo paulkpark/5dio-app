@@ -3,3 +3,17 @@ node_modules/
 .DS_Store
 *.log
 .superpowers/
+
+# Local safety copies of the Supabase-hosted media meta.json. Kept on disk on
+# purpose — meta.json lives in Supabase storage, not in this repo, and a
+# full-overwrite once cost 200+ entries (recovered 2026-07-19). Snapshot before
+# every meta.json write; edits must MERGE, never replace. Not committed: they are
+# large data dumps that would churn the history.
+meta-backup-*.json
+meta-RESTORED-*.json
+
+# Thumbnail snapshots taken before a bulk regeneration (~55MB).
+thumb-backup-*/
+
+# Working notes for content passes.
+RIFE_*.md
