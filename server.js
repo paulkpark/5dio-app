@@ -50,7 +50,15 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
       linkedTo5do = !!(linked && linked.length);
     }
     const isCheckout = event.type === 'checkout.session.completed';
-    const belongsTo5do = metaApp === '5do' || linkedTo5do || (isCheckout && sub?.metadata?.user_id);
+    // app 태그가 있으면 그것만 믿는다. 세 번째 조건(isCheckout && metadata.user_id)이
+    // 태그를 보지 않아서, Resona 의 checkout.session.completed 가 여기를 통과했다
+    // — Resona 도 metadata.user_id 를 담기 때문이다(실측 2026-08-22).
+    // 통과해도 5DO profiles 에 그 user_id 가 없어 아무 일도 일어나지 않았지만,
+    // 남의 제품 이벤트가 처리 경로에 들어오는 것 자체를 막는 편이 낫다.
+    // 태그가 없는 예전 구독은 종전 판정(고객 연결·체크아웃)으로 그대로 처리된다.
+    const belongsTo5do = metaApp
+      ? metaApp === '5do'
+      : (linkedTo5do || (isCheckout && sub?.metadata?.user_id));
     if (!belongsTo5do) {
       return res.json({ received: true, ignored: 'not-5do' });
     }
