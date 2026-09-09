@@ -1936,11 +1936,21 @@ function lerpHex(a, b, t) {
 
 // ─── App module wrapper ──────────────────────────────────────────────────────
 export function initTorus(canvas, getBins, opts = {}) {
-  const gl = canvas.getContext('webgl2', { antialias: false, alpha: false, powerPreference: 'high-performance' });
-  if (!gl) throw new Error('torus: no webgl2');
-  if (!gl.getExtension('EXT_color_buffer_float')) throw new Error('torus: no float targets');
+  function acquire() {
+    const ctx = canvas.getContext('webgl2', { antialias: false, alpha: false, powerPreference: 'high-performance' });
+    if (!ctx) throw new Error('torus: no webgl2');
+    if (!ctx.getExtension('EXT_color_buffer_float')) throw new Error('torus: no float targets');
+    return ctx;
+  }
+  let gl = acquire();
   const isMobile = matchMedia('(max-width: 780px)').matches;
-  const renderer = createTorusRenderer(gl, { mobile: isMobile });
+  let renderer = createTorusRenderer(gl, { mobile: isMobile });
+  let contextLost = false;
+
+  // Whether the track is playing. This has to be an explicit signal: inferring it
+  // from the bins conflates "paused" with "could not read the audio this frame",
+  // and the second one is recoverable — see readBins.
+  const isPlaying = opts.isPlaying;
 
   // The renderer's own starting values are the baseline every preset resolves
   // against, so a preset only has to state what it changes.
@@ -2099,19 +2109,39 @@ export function initTorus(canvas, getBins, opts = {}) {
     const h = Math.max(1, Math.round(canvas.clientHeight * dpr));
     if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; resized = true; }
   }
+  // Read the audio bins, tolerating anything short of a clean 32-bin frame.
+  // Returning null here means "no reading this frame", NOT "paused" — a sidecar
+  // with a different bin count, a stale analyser, or a throwing sample() must not
+  // be able to stop the animation.
+  const scratch = new Float32Array(BINS);
+  function readBins() {
+    try {
+      const b = getBins && getBins();
+      if (b && b.length >= BINS) return b;
+      if (b && b.length > 0) {          // short frame — zero-pad rather than discard
+        scratch.fill(0);
+        scratch.set(b.subarray ? b.subarray(0, BINS) : b.slice(0, BINS));
+        return scratch;
+      }
+    } catch (_) {}
+    return null;
+  }
+
   function frame(now) {
     rafId = requestAnimationFrame(frame);
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
-    if (document.visibilityState !== 'visible') return;
+    if (document.visibilityState !== 'visible' || contextLost) return;
     resize();
-    // getBins() returning null means "not playing". The torus advances on dt alone
-    // (audio only scales the rate), so we hand it dt = 0 to hold the current pose
-    // instead of drifting at base speed while the track is paused. updateAudio's
-    // smoothing is also dt-scaled, so the audio envelope freezes with it.
-    let data = null;
-    try { const b = getBins && getBins(); if (b && b.length >= BINS) data = b; } catch (_) {}
-    const playing = data !== null;
-    if (playing) lastData = data;
+
+    // Playback state comes from isPlaying(), never from the bins. The torus
+    // advances on dt alone (audio only scales the rate), so a paused track gets
+    // dt = 0 to hold its pose; updateAudio's smoothing is dt-scaled too, so the
+    // envelope freezes with it. If the bins are momentarily unreadable we keep
+    // the last good frame and keep animating.
+    const playing = isPlaying ? !!isPlaying() : true;
+    const bins = readBins();
+    if (bins) lastData = bins;
+
     // While frozen the output is identical every frame, so draw once and then idle
     // until playback resumes or the canvas is resized (fullscreen, rotation).
     // A morph must keep drawing even while paused, otherwise it would stall
@@ -2127,8 +2157,39 @@ export function initTorus(canvas, getBins, opts = {}) {
     const morphing = stepMorph();
     if (playing && !morphing) drift(dt);
     frozenDrawn = !playing && !morphing;
-    renderer.render(playing ? data : lastData, playing ? dt : 0, canvas.width, canvas.height);
+    // One bad frame must not wedge the loop: rafId is already reassigned above, but
+    // a throw here would skip every later frame's work forever.
+    try {
+      renderer.render(lastData, playing ? dt : 0, canvas.width, canvas.height);
+    } catch (e) {
+      if (!frame._warned) { frame._warned = true; console.warn('[torus] render failed', e); }
+    }
   }
+
+  // Without these the canvas silently stops updating for good when the browser
+  // drops the context (mobile memory/thermal pressure, GPU reset, or reparenting
+  // on some engines) — gl calls become no-ops while rAF keeps spinning.
+  // cymatics.js already does this for the particle canvas.
+  canvas.addEventListener('webglcontextlost', (e) => {
+    e.preventDefault();
+    contextLost = true;
+    if (rafId != null) { cancelAnimationFrame(rafId); rafId = null; }
+    console.warn('[torus] WebGL context lost');
+  });
+  canvas.addEventListener('webglcontextrestored', () => {
+    try {
+      gl = acquire();
+      renderer = createTorusRenderer(gl, { mobile: isMobile });
+      contextLost = false;
+      morph = null;                 // its `from` values belong to the dead context
+      applyPreset(preset);          // rebuild the current look, no transition
+      last = performance.now();
+      if (rafId == null) rafId = requestAnimationFrame(frame);
+      console.warn('[torus] WebGL context restored');
+    } catch (e) {
+      console.warn('[torus] context restore failed', e);
+    }
+  });
   // Open on a random look rather than always the default one.
   applyPreset(TORUS_PRESETS[Math.floor(Math.random() * TORUS_PRESETS.length)]);
 

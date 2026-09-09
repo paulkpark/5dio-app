@@ -45,12 +45,18 @@ import { initTorus } from './torus-viz.js';
 let _torus = null;         // { start, stop, resize, destroy }
 let _torusCanvas = null;
 let _torusLabel = null;    // small on-canvas caption naming the active form
-// Returning null tells the torus loop to freeze: its rotation is time-driven and
-// audio only scales the rate, so silence alone would still spin it at base speed.
 function _torusBins() {
-  if (!STATE.source) return null;
-  if (STATE.audio && (STATE.audio.paused || STATE.audio.ended)) return null;
-  return STATE.source.sample();
+  return STATE.source ? STATE.source.sample() : null;
+}
+// Playback state is reported separately from the bins. Folding the two together
+// meant any hiccup in the audio pipeline read as "paused" and froze the animation
+// for good; the visual should only hold still when playback actually stops.
+// No audio element attached yet counts as playing, so the torus never wedges
+// waiting for a signal that will not come.
+function _torusPlaying() {
+  const a = STATE.audio;
+  if (!a) return true;
+  return !a.paused && !a.ended;
 }
 // Names the form currently on screen. Sits dim so it never competes with the
 // visual, and brightens for a moment whenever the form changes.
@@ -75,7 +81,10 @@ function _ensureTorus() {
   _torusLabel.style.display = 'none';
   _torusCanvas.insertAdjacentElement('afterend', _torusLabel);
   try {
-    _torus = initTorus(_torusCanvas, _torusBins, { onPreset: (id, name) => _setTorusLabel(name) });
+    _torus = initTorus(_torusCanvas, _torusBins, {
+      onPreset: (id, name) => _setTorusLabel(name),
+      isPlaying: _torusPlaying
+    });
   } catch (e) {
     console.warn('[cymatics] torus init failed', e);
     _torusCanvas.remove(); _torusLabel.remove();
