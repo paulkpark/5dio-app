@@ -2085,6 +2085,29 @@ export function initTorus(canvas, getBins, opts = {}) {
     return true;
   }
 
+  /**
+   * Advance the slow parameter wander. Every DRIFT key is a plain per-frame
+   * uniform, so these are assigned straight onto renderer.params — going through
+   * configure() would rebuild buffers and palettes sixty times a second.
+   *
+   * The amplitude convention matches the jitter applyPreset applies to `base`:
+   * 'mul' is a fraction of the base value, 'add' is absolute (radians, for tilt).
+   */
+  function drift(step) {
+    driftT += step;
+    const p = renderer.params;
+    for (const k of DRIFT_KEYS) {
+      const d = DRIFT[k];
+      const w = waves[k];
+      const b = base[k];
+      if (!w || b == null) continue;
+      const s = Math.sin(driftT * w.freq * Math.PI * 2 + w.phase);
+      let v = d.mode === 'mul' ? b * (1 + d.amp * s) : b + d.amp * s;
+      if (d.lo != null) v = clampTo(v, d.lo, d.hi);
+      p[k] = v;
+    }
+  }
+
   /** Roll a new look. Avoids repeating the current one. */
   function randomize(options) {
     const pool = TORUS_PRESETS.filter((p) => p.id !== preset.id);
@@ -2127,8 +2150,21 @@ export function initTorus(canvas, getBins, opts = {}) {
     return null;
   }
 
+  // The rAF reschedule sits outside this, so the loop itself can never die; what
+  // this guards against is the far quieter failure of a steady-state throw
+  // skipping the paint on every frame, which reads as a frozen picture rather
+  // than an error. That is precisely how a missing drift() went unnoticed.
+  let warnedOnce = false;
   function frame(now) {
     rafId = requestAnimationFrame(frame);
+    try {
+      step(now);
+    } catch (e) {
+      if (!warnedOnce) { warnedOnce = true; console.warn('[torus] frame failed', e); }
+    }
+  }
+
+  function step(now) {
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
     if (document.visibilityState !== 'visible' || contextLost) return;
     resize();
@@ -2147,7 +2183,6 @@ export function initTorus(canvas, getBins, opts = {}) {
     // A morph must keep drawing even while paused, otherwise it would stall
     // half-way through the transition.
     if (!playing && frozenDrawn && !resized && !morph) return;
-    resized = false;
     if (playing) {
       cycleT += dt;
       if (cycleT >= nextCycle && !morph) randomize({ animate: true });
@@ -2157,13 +2192,11 @@ export function initTorus(canvas, getBins, opts = {}) {
     const morphing = stepMorph();
     if (playing && !morphing) drift(dt);
     frozenDrawn = !playing && !morphing;
-    // One bad frame must not wedge the loop: rafId is already reassigned above, but
-    // a throw here would skip every later frame's work forever.
-    try {
-      renderer.render(lastData, playing ? dt : 0, canvas.width, canvas.height);
-    } catch (e) {
-      if (!frame._warned) { frame._warned = true; console.warn('[torus] render failed', e); }
-    }
+    renderer.render(lastData, playing ? dt : 0, canvas.width, canvas.height);
+    // Cleared only after a successful paint. Assigning canvas.width clears the
+    // drawing buffer, so a resize dropped on a throwing frame would leave the
+    // canvas black with nothing scheduled to repaint it.
+    resized = false;
   }
 
   // Without these the canvas silently stops updating for good when the browser
