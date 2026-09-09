@@ -2,12 +2,23 @@
 
 // Initial LANG:
 // 1) If user manually picked a language before, honor it (localStorage 'userLang')
-// 2) Otherwise use the HTML lang hint (document.documentElement.lang)
-// The IP-based auto-detect runs at boot and may override before first paint.
+// 2) Otherwise guess from navigator.language
+// 3) Otherwise fall back to the HTML lang hint
+//
+// Step 2 matters because the markup is authored in Korean: whatever this returns
+// is what a visitor actually reads until applyLang() runs. Falling straight to the
+// document's lang="ko" meant every first-time visitor abroad sat on a Korean UI
+// for as long as boot took — and boot awaits meta.json, up to 5s on a cold start.
+// navigator.language is synchronous, so it is the only signal available before
+// first paint. IP detection still refines this a moment later.
 let LANG = (function initialLang() {
   try {
     const saved = localStorage.getItem('userLang');
     if (saved === 'ko' || saved === 'en') return saved;
+  } catch (_) {}
+  try {
+    const nav = (navigator.language || navigator.userLanguage || '').toLowerCase();
+    if (nav) return nav.startsWith('ko') ? 'ko' : 'en';
   } catch (_) {}
   return (document.documentElement.lang === 'en' ? 'en' : 'ko');
 })();
@@ -257,6 +268,12 @@ function refreshLoadingThumbForLang(force = true) {
 }
 
 function applyLang() {
+  // Keep the document in sync so lang-dependent CSS (the Korean font stack) and
+  // assistive tech follow the toggle instead of the markup's authored language.
+  try {
+    if (document.documentElement.lang !== LANG) document.documentElement.lang = LANG;
+  } catch (_) {}
+
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
     const val = I18N[LANG] && I18N[LANG][key];

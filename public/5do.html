@@ -4260,14 +4260,26 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     ? detectLangByIp().catch(() => null)
     : Promise.resolve(null);
 
-  await loadTrackMeta();   // ★ meta.json 먼저 로딩
-
-  // Apply IP-detected lang BEFORE first applyLang() so the UI paints in the right language.
-  const detectedLang = await langDetectPromise;
-  if (detectedLang && detectedLang !== LANG) LANG = detectedLang;
-
+  // Translate immediately, using the language we already know synchronously
+  // (saved choice, else navigator.language). This must NOT wait on the network:
+  // the markup is Korean, and on a first-ever visit loadTrackMeta() blocks on
+  // meta.json for up to 5s, which is exactly how long a visitor abroad used to
+  // stare at a Korean UI.
   applyLang();
   if (typeof updateLangToggle === 'function') updateLangToggle();
+
+  // Refine from IP when it resolves — independently, so a slow or blocked
+  // detect can never hold up the rest of boot.
+  langDetectPromise.then((detectedLang) => {
+    if (detectedLang && detectedLang !== LANG) {
+      LANG = detectedLang;
+      applyLang();
+      if (typeof updateLangToggle === 'function') updateLangToggle();
+    }
+  }).catch(() => {});
+
+  await loadTrackMeta();   // ★ meta.json 로딩
+  applyLang();             // track/category names are localized from meta.json
 
   // ★ BGM 시스템 초기화 (meta.json 로딩 후)
   if (typeof window.initBgmSystem === 'function') window.initBgmSystem();
